@@ -1,0 +1,22 @@
+{
+    "$schema": "https://json.schemastore.org/tsconfig",
+    "compilerOptions": {
+        "target": "ESNext",
+        "module": "ESNext",
+        "lib": ["DOM", "DOM.Iterable", "ESNext"],
+        "moduleResolution": "bundler",
+
+        "strict": true, 
+        "noImplicitAny": true, 
+
+        "skipLibCheck": true, 
+        "esModuleInterop": true, 
+        "resolveJsonModule": true, 
+        "isolatedModules": true,
+        "baseUrl": ".",
+        "paths": {
+            "@eng-suite/physics": ["packages/physics/src"],
+            "@eng-suite/physics/*": ["packages/physics/src/*"]
+        }
+    }
+}
