@@ -832,7 +832,7 @@ export const LengthPage = ({ pipe, onUpdatePipe, startNode, endNode }: { pipe: P
         // It doesn't take external node props, so we rely on what's in the pipe object.
         // However, for density/viscosity, it uses the fluid object.
 
-        tempPipe = recalculatePipeFittingLosses(tempPipe);
+        tempPipe = recalculatePipeFittingLosses(tempPipe) as any;
 
         const gradient = tempPipe.pressureDropCalculationResults?.totalSegmentPressureDrop;
 

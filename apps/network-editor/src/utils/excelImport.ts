@@ -163,7 +163,7 @@ export const parseExcelNetwork = async (file: File): Promise<NetworkState | null
                         // Create Fluid Object
                         const fluid = {
                             id: phase === "liquid" ? "Liquid" : "Gas",
-                            phase: phase,
+                            phase: phase as "liquid" | "gas",
                             density: density,
                             densityUnit: "kg/m3",
                             viscosity: viscosity,

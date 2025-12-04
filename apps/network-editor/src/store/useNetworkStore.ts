@@ -14,7 +14,7 @@ import { recalculatePipeFittingLosses } from "@eng-suite/physics";
 // Helper functions
 const applyFittingLosses = (network: NetworkState): NetworkState => ({
     ...network,
-    pipes: network.pipes.map(recalculatePipeFittingLosses),
+    pipes: network.pipes.map(recalculatePipeFittingLosses) as any,
 });
 
 const createNetworkWithDerivedValues = () =>
@@ -268,7 +268,7 @@ export const useNetworkStore = create<NetworkStore>((set, get) => ({
                 if (Object.keys(pipePatch).length === 0) {
                     return pipe;
                 }
-                return recalculatePipeFittingLosses({ ...pipe, ...pipePatch });
+                return recalculatePipeFittingLosses({ ...pipe, ...pipePatch }) as any;
             });
 
             return {
@@ -328,7 +328,7 @@ export const useNetworkStore = create<NetworkStore>((set, get) => ({
                 pipes: current.pipes.map(pipe => {
                     if (pipe.id !== id) return pipe;
                     const updatedPipe = { ...pipe, ...finalPipePatch };
-                    return recalculatePipeFittingLosses(updatedPipe);
+                    return recalculatePipeFittingLosses(updatedPipe) as any;
                 }),
             };
         });

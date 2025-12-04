@@ -1,4 +1,4 @@
-import { Box, Typography, Button, Chip, SxProps, Theme } from "@mui/material";
+import { Box, Typography, Button, Chip, SxProps, Theme, useTheme } from "@mui/material";
 import { glassPanelSx } from "@eng-suite/ui-kit"; // Reusing your shared style!
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import LockIcon from "@mui/icons-material/Lock";
@@ -16,6 +16,8 @@ interface AppCardProps {
 
 export const AppCard = ({ title, description, icon, href, status = "active" }: AppCardProps) => {
     const isActive = status === "active";
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
 
     return (
         <Box
@@ -27,11 +29,11 @@ export const AppCard = ({ title, description, icon, href, status = "active" }: A
                 alignItems: "flex-start",
                 gap: 2,
                 transition: "transform 0.2s, box-shadow 0.2s",
-                boxShadow: (theme: Theme) => theme.palette.mode === 'dark' ? "-10px 0 40px rgba(0,0,0,0.7)," + liquidGlassBorderSx : "-10px 0 40px rgba(0,0,0,0.2)," + liquidGlassBorderSx,
+                boxShadow: isDark ? "-10px 0 40px rgba(0,0,0,0.7)," + liquidGlassBorderSx : "-10px 0 40px rgba(0,0,0,0.2)," + liquidGlassBorderSx,
                 "&:hover": isActive
                     ? {
                         transform: "translateY(-4px)",
-                        boxShadow: (theme: Theme    ) => theme.palette.mode === 'dark' ? "0 8px 32px rgba(0, 0, 0, 0.2), " + liquidGlassBorderSx : "0 8px 32px rgba(0, 0, 0, 0.2), " + liquidGlassBorderSx,
+                        boxShadow: isDark ? "0 8px 32px rgba(0, 0, 0, 0.2), " + liquidGlassBorderSx : "0 8px 32px rgba(0, 0, 0, 0.2), " + liquidGlassBorderSx,
                         cursor: "pointer",
                     }
                     : {},
@@ -45,12 +47,13 @@ export const AppCard = ({ title, description, icon, href, status = "active" }: A
                 <Box
                     sx={{
                         p: 1.5,
-                        borderRadius: "12px",
-                        background: "rgba(255,255,255,0.1)",
+                        borderRadius: "50%",
+                        border: isDark ? "2px solid rgba(255,255,255,0.2)" : "2px solid rgba(0,0,0,0.2)",
+                        background: isDark ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.1)",
                         display: "flex",
                         alignItems: "center",
                         justifyContent: "center",
-                        color: "#60a5fa", // Blue-400
+                        color: "primary.main", // Blue-400
                     }}
                 >
                     {icon}
@@ -59,7 +62,7 @@ export const AppCard = ({ title, description, icon, href, status = "active" }: A
                     <Chip
                         label={status === "coming_soon" ? "Coming Soon" : "Maintenance"}
                         size="small"
-                        sx={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#94a3b8' }}
+                        sx={{ backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(255,255,255,0.1)', color: 'primary.main' }}
                     />
                 )}
             </Box>

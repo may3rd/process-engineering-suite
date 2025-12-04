@@ -465,7 +465,7 @@ function EditorCanvas({
         roughnessUnit: "mm",
         fluid: startNode?.fluid ? { ...startNode.fluid } : undefined,
         gasFlowModel,
-        direction: "forward",
+        direction: "forward" as "forward" | "backward",
         boundaryPressure: startNode?.pressure,
         boundaryPressureUnit: startNode?.pressureUnit,
         boundaryTemperature: startNode?.temperature,
@@ -475,7 +475,7 @@ function EditorCanvas({
         fittingType: "LR",
       };
 
-      const calculatedPipe = recalculatePipeFittingLosses(newPipe);
+      const calculatedPipe = recalculatePipeFittingLosses(newPipe) as any;
 
       onNetworkChange({
         ...network,
@@ -645,7 +645,7 @@ function EditorCanvas({
 
       const newNodeId = `node-${Date.now()}`;
       const sourceNode = network.nodes.find((node) => node.id === fromId);
-      const copiedFluid = sourceNode?.fluid ? { ...sourceNode.fluid } : { id: "fluid", phase: "liquid" };
+      const copiedFluid = sourceNode?.fluid ? { ...sourceNode.fluid } : { id: "fluid", phase: "liquid" as "liquid" | "gas" };
       const newNode = {
         id: newNodeId,
         label: `Node ${network.nodes.length + 1}`,
@@ -683,7 +683,7 @@ function EditorCanvas({
         roughnessUnit: "mm",
         fluid: pipeStartNode?.fluid ? { ...pipeStartNode.fluid } : undefined,
         gasFlowModel,
-        direction: "forward",
+        direction: "forward" as "forward" | "backward",
         boundaryPressure: sourceNode?.pressure, // Use source node pressure
         boundaryPressureUnit: sourceNode?.pressureUnit,
         boundaryTemperature: sourceNode?.temperature,
@@ -693,7 +693,7 @@ function EditorCanvas({
         fittingType: "LR",
       };
 
-      const calculatedPipe = recalculatePipeFittingLosses(newPipe);
+      const calculatedPipe = recalculatePipeFittingLosses(newPipe) as any;
 
       onNetworkChange({
         ...network,

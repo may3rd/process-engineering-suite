@@ -22,7 +22,7 @@ const createNetworkWithDerivedValues = () =>
 
 const applyFittingLosses = (network: NetworkState): NetworkState => ({
   ...network,
-  pipes: network.pipes.map(recalculatePipeFittingLosses),
+  pipes: network.pipes.map(recalculatePipeFittingLosses) as any,
 });
 
 export default function Home() {
@@ -301,6 +301,30 @@ export default function Home() {
         style={{ display: "none" }}
         onChange={handleExcelFileChange}
       />
+      <IconButton
+        onClick={() => window.location.href = "http://localhost:3000"}
+        sx={{
+          position: "fixed",
+          top: 24,
+          right: 24,
+          zIndex: 1300, // Higher than standard app bar
+          bgcolor: (theme) => theme.palette.mode === 'dark' ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.9)",
+          backdropFilter: "blur(10px)",
+          border: (theme) => theme.palette.mode === 'dark' ? "1px solid rgba(255,255,255,0.2)" : "1px solid rgba(0,0,0,0.1)",
+          color: (theme) => theme.palette.mode === 'dark' ? "white" : "text.primary",
+          width: 48,
+          height: 48,
+          "&:hover": {
+            bgcolor: (theme) => theme.palette.mode === 'dark' ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.05)",
+            transform: "scale(1.05)",
+          },
+          transition: "all 0.2s ease-in-out",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+        }}
+      >
+        <CloseIcon />
+      </IconButton>
+
       <Header
         network={network}
         onNetworkChange={handleNetworkChange}
