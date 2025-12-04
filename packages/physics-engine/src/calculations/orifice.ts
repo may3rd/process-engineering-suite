@@ -1,7 +1,12 @@
 import {
+    STANDARD_GRAVITY,
+    calculateReynoldsNumber,
     darcyFrictionFactor,
+    hydraulicHeadToPressureLoss,
+    pressureLossToHydraulicHead,
     relativeRoughness,
-} from "./basicCaculations";
+    velocityFromFlow,
+} from "./basicCalculations";
 import type {
     PipeProps,
     PressureDropCalculationResults,

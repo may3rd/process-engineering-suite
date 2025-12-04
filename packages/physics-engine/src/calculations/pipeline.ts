@@ -3,9 +3,16 @@ import {
 } from "./fittingCalculation";
 import {
     STANDARD_GRAVITY,
+    calculateReynoldsNumber,
     darcyFrictionFactor,
     determineFlowScheme,
-} from "./basicCaculations";
+    hydraulicHeadToPressureLoss,
+    pipeResistanceFromDarcy,
+    pressureLossFromTotalK,
+    pressureLossToHydraulicHead,
+    relativeRoughness,
+    velocityFromFlow,
+} from "./basicCalculations";
 import {
     solveIsothermal,
     solveAdiabatic,

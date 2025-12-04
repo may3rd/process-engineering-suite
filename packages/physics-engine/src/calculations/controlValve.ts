@@ -1,9 +1,12 @@
 import {
     calculateReynoldsNumber,
-    determineFlowScheme,
     darcyFrictionFactor,
+    determineFlowScheme,
+    hydraulicHeadToPressureLoss,
+    pressureLossToHydraulicHead,
     relativeRoughness,
-} from "./basicCaculations";
+    velocityFromFlow,
+} from "./basicCalculations";
 import type {
     PipeProps,
     PressureDropCalculationResults,
