@@ -1,0 +1,97 @@
+import { Box, Typography, Button, Chip, SxProps, Theme } from "@mui/material";
+import { glassPanelSx } from "@eng-suite/ui-kit"; // Reusing your shared style!
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import LockIcon from "@mui/icons-material/Lock";
+
+// 
+import { liquidGlassBorderSx } from "@eng-suite/ui-kit";
+
+interface AppCardProps {
+    title: string;
+    description: string;
+    icon: React.ReactNode;
+    href?: string;
+    status?: "active" | "coming_soon" | "maintenance";
+}
+
+export const AppCard = ({ title, description, icon, href, status = "active" }: AppCardProps) => {
+    const isActive = status === "active";
+
+    return (
+        <Box
+            sx={{
+                ...liquidGlassBorderSx,
+                ...glassPanelSx,
+                p: 3,
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "flex-start",
+                gap: 2,
+                transition: "transform 0.2s, box-shadow 0.2s",
+                "&:hover": isActive
+                    ? {
+                        transform: "translateY(-4px)",
+                        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2), " + liquidGlassBorderSx.boxShadow,
+                        cursor: "pointer",
+                    }
+                    : {},
+                opacity: isActive ? 1 : 0.7,
+            } as SxProps<Theme>}
+            onClick={() => {
+                if (isActive && href) window.location.href = href;
+            }}
+        >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
+                <Box
+                    sx={{
+                        p: 1.5,
+                        borderRadius: "12px",
+                        background: "rgba(255,255,255,0.1)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#60a5fa", // Blue-400
+                    }}
+                >
+                    {icon}
+                </Box>
+                {status !== "active" && (
+                    <Chip
+                        label={status === "coming_soon" ? "Coming Soon" : "Maintenance"}
+                        size="small"
+                        sx={{ backgroundColor: 'rgba(255,255,255,0.1)', color: '#94a3b8' }}
+                    />
+                )}
+            </Box>
+
+            <Box>
+                <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
+                    {title}
+                </Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary', mt: 0.5 }}>
+                    {description}
+                </Typography>
+            </Box>
+
+            <Box sx={{ mt: 'auto', pt: 2, width: '100%' }}>
+                <Button
+                    variant={isActive ? "contained" : "outlined"}
+                    fullWidth
+                    disabled={!isActive}
+                    endIcon={isActive ? <ArrowForwardIcon /> : <LockIcon />}
+                    sx={{
+                        borderRadius: "10px",
+                        textTransform: "none",
+                        backgroundColor: isActive ? "#3b82f6" : "transparent",
+                        borderColor: "rgba(255,255,255,0.1)",
+                        "&:hover": {
+                            backgroundColor: isActive ? "#2563eb" : "transparent",
+                        }
+                    }}
+                >
+                    {isActive ? "Launch Tool" : "Unavailable"}
+                </Button>
+            </Box>
+        </Box>
+    );
+};

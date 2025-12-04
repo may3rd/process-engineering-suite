@@ -1,0 +1,85 @@
+"use client";
+
+import { Box, Container, Typography } from "@mui/material";
+// 1. Import Grid2 (The new standard in MUI v6)
+import Grid from '@mui/material/Grid2';
+import { AppCard } from "../components/AppCard";
+import HubIcon from '@mui/icons-material/Hub';
+import CalculateIcon from '@mui/icons-material/Calculate';
+import TuneIcon from '@mui/icons-material/Tune';
+import ScienceIcon from '@mui/icons-material/Science';
+
+export default function Dashboard() {
+    return (
+        <Box sx={{ py: 8 }}>
+            <Container maxWidth="lg">
+                <Box sx={{ mb: 8, textAlign: "center" }}>
+                    <Typography
+                        variant="h2"
+                        sx={{
+                            fontWeight: 700,
+                            background: "linear-gradient(to right, #053a7bff, #00C4F9)",
+                            WebkitBackgroundClip: "text",
+                            WebkitTextFillColor: "transparent",
+                            mb: 2
+                        }}
+                    >
+                        Engineering Suite
+                    </Typography>
+                    <Typography
+                        variant="h6"
+                        sx={{
+                            color: "text.secondary",
+                            maxWidth: "600px",
+                            mx: "auto"
+                        }}>
+                        A unified platform for process design, hydraulic analysis, and equipment sizing.
+                    </Typography>
+                </Box>
+
+                {/* 2. Grid container spacing remains the same */}
+                <Grid container spacing={3}>
+
+                    {/* 3. Use the 'size' object prop instead of individual 'xs/md/lg' props */}
+                    <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+                        <AppCard
+                            title="Network Editor"
+                            description="Hydraulic network analysis for incompressible flow. Calculate pressure drops, velocities, and fittings."
+                            icon={<HubIcon fontSize="large" />}
+                            href="http://localhost:3002"
+                            status="active"
+                        />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+                        <AppCard
+                            title="Control Valve Sizing"
+                            description="ISA 75.01 compliant sizing for Cv, Cg, and trim characteristics. Includes cavitation checks."
+                            icon={<TuneIcon fontSize="large" />}
+                            status="coming_soon"
+                        />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+                        <AppCard
+                            title="Orifice Calculator"
+                            description="Restriction orifice and flow meter sizing (ISO 5167). Beta ratio and permanent pressure loss."
+                            icon={<CalculateIcon fontSize="large" />}
+                            status="coming_soon"
+                        />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+                        <AppCard
+                            title="Fluid Properties"
+                            description="Thermodynamic properties using the CoolProp engine. Phase envelopes and flash calculations."
+                            icon={<ScienceIcon fontSize="large" />}
+                            status="coming_soon"
+                        />
+                    </Grid>
+
+                </Grid>
+            </Container>
+        </Box>
+    );
+}
