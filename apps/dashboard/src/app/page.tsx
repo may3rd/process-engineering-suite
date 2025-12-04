@@ -2,7 +2,7 @@
 
 import { Box, Container, Typography } from "@mui/material";
 // 1. Import Grid2 (The new standard in MUI v6)
-import Grid from '@mui/material/Grid2';
+import Grid from '@mui/material/Grid';
 import { AppCard } from "../components/AppCard";
 import HubIcon from '@mui/icons-material/Hub';
 import CalculateIcon from '@mui/icons-material/Calculate';

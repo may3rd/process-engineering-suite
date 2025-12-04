@@ -39,14 +39,7 @@ const nextConfig: NextConfig = {
   /* config options here */
   transpilePackages: ["@eng-suite/physics", "@eng-suite/ui-kit"],
 
-  // We are forcing Webpack mode in the dev script, but keeping the webpack config safe
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      // [Existing Fallbacks here]
-    }
-    // [Existing experiments config]
-    return config;
-  },
+
 
   // ADD THIS BLOCK: Local Routing for the Monorepo
   async rewrites() {
