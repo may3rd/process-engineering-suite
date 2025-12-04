@@ -3,24 +3,35 @@ import type { NextConfig } from "next";
 const stripTrailingSlash = (url: string) => url.replace(/\/+$/, "");
 const isVercel = process.env.VERCEL === "1";
 
-const proxyTarget = (envKey: string, localFallback: string) => {
+const createProxyTarget = (
+  envKey: string,
+  productionFallback: string,
+  localFallback: string,
+) => {
   const configured = process.env[envKey];
   if (configured && configured.trim().length > 0) {
     return stripTrailingSlash(configured.trim());
   }
 
   if (isVercel) {
-    throw new Error(
-      `Missing "${envKey}" environment variable. Set it to the deployed origin of the ${envKey.includes("NETWORK") ? "Network Editor" : "Docs"} app so the dashboard can proxy traffic.`,
+    const fallback = stripTrailingSlash(productionFallback);
+    console.warn(
+      `[dashboard] "${envKey}" not provided. Falling back to "${fallback}".`,
     );
+    return fallback;
   }
 
   return stripTrailingSlash(localFallback);
 };
 
-const docsAppOrigin = proxyTarget("DOCS_URL", "http://localhost:3001");
-const networkEditorOrigin = proxyTarget(
+const docsAppOrigin = createProxyTarget(
+  "DOCS_URL",
+  "https://process-engineering-suite-docs.vercel.app",
+  "http://localhost:3001",
+);
+const networkEditorOrigin = createProxyTarget(
   "NETWORK_EDITOR_URL",
+  "https://process-engineering-suite-network-e.vercel.app",
   "http://localhost:3002",
 );
 
