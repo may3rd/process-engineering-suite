@@ -1,8 +1,26 @@
 {
+  "build": {
+    "env": {
+      "NPM_TOKEN": "", 
+      "TURBO_TOKEN": ""
+    }
+  },
+  
+  "projects": [
+    {
+      "rootDirectory": "apps/dashboard",
+      "name": "dashboard"
+    },
+    {
+      "rootDirectory": "apps/network-editor",
+      "name": "network-editor"
+    }
+  ],
+
   "rewrites": [
     {
-      "source": "/network-editor/(.*)",
-      "destination": "/network-editor/$1" 
+      "source": "/network-editor/:path*",
+      "destination": "/network-editor/:path*" 
     }
   ]
 }
