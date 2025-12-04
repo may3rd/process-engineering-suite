@@ -73,7 +73,7 @@ export function useNodeFlowState(nodes: NodeProps[], pipes: PipeProps[]) {
 
             // Debug logging
             if (needsAttention) {
-                console.log(`Node ${node.label} (${node.id}) needs attention:`, { warnings, invalidConfig: !validation.isValid });
+                // console.log(`Node ${node.label} (${node.id}) needs attention:`, { warnings, invalidConfig: !validation.isValid });
             }
 
             if (!validation.isValid) {

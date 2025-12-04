@@ -1,6 +1,10 @@
 import { NodeProps, PipeProps, NodeFlowRole } from "@/lib/types";
 import { convertUnit } from "@eng-suite/physics";
 
+const temperatureTolerance = 0.01; // K
+const pressureTolerance = 100; // Pa
+const massFlowRateTolerance = 0.001; // kg/s
+
 export const getPipeWarnings = (pipe: PipeProps): string[] => {
     const warnings: string[] = [];
 
@@ -91,22 +95,45 @@ export const getNodeWarnings = (node: NodeProps, role: NodeFlowRole, pipes: Pipe
         if (node.temperature === undefined) warnings.push("Temperature missing");
     }
 
-    // Pressure mismatch check
+    // Pressure and Temperature mismatch check
     if (node.pressure !== undefined) {
         const connectedPipes = pipes.filter(p => p.startNodeId === node.id || p.endNodeId === node.id);
         for (const pipe of connectedPipes) {
             // Check inlet pressure for outgoing pipes (startNode)
             if (pipe.startNodeId === node.id) {
                 const inletPressure = pipe.resultSummary?.inletState?.pressure;
-                if (inletPressure !== undefined && Math.abs(inletPressure - convertUnit(node.pressure, node.pressureUnit || "kPag", "Pa")) > 100) { // 100 Pa tolerance
+                if (inletPressure !== undefined && Math.abs(inletPressure - convertUnit(node.pressure, node.pressureUnit || "kPag", "Pa")) > pressureTolerance) { // 100 Pa tolerance
                     warnings.push(`Pressure mismatch with pipe ${pipe.name || pipe.id}`);
                 }
+                // Gas Temperature Check
+                if (node.fluid?.phase === "gas" && node.temperature !== undefined && pipe.direction !== "forward") {
+                    const inletTemp = pipe.resultSummary?.inletState?.temperature;
+                    if (inletTemp !== undefined) {
+                        const nodeTempK = convertUnit(node.temperature, node.temperatureUnit || "C", "K");
+                        // console.log(`[Validation] Node ${node.label} Temp: ${nodeTempK.toFixed(4)} K, Pipe ${pipe.name} Inlet: ${inletTemp.toFixed(4)} K, Diff: ${Math.abs(inletTemp - nodeTempK).toFixed(4)}`);
+                        if (Math.abs(inletTemp - nodeTempK) > temperatureTolerance) {
+                            warnings.push(`Temperature mismatch with pipe ${pipe.name || pipe.id}`);
+                        }
+                    }
+                }
             }
+
             // Check outlet pressure for incoming pipes (endNode)
             if (pipe.endNodeId === node.id) {
                 const outletPressure = pipe.resultSummary?.outletState?.pressure;
-                if (outletPressure !== undefined && Math.abs(outletPressure - convertUnit(node.pressure, node.pressureUnit || "kPag", "Pa")) > 100) {
+                if (outletPressure !== undefined && Math.abs(outletPressure - convertUnit(node.pressure, node.pressureUnit || "kPag", "Pa")) > pressureTolerance) {
                     warnings.push(`Pressure mismatch with pipe ${pipe.name || pipe.id}`);
+                }
+                // Gas Temperature Check
+                if (node.fluid?.phase === "gas" && node.temperature !== undefined && pipe.direction !== "backward") {
+                    const outletTemp = pipe.resultSummary?.outletState?.temperature;
+                    if (outletTemp !== undefined) {
+                        const nodeTempK = convertUnit(node.temperature, node.temperatureUnit || "C", "K");
+                        // console.log(`[Validation] Node ${node.label} Temp: ${nodeTempK.toFixed(4)} K, Pipe ${pipe.name} Outlet: ${outletTemp.toFixed(4)} K, Diff: ${Math.abs(outletTemp - nodeTempK).toFixed(4)}`);
+                        if (Math.abs(outletTemp - nodeTempK) > temperatureTolerance) {
+                            warnings.push(`Temperature mismatch with pipe ${pipe.name || pipe.id}`);
+                        }
+                    }
                 }
             }
         }
@@ -139,7 +166,7 @@ export const getNodeWarnings = (node: NodeProps, role: NodeFlowRole, pipes: Pipe
 
         // Only check for middle nodes (has both inlet and outlet)
         if (hasInlet && hasOutlet) {
-            if (Math.abs(massIn - massOut) > 0.01) {
+            if (Math.abs(massIn - massOut) > massFlowRateTolerance) {
                 warnings.push(`Mass balance mismatch: In ${massIn.toFixed(3)} kg/s, Out ${massOut.toFixed(3)} kg/s`);
             }
         }

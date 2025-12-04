@@ -27,7 +27,7 @@ export type NodeProps = {
 
 export type pipeState = {
   pressure?: number, // State pressure in Pa
-  temprature?: number, // State temperature in K
+  temperature?: number, // State temperature in K
   density?: number, // State fluid density in kg/m3
   machNumber?: number, // State gas mach number in m/s (only gas)
   velocity?: number, // velocity of fluid at pipe diameter in m/s

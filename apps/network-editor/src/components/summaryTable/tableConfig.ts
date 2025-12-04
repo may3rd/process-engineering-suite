@@ -156,7 +156,7 @@ export const getPipeSummaryRows = (network: NetworkState, unitSystem: "metric" |
             label: "Temperature",
             unit: u("°C", "°F"),
             getValue: (pipe) => {
-                const val = pipe.resultSummary?.inletState?.temprature; // Note typo in types.ts 'temprature'
+                const val = pipe.resultSummary?.inletState?.temperature;
                 return val ? convertUnit(val, "K", u("C", "F")) : "";
             }
         },
@@ -594,7 +594,7 @@ export const getPipeSummaryRows = (network: NetworkState, unitSystem: "metric" |
             label: "INLET Temperature",
             unit: u("°C", "°F"),
             getValue: (pipe) => {
-                const val = pipe.resultSummary?.inletState?.temprature;
+                const val = pipe.resultSummary?.inletState?.temperature;
                 return val ? convertUnit(val, "K", u("C", "F")) : "";
             }
         },
@@ -675,7 +675,7 @@ export const getPipeSummaryRows = (network: NetworkState, unitSystem: "metric" |
             label: "OUTLET Temperature",
             unit: u("°C", "°F"),
             getValue: (pipe) => {
-                const val = pipe.resultSummary?.outletState?.temprature;
+                const val = pipe.resultSummary?.outletState?.temperature;
                 return val ? convertUnit(val, "K", u("C", "F")) : "";
             }
         },

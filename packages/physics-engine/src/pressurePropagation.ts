@@ -212,9 +212,9 @@ export const propagatePressure = (
             // 2. Fallback: Isothermal (use current node's temperature)
             const outletState = updatedPipe.resultSummary?.outletState;
 
-            if (outletState && typeof outletState.temprature === "number") {
+            if (outletState && typeof outletState.temperature === "number") {
                 const newTargetTemp = convertUnit(
-                    outletState.temprature,
+                    outletState.temperature,
                     "K",
                     targetNode.temperatureUnit || "C"
                 );

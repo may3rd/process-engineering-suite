@@ -349,7 +349,7 @@ export function buildHydraulicContext(pipe: PipeProps): HydraulicContext | null 
 export function gasStateToPipeState(state: GasState, erosionalConstant?: number): pipeState {
     return {
         pressure: state.pressure,
-        temprature: state.temperature,
+        temperature: state.temperature,
         density: state.density,
         velocity: state.velocity,
         machNumber: state.mach,
@@ -388,7 +388,7 @@ export function calculateResultSummary(
 
     const inletState: pipeState = {
         pressure: inletPressurePa,
-        temprature: context.temperature,
+        temperature: context.temperature,
         density: context.density,
         velocity,
         erosionalVelocity,
@@ -398,7 +398,7 @@ export function calculateResultSummary(
 
     const outletState: pipeState = {
         pressure: outletPressurePa,
-        temprature: context.temperature,
+        temperature: context.temperature,
         density: context.density,
         velocity,
         erosionalVelocity,

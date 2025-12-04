@@ -126,9 +126,9 @@ export function IOSNodeProperties({
                     updates.pressureUnit = targetUnit;
                 }
 
-                if (state.temprature !== undefined) {
+                if (state.temperature !== undefined) {
                     const targetUnit = node.temperatureUnit || "C";
-                    updates.temperature = convertUnit(state.temprature, "K", targetUnit);
+                    updates.temperature = convertUnit(state.temperature, "K", targetUnit);
                     updates.temperatureUnit = targetUnit;
                 }
             }
