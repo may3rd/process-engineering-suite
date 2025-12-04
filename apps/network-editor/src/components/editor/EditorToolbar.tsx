@@ -172,6 +172,11 @@ export function EditorToolbar({
                     top: 0,
                     left: 0,
                     pointerEvents: "none",
+                    opacity: 0.2,
+                    transition: "opacity 0.5s ease",
+                    "&:hover": {
+                        opacity: 1,
+                    },
                 }}
             >
                 <Stack direction="row" spacing={2} sx={{ pointerEvents: "auto" }}>
@@ -179,7 +184,7 @@ export function EditorToolbar({
                         variant="contained"
                         aria-label="File tools"
                         sx={{
-                           ...glassToolBarButtonGroupSx,
+                            ...glassToolBarButtonGroupSx,
                             bgcolor: (theme) => theme.palette.mode === 'dark' ? '#1e293b' : 'background.paper'
                         }}
                     >

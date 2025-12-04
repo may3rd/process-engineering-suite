@@ -287,11 +287,13 @@ export default function Home() {
 
   return (
     <>
-      <Stack sx={{
-        bgcolor: "background.default",
-        height: "60px",
-        gap: 0, p: 0,
-      }}>
+      <Stack
+        sx={{
+          bgcolor: "background.default",
+          height: "60px",
+          gap: 0, p: 0,
+        }}
+      >
         <input
           ref={fileInputRef}
           type="file"
@@ -313,10 +315,22 @@ export default function Home() {
           onImportExcel={handleImportExcelClick}
         />
       </Stack>
-      <Stack sx={{ bgcolor: "background.default", height: "100%", gap: 3, pr: 4, pl: 4, pt: 16, pb: 0, mt: -11 }}>
+      <Stack
+        sx={{
+          bgcolor: "background.default",
+          height: "100%",
+          gap: 2,
+          pr: 2,
+          pl: 2,
+          pt: 12,
+          pb: 0,
+          mt: -9,
+        }}
+      >
         <Box sx={{
           position: "relative",
-          flex: 1, width: "100%",
+          flex: 1,
+          width: "100%",
           overflow: "hidden",
           borderRadius: "24px",
           border: "1px solid",
@@ -355,8 +369,6 @@ export default function Home() {
             </Paper>
           </Slide>
         </Box>
-
-
 
         <Dialog
           open={showSummary}

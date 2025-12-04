@@ -359,8 +359,6 @@ function EditorCanvas({
     [network.pipes, selectedId, selectedType, viewSettings, theme, forceLightMode, isAnimationEnabled, isConnectingMode]
   );
 
-
-
   const defaultEdgeOptions: DefaultEdgeOptions = {
     style: { strokeWidth: 2, stroke: "#94a3b8" },
     type: "smoothstep",
@@ -783,10 +781,6 @@ function EditorCanvas({
     },
     [isAddingNode],
   );
-
-
-
-
 
   // Hotkey logic moved to useNetworkHotkeys hook
 
