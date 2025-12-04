@@ -958,7 +958,7 @@ function EditorCanvas({
               if (n.type === 'background') return 'transparent';
               return '#222';
             }}
-            style={{ background: "background.paper", opacity: 0.7, width: 140, height: 90 }}
+            style={{ background: "transparent", opacity: 0.5, width: 140, height: 90, border: "1px solid rgba(0, 0, 0, 0.3)" }}
           />
           <Controls />
         </ReactFlow>
