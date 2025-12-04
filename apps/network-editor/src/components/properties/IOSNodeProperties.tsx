@@ -3,13 +3,13 @@ import React from "react";
 import { IOSListGroup, IOSListItem, glassListGroupSx, IOSTextField } from "@eng-suite/ui-kit";
 import { Navigator } from "../PropertiesPanel";
 import { Box, TextField, Typography, useTheme, Stack, Menu, MenuItem } from "@mui/material";
-import { BackButtonPanel, ForwardButtonPanel } from "./NavigationButtons";
+import { FloatingNavigationPanel } from "./FloatingNavigationPanel";
 import { Sync, PlayArrow } from "@mui/icons-material";
 import { convertUnit } from "@eng-suite/physics";
 import { propagatePressure } from "@eng-suite/physics";
 import { getNodeWarnings } from "@/utils/validationUtils";
 import { RefObject } from "react";
-import { createPortal } from "react-dom";
+
 import { PressurePage, TemperaturePage, NodeFluidPage } from "./subPages/NodeSubPages";
 import { useNetworkStore } from "@/store/useNetworkStore";
 
@@ -398,59 +398,39 @@ export function IOSNodeProperties({
                 )}
             </IOSListGroup>
 
-            {/* Navigation Buttons - Rendered via Portal if footerNode is available */}
-            {footerNode && createPortal(
-                <Stack
-                    direction="row"
-                    spacing={2}
-                    sx={{
-                        position: "absolute",
-                        bottom: 24,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        zIndex: 1200,
-                        pointerEvents: "auto", // Re-enable pointer events for buttons
-                    }}
-                >
-                    {(() => {
-                        const incomingPipes = network.pipes.filter(p => p.endNodeId === node.id);
-                        return (
-                            <BackButtonPanel
-                                disabled={incomingPipes.length === 0}
-                                onClick={(e) => {
-                                    if (incomingPipes.length === 1) {
-                                        onClose();
-                                        console.log("Selecting start node:", incomingPipes[0].id);
-                                        selectElement(incomingPipes[0].id, "pipe");
-                                    } else {
-                                        setMenuPipes(incomingPipes.map(p => ({ pipe: p, pipeId: p.id })));
-                                        setAnchorEl(e.currentTarget);
-                                    }
-                                }}
-                            />
-                        );
-                    })()}
-                    {(() => {
-                        const outgoingPipes = network.pipes.filter(p => p.startNodeId === node.id);
-                        return (
-                            <ForwardButtonPanel
-                                disabled={outgoingPipes.length === 0}
-                                onClick={(e) => {
-                                    if (outgoingPipes.length === 1) {
-                                        onClose();
-                                        console.log("Selecting end node:", outgoingPipes[0].id);
-                                        selectElement(outgoingPipes[0].id, "pipe");
-                                    } else {
-                                        setMenuPipes(outgoingPipes.map(p => ({ pipe: p, pipeId: p.id })));
-                                        setAnchorEl(e.currentTarget);
-                                    }
-                                }}
-                            />
-                        );
-                    })()}
-                </Stack>,
-                footerNode
-            )}
+            {/* Navigation Buttons */}
+            {footerNode && (() => {
+                const incomingPipes = network.pipes.filter(p => p.endNodeId === node.id);
+                const outgoingPipes = network.pipes.filter(p => p.startNodeId === node.id);
+
+                return (
+                    <FloatingNavigationPanel
+                        footerNode={footerNode}
+                        backDisabled={incomingPipes.length === 0}
+                        forwardDisabled={outgoingPipes.length === 0}
+                        onBack={(e: React.MouseEvent<HTMLButtonElement>) => {
+                            if (incomingPipes.length === 1) {
+                                onClose();
+                                console.log("Selecting start node:", incomingPipes[0].id);
+                                selectElement(incomingPipes[0].id, "pipe");
+                            } else {
+                                setMenuPipes(incomingPipes.map(p => ({ pipe: p, pipeId: p.id })));
+                                setAnchorEl(e.currentTarget);
+                            }
+                        }}
+                        onForward={(e: React.MouseEvent<HTMLButtonElement>) => {
+                            if (outgoingPipes.length === 1) {
+                                onClose();
+                                console.log("Selecting end node:", outgoingPipes[0].id);
+                                selectElement(outgoingPipes[0].id, "pipe");
+                            } else {
+                                setMenuPipes(outgoingPipes.map(p => ({ pipe: p, pipeId: p.id })));
+                                setAnchorEl(e.currentTarget);
+                            }
+                        }}
+                    />
+                );
+            })()}
 
             <Menu
                 anchorEl={anchorEl}

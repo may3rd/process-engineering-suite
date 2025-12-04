@@ -6,11 +6,11 @@ import { IOSListGroup } from "@eng-suite/ui-kit";
 import { IOSListItem } from "@eng-suite/ui-kit";
 import { Navigator } from "../PropertiesPanel";
 import { Box, IconButton, Typography, useTheme, SvgIcon, SvgIconProps, Dialog, DialogTitle, DialogContent, DialogActions, Button, Stack } from "@mui/material";
-import { BackButtonPanel, ForwardButtonPanel } from "./NavigationButtons";
+import { FloatingNavigationPanel } from "./FloatingNavigationPanel";
 import { Add, Check, Timeline, Close, ErrorOutline } from "@mui/icons-material";
 import { RefObject, useEffect, useRef, useState } from "react";
 import { glassDialogSx, glassListGroupSx, glassPanelSx } from "@eng-suite/ui-kit";
-import { createPortal } from "react-dom";
+
 import { useNetworkStore } from "@/store/useNetworkStore";
 
 function ControlValveIcon(props: SvgIconProps) {
@@ -559,40 +559,25 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                 />
             </IOSListGroup>
 
-            {/* Navigation Buttons - Rendered via Portal if footerNode is available */}
-            {footerNode && createPortal(
-                <Stack
-                    direction="row"
-                    spacing={2}
-                    sx={{
-                        position: "absolute",
-                        bottom: 24,
-                        left: "50%",
-                        transform: "translateX(-50%)",
-                        zIndex: 1200,
-                        pointerEvents: "auto", // Re-enable pointer events for buttons
+            {/* Navigation Buttons */}
+            {footerNode && (
+                <FloatingNavigationPanel
+                    footerNode={footerNode}
+                    backDisabled={!pipe.startNodeId}
+                    forwardDisabled={!pipe.endNodeId}
+                    onBack={() => {
+                        console.log("Back (Start Node):", pipe.startNodeId);
+                        onClose();
+                        // select start node
+                        if (pipe.startNodeId) selectElement(pipe.startNodeId, "node");
                     }}
-                >
-                    <BackButtonPanel
-                        disabled={!pipe.startNodeId}
-                        onClick={() => {
-                            console.log("Back (Start Node):", pipe.startNodeId);
-                            onClose();
-                            // select start node
-                            selectElement(pipe.startNodeId, "node");
-                        }}
-                    />
-                    <ForwardButtonPanel
-                        disabled={!pipe.endNodeId}
-                        onClick={() => {
-                            console.log("Forward (End Node):", pipe.endNodeId);
-                            onClose();
-                            // select end node
-                            selectElement(pipe.endNodeId, "node");
-                        }}
-                    />
-                </Stack>,
-                footerNode
+                    onForward={() => {
+                        console.log("Forward (End Node):", pipe.endNodeId);
+                        onClose();
+                        // select end node
+                        if (pipe.endNodeId) selectElement(pipe.endNodeId, "node");
+                    }}
+                />
             )}
         </Box>
     );

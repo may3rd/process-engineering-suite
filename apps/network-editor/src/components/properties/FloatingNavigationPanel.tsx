@@ -1,12 +1,12 @@
 import React from "react";
 import { createPortal } from "react-dom";
-import { Stack } from "@mui/material";
-import { BackButtonPanel, ForwardButtonPanel } from "./NavigationButtons";
+import { Stack, IconButton, Box } from "@mui/material";
+import { ChevronLeft, ChevronRight } from "@mui/icons-material";
 
 type Props = {
     footerNode: HTMLDivElement | null;
-    onBack?: () => void;
-    onForward?: () => void;
+    onBack?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+    onForward?: (event: React.MouseEvent<HTMLButtonElement>) => void;
     backDisabled?: boolean;
     forwardDisabled?: boolean;
 };
@@ -20,10 +20,19 @@ export const FloatingNavigationPanel = ({
 }: Props) => {
     if (!footerNode) return null;
 
+    const buttonStyle = {
+        color: "text.primary",
+        padding: "8px",
+        "&:hover": {
+            backgroundColor: (theme: any) => theme.palette.mode === 'dark' ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.05)",
+        },
+        "&.Mui-disabled": {
+            color: "rgba(0, 0, 0, 0.26)",
+        },
+    };
+
     return createPortal(
-        <Stack
-            direction="row"
-            spacing={2}
+        <Box
             sx={{
                 position: "absolute",
                 bottom: 24,
@@ -31,17 +40,32 @@ export const FloatingNavigationPanel = ({
                 transform: "translateX(-50%)",
                 zIndex: 1200,
                 pointerEvents: "auto",
+                backgroundColor: "background.paper",
+                borderRadius: "50px",
+                boxShadow: "0px 4px 20px rgba(0, 0, 0, 0.1)",
+                padding: "4px 8px",
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
             }}
         >
-            <BackButtonPanel
-                disabled={backDisabled}
+            <IconButton
                 onClick={onBack}
-            />
-            <ForwardButtonPanel
-                disabled={forwardDisabled}
+                disabled={backDisabled}
+                sx={buttonStyle}
+                size="large"
+            >
+                <ChevronLeft fontSize="inherit" />
+            </IconButton>
+            <IconButton
                 onClick={onForward}
-            />
-        </Stack>,
+                disabled={forwardDisabled}
+                sx={buttonStyle}
+                size="large"
+            >
+                <ChevronRight fontSize="inherit" />
+            </IconButton>
+        </Box>,
         footerNode
     );
 };
