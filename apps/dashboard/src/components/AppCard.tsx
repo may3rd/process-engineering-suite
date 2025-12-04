@@ -40,7 +40,10 @@ export const AppCard = ({ title, description, icon, href, status = "active" }: A
                 opacity: isActive ? 1 : 0.7,
             } as SxProps<Theme>}
             onClick={() => {
-                if (isActive && href) window.location.href = href;
+                if (isActive && href) {
+                    const separator = href.includes('?') ? '&' : '?';
+                    window.location.href = `${href}${separator}theme=${theme.palette.mode}`;
+                }
             }}
         >
             <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>

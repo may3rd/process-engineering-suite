@@ -9,6 +9,9 @@ export const metadata: Metadata = {
     description: "Advanced Process Engineering Tools",
 };
 
+import { Providers } from "./providers";
+import { TopToolbar } from "../components/TopToolbar";
+
 export default function RootLayout({
     children,
 }: {
@@ -17,7 +20,10 @@ export default function RootLayout({
     return (
         <html lang="en" suppressHydrationWarning>
             <body className={inter.className} style={{ margin: 0, padding: 0 }}>
-                {children}
+                <Providers>
+                    <TopToolbar />
+                    {children}
+                </Providers>
             </body>
         </html>
     );

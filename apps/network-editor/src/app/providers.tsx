@@ -2,7 +2,7 @@
 
 import { ThemeProvider, createTheme, CssBaseline, Theme, Components } from "@mui/material";
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
-import { ReactNode, useState, useMemo } from "react";
+import { ReactNode, useState, useMemo, useEffect } from "react";
 import { ColorModeContext } from "@/contexts/ColorModeContext";
 
 const getDesignTokens = (mode: 'light' | 'dark') => {
@@ -151,6 +151,15 @@ const getDesignTokens = (mode: 'light' | 'dark') => {
 
 export function Providers({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<'light' | 'dark'>('dark');
+
+  useEffect(() => {
+    // Check URL params for theme
+    const searchParams = new URLSearchParams(window.location.search);
+    const themeParam = searchParams.get('theme');
+    if (themeParam === 'light' || themeParam === 'dark') {
+      setMode(themeParam);
+    }
+  }, []);
 
   const colorMode = useMemo(
     () => ({
