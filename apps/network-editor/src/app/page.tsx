@@ -287,163 +287,143 @@ export default function Home() {
 
   return (
     <>
-    <Stack sx={{ bgcolor: "background.default", height: "60px", gap: 0, p: 0 }}>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".nhf,.json,application/json"
-        style={{ display: "none" }}
-        onChange={handleFileChange}
-      />
-      <input
-        ref={excelInputRef}
-        type="file"
-        accept=".xlsx,.xls,.xlsm"
-        style={{ display: "none" }}
-        onChange={handleExcelFileChange}
-      />
-      <IconButton
-        onClick={() => window.location.href = "/"}
-        sx={{
-          position: "fixed",
-          top: 64,
-          right: 24,
-          zIndex: 1300, // Higher than standard app bar
-          bgcolor: (theme) => theme.palette.mode === 'dark' ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.9)",
-          backdropFilter: "blur(10px)",
-          border: (theme) => theme.palette.mode === 'dark' ? "1px solid rgba(255,255,255,0.2)" : "1px solid rgba(0,0,0,0.1)",
-          color: (theme) => theme.palette.mode === 'dark' ? "white" : "text.primary",
-          width: 48,
-          height: 48,
-          "&:hover": {
-            bgcolor: (theme) => theme.palette.mode === 'dark' ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.05)",
-            transform: "scale(1.05)",
-          },
-          transition: "all 0.2s ease-in-out",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-        }}
-      >
-        <CloseIcon />
-      </IconButton>
-
-      <Header
-        network={network}
-        onNetworkChange={handleNetworkChange}
-        onReset={resetNetwork}
-        onImportExcel={handleImportExcelClick}
-      />
-    </Stack>
-    <Stack sx={{ bgcolor: "background.default", height: "100%", gap: 3, pr: 4, pl: 4, pt: 16, pb: 0, mt: -10 }}>
-      <Box sx={{
-        position: "relative",
-        flex: 1, width: "100%",
-        overflow: "hidden",
-        borderRadius: "24px",
-        border: "1px solid",
-        borderColor: "divider",
-        boxShadow: "0px 0px 12px rgba(0, 0, 0, 0.1)",
+      <Stack sx={{
+        bgcolor: "background.default",
+        height: "60px",
+        gap: 0, p: 0,
       }}>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept=".nhf,.json,application/json"
+          style={{ display: "none" }}
+          onChange={handleFileChange}
+        />
+        <input
+          ref={excelInputRef}
+          type="file"
+          accept=".xlsx,.xls,.xlsm"
+          style={{ display: "none" }}
+          onChange={handleExcelFileChange}
+        />
+        <Header
+          network={network}
+          onNetworkChange={handleNetworkChange}
+          onReset={resetNetwork}
+          onImportExcel={handleImportExcelClick}
+        />
+      </Stack>
+      <Stack sx={{ bgcolor: "background.default", height: "100%", gap: 3, pr: 4, pl: 4, pt: 16, pb: 0, mt: -11 }}>
         <Box sx={{
-          width: "100%",
-          height: "100%",
+          position: "relative",
+          flex: 1, width: "100%",
+          overflow: "hidden",
+          borderRadius: "24px",
+          border: "1px solid",
+          borderColor: "divider",
+          boxShadow: "0px 0px 12px rgba(0, 0, 0, 0.1)",
         }}>
-          <NetworkEditor
-            height="100%"
-            forceLightMode={isExporting}
-            onLoad={handleLoadNetworkClick}
-            onSave={handleSaveNetwork}
-            onExport={handleExportPng}
-            onNew={clearNetwork}
-          />
+          <Box sx={{
+            width: "100%",
+            height: "100%",
+          }}>
+            <NetworkEditor
+              height="100%"
+              forceLightMode={isExporting}
+              onLoad={handleLoadNetworkClick}
+              onSave={handleSaveNetwork}
+              onExport={handleExportPng}
+              onNew={clearNetwork}
+            />
+          </Box>
+
+          <Slide direction="left" in={!!selection && isPanelOpen} mountOnEnter unmountOnExit>
+            <Paper
+              elevation={0}
+              sx={{
+                position: "absolute",
+                top: 0,
+                right: "0px",
+                bottom: 0,
+                width: "340px",
+                borderRadius: "27px",
+                zIndex: 10,
+                backgroundColor: "transparent",
+              }}
+            >
+              <PropertiesPanel />
+            </Paper>
+          </Slide>
         </Box>
 
-        <Slide direction="left" in={!!selection && isPanelOpen} mountOnEnter unmountOnExit>
-          <Paper
-            elevation={0}
-            sx={{
-              position: "absolute",
-              top: 0,
-              right: "0px",
-              bottom: 0,
-              width: "340px",
-              borderRadius: "27px",
-              zIndex: 10,
-              backgroundColor: "transparent",
-            }}
-          >
-            <PropertiesPanel />
-          </Paper>
-        </Slide>
-      </Box>
 
 
-
-      <Dialog
-        open={showSummary}
-        onClose={() => setShowSummary(false)}
-        maxWidth="xl"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              height: "100vh",
-              bgcolor: "background.paper",
-              borderRadius: 0,
-              m: 0,
+        <Dialog
+          open={showSummary}
+          onClose={() => setShowSummary(false)}
+          maxWidth="xl"
+          fullWidth
+          slotProps={{
+            paper: {
+              sx: {
+                height: "100vh",
+                bgcolor: "background.paper",
+                borderRadius: 0,
+                m: 0,
+              }
             }
-          }
-        }}
-      >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          Summary Table
-          <IconButton onClick={() => setShowSummary(false)} size="small">
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers sx={{ p: 0 }}>
-          <SummaryTable />
-        </DialogContent>
-      </Dialog>
+          }}
+        >
+          <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            Summary Table
+            <IconButton onClick={() => setShowSummary(false)} size="small">
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent dividers sx={{ p: 0 }}>
+            <SummaryTable />
+          </DialogContent>
+        </Dialog>
 
-      <Dialog
-        open={showSnapshot}
-        onClose={() => setShowSnapshot(false)}
-        maxWidth="md"
-        fullWidth
-        slotProps={{
-          paper: {
-            sx: {
-              bgcolor: "#0f172a",
-              color: "#86efac",
-              borderRadius: 2,
-              border: "1px solid",
-              borderColor: "divider",
-              boxShadow: "-10px 0 40px rgba(0,0,0,0.7)",
+        <Dialog
+          open={showSnapshot}
+          onClose={() => setShowSnapshot(false)}
+          maxWidth="md"
+          fullWidth
+          slotProps={{
+            paper: {
+              sx: {
+                bgcolor: "#0f172a",
+                color: "#86efac",
+                borderRadius: 2,
+                border: "1px solid",
+                borderColor: "divider",
+                boxShadow: "-10px 0 40px rgba(0,0,0,0.7)",
+              }
             }
-          }
-        }}
-      >
-        <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'white' }}>
-          Network Snapshot
-          <IconButton onClick={() => setShowSnapshot(false)} sx={{ color: 'white' }} size="small">
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-        <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.1)' }}>
-          <pre
-            style={{
-              margin: 0,
-              padding: "16px",
-              overflow: "auto",
-              fontSize: "12px",
-              fontFamily: "monospace",
-            }}
-          >
-            {JSON.stringify(network, null, 2)}
-          </pre>
-        </DialogContent>
-      </Dialog>
-    </Stack >
+          }}
+        >
+          <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', color: 'white' }}>
+            Network Snapshot
+            <IconButton onClick={() => setShowSnapshot(false)} sx={{ color: 'white' }} size="small">
+              <CloseIcon />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent dividers sx={{ borderColor: 'rgba(255,255,255,0.1)' }}>
+            <pre
+              style={{
+                margin: 0,
+                padding: "16px",
+                overflow: "auto",
+                fontSize: "12px",
+                fontFamily: "monospace",
+              }}
+            >
+              {JSON.stringify(network, null, 2)}
+            </pre>
+          </DialogContent>
+        </Dialog>
+      </Stack >
     </>
   );
 }

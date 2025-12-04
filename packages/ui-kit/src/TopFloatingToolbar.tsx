@@ -1,6 +1,7 @@
 "use client";
 
-import { Box, Typography, Stack, useTheme } from "@mui/material";
+import { Box, Typography, Stack, useTheme, IconButton, Tooltip } from "@mui/material";
+import { LightMode as LightModeIcon, DarkMode as DarkModeIcon } from "@mui/icons-material";
 import { ReactNode } from "react";
 
 export interface TopFloatingToolbarProps {
@@ -8,13 +9,17 @@ export interface TopFloatingToolbarProps {
     subtitle?: string;
     icon?: ReactNode;
     actions?: ReactNode;
+    onToggleTheme?: () => void;
+    isDarkMode?: boolean;
 }
 
 export const TopFloatingToolbar = ({
     title = "E-PT",
     subtitle,
     icon,
-    actions
+    actions,
+    onToggleTheme,
+    isDarkMode = false,
 }: TopFloatingToolbarProps) => {
     const theme = useTheme();
 
@@ -27,6 +32,7 @@ export const TopFloatingToolbar = ({
                 px: 3,
                 py: 2,
                 borderBottom: `1px solid ${theme.palette.divider}`,
+                boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
                 bgcolor: 'background.paper',
                 backdropFilter: 'blur(10px)',
                 position: 'sticky',
@@ -68,6 +74,30 @@ export const TopFloatingToolbar = ({
             {/* Right Side: Actions */}
             <Stack direction="row" alignItems="center" spacing={2}>
                 {actions}
+                {onToggleTheme && (
+                    <Tooltip title={`Switch to ${isDarkMode ? 'light' : 'dark'} mode`}>
+                        <IconButton
+                            onClick={onToggleTheme}
+                            sx={{
+                                bgcolor: isDarkMode ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.9)",
+                                backdropFilter: "blur(10px)",
+                                border: isDarkMode ? "1px solid rgba(255,255,255,0.2)" : "1px solid rgba(0,0,0,0.1)",
+                                color: isDarkMode ? "white" : "text.primary",
+                                "&:hover": {
+                                    bgcolor: isDarkMode ? "rgba(255,255,255,0.2)" : "rgba(0,0,0,0.05)",
+                                    transform: "scale(1.05)",
+                                },
+                                transition: "all 0.2s ease-in-out",
+                                boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+                                borderRadius: '50%',
+                                width: '36px',
+                                height: '36px',
+                            }}
+                        >
+                            {isDarkMode ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
+                        </IconButton>
+                    </Tooltip>
+                )}
             </Stack>
         </Box>
     );

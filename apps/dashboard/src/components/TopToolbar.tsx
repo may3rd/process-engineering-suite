@@ -1,10 +1,8 @@
 "use client";
 
-import { Box, Typography, IconButton, InputBase, Stack, Button, useTheme, Tooltip } from "@mui/material";
+import { Box, InputBase, Button, useTheme } from "@mui/material";
 import SearchIcon from '@mui/icons-material/Search';
 import DescriptionIcon from '@mui/icons-material/Description';
-import DarkModeIcon from '@mui/icons-material/DarkMode';
-import LightModeIcon from '@mui/icons-material/LightMode';
 import HubIcon from '@mui/icons-material/Hub';
 import { useColorMode } from "@/contexts/ColorModeContext";
 import { TopFloatingToolbar } from "@eng-suite/ui-kit";
@@ -65,21 +63,10 @@ export const TopToolbar = () => {
                     >
                         Docs
                     </Button>
-
-                    {/* Theme Toggle */}
-                    <Tooltip title={`Switch to ${isDark ? 'light' : 'dark'} mode`}>
-                        <IconButton
-                            onClick={toggleColorMode}
-                            sx={{
-                                bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-                                border: `1px solid ${theme.palette.divider}`,
-                            }}
-                        >
-                            {isDark ? <LightModeIcon fontSize="small" /> : <DarkModeIcon fontSize="small" />}
-                        </IconButton>
-                    </Tooltip>
                 </>
             }
+            onToggleTheme={toggleColorMode}
+            isDarkMode={isDark}
         />
     );
 };
