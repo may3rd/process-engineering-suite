@@ -54,10 +54,7 @@ export const glassPanelSx = {
     borderRadius: "26px",
     backgroundColor: (theme: Theme) => theme.palette.mode === 'dark' ? "rgba(30, 41, 59, 0.7)" : "rgba(225, 225, 225, 0.7)",
     backdropFilter: "blur(10px)",
-    boxShadow: (theme: Theme) => theme.palette.mode === 'dark' ?
-        "-10px 0 40px rgba(0,0,0,0.7), " + liquidGlassBorderSx.boxShadow
-        :
-        "-10px 0 40px rgba(0,0,0,0.2), " + liquidGlassBorderSx.boxShadow,
+    boxShadow: (theme: Theme) => theme.palette.mode === 'dark' ? "-10px 0 40px rgba(0,0,0,0.7)" : "-10px 0 40px rgba(0,0,0,0.2)",
     border: (theme: Theme) => `1px solid ${theme.palette.divider}`,
 };
 
@@ -87,6 +84,4 @@ export const glassListGroupSx = {
     overflow: "hidden",
 };
 
-export const liquidGlassBorderSx = {
-    boxShadow: "2px 2px 4px -2px rgba(255, 255, 255, 0.7) inset, -2px -2px 4px -2px rgba(255,255,255,0.7) inset",
-}
+export const liquidGlassBorderSx = "2px 2px 3px -2px rgba(255, 255, 255, 0.7) inset, -2px -2px 3px -2px rgba(255,255,255,0.7) inset";

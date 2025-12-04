@@ -20,7 +20,6 @@ export const AppCard = ({ title, description, icon, href, status = "active" }: A
     return (
         <Box
             sx={{
-                ...liquidGlassBorderSx,
                 ...glassPanelSx,
                 p: 3,
                 display: "flex",
@@ -28,10 +27,11 @@ export const AppCard = ({ title, description, icon, href, status = "active" }: A
                 alignItems: "flex-start",
                 gap: 2,
                 transition: "transform 0.2s, box-shadow 0.2s",
+                boxShadow: (theme: Theme) => theme.palette.mode === 'dark' ? "-10px 0 40px rgba(0,0,0,0.7)," + liquidGlassBorderSx : "-10px 0 40px rgba(0,0,0,0.2)," + liquidGlassBorderSx,
                 "&:hover": isActive
                     ? {
                         transform: "translateY(-4px)",
-                        boxShadow: "0 8px 32px rgba(0, 0, 0, 0.2), " + liquidGlassBorderSx.boxShadow,
+                        boxShadow: (theme: Theme    ) => theme.palette.mode === 'dark' ? "0 8px 32px rgba(0, 0, 0, 0.2), " + liquidGlassBorderSx : "0 8px 32px rgba(0, 0, 0, 0.2), " + liquidGlassBorderSx,
                         cursor: "pointer",
                     }
                     : {},
@@ -84,8 +84,10 @@ export const AppCard = ({ title, description, icon, href, status = "active" }: A
                         textTransform: "none",
                         backgroundColor: isActive ? "#3b82f6" : "transparent",
                         borderColor: "rgba(255,255,255,0.1)",
+                        boxShadow: liquidGlassBorderSx,
                         "&:hover": {
                             backgroundColor: isActive ? "#2563eb" : "transparent",
+                            boxShadow: liquidGlassBorderSx,
                         }
                     }}
                 >
