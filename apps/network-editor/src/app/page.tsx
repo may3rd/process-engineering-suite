@@ -286,7 +286,8 @@ export default function Home() {
   }, [setNetwork]);
 
   return (
-    <Stack sx={{ bgcolor: "background.default", height: "100vh", gap: 3, p: 4 }}>
+    <>
+    <Stack sx={{ bgcolor: "background.default", height: "60px", gap: 0, p: 0 }}>
       <input
         ref={fileInputRef}
         type="file"
@@ -305,7 +306,7 @@ export default function Home() {
         onClick={() => window.location.href = "/"}
         sx={{
           position: "fixed",
-          top: 24,
+          top: 64,
           right: 24,
           zIndex: 1300, // Higher than standard app bar
           bgcolor: (theme) => theme.palette.mode === 'dark' ? "rgba(255,255,255,0.1)" : "rgba(255,255,255,0.9)",
@@ -331,7 +332,8 @@ export default function Home() {
         onReset={resetNetwork}
         onImportExcel={handleImportExcelClick}
       />
-
+    </Stack>
+    <Stack sx={{ bgcolor: "background.default", height: "100%", gap: 3, pr: 4, pl: 4, pt: 16, pb: 0, mt: -10 }}>
       <Box sx={{
         position: "relative",
         flex: 1, width: "100%",
@@ -441,7 +443,7 @@ export default function Home() {
           </pre>
         </DialogContent>
       </Dialog>
-
     </Stack >
+    </>
   );
 }
