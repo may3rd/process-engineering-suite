@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/network-editor/(.*)",
+      "destination": "/network-editor/$1" 
+    }
+  ]
+}

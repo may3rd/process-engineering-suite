@@ -302,7 +302,7 @@ export default function Home() {
         onChange={handleExcelFileChange}
       />
       <IconButton
-        onClick={() => window.location.href = "http://localhost:3000"}
+        onClick={() => window.location.href = "/"}
         sx={{
           position: "fixed",
           top: 24,

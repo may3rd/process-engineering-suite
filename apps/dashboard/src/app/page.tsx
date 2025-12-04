@@ -8,6 +8,7 @@ import HubIcon from '@mui/icons-material/Hub';
 import CalculateIcon from '@mui/icons-material/Calculate';
 import TuneIcon from '@mui/icons-material/Tune';
 import ScienceIcon from '@mui/icons-material/Science';
+import { Add, Check, Timeline, Close, ErrorOutline } from "@mui/icons-material";
 
 export default function Dashboard() {
     return (
@@ -44,17 +45,26 @@ export default function Dashboard() {
                     <Grid size={{ xs: 12, md: 6, lg: 4 }}>
                         <AppCard
                             title="Network Editor"
-                            description="Hydraulic network analysis for incompressible flow. Calculate pressure drops, velocities, and fittings."
-                            icon={<HubIcon fontSize="large" />}
-                            href="http://localhost:3002"
+                            description="Hydraulic network analysis for single phase flow. Calculate pressure drops, velocities, and fittings."
+                            icon={<Timeline fontSize="large" />}
+                            href="/network-editor"
                             status="active"
                         />
                     </Grid>
 
                     <Grid size={{ xs: 12, md: 6, lg: 4 }}>
                         <AppCard
+                            title="Pressure Safety Valve Sizing"
+                            description="PSV sizing based on ASME and EN standards. Includes data from vendor's catalog."
+                            icon={<TuneIcon fontSize="large" />}
+                            status="coming_soon"
+                        />
+                    </Grid>
+
+                    <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+                        <AppCard
                             title="Control Valve Sizing"
-                            description="ISA 75.01 compliant sizing for Cv, Cg, and trim characteristics. Includes cavitation checks."
+                            description="CV sizing based on ISA 75.01. Includes cavitation checks."
                             icon={<TuneIcon fontSize="large" />}
                             status="coming_soon"
                         />

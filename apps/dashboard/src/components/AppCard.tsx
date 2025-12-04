@@ -38,6 +38,7 @@ export const AppCard = ({ title, description, icon, href, status = "active" }: A
                     }
                     : {},
                 opacity: isActive ? 1 : 0.7,
+                height: "100%",
             } as SxProps<Theme>}
             onClick={() => {
                 if (isActive && href) {
