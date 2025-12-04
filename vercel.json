@@ -5,17 +5,6 @@
       "TURBO_TOKEN": ""
     }
   },
-  
-  "projects": [
-    {
-      "rootDirectory": "apps/dashboard",
-      "name": "dashboard"
-    },
-    {
-      "rootDirectory": "apps/network-editor",
-      "name": "network-editor"
-    }
-  ],
 
   "rewrites": [
     {
