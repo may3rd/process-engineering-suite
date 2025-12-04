@@ -1,12 +1,13 @@
 {
     "name": "network-editor",
-    "version": "1.0.0",
+    "version": "0.1.0",
     "private": true,
     "scripts": {
         "dev": "next dev -p 3002",
         "build": "next build",
-        "start": "next start -p 3002",
-        "lint": "eslint"
+        "start": "next start",
+        "lint": "eslint --max-warnings 0",
+        "typegen": "next typegen && tsc --noEmit"
     },
     "dependencies": {
         "@emotion/react": "^11.14.0",
@@ -27,9 +28,12 @@
         "xlsx": "^0.18.5",
         "zustand": "^5.0.9",
         "@eng-suite/physics": "*",
-        "@eng-suite/ui-kit": "*"
+        "@eng-suite/ui-kit": "*",
+        "@repo/ui": "*"
     },
     "devDependencies": {
+        "@repo/eslint-config": "*",
+        "@repo/typescript-config": "*",
         "@types/convert-units": "^2.3.12",
         "@types/node": "^20",
         "@types/react": "^19",

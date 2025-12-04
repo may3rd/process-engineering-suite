@@ -24,6 +24,10 @@ const nextConfig: NextConfig = {
         // We use a fixed port (3001) for local testing
         destination: `${process.env.NETWORK_EDITOR_URL || 'http://localhost:3002'}/network-editor/:path*`,
       },
+      {
+        source: '/docs/:path*',
+        destination: `${process.env.DASHBOARD_URL || 'http://localhost:3001'}/docs/:path*`,
+      }
     ];
   },
 };
