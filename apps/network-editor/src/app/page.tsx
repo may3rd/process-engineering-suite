@@ -351,7 +351,7 @@ export default function Home() {
             />
           </Box>
 
-          <Slide direction="left" in={!!selection && isPanelOpen} mountOnEnter unmountOnExit>
+          <Slide direction="left" in={!!selection && isPanelOpen} mountOnEnter unmountOnExit timeout={{ enter: 300, exit: 300 }}>
             <Paper
               elevation={0}
               sx={{

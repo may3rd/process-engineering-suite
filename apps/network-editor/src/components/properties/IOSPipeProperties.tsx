@@ -147,6 +147,42 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                             last
                         />
                     </IOSListGroup>
+                    
+                    <IOSListGroup>
+                        <IOSListItem
+                            label="Mass Flow Rate"
+                            value={`${typeof pipe.massFlowRate === 'number' ? pipe.massFlowRate.toFixed(2) : "-"} ${pipe.massFlowRateUnit ?? ""}`}
+                            secondary={(() => {
+                                if (typeof pipe.massFlowRate !== 'number') return undefined;
+
+                                const massFlowUnit = pipe.massFlowRateUnit ?? "kg/h";
+                                const massFlowKgH = convertUnit(pipe.massFlowRate, massFlowUnit, "kg/h");
+
+                                if (pipe.fluid?.phase === "gas") {
+                                    const mw = pipe.fluid?.molecularWeight ?? startNode?.fluid?.molecularWeight;
+                                    if (typeof mw === 'number' && mw > 0) {
+                                        const normalFlowNm3H = (massFlowKgH / mw) * 24.465;
+                                        return `${normalFlowNm3H.toFixed(2)} Nm³/h`;
+                                    }
+                                } else {
+                                    const density = pipe.fluid?.density ?? startNode?.fluid?.density;
+                                    if (typeof density === 'number' && density > 0) {
+                                        let densityKgM3 = density;
+                                        const densityUnit = pipe.fluid?.densityUnit ?? startNode?.fluid?.densityUnit;
+                                        if (densityUnit && densityUnit !== "kg/m3") {
+                                            densityKgM3 = convertUnit(density, densityUnit, "kg/m3");
+                                        }
+                                        const volFlowM3H = massFlowKgH / densityKgM3;
+                                        return `${volFlowM3H.toFixed(2)} m³/h`;
+                                    }
+                                }
+                                return undefined;
+                            })()}
+                            onClick={openMassFlowRatePage}
+                            chevron
+                            last
+                        />
+                    </IOSListGroup>
 
                     {boundaryNode && (
                         <BoundaryNodePage
@@ -333,11 +369,17 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                     return null;
                 })()}
             </Box>
-
+            {/* About */}
             <IOSListGroup>
                 <IOSListItem
                     label="About"
                     onClick={openAboutPage}
+                    chevron
+                />
+                <IOSListItem
+                    label="Calculation Type"
+                    value={pipe.pipeSectionType || "Pipeline"}
+                    onClick={openCalculationTypePage}
                     chevron
                 />
                 <IOSListItem
@@ -377,48 +419,9 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                         chevron
                     />
                 )}
-                <IOSListItem
-                    label="Mass Flow Rate"
-                    value={`${typeof pipe.massFlowRate === 'number' ? pipe.massFlowRate.toFixed(3) : "-"} ${pipe.massFlowRateUnit ?? ""}`}
-                    secondary={(() => {
-                        if (typeof pipe.massFlowRate !== 'number') return undefined;
-
-                        const massFlowUnit = pipe.massFlowRateUnit ?? "kg/h";
-                        const massFlowKgH = convertUnit(pipe.massFlowRate, massFlowUnit, "kg/h");
-
-                        if (pipe.fluid?.phase === "gas") {
-                            const mw = pipe.fluid?.molecularWeight ?? startNode?.fluid?.molecularWeight;
-                            if (typeof mw === 'number' && mw > 0) {
-                                const normalFlowNm3H = (massFlowKgH / mw) * 24.465;
-                                return `Normal Flow: ${normalFlowNm3H.toFixed(3)} Nm³/h`;
-                            }
-                        } else {
-                            const density = pipe.fluid?.density ?? startNode?.fluid?.density;
-                            if (typeof density === 'number' && density > 0) {
-                                let densityKgM3 = density;
-                                const densityUnit = pipe.fluid?.densityUnit ?? startNode?.fluid?.densityUnit;
-                                if (densityUnit && densityUnit !== "kg/m3") {
-                                    densityKgM3 = convertUnit(density, densityUnit, "kg/m3");
-                                }
-                                const volFlowM3H = massFlowKgH / densityKgM3;
-                                return `Vol: ${volFlowM3H.toFixed(3)} m³/h`;
-                            }
-                        }
-                        return undefined;
-                    })()}
-                    onClick={openMassFlowRatePage}
-                    chevron
-                    last
-                />
             </IOSListGroup>
 
             <IOSListGroup>
-                <IOSListItem
-                    label="Calculation Type"
-                    value={pipe.pipeSectionType || "Pipeline"}
-                    onClick={openCalculationTypePage}
-                    chevron
-                />
                 <IOSListItem
                     label="Pipe Diameter"
                     value={`${typeof pipe.diameter === 'number' ? pipe.diameter.toFixed(3) : "-"} ${pipe.diameterUnit ?? ""}`}
@@ -429,8 +432,7 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                     })}
                     secondary={(() => {
                         if (typeof pipe.velocity === 'number') {
-                            const text = `Pipe Velocity: ${pipe.velocity.toFixed(3)} ${pipe.velocityUnit ?? "m/s"}`;
-
+                            const text = `Velocity: ${pipe.velocity.toFixed(2)} ${pipe.velocityUnit ?? "m/s"}`;
                             const status = getPipeStatus(pipe);
                             if (status.velocityStatus.status === 'error') {
                                 return (
@@ -445,7 +447,6 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                                     </Typography>
                                 );
                             }
-
                             return text;
                         }
                         return undefined;
@@ -456,12 +457,15 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                     label="Erosional Constant"
                     value={pipe.erosionalConstant?.toFixed(0) ?? "-"}
                     secondary={(() => {
-                        const density = pipe.fluid?.density ?? startNode?.fluid?.density;
+                        
+                        const density = pipe.fluid?.phase === "gas" ?
+                            pipe.direction === "forward" ? pipe.resultSummary?.inletState.density : pipe.resultSummary?.outletState.density
+                            : pipe.fluid?.density ?? startNode?.fluid?.density;
                         const erosionalConstant = pipe.erosionalConstant ?? 100;
                         const erosionalVelocity = computeErosionalVelocity(density, erosionalConstant);
 
                         if (typeof erosionalVelocity === 'number') {
-                            return `Erosional Velocity: ${erosionalVelocity.toFixed(3)} m/s`;
+                            return `Erosional Velocity: ${erosionalVelocity.toFixed(2)} m/s`;
                         }
                         return undefined;
                     })()}
