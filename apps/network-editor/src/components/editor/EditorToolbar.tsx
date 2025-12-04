@@ -35,8 +35,7 @@ import { useColorMode } from "@/contexts/ColorModeContext";
 import ViewSettingsDialog from "@/components/ViewSettingsDialog";
 import { NetworkState, ViewSettings } from "@/lib/types";
 import { useState, useRef, ChangeEvent } from "react";
-import { g } from "framer-motion/client";
-import { glassToolBarButtonGroupSx } from "@/lib/glassStyles";
+import { glassToolBarButtonGroupSx } from "@eng-suite/ui-kit";
 
 type EditorToolbarProps = {
     network: NetworkState;

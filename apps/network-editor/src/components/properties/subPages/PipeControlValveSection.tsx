@@ -9,7 +9,7 @@ import {
     IconButton,
     Tooltip,
 } from "@mui/material";
-import { glassInputSx } from "@/lib/glassStyles";
+import { glassInputSx } from "@eng-suite/ui-kit";
 import {
     AutoFixHigh as AutoFixHighIcon,
 } from "@mui/icons-material";

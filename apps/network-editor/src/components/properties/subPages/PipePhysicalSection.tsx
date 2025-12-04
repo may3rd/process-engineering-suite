@@ -9,7 +9,7 @@ import {
     IconButton,
     Box,
 } from "@mui/material";
-import { glassInputSx, glassSelectSx } from "@/lib/glassStyles";
+import { glassInputSx, glassSelectSx } from "@eng-suite/ui-kit";
 import {
     Add as AddIcon,
     Refresh as RefreshIcon,

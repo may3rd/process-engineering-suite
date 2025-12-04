@@ -1,5 +1,5 @@
 import { Box, Typography, useTheme } from "@mui/material";
-import { glassListGroupSx } from "@/lib/glassStyles";
+import { glassListGroupSx } from "./glassStyles";
 import { ReactNode } from "react";
 
 type Props = {

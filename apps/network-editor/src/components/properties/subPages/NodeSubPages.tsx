@@ -1,13 +1,12 @@
-import { Box, TextField, FormControl, Typography, RadioGroup, FormControlLabel, Radio } from "@mui/material";
-import { glassInputSx, glassRadioSx } from "@/lib/glassStyles";
+import { Box } from "@mui/material";
 import { QuantityInput, QUANTITY_UNIT_OPTIONS } from "../QuantityInput";
-import { IOSQuantityPage } from "../../ios/IOSQuantityPage";
+import { IOSQuantityPage } from "@eng-suite/ui-kit";
 import { NodeProps, NodePatch } from "@/lib/types";
-import { IOSListGroup } from "../../ios/IOSListGroup";
+import { IOSListGroup } from "@eng-suite/ui-kit";
 import { Navigator } from "../../PropertiesPanel";
-import { IOSListItem } from "../../ios/IOSListItem";
+import { IOSListItem } from "@eng-suite/ui-kit";
 import { Check, ContentCopy } from "@mui/icons-material";
-import { IOSTextField } from "../../ios/IOSTextField";
+import { IOSTextField } from "@eng-suite/ui-kit";
 import { useState, useEffect, useRef } from "react";
 
 // --- Pressure ---

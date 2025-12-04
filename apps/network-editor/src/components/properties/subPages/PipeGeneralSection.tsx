@@ -10,7 +10,7 @@ import {
     FormControlLabel,
     Radio,
 } from "@mui/material";
-import { glassInputSx, glassSelectSx } from "@/lib/glassStyles";
+import { glassInputSx, glassSelectSx } from "@eng-suite/ui-kit";
 import { useState, useEffect } from "react";
 import { PipeProps, PipePatch, NodeProps } from "@/lib/types";
 

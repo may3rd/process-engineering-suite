@@ -1,4 +1,4 @@
-import { NetworkState, NodeProps, PipeProps } from "@/lib/types";
+import { NetworkState, NodeProps, PipeProps } from "./types";
 import { convertUnit } from "@eng-suite/physics";
 
 import { recalculatePipeFittingLosses } from "./fittings";

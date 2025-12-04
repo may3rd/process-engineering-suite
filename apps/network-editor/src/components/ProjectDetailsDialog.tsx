@@ -12,7 +12,7 @@ import {
     Stack
 } from "@mui/material";
 import CloseIcon from '@mui/icons-material/Close';
-import { glassDialogSx } from "@/lib/glassStyles";
+import { glassDialogSx } from "@eng-suite/ui-kit";
 import { ProjectDetails } from "@/lib/types";
 import { useState, useEffect } from "react";
 

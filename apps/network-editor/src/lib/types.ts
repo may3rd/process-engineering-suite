@@ -90,7 +90,7 @@ export type PipeSchedule =
 
 export type PipeProps = {
   id: string;
-  name?: string;
+  name: string;
   description?: string;
   startNodeId: string;
   endNodeId: string;
@@ -126,7 +126,7 @@ export type PipeProps = {
   totalK?: number,
   erosionalConstant?: number,
   machNumber?: number,
-  direction?: string,
+  direction?: "forward" | "backward",
   gasFlowModel?: "adiabatic" | "isothermal",
   boundaryPressure?: number,
   boundaryPressureUnit?: string,
@@ -153,7 +153,7 @@ export type PipeProps = {
 // Fluid propertis
 export type Fluid = {
   id: string,
-  phase: string,
+  phase: "liquid" | "gas",
   viscosity?: number,
   viscosityUnit?: string,
   density?: number,

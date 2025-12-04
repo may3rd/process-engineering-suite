@@ -11,7 +11,7 @@ import {
     Radio,
     FormHelperText,
 } from "@mui/material";
-import { glassInputSx, glassSelectSx } from "@/lib/glassStyles";
+import { glassInputSx, glassSelectSx } from "@eng-suite/ui-kit";
 import { PipeProps, PipePatch, PipeSchedule } from "@/lib/types";
 import {
     PIPE_SCHEDULES,

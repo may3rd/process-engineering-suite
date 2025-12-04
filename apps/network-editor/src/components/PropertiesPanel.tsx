@@ -3,8 +3,8 @@
 import { useState, useEffect, useLayoutEffect, ReactNode, useRef, RefObject } from "react";
 import { Paper, Box } from "@mui/material";
 import { NetworkState } from "@/lib/types";
-import { glassPanelSx } from "@/lib/glassStyles";
-import { IOSNavBar } from "./ios/IOSNavBar";
+import { glassPanelSx } from "@eng-suite/ui-kit";
+import { IOSNavBar } from "@eng-suite/ui-kit";
 import { IOSPipeProperties } from "./properties/IOSPipeProperties";
 import { IOSNodeProperties } from "./properties/IOSNodeProperties";
 

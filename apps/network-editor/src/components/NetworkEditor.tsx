@@ -82,7 +82,7 @@ import ViewSettingsDialog from "@/components/ViewSettingsDialog";
 import { type ViewSettings } from "@/lib/types";
 import { useCopyPaste } from "@/hooks/useCopyPaste";
 import { CustomCursor } from "./CustomCursor";
-import { glassDialogSx } from "@/lib/glassStyles";
+import { glassDialogSx } from "@eng-suite/ui-kit";
 import { useNetworkStore } from "@/store/useNetworkStore";
 
 // ... other imports

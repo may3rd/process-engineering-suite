@@ -1,13 +1,12 @@
 import { Box, TextField, FormControl, InputLabel, Select, MenuItem, Stack, Typography, Switch, RadioGroup, FormControlLabel, Radio, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
-import { glassInputSx, glassSelectSx, glassRadioSx, glassDialogSx } from "@/lib/glassStyles";
+import { glassInputSx, glassSelectSx, glassRadioSx, glassDialogSx } from "@eng-suite/ui-kit";
 import { QuantityInput, QUANTITY_UNIT_OPTIONS } from "../QuantityInput";
 import { getScheduleEntries, nearest_pipe_diameter, PIPE_FITTING_OPTIONS } from "./PipeDimension";
 import { PipeProps, PipePatch, FittingType, ViewSettings, NodeProps, NodePatch } from "@/lib/types";
-import { IOSListGroup } from "../../ios/IOSListGroup";
-import { IOSListItem } from "../../ios/IOSListItem";
-
-import { IOSTextField } from "../../ios/IOSTextField";
-import { IOSQuantityPage } from '../../ios/IOSQuantityPage';
+import { IOSListGroup } from "@eng-suite/ui-kit";
+import { IOSListItem } from "@eng-suite/ui-kit";
+import { IOSTextField } from "@eng-suite/ui-kit";
+import { IOSQuantityPage } from '@eng-suite/ui-kit';
 import { VelocityCriteriaPage } from './VelocityCriteriaPage';
 import { SERVICE_TYPES } from "@/utils/velocityCriteria";
 import { Check, ArrowForwardIos, Add, Remove, AutoFixHigh, ContentCopy, Close, ErrorOutline } from "@mui/icons-material";

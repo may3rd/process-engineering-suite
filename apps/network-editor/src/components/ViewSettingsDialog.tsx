@@ -16,9 +16,7 @@ import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { ViewSettings } from "@/lib/types";
-import { IOSListGroup } from "./ios/IOSListGroup";
-import { IOSListItem } from "./ios/IOSListItem";
-import { glassDialogSx } from "@/lib/glassStyles";
+import { IOSListGroup , IOSListItem , glassDialogSx } from "@eng-suite/ui-kit";
 import { useState } from "react";
 
 type Props = {

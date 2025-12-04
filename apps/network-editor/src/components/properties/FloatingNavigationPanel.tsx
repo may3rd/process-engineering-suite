@@ -1,6 +1,6 @@
 import React from "react";
 import { createPortal } from "react-dom";
-import { Stack, Box } from "@mui/material";
+import { Stack } from "@mui/material";
 import { BackButtonPanel, ForwardButtonPanel } from "./NavigationButtons";
 
 type Props = {

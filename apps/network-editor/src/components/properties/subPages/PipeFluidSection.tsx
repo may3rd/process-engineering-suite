@@ -6,7 +6,7 @@ import {
     InputLabel,
     Stack,
 } from "@mui/material";
-import { glassInputSx, glassSelectSx } from "@/lib/glassStyles";
+import { glassInputSx, glassSelectSx } from "@eng-suite/ui-kit";
 import { PipeProps, PipePatch, NodeProps } from "@/lib/types";
 import { convertUnit } from "@eng-suite/physics";
 import { QuantityInput, QUANTITY_UNIT_OPTIONS } from "../QuantityInput";

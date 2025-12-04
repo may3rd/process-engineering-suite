@@ -1,0 +1,21 @@
+{
+  "name": "@eng-suite/ui-kit",
+  "version": "0.1.0",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "dependencies": {
+    "@eng-suite/physics": "*"
+  },
+  "peerDependencies": {
+    "@mui/material": "^7.3.6",
+    "@mui/icons-material": "^7.3.6",
+    "@emotion/react": "^11.11.0",
+    "@emotion/styled": "^11.11.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "@types/react": "^19.0.0"
+  }
+}

@@ -11,9 +11,9 @@
     "dependencies": {
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.1",
-        "@mui/icons-material": "latest",
-        "@mui/material": "latest",
-        "@mui/material-nextjs": "latest",
+        "@mui/icons-material": "^7.3.6",
+        "@mui/material": "^7.3.6",
+        "@mui/material-nextjs": "^7.3.6",
         "@types/uuid": "^10.0.0",
         "@xyflow/react": "^12.9.3",
         "convert-units": "^3.0.0-beta.8",
@@ -26,7 +26,8 @@
         "uuid": "^13.0.0",
         "xlsx": "^0.18.5",
         "zustand": "^5.0.9",
-        "@eng-suite/physics": "*"
+        "@eng-suite/physics": "*",
+        "@eng-suite/ui-kit": "*"
     },
     "devDependencies": {
         "@types/convert-units": "^2.3.12",

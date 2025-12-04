@@ -2,7 +2,7 @@ import {
     TextField,
     Stack,
 } from "@mui/material";
-import { glassInputSx } from "@/lib/glassStyles";
+import { glassInputSx } from "@eng-suite/ui-kit";
 import { PipeProps, PipePatch } from "@/lib/types";
 import { convertUnit } from "@eng-suite/physics";
 import { QuantityInput, QUANTITY_UNIT_OPTIONS } from "../QuantityInput";

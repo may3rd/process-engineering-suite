@@ -1,7 +1,6 @@
 import { NodeProps, NodePatch, NetworkState, PipeProps } from "@/lib/types";
 import React from "react";
-import { IOSListGroup } from "../ios/IOSListGroup";
-import { IOSListItem } from "../ios/IOSListItem";
+import { IOSListGroup, IOSListItem, glassListGroupSx, IOSTextField } from "@eng-suite/ui-kit";
 import { Navigator } from "../PropertiesPanel";
 import { Box, TextField, Typography, useTheme, Stack, Menu, MenuItem } from "@mui/material";
 import { BackButtonPanel, ForwardButtonPanel } from "./NavigationButtons";
@@ -10,11 +9,8 @@ import { convertUnit } from "@eng-suite/physics";
 import { propagatePressure } from "@eng-suite/physics";
 import { getNodeWarnings } from "@/utils/validationUtils";
 import { RefObject } from "react";
-import { glassListGroupSx } from "@/lib/glassStyles";
 import { createPortal } from "react-dom";
-import { IOSTextField } from "../ios/IOSTextField";
 import { PressurePage, TemperaturePage, NodeFluidPage } from "./subPages/NodeSubPages";
-
 import { useNetworkStore } from "@/store/useNetworkStore";
 
 type Props = {
@@ -163,12 +159,51 @@ export function IOSNodeProperties({
         // Update the network with all modified nodes and pipes
         const nextNodes = network.nodes.map(n => {
             const updated = result.updatedNodes.find(un => un.id === n.id);
-            return updated || n;
+            if (updated) {
+                return {
+                    ...n,
+                    pressure: updated.pressure,
+                    pressureUnit: updated.pressureUnit,
+                    temperature: updated.temperature,
+                    temperatureUnit: updated.temperatureUnit,
+                };
+            }
+            return n;
         });
 
         const nextPipes = network.pipes.map(p => {
             const updated = result.updatedPipes.find(up => up.id === p.id);
-            return updated || p;
+            if (updated) {
+                return {
+                    ...p,
+                    ...updated,
+                    fluid: p.fluid, // Preserve original fluid to avoid type mismatch (missing id)
+                    pipeSectionType: p.pipeSectionType, // Preserve original type (union vs string)
+                    gasFlowModel: p.gasFlowModel, // Preserve original type (union vs string)
+                    fittings: updated.fittings?.map(f => ({
+                        ...f,
+                        k_each: f.k_each ?? 0,
+                        k_total: f.k_total ?? 0,
+                    })),
+                    controlValve: updated.controlValve ? {
+                        ...p.controlValve,
+                        ...updated.controlValve,
+                        id: p.controlValve?.id || "cv-unknown",
+                    } : p.controlValve,
+                    orifice: updated.orifice ? {
+                        ...p.orifice,
+                        ...updated.orifice,
+                        id: p.orifice?.id || "or-unknown",
+                        inputMode: updated.orifice.inputMode as "pressure_drop" | "beta_ratio" | undefined,
+                    } : p.orifice,
+                    resultSummary: updated.resultSummary ? {
+                        ...updated.resultSummary,
+                        inletState: updated.resultSummary.inletState || {},
+                        outletState: updated.resultSummary.outletState || {},
+                    } : p.resultSummary,
+                };
+            }
+            return p;
         });
 
         onNetworkChange({

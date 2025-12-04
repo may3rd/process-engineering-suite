@@ -2,14 +2,14 @@ import { PipeProps, NodeProps, PipePatch, ViewSettings, NetworkState, NodePatch 
 import { convertUnit, computeErosionalVelocity } from "@eng-suite/physics";
 import { getPipeStatus } from "@/utils/velocityCriteria";
 import { getPipeWarnings } from "@/utils/validationUtils";
-import { IOSListGroup } from "../ios/IOSListGroup";
-import { IOSListItem } from "../ios/IOSListItem";
+import { IOSListGroup } from "@eng-suite/ui-kit";
+import { IOSListItem } from "@eng-suite/ui-kit";
 import { Navigator } from "../PropertiesPanel";
 import { Box, IconButton, Typography, useTheme, SvgIcon, SvgIconProps, Dialog, DialogTitle, DialogContent, DialogActions, Button, Stack } from "@mui/material";
 import { BackButtonPanel, ForwardButtonPanel } from "./NavigationButtons";
 import { Add, Check, Timeline, Close, ErrorOutline } from "@mui/icons-material";
 import { RefObject, useEffect, useRef, useState } from "react";
-import { glassDialogSx, glassListGroupSx, glassPanelSx } from "@/lib/glassStyles";
+import { glassDialogSx, glassListGroupSx, glassPanelSx } from "@eng-suite/ui-kit";
 import { createPortal } from "react-dom";
 import { useNetworkStore } from "@/store/useNetworkStore";
 

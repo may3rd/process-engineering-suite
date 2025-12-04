@@ -8,7 +8,7 @@ import { convertUnit } from "@eng-suite/physics";
 import { HoverCard } from "./HoverCard";
 import { NodeProps } from "@/lib/types";
 import { getNodeWarnings } from "@/utils/validationUtils";
-import { glassNodeSx, glassLabelSx } from "@/lib/glassStyles";
+import { glassNodeSx, glassLabelSx } from "@eng-suite/ui-kit";
 
 type NodeRole = "source" | "sink" | "middle" | "isolated" | "neutral";
 
