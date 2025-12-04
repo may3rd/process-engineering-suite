@@ -24,6 +24,8 @@ export const AppCard = ({ title, description, icon, href, status = "active" }: A
             sx={{
                 ...glassPanelSx,
                 p: 3,
+                backgroundColor: isDark ? "background.paper" : "rgba(200, 200, 200, 0.2)",
+                border: "2px solid rgba(0, 0, 0, 0.18)",
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "flex-start",
@@ -37,7 +39,7 @@ export const AppCard = ({ title, description, icon, href, status = "active" }: A
                         cursor: "pointer",
                     }
                     : {},
-                opacity: isActive ? 1 : 0.7,
+                opacity: isActive ? 1 : 0.4,
                 height: "100%",
             } as SxProps<Theme>}
             onClick={() => {

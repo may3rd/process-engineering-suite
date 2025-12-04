@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { Box } from "@mui/material";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"] });
@@ -21,7 +22,17 @@ export default function RootLayout({
         <html lang="en" suppressHydrationWarning>
             <body className={inter.className} style={{ margin: 0, padding: 0 }}>
                 <Providers>
-                    <TopToolbar />
+                    <Box
+                        sx={{
+                            position: "sticky",
+                            top: 0,
+                            zIndex: 1000,
+                            boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+                            backdropFilter: "blur(4px)",
+                        }}
+                    >
+                        <TopToolbar />
+                    </Box>
                     {children}
                 </Providers>
             </body>

@@ -84,4 +84,4 @@ export const glassListGroupSx = {
     overflow: "hidden",
 };
 
-export const liquidGlassBorderSx = "2px 2px 3px -2px rgba(255, 255, 255, 0.7) inset, -2px -2px 3px -2px rgba(255,255,255,0.7) inset";
+export const liquidGlassBorderSx = "3px 3px 3px -2px rgba(255, 255, 255, 0.7) inset, -3px -3px 3px -2px rgba(255,255,255,0.7) inset";
