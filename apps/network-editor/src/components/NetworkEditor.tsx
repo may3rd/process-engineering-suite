@@ -127,6 +127,9 @@ export function NetworkEditor({
   );
 }
 
+const nodeTypes = { pressure: PressureNode, background: BackgroundNode } as any;
+const edgeTypes = { pipe: PipeEdge } as any;
+
 function EditorCanvas({
   height,
   forceLightMode,
@@ -335,7 +338,6 @@ function EditorCanvas({
   useEffect(() => {
     if (selectedType === "pipe" && selectedId) {
       const selectedPipe = network.pipes.find(pipe => pipe.id === selectedId);
-      console.log("[PipeDebug] Selected pipe fluid:", selectedPipe?.fluid);
     }
   }, [selectedType, selectedId, network.pipes]);
 
@@ -357,8 +359,7 @@ function EditorCanvas({
     [network.pipes, selectedId, selectedType, viewSettings, theme, forceLightMode, isAnimationEnabled, isConnectingMode]
   );
 
-  const nodeTypes = useMemo(() => ({ pressure: PressureNode, background: BackgroundNode } as any), []);
-  const edgeTypes = useMemo(() => ({ pipe: PipeEdge }), []);
+
 
   const defaultEdgeOptions: DefaultEdgeOptions = {
     style: { strokeWidth: 2, stroke: "#94a3b8" },
