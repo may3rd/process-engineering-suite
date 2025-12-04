@@ -22,7 +22,7 @@ const nextConfig: NextConfig = {
 
         // This is the internal destination to the Network Editor app
         // We use a fixed port (3001) for local testing
-        destination: 'http://localhost:3002/network-editor/:path*',
+        destination: `${process.env.NETWORK_EDITOR_URL || 'http://localhost:3002'}/network-editor/:path*`,
       },
     ];
   },
