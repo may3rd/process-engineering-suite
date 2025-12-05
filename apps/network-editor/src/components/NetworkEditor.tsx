@@ -782,8 +782,6 @@ function EditorCanvas({
     [isAddingNode],
   );
 
-  // Hotkey logic moved to useNetworkHotkeys hook
-
   const isPanMode = panModeEnabled || isSpacePanning;
 
   useEffect(() => {
@@ -924,9 +922,11 @@ function EditorCanvas({
           maxZoom={16}
           minZoom={0.1}
           panActivationKeyCode={undefined} // We handle space panning manually
-          deleteKeyCode={null} // We handle delete manually with confirmation
+          deleteKeyCode={['Delete', 'Backspace']}
+          selectNodesOnDrag={true}
+          nodesConnectable={!isPanMode}
+          connectOnClick={!isPanMode}
           nodesDraggable={!isPanMode}
-          selectionOnDrag={!isPanMode}
           panOnDrag={panModeEnabled || [1, 2]} // Pan on left click if in pan mode, or middle/right click always
           selectionKeyCode={isPanMode ? null : "Shift"} // Use Shift for selection if not in pan mode
           multiSelectionKeyCode={isPanMode ? null : "Meta"}

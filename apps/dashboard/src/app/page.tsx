@@ -1,8 +1,7 @@
 "use client";
 
 import { Box, Container, Typography } from "@mui/material";
-// 1. Import Grid2 (The new standard in MUI v6)
-import Grid from '@mui/material/Grid';
+import Grid from "@mui/material/GridLegacy";
 import { AppCard } from "../components/AppCard";
 import HubIcon from '@mui/icons-material/Hub';
 import CalculateIcon from '@mui/icons-material/Calculate';
@@ -38,11 +37,9 @@ export default function Dashboard() {
                     </Typography>
                 </Box>
 
-                {/* 2. Grid container spacing remains the same */}
                 <Grid container spacing={3}>
 
-                    {/* 3. Use the 'size' object prop instead of individual 'xs/md/lg' props */}
-                    <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+                    <Grid item xs={12} md={6} lg={4}>
                         <AppCard
                             title="Network Editor"
                             description="Hydraulic network analysis for single phase flow. Calculate pressure drops, velocities, and fittings."
@@ -52,7 +49,7 @@ export default function Dashboard() {
                         />
                     </Grid>
 
-                    <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+                    <Grid item xs={12} md={6} lg={4}>
                         <AppCard
                             title="Pressure Safety Valve Sizing"
                             description="PSV sizing based on ASME and EN standards. Includes data from vendor's catalog."
@@ -61,7 +58,7 @@ export default function Dashboard() {
                         />
                     </Grid>
 
-                    <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+                    <Grid item xs={12} md={6} lg={4}>
                         <AppCard
                             title="Control Valve Sizing"
                             description="CV sizing based on ISA 75.01. Includes cavitation checks."
@@ -70,7 +67,7 @@ export default function Dashboard() {
                         />
                     </Grid>
 
-                    <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+                    <Grid item xs={12} md={6} lg={4}>
                         <AppCard
                             title="Orifice Calculator"
                             description="Restriction orifice and flow meter sizing (ISO 5167). Beta ratio and permanent pressure loss."
@@ -79,7 +76,7 @@ export default function Dashboard() {
                         />
                     </Grid>
 
-                    <Grid size={{ xs: 12, md: 6, lg: 4 }}>
+                    <Grid item xs={12} md={6} lg={4}>
                         <AppCard
                             title="Fluid Properties"
                             description="Thermodynamic properties using the CoolProp engine. Phase envelopes and flash calculations."
