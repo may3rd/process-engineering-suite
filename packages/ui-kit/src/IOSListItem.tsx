@@ -12,9 +12,10 @@ type Props = {
     icon?: ReactNode;
     textColor?: string;
     secondary?: ReactNode;
+    selected?: boolean;
 };
 
-export function IOSListItem({ label, value, onClick, control, chevron, last, icon, textColor, secondary }: Props) {
+export function IOSListItem({ label, value, onClick, control, chevron, last, icon, textColor, secondary, selected }: Props) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
 
@@ -25,6 +26,7 @@ export function IOSListItem({ label, value, onClick, control, chevron, last, ico
                 pl: 2,
                 pr: chevron ? 1 : 0.5,
                 cursor: onClick ? "pointer" : "default",
+                backgroundColor: selected ? (isDark ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.05)") : undefined,
                 "&:active": onClick ? {
                     backgroundColor: isDark ? "#3a3a3c" : "#e5e5ea",
                 } : undefined,

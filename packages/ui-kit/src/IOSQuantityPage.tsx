@@ -4,7 +4,7 @@ import { IOSTextField } from "./IOSTextField";
 import { IOSListGroup } from "./IOSListGroup";
 import { IOSListItem } from "./IOSListItem";
 import { convertUnit, UnitFamily } from "@eng-suite/physics";
-import { useState, useEffect, useMemo, useRef, ReactNode } from "react";
+import { useState, useEffect, useMemo, useRef, ReactNode, useCallback } from "react";
 
 type Props = {
     label: string;
@@ -19,6 +19,7 @@ type Props = {
     placeholder?: string;
     autoFocus?: boolean;
     action?: ReactNode;
+    onBack?: () => void;
 };
 
 export function IOSQuantityPage({
@@ -34,15 +35,21 @@ export function IOSQuantityPage({
     placeholder,
     autoFocus,
     action,
+    onBack,
 }: Props) {
     const [inputValue, setInputValue] = useState<string>("");
     const [localUnit, setLocalUnit] = useState<string>(unit);
     const [error, setError] = useState<string | null>(null);
+    const [isUnitSelectionActive, setIsUnitSelectionActive] = useState(false);
+    const [highlightedUnitIndex, setHighlightedUnitIndex] = useState(() => Math.max(0, units.indexOf(unit)));
+    const [isInputFocused, setIsInputFocused] = useState(false);
 
-    // Refs to track latest values for cleanup commit
+    // Refs to track latest values for cleanup/commit
     const valueRef = useRef<number | undefined>(typeof value === 'number' ? value : undefined);
     const unitRef = useRef<string>(unit);
     const isDirty = useRef(false);
+    const initialValueRef = useRef<number | undefined>(valueRef.current);
+    const initialUnitRef = useRef<string>(unit);
 
     // Refs for callbacks to ensure fresh access in cleanup
     const onValueChangeRef = useRef(onValueChange);
@@ -78,6 +85,12 @@ export function IOSQuantityPage({
         setLocalUnit(unit);
         unitRef.current = unit;
     }, [unit]);
+
+    // Keep highlighted index aligned with active unit
+    useEffect(() => {
+        const idx = units.indexOf(localUnit);
+        setHighlightedUnitIndex(idx >= 0 ? idx : 0);
+    }, [localUnit, units]);
 
     // Commit changes on unmount
     useEffect(() => {
@@ -129,7 +142,32 @@ export function IOSQuantityPage({
         }
     };
 
-    const handleUnitSelect = (newUnit: string) => {
+    const commitChanges = useCallback(() => {
+        if (!isDirty.current) return;
+        if (onChangeRef.current) {
+            onChangeRef.current(valueRef.current, unitRef.current);
+        } else {
+            onValueChangeRef.current?.(valueRef.current);
+            if (unitRef.current !== unit) {
+                onUnitChangeRef.current?.(unitRef.current);
+            }
+        }
+        isDirty.current = false;
+    }, [unit]);
+
+    const revertChanges = useCallback(() => {
+        valueRef.current = initialValueRef.current;
+        unitRef.current = initialUnitRef.current;
+        setInputValue(formatValue(initialValueRef.current));
+        setLocalUnit(initialUnitRef.current);
+        setError(null);
+        setIsUnitSelectionActive(false);
+        const idx = units.indexOf(initialUnitRef.current ?? "");
+        setHighlightedUnitIndex(idx >= 0 ? idx : 0);
+        isDirty.current = false;
+    }, [formatValue, units]);
+
+    const handleUnitSelect = useCallback((newUnit: string) => {
         if (newUnit === localUnit) return;
 
         // Convert value if unitFamily provided
@@ -143,7 +181,68 @@ export function IOSQuantityPage({
         setLocalUnit(newUnit);
         unitRef.current = newUnit;
         isDirty.current = true;
-    };
+        setHighlightedUnitIndex(() => {
+            const idx = units.indexOf(newUnit);
+            return idx >= 0 ? idx : 0;
+        });
+        setIsUnitSelectionActive(false);
+    }, [localUnit, unitFamily, formatValue, units]);
+
+    const beginUnitSelection = useCallback(() => {
+        if (units.length === 0) return;
+        setIsUnitSelectionActive(true);
+        setHighlightedUnitIndex((current) => {
+            if (current >= 0 && current < units.length) return current;
+            const idx = units.indexOf(localUnit);
+            return idx >= 0 ? idx : 0;
+        });
+    }, [units, localUnit]);
+
+    const handleKeyDown = useCallback((event: KeyboardEvent) => {
+        if (event.key === "Escape") {
+            event.preventDefault();
+            revertChanges();
+            onBack?.();
+            return;
+        }
+
+        if (event.key === " " || event.key === "Spacebar") {
+            event.preventDefault();
+            beginUnitSelection();
+            return;
+        }
+
+        if ((event.key === "ArrowDown" || event.key === "ArrowUp") && isUnitSelectionActive) {
+            event.preventDefault();
+            setHighlightedUnitIndex((current) => {
+                if (units.length === 0) return current;
+                if (event.key === "ArrowDown") {
+                    return (current + 1) % units.length;
+                }
+                return (current - 1 + units.length) % units.length;
+            });
+            return;
+        }
+
+        if (event.key === "Enter") {
+            event.preventDefault();
+            if (isUnitSelectionActive) {
+                const highlightedUnit = units[highlightedUnitIndex];
+                if (highlightedUnit) {
+                    handleUnitSelect(highlightedUnit);
+                }
+                setIsUnitSelectionActive(false);
+            } else if (isInputFocused) {
+                commitChanges();
+                onBack?.();
+            }
+        }
+    }, [beginUnitSelection, commitChanges, handleUnitSelect, highlightedUnitIndex, isInputFocused, isUnitSelectionActive, revertChanges, units, onBack]);
+
+    useEffect(() => {
+        window.addEventListener("keydown", handleKeyDown);
+        return () => window.removeEventListener("keydown", handleKeyDown);
+    }, [handleKeyDown]);
 
     return (
         <Box sx={{ pt: 2 }}>
@@ -161,6 +260,8 @@ export function IOSQuantityPage({
                     autoFocus={autoFocus}
                     error={!!error}
                     helperText={error}
+                    onFocus={() => setIsInputFocused(true)}
+                    onBlur={() => setIsInputFocused(false)}
                 />
             </IOSListGroup>
 
@@ -171,6 +272,7 @@ export function IOSQuantityPage({
                         label={u}
                         value={u === localUnit ? <Check color="primary" sx={{ fontSize: 16 }} /> : ""}
                         onClick={() => handleUnitSelect(u)}
+                        selected={isUnitSelectionActive && units[highlightedUnitIndex] === u}
                         last={u === units[units.length - 1]}
                     />
                 ))}

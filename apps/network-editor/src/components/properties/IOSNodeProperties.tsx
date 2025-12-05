@@ -97,7 +97,7 @@ export function IOSNodeProperties({
         navigator.push("Pressure", (net: NetworkState, nav: Navigator) => {
             const currentNode = net.nodes.find(n => n.id === node.id);
             if (!currentNode) return null;
-            return <PressurePage node={currentNode} onUpdateNode={(id, patch) => onUpdateNode(id, { ...patch, pressureUpdateStatus: 'manual' })} />;
+            return <PressurePage node={currentNode} onUpdateNode={(id, patch) => onUpdateNode(id, { ...patch, pressureUpdateStatus: 'manual' })} navigator={nav} />;
         });
     };
 
@@ -105,7 +105,7 @@ export function IOSNodeProperties({
         navigator.push("Temperature", (net: NetworkState, nav: Navigator) => {
             const currentNode = net.nodes.find(n => n.id === node.id);
             if (!currentNode) return null;
-            return <TemperaturePage node={currentNode} onUpdateNode={(id, patch) => onUpdateNode(id, { ...patch, temperatureUpdateStatus: 'manual' })} />;
+            return <TemperaturePage node={currentNode} onUpdateNode={(id, patch) => onUpdateNode(id, { ...patch, temperatureUpdateStatus: 'manual' })} navigator={nav} />;
         });
     };
 

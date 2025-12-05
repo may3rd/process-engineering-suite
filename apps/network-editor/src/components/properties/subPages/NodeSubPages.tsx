@@ -10,7 +10,7 @@ import { IOSTextField } from "@eng-suite/ui-kit";
 import { useState, useEffect, useRef } from "react";
 
 // --- Pressure ---
-export const PressurePage = ({ node, onUpdateNode }: { node: NodeProps, onUpdateNode: (id: string, patch: NodePatch) => void }) => (
+export const PressurePage = ({ node, onUpdateNode, navigator }: { node: NodeProps, onUpdateNode: (id: string, patch: NodePatch) => void, navigator: Navigator }) => (
     <IOSQuantityPage
         label="Pressure"
         value={node.pressure ?? ""}
@@ -19,11 +19,12 @@ export const PressurePage = ({ node, onUpdateNode }: { node: NodeProps, onUpdate
         unitFamily="pressure"
         onChange={(v, u) => onUpdateNode(node.id, { pressure: v, pressureUnit: u })}
         autoFocus
+        onBack={() => navigator.pop()}
     />
 );
 
 // --- Temperature ---
-export const TemperaturePage = ({ node, onUpdateNode }: { node: NodeProps, onUpdateNode: (id: string, patch: NodePatch) => void }) => (
+export const TemperaturePage = ({ node, onUpdateNode, navigator }: { node: NodeProps, onUpdateNode: (id: string, patch: NodePatch) => void, navigator: Navigator }) => (
     <IOSQuantityPage
         label="Temperature"
         value={node.temperature ?? ""}
@@ -32,6 +33,7 @@ export const TemperaturePage = ({ node, onUpdateNode }: { node: NodeProps, onUpd
         unitFamily="temperature"
         onChange={(v, u) => onUpdateNode(node.id, { temperature: v, temperatureUnit: u })}
         autoFocus
+        onBack={() => navigator.pop()}
     />
 );
 
@@ -255,6 +257,7 @@ export const NodeFluidPage = ({ node, onUpdateNode, navigator }: { node: NodePro
                     onChange={(v, u) => onUpdateNode(node.id, { fluid: { ...currentFluid, [field]: v, [unitField]: u } })}
                     min={min}
                     autoFocus
+                    onBack={() => navigator.pop()}
                 />
             );
         });

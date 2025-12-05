@@ -228,7 +228,7 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
         navigator.push("Mass Flow Rate", (network: NetworkState, nav: Navigator) => {
             const currentPipe = network.pipes.find(p => p.id === pipe.id);
             if (!currentPipe) return null;
-            return <MassFlowRatePage pipe={currentPipe} onUpdatePipe={(id, patch) => onUpdatePipe(id, { ...patch, massFlowRateUpdateStatus: 'manual' })} />;
+            return <MassFlowRatePage pipe={currentPipe} onUpdatePipe={(id, patch) => onUpdatePipe(id, { ...patch, massFlowRateUpdateStatus: 'manual' })} navigator={nav} />;
         });
     };
 
@@ -246,7 +246,7 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
         navigator.push("Roughness", (network: NetworkState, nav: Navigator) => {
             const currentPipe = network.pipes.find(p => p.id === pipe.id);
             if (!currentPipe) return null;
-            return <RoughnessPage pipe={currentPipe} onUpdatePipe={onUpdatePipe} />;
+            return <RoughnessPage pipe={currentPipe} onUpdatePipe={onUpdatePipe} navigator={nav} />;
         });
     };
 
@@ -263,6 +263,7 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                 onUpdatePipe={onUpdatePipe}
                 startNode={currentStartNode}
                 endNode={currentEndNode}
+                navigator={nav}
             />;
         });
     };
@@ -271,7 +272,7 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
         navigator.push("Elevation", (network: NetworkState, nav: Navigator) => {
             const currentPipe = network.pipes.find(p => p.id === pipe.id);
             if (!currentPipe) return null;
-            return <ElevationPage pipe={currentPipe} onUpdatePipe={onUpdatePipe} />;
+            return <ElevationPage pipe={currentPipe} onUpdatePipe={onUpdatePipe} navigator={nav} />;
         });
     };
 
@@ -545,7 +546,7 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                             onClick={() => navigator.push("User Specified Drop", (net, nav) => {
                                 const currentPipe = net.pipes.find(p => p.id === pipe.id);
                                 if (!currentPipe) return null;
-                                return <UserSpecifiedPressureLossPage pipe={currentPipe} onUpdatePipe={onUpdatePipe} />;
+                                return <UserSpecifiedPressureLossPage pipe={currentPipe} onUpdatePipe={onUpdatePipe} navigator={nav} />;
                             })}
                             chevron
                             last

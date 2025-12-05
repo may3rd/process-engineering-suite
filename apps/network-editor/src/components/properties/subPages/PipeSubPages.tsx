@@ -304,6 +304,7 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                     onChange={(v, u) => onUpdatePipe(pipe.id, { fluid: { ...currentFluid, [field]: v, [unitField]: u } })}
                     min={min}
                     autoFocus
+                    onBack={() => navigator.pop()}
                 />
             );
         });
@@ -522,7 +523,7 @@ export const GasFlowModelSelectionPage = ({ pipe, onUpdatePipe, navigator }: { p
 
 // --- Mass Flow Rate ---
 
-export const MassFlowRatePage = ({ pipe, onUpdatePipe }: { pipe: PipeProps, onUpdatePipe: (id: string, patch: PipePatch) => void }) => (
+export const MassFlowRatePage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, onUpdatePipe: (id: string, patch: PipePatch) => void, navigator: Navigator }) => (
     <IOSQuantityPage
         label="Mass Flow Rate"
         value={pipe.massFlowRate ?? ""}
@@ -533,6 +534,7 @@ export const MassFlowRatePage = ({ pipe, onUpdatePipe }: { pipe: PipeProps, onUp
         onUnitChange={(u) => onUpdatePipe(pipe.id, { massFlowRateUnit: u })}
         min={0}
         autoFocus
+        onBack={() => navigator.pop()}
     />
 );
 
@@ -676,6 +678,7 @@ export const DiameterPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProp
                     onUnitChange={(u) => onUpdatePipe(pipe.id, { [unitField]: u })}
                     min={0}
                     autoFocus
+                    onBack={() => navigator.pop()}
                 />
             );
         });
@@ -789,7 +792,7 @@ export const CalculationTypePage = ({ pipe, onUpdatePipe }: { pipe: PipeProps, o
 
 // --- Length & Elevation ---
 
-export const RoughnessPage = ({ pipe, onUpdatePipe }: { pipe: PipeProps, onUpdatePipe: (id: string, patch: PipePatch) => void }) => (
+export const RoughnessPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, onUpdatePipe: (id: string, patch: PipePatch) => void, navigator: Navigator }) => (
     <IOSQuantityPage
         label="Roughness"
         value={pipe.roughness ?? ""}
@@ -800,10 +803,11 @@ export const RoughnessPage = ({ pipe, onUpdatePipe }: { pipe: PipeProps, onUpdat
         onUnitChange={(u) => onUpdatePipe(pipe.id, { roughnessUnit: u })}
         min={0}
         autoFocus
+        onBack={() => navigator.pop()}
     />
 );
 
-export const LengthPage = ({ pipe, onUpdatePipe, startNode, endNode }: { pipe: PipeProps, onUpdatePipe: (id: string, patch: PipePatch) => void, startNode?: NodeProps, endNode?: NodeProps }) => {
+export const LengthPage = ({ pipe, onUpdatePipe, startNode, endNode, navigator }: { pipe: PipeProps, onUpdatePipe: (id: string, patch: PipePatch) => void, startNode?: NodeProps, endNode?: NodeProps, navigator: Navigator }) => {
     const handleEstimate = () => {
         if (!startNode || !endNode || !pipe.diameter || !pipe.massFlowRate) return;
 
@@ -879,11 +883,12 @@ export const LengthPage = ({ pipe, onUpdatePipe, startNode, endNode }: { pipe: P
                     />
                 </IOSListGroup>
             }
+            onBack={() => navigator.pop()}
         />
     );
 };
 
-export const ElevationPage = ({ pipe, onUpdatePipe }: { pipe: PipeProps, onUpdatePipe: (id: string, patch: PipePatch) => void }) => (
+export const ElevationPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, onUpdatePipe: (id: string, patch: PipePatch) => void, navigator: Navigator }) => (
     <IOSQuantityPage
         label="Elevation Change"
         value={pipe.elevation ?? ""}
@@ -893,6 +898,7 @@ export const ElevationPage = ({ pipe, onUpdatePipe }: { pipe: PipeProps, onUpdat
         onValueChange={(v) => onUpdatePipe(pipe.id, { elevation: v })}
         onUnitChange={(u) => onUpdatePipe(pipe.id, { elevationUnit: u })}
         autoFocus
+        onBack={() => navigator.pop()}
     />
 );
 
@@ -1044,6 +1050,7 @@ export const ControlValvePage = ({ pipe, onUpdatePipe, navigator, viewSettings, 
                             />
                         </IOSListGroup>
                     }
+                    onBack={() => navigator.pop()}
                 />
             );
         });
@@ -1213,6 +1220,7 @@ export const OrificePage = ({ pipe, onUpdatePipe, navigator, viewSettings, start
                             />
                         </IOSListGroup>
                     }
+                    onBack={() => navigator.pop()}
                 />
             );
         });
@@ -1272,7 +1280,7 @@ export const OrificePage = ({ pipe, onUpdatePipe, navigator, viewSettings, start
     );
 };
 
-export const UserSpecifiedPressureLossPage = ({ pipe, onUpdatePipe }: { pipe: PipeProps, onUpdatePipe: (id: string, patch: PipePatch) => void }) => (
+export const UserSpecifiedPressureLossPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, onUpdatePipe: (id: string, patch: PipePatch) => void, navigator: Navigator }) => (
     <IOSQuantityPage
         label="User Specified Drop"
         value={pipe.userSpecifiedPressureLoss ?? ""}
@@ -1283,6 +1291,7 @@ export const UserSpecifiedPressureLossPage = ({ pipe, onUpdatePipe }: { pipe: Pi
         onUnitChange={(u) => onUpdatePipe(pipe.id, { userSpecifiedPressureLossUnit: u })}
         min={0}
         autoFocus
+        onBack={() => navigator.pop()}
     />
 );
 
@@ -1345,6 +1354,7 @@ export const PipeFittingsPage = ({ pipe, onUpdatePipe, navigator }: { pipe: Pipe
                     onUnitChange={() => { }}
                     min={0}
                     autoFocus
+                    onBack={() => navigator.pop()}
                 />
             );
         });
