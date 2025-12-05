@@ -133,19 +133,22 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                     <IOSListGroup>
                         <IOSListItem
                             label="Name"
-                            value={<span style={{ color: USER_INPUT_COLOR }}>{currentPipe.name}</span>}
-                            onClick={() => nav.push("Name", (net, n) => <NamePage value={currentPipe.name || ""} onChange={(v) => onUpdatePipe(pipe.id, { name: v })} />)}
+                            value={currentPipe.name || "-"}
+                            valueColor={USER_INPUT_COLOR}
+                            onClick={() => nav.push("Name", (net, n) => <NamePage value={currentPipe.name || ""} onChange={(v) => onUpdatePipe(pipe.id, { name: v })} navigator={n} />)}
                             chevron
                         />
                         <IOSListItem
                             label="Description"
-                            value={<span style={{ color: USER_INPUT_COLOR }}>{currentPipe.description || "None"}</span>}
-                            onClick={() => nav.push("Description", (net, n) => <DescriptionPage value={currentPipe.description || ""} onChange={(v) => onUpdatePipe(pipe.id, { description: v })} />)}
+                            value={currentPipe.description || "None"}
+                            valueColor={USER_INPUT_COLOR}
+                            onClick={() => nav.push("Description", (net, n) => <DescriptionPage value={currentPipe.description || ""} onChange={(v) => onUpdatePipe(pipe.id, { description: v })} navigator={n} />)}
                             chevron
                         />
                         <IOSListItem
                             label="Fluid"
-                            value={<span style={{ color: getValueColor(currentPipe.fluidUpdateStatus) }}>{currentPipe.fluid?.id || "None"}</span>}
+                            value={currentPipe.fluid?.id || "None"}
+                            valueColor={getValueColor(currentPipe.fluidUpdateStatus)}
                             onClick={() => nav.push("Fluid", (net, n) => <FluidPage pipe={currentPipe} onUpdatePipe={(id, patch) => onUpdatePipe(id, { ...patch, fluidUpdateStatus: 'manual' })} navigator={n} />)}
                             chevron
                             last
@@ -155,7 +158,8 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                     <IOSListGroup>
                         <IOSListItem
                             label="Mass Flow Rate"
-                            value={<span style={{ color: getValueColor(pipe.massFlowRateUpdateStatus) }}>{`${typeof pipe.massFlowRate === 'number' ? pipe.massFlowRate.toFixed(2) : "-"} ${pipe.massFlowRateUnit ?? ""}`}</span>}
+                            value={`${typeof pipe.massFlowRate === 'number' ? pipe.massFlowRate.toFixed(2) : "-"} ${pipe.massFlowRateUnit ?? ""}`}
+                            valueColor={getValueColor(pipe.massFlowRateUpdateStatus)}
                             secondary={(() => {
                                 if (typeof pipe.massFlowRate !== 'number') return undefined;
 
@@ -204,7 +208,7 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
         navigator.push("Name", (network: NetworkState, nav: Navigator) => {
             const currentPipe = network.pipes.find(p => p.id === pipe.id);
             if (!currentPipe) return null;
-            return <NamePage value={currentPipe.name || ""} onChange={(v) => onUpdatePipe(pipe.id, { name: v })} />;
+            return <NamePage value={currentPipe.name || ""} onChange={(v) => onUpdatePipe(pipe.id, { name: v })} navigator={nav} />;
         });
     };
 
@@ -212,7 +216,7 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
         navigator.push("Description", (network: NetworkState, nav: Navigator) => {
             const currentPipe = network.pipes.find(p => p.id === pipe.id);
             if (!currentPipe) return null;
-            return <DescriptionPage value={currentPipe.description || ""} onChange={(v) => onUpdatePipe(pipe.id, { description: v })} />;
+            return <DescriptionPage value={currentPipe.description || ""} onChange={(v) => onUpdatePipe(pipe.id, { description: v })} navigator={nav} />;
         });
     };
 
@@ -232,13 +236,11 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
         });
     };
 
-
-
     const openCalculationTypePage = () => {
         navigator.push("Calculation Type", (network: NetworkState, nav: Navigator) => {
             const currentPipe = network.pipes.find(p => p.id === pipe.id);
             if (!currentPipe) return null;
-            return <CalculationTypePage pipe={currentPipe} onUpdatePipe={onUpdatePipe} />;
+            return <CalculationTypePage pipe={currentPipe} onUpdatePipe={onUpdatePipe} navigator={nav} />;
         });
     };
 
@@ -383,34 +385,38 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                 />
                 <IOSListItem
                     label="Calculation Type"
-                    value={<span style={{ color: USER_INPUT_COLOR }}>{pipe.pipeSectionType || "Pipeline"}</span>}
+                    value={pipe.pipeSectionType || "Pipeline"}
+                    valueColor={USER_INPUT_COLOR}
                     onClick={openCalculationTypePage}
                     chevron
                 />
                 <IOSListItem
                     label="Service Type"
-                    value={<span style={{ color: USER_INPUT_COLOR }}>{pipe.serviceType || "Select Service"}</span>}
+                    value={pipe.serviceType || "Select Service"}
+                    valueColor={USER_INPUT_COLOR}
                     onClick={() => navigator.push("Service Type", (net, nav) => {
                         const currentPipe = net.pipes.find(p => p.id === pipe.id);
                         if (!currentPipe) return null;
-                        return <ServiceTypePage value={currentPipe.serviceType || ""} onChange={(v) => onUpdatePipe(pipe.id, { serviceType: v })} />;
+                        return <ServiceTypePage value={currentPipe.serviceType || ""} onChange={(v) => onUpdatePipe(pipe.id, { serviceType: v })} navigator={nav} />;
                     })}
                     chevron
                 />
                 <IOSListItem
                     label="Direction"
-                    value={<span style={{ color: USER_INPUT_COLOR }}>{pipe.direction === "backward" ? "Backward" : "Forward"}</span>}
+                    value={pipe.direction === "backward" ? "Backward" : "Forward"}
+                    valueColor={USER_INPUT_COLOR}
                     onClick={() => navigator.push("Direction", (net, nav) => {
                         const currentPipe = net.pipes.find(p => p.id === pipe.id);
                         if (!currentPipe) return null;
-                        return <DirectionPage pipe={currentPipe} onUpdatePipe={onUpdatePipe} />;
+                        return <DirectionPage pipe={currentPipe} onUpdatePipe={onUpdatePipe} navigator={nav} />;
                     })}
                     chevron
                 />
                 {pipe.fluid?.phase === "gas" && (
                     <IOSListItem
                         label="Flow Model"
-                        value={<span style={{ color: USER_INPUT_COLOR }}>{pipe.gasFlowModel === "isothermal" ? "Isothermal" : "Adiabatic"}</span>}
+                        value={pipe.gasFlowModel === "isothermal" ? "Isothermal" : "Adiabatic"}
+                        valueColor={USER_INPUT_COLOR}
                         onClick={() => navigator.push("Flow Model", (net, nav) => {
                             const currentPipe = net.pipes.find(p => p.id === pipe.id);
                             if (!currentPipe) return null;
@@ -418,6 +424,7 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                                 <GasFlowModelPage
                                     value={currentPipe.gasFlowModel ?? "adiabatic"}
                                     onChange={(v) => onUpdatePipe(pipe.id, { gasFlowModel: v })}
+                                    navigator={nav}
                                 />
                             );
                         })}
@@ -429,7 +436,8 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
             <IOSListGroup>
                 <IOSListItem
                     label="Pipe Diameter"
-                    value={<span style={{ color: getValueColor(pipe.diameterUpdateStatus) }}>{`${typeof pipe.diameter === 'number' ? pipe.diameter.toFixed(3) : "-"} ${pipe.diameterUnit ?? ""}`}</span>}
+                    value={`${typeof pipe.diameter === 'number' ? pipe.diameter.toFixed(3) : "-"} ${pipe.diameterUnit ?? ""}`}
+                    valueColor={getValueColor(pipe.diameterUpdateStatus)}
                     onClick={() => navigator.push("Pipe Diameter", (net, nav) => {
                         const currentPipe = net.pipes.find(p => p.id === pipe.id);
                         if (!currentPipe) return null;
@@ -460,7 +468,8 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                 />
                 <IOSListItem
                     label="Erosional Constant"
-                    value={<span style={{ color: USER_INPUT_COLOR }}>{pipe.erosionalConstant?.toFixed(0) ?? "-"}</span>}
+                    value={pipe.erosionalConstant?.toFixed(0) ?? "-"}
+                    valueColor={USER_INPUT_COLOR}
                     secondary={(() => {
 
                         const density = pipe.fluid?.phase === "gas" ?
@@ -484,6 +493,7 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                                 placeholder="Erosional Constant"
                                 autoFocus
                                 min={0}
+                                onBack={() => nav.pop()}
                             />
                         );
                     })}
@@ -512,20 +522,23 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                     <>
                         <IOSListItem
                             label="Roughness"
-                            value={<span style={{ color: USER_INPUT_COLOR }}>{`${pipe.roughness ?? "-"} ${pipe.roughnessUnit ?? ""}`}</span>}
+                            value={`${pipe.roughness ?? "-"} ${pipe.roughnessUnit ?? ""}`}
+                            valueColor={USER_INPUT_COLOR}
                             onClick={openRoughnessPage}
                             chevron
                         />
                         <IOSListItem
                             label="Length"
-                            value={<span style={{ color: getValueColor(pipe.lengthUpdateStatus) }}>{`${pipe.length?.toFixed(3) ?? "-"} ${pipe.lengthUnit ?? ""}`}</span>}
+                            value={`${pipe.length?.toFixed(3) ?? "-"} ${pipe.lengthUnit ?? ""}`}
+                            valueColor={getValueColor(pipe.lengthUpdateStatus)}
                             onClick={openLengthPage}
                             chevron
                         />
                         {pipe.fluid?.phase !== "gas" && (
                             <IOSListItem
                                 label="Elevation"
-                                value={<span style={{ color: USER_INPUT_COLOR }}>{`${pipe.elevation?.toFixed(3) ?? "-"} ${pipe.elevationUnit ?? ""}`}</span>}
+                                value={`${pipe.elevation?.toFixed(3) ?? "-"} ${pipe.elevationUnit ?? ""}`}
+                                valueColor={USER_INPUT_COLOR}
                                 onClick={openElevationPage}
                                 chevron
                             />
@@ -542,7 +555,8 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                         />
                         <IOSListItem
                             label="User Specified Drop"
-                            value={<span style={{ color: USER_INPUT_COLOR }}>{pipe.userSpecifiedPressureLoss ? `${pipe.userSpecifiedPressureLoss.toFixed(3)} ${pipe.userSpecifiedPressureLossUnit ?? "Pa"}` : "-"}</span>}
+                            value={pipe.userSpecifiedPressureLoss ? `${pipe.userSpecifiedPressureLoss.toFixed(3)} ${pipe.userSpecifiedPressureLossUnit ?? "Pa"}` : "-"}
+                            valueColor={USER_INPUT_COLOR}
                             onClick={() => navigator.push("User Specified Drop", (net, nav) => {
                                 const currentPipe = net.pipes.find(p => p.id === pipe.id);
                                 if (!currentPipe) return null;

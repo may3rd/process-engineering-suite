@@ -332,13 +332,15 @@ export function IOSNodeProperties({
             <IOSListGroup>
                 <IOSListItem
                     label="Label"
-                    value={<span style={{ color: USER_INPUT_COLOR }}>{node.label}</span>}
+                    value={node.label}
+                    valueColor={USER_INPUT_COLOR}
                     onClick={openNamePage}
                     chevron
                 />
                 <IOSListItem
                     label="Fluid"
-                    value={<span style={{ color: getValueColor(node.fluidUpdateStatus) }}>{node.fluid?.id || "None"}</span>}
+                    value={node.fluid?.id || "None"}
+                    valueColor={getValueColor(node.fluidUpdateStatus)}
                     onClick={openFluidPage}
                     chevron
                     last
@@ -348,13 +350,15 @@ export function IOSNodeProperties({
             <IOSListGroup>
                 <IOSListItem
                     label="Pressure"
-                    value={<span style={{ color: getValueColor(node.pressureUpdateStatus) }}>{`${node.pressure?.toFixed(2) ?? "-"} ${node.pressureUnit ?? ""}`}</span>}
+                    value={`${node.pressure?.toFixed(2) ?? "-"} ${node.pressureUnit ?? ""}`}
+                    valueColor={getValueColor(node.pressureUpdateStatus)}
                     onClick={openPressurePage}
                     chevron
                 />
                 <IOSListItem
                     label="Temperature"
-                    value={<span style={{ color: getValueColor(node.temperatureUpdateStatus) }}>{`${node.temperature?.toFixed(2) ?? "-"} ${node.temperatureUnit ?? ""}`}</span>}
+                    value={`${node.temperature?.toFixed(2) ?? "-"} ${node.temperatureUnit ?? ""}`}
+                    valueColor={getValueColor(node.temperatureUpdateStatus)}
                     onClick={openTemperaturePage}
                     chevron
                     last

@@ -3,10 +3,7 @@ import { glassInputSx, glassSelectSx, glassRadioSx, glassDialogSx } from "@eng-s
 import { QuantityInput, QUANTITY_UNIT_OPTIONS } from "../QuantityInput";
 import { getScheduleEntries, nearest_pipe_diameter, PIPE_FITTING_OPTIONS } from "./PipeDimension";
 import { PipeProps, PipePatch, FittingType, ViewSettings, NodeProps, NodePatch, UpdateStatus } from "@/lib/types";
-import { IOSListGroup } from "@eng-suite/ui-kit";
-import { IOSListItem } from "@eng-suite/ui-kit";
-import { IOSTextField } from "@eng-suite/ui-kit";
-import { IOSQuantityPage } from '@eng-suite/ui-kit';
+import { IOSListGroup, IOSListItem, IOSTextField, IOSQuantityPage, IOSPickerPage, IOSPickerItem } from "@eng-suite/ui-kit";
 import { VelocityCriteriaPage } from './VelocityCriteriaPage';
 import { SERVICE_TYPES } from "@/utils/velocityCriteria";
 import { Check, ArrowForwardIos, Add, Remove, AutoFixHigh, ContentCopy, Close, ErrorOutline } from "@mui/icons-material";
@@ -52,39 +49,36 @@ const VelocityCriteriaDialog = ({ open, onClose }: { open: boolean, onClose: () 
     </Dialog>
 );
 
-export function ServiceTypePage({ value, onChange }: { value: string, onChange: (val: string) => void }) {
+export function ServiceTypePage({ value, onChange, navigator }: { value: string, onChange: (val: string) => void, navigator: Navigator }) {
     const [openVelocityCriteria, setOpenVelocityCriteria] = useState(false);
 
-    return (
-        <Box sx={{ pt: 2 }}>
-            <IOSListGroup>
-                {SERVICE_TYPES.map((type, index) => (
-                    <IOSListItem
-                        key={type}
-                        label={type}
-                        value={value === type ? <Check color="primary" sx={{ fontSize: 16 }} /> : ""}
-                        onClick={() => onChange(type)}
-                        last={index === SERVICE_TYPES.length - 1}
-                    />
-                ))}
-            </IOSListGroup>
-            <Box sx={{ pl: 3, pb: 2, mt: -2 }}>
-                <Typography
-                    variant="body2"
-                    sx={{
-                        color: "primary.main",
-                        cursor: "pointer",
-                        textDecoration: "none",
-                        "&:hover": { textDecoration: "underline" }
-                    }}
-                    onClick={() => setOpenVelocityCriteria(true)}
-                >
-                    Velocity criteria...
-                </Typography>
-            </Box>
+    const pickerItems: IOSPickerItem<string>[] = [
+        ...SERVICE_TYPES.map((type) => ({
+            label: type,
+            value: type,
+        })),
+        {
+            label: "Velocity criteria...",
+            onSelect: () => setOpenVelocityCriteria(true),
+            renderValue: () => <ArrowForwardIos sx={{ fontSize: 16, color: "primary.main" }} />,
+            textColor: "primary.main",
+            chevron: true,
+        },
+    ];
 
+    return (
+        <>
+            <IOSPickerPage
+                items={pickerItems}
+                selectedValue={value}
+                onSelect={(selected) => {
+                    onChange(selected);
+                    navigator.pop();
+                }}
+                onCancel={() => navigator.pop()}
+            />
             <VelocityCriteriaDialog open={openVelocityCriteria} onClose={() => setOpenVelocityCriteria(false)} />
-        </Box>
+        </>
     );
 }
 import { Navigator } from "../../PropertiesPanel";
@@ -94,95 +88,110 @@ import { recalculatePipeFittingLosses } from "@eng-suite/physics";
 
 import { useState, useEffect, useRef } from "react";
 
+const USER_INPUT_COLOR = "#007AFF";
+const getValueColor = (status?: UpdateStatus) => status === "manual" ? USER_INPUT_COLOR : "inherit";
+
 // --- Name & Description ---
 
-export const NamePage = ({ value, onChange }: { value: string, onChange: (v: string) => void }) => (
-    <Box sx={{ p: 2 }}>
-        <IOSTextField
-            fullWidth
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onClear={() => onChange("")}
-            placeholder="Name"
-            autoFocus
-        />
-    </Box>
-);
+export const NamePage = ({ value, onChange, navigator }: { value: string, onChange: (v: string) => void, navigator: Navigator }) => {
+    const originalValue = useRef(value);
 
-export const DescriptionPage = ({ value, onChange }: { value: string, onChange: (v: string) => void }) => (
-    <Box sx={{ p: 2 }}>
-        <IOSTextField
-            fullWidth
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onClear={() => onChange("")}
-            placeholder="Description"
-            multiline
-            rows={4}
-            autoFocus
-        />
-    </Box>
-);
-
-// --- Fluid ---
-
-const FluidNamePage = ({ value, onChange }: { value: string, onChange: (v: string) => void }) => (
-    <Box sx={{ pt: 4 }}>
-        <IOSListGroup>
+    return (
+        <Box sx={{ p: 2 }}>
             <IOSTextField
                 fullWidth
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 onClear={() => onChange("")}
-                placeholder="Fluid Name"
+                placeholder="Name"
                 autoFocus
+                onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                        e.preventDefault();
+                        navigator.pop();
+                    } else if (e.key === "Escape") {
+                        e.preventDefault();
+                        onChange(originalValue.current);
+                        navigator.pop();
+                    }
+                }}
             />
-        </IOSListGroup>
-    </Box>
-);
+        </Box>
+    );
+};
 
-const FluidPhasePage = ({ value, onChange }: { value: "liquid" | "gas", onChange: (v: "liquid" | "gas") => void }) => {
-    const [localValue, setLocalValue] = useState(value);
-    const valueRef = useRef(value);
-    const onChangeRef = useRef(onChange);
-    const isDirty = useRef(false);
+export const DescriptionPage = ({ value, onChange, navigator }: { value: string, onChange: (v: string) => void, navigator: Navigator }) => {
+    const originalValue = useRef(value);
 
-    useEffect(() => {
-        onChangeRef.current = onChange;
-    }, [onChange]);
+    return (
+        <Box sx={{ p: 2 }}>
+            <IOSTextField
+                fullWidth
+                value={value}
+                onChange={(e) => onChange(e.target.value)}
+                onClear={() => onChange("")}
+                placeholder="Description"
+                multiline
+                rows={4}
+                autoFocus
+                onKeyDown={(e) => {
+                    if (e.key === "Escape") {
+                        e.preventDefault();
+                        onChange(originalValue.current);
+                        navigator.pop();
+                    }
+                    // Enter is allowed for multiline
+                }}
+            />
+        </Box>
+    );
+};
 
-    useEffect(() => {
-        return () => {
-            if (isDirty.current) {
-                onChangeRef.current(valueRef.current);
-            }
-        };
-    }, []);
+// --- Fluid ---
 
-    const handleSelect = (v: "liquid" | "gas") => {
-        setLocalValue(v);
-        valueRef.current = v;
-        isDirty.current = true;
-    };
+const FluidNamePage = ({ value, onChange, navigator }: { value: string, onChange: (v: string) => void, navigator: Navigator }) => {
+    const originalValue = useRef(value);
 
     return (
         <Box sx={{ pt: 4 }}>
             <IOSListGroup>
-                <IOSListItem
-                    label="Liquid"
-                    value={localValue === "liquid" ? <Check color="primary" sx={{ fontSize: 20 }} /> : ""}
-                    onClick={() => handleSelect("liquid")}
-                />
-                <IOSListItem
-                    label="Gas"
-                    value={localValue === "gas" ? <Check color="primary" sx={{ fontSize: 20 }} /> : ""}
-                    onClick={() => handleSelect("gas")}
-                    last
+                <IOSTextField
+                    fullWidth
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    onClear={() => onChange("")}
+                    placeholder="Fluid Name"
+                    autoFocus
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            navigator.pop();
+                        } else if (e.key === "Escape") {
+                            e.preventDefault();
+                            onChange(originalValue.current);
+                            navigator.pop();
+                        }
+                    }}
                 />
             </IOSListGroup>
         </Box>
     );
 };
+
+const FluidPhasePage = ({ value, onChange, navigator }: { value: "liquid" | "gas", onChange: (v: "liquid" | "gas") => void, navigator: Navigator }) => (
+    <IOSPickerPage
+        items={[
+            { label: "Liquid", value: "liquid" },
+            { label: "Gas", value: "gas" },
+        ]}
+        selectedValue={value}
+        onSelect={(selected) => {
+            onChange(selected);
+            navigator.pop();
+        }}
+        onCancel={() => navigator.pop()}
+    />
+);
 
 // --- Helper for Number Input ---
 export const NumberInputPage = ({
@@ -190,13 +199,15 @@ export const NumberInputPage = ({
     onChange,
     placeholder,
     autoFocus,
-    min
+    min,
+    onBack
 }: {
     value: number | undefined,
     onChange: (val: number | undefined) => void,
     placeholder: string,
     autoFocus?: boolean,
-    min?: number
+    min?: number,
+    onBack?: () => void
 }) => {
     const [localValue, setLocalValue] = useState(value?.toString() ?? "");
 
@@ -245,6 +256,22 @@ export const NumberInputPage = ({
                             MozAppearance: "textfield",
                         },
                     }}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            // Ensure value is committed before navigating back
+                            const num = parseFloat(localValue);
+                            if (!isNaN(num) && (min === undefined || num >= min)) {
+                                onChange(num);
+                            } else if (localValue.trim() === "") {
+                                onChange(undefined);
+                            }
+                            onBack?.();
+                        } else if (e.key === "Escape") {
+                            e.preventDefault();
+                            onBack?.();
+                        }
+                    }}
                 />
             </IOSListGroup>
         </Box>
@@ -263,6 +290,7 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                 <FluidNamePage
                     value={currentFluid.id}
                     onChange={(v) => onUpdatePipe(pipe.id, { fluid: { ...currentFluid, id: v } })}
+                    navigator={nav}
                 />
             );
         });
@@ -277,6 +305,7 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                 <FluidPhasePage
                     value={currentFluid.phase as "liquid" | "gas"}
                     onChange={(v) => onUpdatePipe(pipe.id, { fluid: { ...currentFluid, phase: v } })}
+                    navigator={nav}
                 />
             );
         });
@@ -333,12 +362,14 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                 <IOSListItem
                     label="Name"
                     value={fluid.id}
+                    valueColor={USER_INPUT_COLOR}
                     onClick={openNamePage}
                     chevron
                 />
                 <IOSListItem
                     label="Phase"
                     value={fluid.phase === "liquid" ? "Liquid" : "Gas"}
+                    valueColor={USER_INPUT_COLOR}
                     onClick={openPhasePage}
                     chevron
                     last
@@ -350,12 +381,14 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                     <IOSListItem
                         label="Density"
                         value={`${fluid.density ?? "-"} ${fluid.densityUnit ?? "kg/m3"}`}
+                        valueColor={USER_INPUT_COLOR}
                         onClick={() => openQuantityPage("Density", "density", "densityUnit", QUANTITY_UNIT_OPTIONS.density, "density", 0)}
                         chevron
                     />
                     <IOSListItem
                         label="Viscosity"
                         value={`${fluid.viscosity ?? "-"} ${fluid.viscosityUnit ?? "cP"}`}
+                        valueColor={USER_INPUT_COLOR}
                         onClick={() => openQuantityPage("Viscosity", "viscosity", "viscosityUnit", QUANTITY_UNIT_OPTIONS.viscosity, "viscosity", 0)}
                         chevron
                         last
@@ -366,6 +399,7 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                     <IOSListItem
                         label="Flow Model"
                         value={pipe.gasFlowModel === "isothermal" ? "Isothermal" : "Adiabatic"}
+                        valueColor={USER_INPUT_COLOR}
                         onClick={() => navigator.push("Flow Model", (net, nav) => {
                             const currentPipe = net.pipes.find(p => p.id === pipe.id);
                             if (!currentPipe) return null;
@@ -373,6 +407,7 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                                 <GasFlowModelPage
                                     value={currentPipe.gasFlowModel ?? "adiabatic"}
                                     onChange={(v) => onUpdatePipe(pipe.id, { gasFlowModel: v })}
+                                    navigator={nav}
                                 />
                             );
                         })}
@@ -382,6 +417,7 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                     <IOSListItem
                         label="Molecular Weight"
                         value={fluid.molecularWeight?.toString() ?? "-"}
+                        valueColor={USER_INPUT_COLOR}
                         onClick={() => navigator.push("Molecular Weight", (net, nav) => {
                             const currentPipe = net.pipes.find(p => p.id === pipe.id);
                             if (!currentPipe) return null;
@@ -400,6 +436,7 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                     <IOSListItem
                         label="Z Factor"
                         value={fluid.zFactor?.toString() ?? "-"}
+                        valueColor={USER_INPUT_COLOR}
                         onClick={() => navigator.push("Z Factor", (net, nav) => {
                             const currentPipe = net.pipes.find(p => p.id === pipe.id);
                             if (!currentPipe) return null;
@@ -418,6 +455,7 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                     <IOSListItem
                         label="Specific Heat Ratio"
                         value={fluid.specificHeatRatio?.toString() ?? "-"}
+                        valueColor={USER_INPUT_COLOR}
                         onClick={() => navigator.push("Specific Heat Ratio", (net, nav) => {
                             const currentPipe = net.pipes.find(p => p.id === pipe.id);
                             if (!currentPipe) return null;
@@ -436,6 +474,7 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                     <IOSListItem
                         label="Viscosity"
                         value={`${fluid.viscosity ?? "-"} ${fluid.viscosityUnit ?? "cP"}`}
+                        valueColor={USER_INPUT_COLOR}
                         onClick={() => openQuantityPage("Viscosity", "viscosity", "viscosityUnit", QUANTITY_UNIT_OPTIONS.viscosity, "viscosity", 0)}
                         chevron
                         last
@@ -473,23 +512,20 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
 
 // --- Gas Flow Model ---
 
-export function GasFlowModelPage({ value, onChange }: { value: "adiabatic" | "isothermal", onChange: (val: "adiabatic" | "isothermal") => void }) {
+export function GasFlowModelPage({ value, onChange, navigator }: { value: "adiabatic" | "isothermal", onChange: (val: "adiabatic" | "isothermal") => void, navigator: Navigator }) {
     return (
-        <Box sx={{ pt: 2 }}>
-            <IOSListGroup>
-                <IOSListItem
-                    label="Adiabatic"
-                    value={value === "adiabatic" ? <Check color="primary" sx={{ fontSize: 16 }} /> : ""}
-                    onClick={() => onChange("adiabatic")}
-                />
-                <IOSListItem
-                    label="Isothermal"
-                    value={value === "isothermal" ? <Check color="primary" sx={{ fontSize: 16 }} /> : ""}
-                    onClick={() => onChange("isothermal")}
-                    last
-                />
-            </IOSListGroup>
-        </Box>
+        <IOSPickerPage
+            items={[
+                { label: "Adiabatic", value: "adiabatic" },
+                { label: "Isothermal", value: "isothermal" },
+            ]}
+            selectedValue={value}
+            onSelect={(selected) => {
+                onChange(selected);
+                navigator.pop();
+            }}
+            onCancel={() => navigator.pop()}
+        />
     );
 }
 
@@ -503,6 +539,7 @@ export const GasFlowModelSelectionPage = ({ pipe, onUpdatePipe, navigator }: { p
                 <GasFlowModelPage
                     value={currentPipe.gasFlowModel ?? "adiabatic"}
                     onChange={(v) => onUpdatePipe(pipe.id, { gasFlowModel: v })}
+                    navigator={nav}
                 />
             );
         });
@@ -542,64 +579,70 @@ export const MassFlowRatePage = ({ pipe, onUpdatePipe, navigator }: { pipe: Pipe
 
 // --- Dimensions (Diameter) ---
 
-const DiameterInputModePage = ({ value, onChange }: { value: "nps" | "diameter", onChange: (v: "nps" | "diameter") => void }) => (
-    <Box sx={{ pt: 4 }}>
-        <IOSListGroup>
-            <IOSListItem
-                label="NPS"
-                value={value === "nps" ? <Check color="primary" sx={{ fontSize: 20 }} /> : ""}
-                onClick={() => onChange("nps")}
-            />
-            <IOSListItem
-                label="Diameter"
-                value={value === "diameter" ? <Check color="primary" sx={{ fontSize: 20 }} /> : ""}
-                onClick={() => onChange("diameter")}
-                last
-            />
-        </IOSListGroup>
-    </Box>
-);
+const DiameterInputModePage = ({ value, onChange, navigator }: { value: "nps" | "diameter", onChange: (v: "nps" | "diameter") => void, navigator: Navigator }) => {
+    return (
+        <IOSPickerPage
+            items={[
+                { label: "NPS", value: "nps" },
+                { label: "Diameter", value: "diameter" },
+            ]}
+            selectedValue={value}
+            onSelect={(selected) => {
+                onChange(selected);
+                navigator.pop();
+            }}
+            onCancel={() => navigator.pop()}
+        />
+    );
+};
 
 const PIPE_SCHEDULES = [
     "5", "10", "20", "30", "40", "60", "80", "100", "120", "140", "160",
     "STD", "XS", "XXS", "5S", "10S", "40S", "80S"
 ] as const;
 
-const SchedulePage = ({ value, onChange }: { value: string, onChange: (v: any) => void }) => (
-    <Box sx={{ pt: 4 }}>
-        <IOSListGroup>
-            {PIPE_SCHEDULES.map((schedule, index) => (
-                <IOSListItem
-                    key={schedule}
-                    label={schedule}
-                    value={value === schedule ? <Check color="primary" sx={{ fontSize: 20 }} /> : ""}
-                    onClick={() => onChange(schedule)}
-                    last={index === PIPE_SCHEDULES.length - 1}
-                />
-            ))}
-        </IOSListGroup>
-    </Box>
+const SchedulePage = ({ value, onChange, navigator }: { value: string, onChange: (v: any) => void, navigator: Navigator }) => (
+    <IOSPickerPage
+        items={PIPE_SCHEDULES.map((schedule) => ({
+            label: schedule,
+            value: schedule,
+        }))}
+        selectedValue={value}
+        onSelect={(selected) => {
+            onChange(selected);
+            navigator.pop();
+        }}
+        onCancel={() => navigator.pop()}
+    />
 );
 
 
 
-const NPDSelectionPage = ({ schedule, value, onChange }: { schedule: string, value: number | undefined, onChange: (v: number) => void }) => {
+const NPDSelectionPage = ({ schedule, value, onChange, navigator }: { schedule: string, value: number | undefined, onChange: (v: number) => void, navigator: Navigator }) => {
     const entries = getScheduleEntries(schedule as any) || [];
+    if (entries.length === 0) {
+        return (
+            <Box sx={{ pt: 4 }}>
+                <IOSListGroup>
+                    <IOSListItem label="No schedule entries available" />
+                </IOSListGroup>
+            </Box>
+        );
+    }
 
     return (
-        <Box sx={{ pt: 4 }}>
-            <IOSListGroup>
-                {entries.map((entry, index) => (
-                    <IOSListItem
-                        key={entry.nps}
-                        label={entry.nps.toString()}
-                        value={value === entry.nps ? <Check color="primary" sx={{ fontSize: 20 }} /> : ""}
-                        onClick={() => onChange(entry.nps)}
-                        last={index === entries.length - 1}
-                    />
-                ))}
-            </IOSListGroup>
-        </Box>
+        <IOSPickerPage
+            items={entries.map((entry) => ({
+                label: entry.nps.toString(),
+                value: entry.nps,
+            }))}
+            selectedValue={value}
+            onSelect={(selected) => {
+                onChange(selected);
+                navigator.pop();
+            }}
+            onCancel={() => navigator.pop()}
+        />
     );
 };
 
@@ -613,6 +656,7 @@ export const DiameterPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProp
                 <DiameterInputModePage
                     value={currentPipe.diameterInputMode ?? "nps"}
                     onChange={(v) => onUpdatePipe(pipe.id, { diameterInputMode: v })}
+                    navigator={nav}
                 />
             );
         });
@@ -633,6 +677,7 @@ export const DiameterPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProp
                             diameterUpdateStatus: 'manual' as UpdateStatus
                         });
                     }}
+                    navigator={nav}
                 />
             );
         });
@@ -654,6 +699,7 @@ export const DiameterPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProp
                             diameterUpdateStatus: 'manual' as UpdateStatus
                         });
                     }}
+                    navigator={nav}
                 />
             );
         });
@@ -774,20 +820,20 @@ export const DiameterPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProp
 
 // --- Calculation Type ---
 
-export const CalculationTypePage = ({ pipe, onUpdatePipe }: { pipe: PipeProps, onUpdatePipe: (id: string, patch: PipePatch) => void }) => (
-    <Box sx={{ pt: 2 }}>
-        <IOSListGroup>
-            {["pipeline", "control valve", "orifice"].map((type) => (
-                <IOSListItem
-                    key={type}
-                    label={type.charAt(0).toUpperCase() + type.slice(1)}
-                    onClick={() => onUpdatePipe(pipe.id, { pipeSectionType: type as any })}
-                    last={type === "orifice"}
-                    value={pipe.pipeSectionType === type ? <Check color="primary" sx={{ fontSize: 20 }} /> : ""}
-                />
-            ))}
-        </IOSListGroup>
-    </Box>
+export const CalculationTypePage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, onUpdatePipe: (id: string, patch: PipePatch) => void, navigator?: Navigator }) => (
+    <IOSPickerPage
+        items={[
+            { label: "Pipeline", value: "pipeline" },
+            { label: "Control Valve", value: "control valve" },
+            { label: "Orifice", value: "orifice" },
+        ]}
+        selectedValue={pipe.pipeSectionType ?? "pipeline"}
+        onSelect={(selected) => {
+            onUpdatePipe(pipe.id, { pipeSectionType: selected as PipeProps["pipeSectionType"] });
+            navigator?.pop();
+        }}
+        onCancel={() => navigator?.pop()}
+    />
 );
 
 // --- Length & Elevation ---
@@ -904,40 +950,34 @@ export const ElevationPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipePro
 
 // --- Control Valve & Orifice ---
 
-const ControlValveInputModePage = ({ value, onChange }: { value: "cv" | "pressure_drop", onChange: (v: "cv" | "pressure_drop") => void }) => (
-    <Box sx={{ pt: 4 }}>
-        <IOSListGroup>
-            <IOSListItem
-                label="CV"
-                value={value === "cv" ? <Check color="primary" sx={{ fontSize: 20 }} /> : ""}
-                onClick={() => onChange("cv")}
-            />
-            <IOSListItem
-                label="Pressure Drop"
-                value={value === "pressure_drop" ? <Check color="primary" sx={{ fontSize: 20 }} /> : ""}
-                onClick={() => onChange("pressure_drop")}
-                last
-            />
-        </IOSListGroup>
-    </Box>
+const ControlValveInputModePage = ({ value, onChange, navigator }: { value: "cv" | "pressure_drop", onChange: (v: "cv" | "pressure_drop") => void, navigator: Navigator }) => (
+    <IOSPickerPage
+        items={[
+            { label: "CV / Cg", value: "cv" },
+            { label: "Pressure Drop", value: "pressure_drop" },
+        ]}
+        selectedValue={value}
+        onSelect={(selected) => {
+            onChange(selected);
+            navigator.pop();
+        }}
+        onCancel={() => navigator.pop()}
+    />
 );
 
-const OrificeInputModePage = ({ value, onChange }: { value: "beta_ratio" | "pressure_drop", onChange: (v: "beta_ratio" | "pressure_drop") => void }) => (
-    <Box sx={{ pt: 4 }}>
-        <IOSListGroup>
-            <IOSListItem
-                label="Beta Ratio"
-                value={value === "beta_ratio" ? <Check color="primary" sx={{ fontSize: 20 }} /> : ""}
-                onClick={() => onChange("beta_ratio")}
-            />
-            <IOSListItem
-                label="Pressure Drop"
-                value={value === "pressure_drop" ? <Check color="primary" sx={{ fontSize: 20 }} /> : ""}
-                onClick={() => onChange("pressure_drop")}
-                last
-            />
-        </IOSListGroup>
-    </Box>
+const OrificeInputModePage = ({ value, onChange, navigator }: { value: "beta_ratio" | "pressure_drop", onChange: (v: "beta_ratio" | "pressure_drop") => void, navigator: Navigator }) => (
+    <IOSPickerPage
+        items={[
+            { label: "Beta Ratio", value: "beta_ratio" },
+            { label: "Pressure Drop", value: "pressure_drop" },
+        ]}
+        selectedValue={value}
+        onSelect={(selected) => {
+            onChange(selected);
+            navigator.pop();
+        }}
+        onCancel={() => navigator.pop()}
+    />
 );
 
 export const ControlValvePage = ({ pipe, onUpdatePipe, navigator, viewSettings, startNode, endNode }: { pipe: PipeProps, onUpdatePipe: (id: string, patch: PipePatch) => void, navigator: Navigator, viewSettings: ViewSettings, startNode?: NodeProps, endNode?: NodeProps }) => {
@@ -954,6 +994,7 @@ export const ControlValvePage = ({ pipe, onUpdatePipe, navigator, viewSettings, 
                 <ControlValveInputModePage
                     value={currentCV.inputMode || "pressure_drop"}
                     onChange={(v) => onUpdatePipe(pipe.id, { controlValve: { ...currentCV, inputMode: v } })}
+                    navigator={nav}
                 />
             );
         });
@@ -1076,6 +1117,7 @@ export const ControlValvePage = ({ pipe, onUpdatePipe, navigator, viewSettings, 
             <IOSListItem
                 label="Input Mode"
                 value={inputMode === "cv" ? (isGas ? "Cg" : "CV") : "Pressure Drop"}
+                valueColor={USER_INPUT_COLOR}
                 onClick={openInputModePage}
                 chevron
             />
@@ -1084,6 +1126,7 @@ export const ControlValvePage = ({ pipe, onUpdatePipe, navigator, viewSettings, 
                     <IOSListItem
                         label="Cg"
                         value={cvData.cg?.toFixed(4) ?? "-"}
+                        valueColor={USER_INPUT_COLOR}
                         onClick={openCgPage}
                         chevron
                     />
@@ -1091,6 +1134,7 @@ export const ControlValvePage = ({ pipe, onUpdatePipe, navigator, viewSettings, 
                     <IOSListItem
                         label="CV"
                         value={cvData.cv?.toFixed(4) ?? "-"}
+                        valueColor={USER_INPUT_COLOR}
                         onClick={openCVPage}
                         chevron
                     />
@@ -1099,6 +1143,7 @@ export const ControlValvePage = ({ pipe, onUpdatePipe, navigator, viewSettings, 
                 <IOSListItem
                     label="Pressure Drop"
                     value={`${cvData.pressureDrop?.toFixed(3) ?? "-"} ${cvData.pressureDropUnit ?? "kPa"}`}
+                    valueColor={USER_INPUT_COLOR}
                     onClick={openPressureDropPage}
                     chevron
                 />
@@ -1141,6 +1186,7 @@ export const OrificePage = ({ pipe, onUpdatePipe, navigator, viewSettings, start
                 <OrificeInputModePage
                     value={currentOrifice.inputMode || "beta_ratio"}
                     onChange={(v) => onUpdatePipe(pipe.id, { orifice: { ...currentOrifice, inputMode: v } })}
+                    navigator={nav}
                 />
             );
         });
@@ -1245,6 +1291,7 @@ export const OrificePage = ({ pipe, onUpdatePipe, navigator, viewSettings, start
             <IOSListItem
                 label="Input Mode"
                 value={inputMode === "beta_ratio" ? "Beta Ratio" : "Pressure Drop"}
+                valueColor={USER_INPUT_COLOR}
                 onClick={openInputModePage}
                 chevron
             />
@@ -1252,6 +1299,7 @@ export const OrificePage = ({ pipe, onUpdatePipe, navigator, viewSettings, start
                 <IOSListItem
                     label="Beta Ratio"
                     value={orificeData.betaRatio?.toFixed(4) ?? "-"}
+                    valueColor={USER_INPUT_COLOR}
                     onClick={openBetaRatioPage}
                     chevron
                 />
@@ -1259,6 +1307,7 @@ export const OrificePage = ({ pipe, onUpdatePipe, navigator, viewSettings, start
                 <IOSListItem
                     label="Pressure Drop"
                     value={`${orificeData.pressureDrop?.toFixed(3) ?? "-"} ${orificeData.pressureDropUnit ?? "kPa"}`}
+                    valueColor={USER_INPUT_COLOR}
                     onClick={openPressureDropPage}
                     chevron
                 />
@@ -1297,22 +1346,19 @@ export const UserSpecifiedPressureLossPage = ({ pipe, onUpdatePipe, navigator }:
 
 // --- Direction ---
 
-export const DirectionPage = ({ pipe, onUpdatePipe }: { pipe: PipeProps, onUpdatePipe: (id: string, patch: PipePatch) => void }) => (
-    <Box sx={{ pt: 2 }}>
-        <IOSListGroup>
-            <IOSListItem
-                label="Forward"
-                value={(!pipe.direction || pipe.direction === "forward") ? <Check color="primary" sx={{ fontSize: 20 }} /> : ""}
-                onClick={() => onUpdatePipe(pipe.id, { direction: "forward" })}
-            />
-            <IOSListItem
-                label="Backward"
-                value={pipe.direction === "backward" ? <Check color="primary" sx={{ fontSize: 20 }} /> : ""}
-                onClick={() => onUpdatePipe(pipe.id, { direction: "backward" })}
-                last
-            />
-        </IOSListGroup>
-    </Box>
+export const DirectionPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, onUpdatePipe: (id: string, patch: PipePatch) => void, navigator?: Navigator }) => (
+    <IOSPickerPage
+        items={[
+            { label: "Forward", value: "forward" },
+            { label: "Backward", value: "backward" },
+        ]}
+        selectedValue={pipe.direction ?? "forward"}
+        onSelect={(selected) => {
+            onUpdatePipe(pipe.id, { direction: selected as PipeProps["direction"] });
+            navigator?.pop();
+        }}
+        onCancel={() => navigator?.pop()}
+    />
 );
 
 // --- Pipe Fittings ---
@@ -1673,12 +1719,14 @@ export const BoundaryNodePage = ({ node, onUpdateNode, navigator }: { node: Node
                 <IOSListItem
                     label="Pressure"
                     value={`${node.pressure?.toFixed(2) ?? "-"} ${node.pressureUnit ?? ""}`}
+                    valueColor={getValueColor(node.pressureUpdateStatus)}
                     onClick={() => openQuantityPage("Pressure", "pressure", "pressureUnit", QUANTITY_UNIT_OPTIONS.pressure, "pressure", 0)}
                     chevron
                 />
                 <IOSListItem
                     label="Temperature"
                     value={`${node.temperature?.toFixed(2) ?? "-"} ${node.temperatureUnit ?? ""}`}
+                    valueColor={getValueColor(node.temperatureUpdateStatus)}
                     onClick={() => openQuantityPage("Temperature", "temperature", "temperatureUnit", QUANTITY_UNIT_OPTIONS.temperature, "temperature")}
                     chevron
                     last

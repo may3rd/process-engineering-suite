@@ -4,4 +4,5 @@ export * from './IOSListGroup';
 export * from './IOSListItem';
 export * from './IOSTextField';
 export * from './IOSQuantityPage';
+export * from './IOSPickerPage';
 export * from './TopFloatingToolbar';

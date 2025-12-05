@@ -1,6 +1,6 @@
 import { Box } from "@mui/material";
 import { QuantityInput, QUANTITY_UNIT_OPTIONS } from "../QuantityInput";
-import { IOSQuantityPage } from "@eng-suite/ui-kit";
+import { IOSQuantityPage, IOSPickerPage } from "@eng-suite/ui-kit";
 import { NodeProps, NodePatch } from "@/lib/types";
 import { IOSListGroup } from "@eng-suite/ui-kit";
 import { Navigator } from "../../PropertiesPanel";
@@ -38,76 +38,64 @@ export const TemperaturePage = ({ node, onUpdateNode, navigator }: { node: NodeP
 );
 
 // --- Fluid Sub-Pages ---
-const FluidNamePage = ({ value, onChange }: { value: string, onChange: (v: string) => void }) => (
-    <Box sx={{ pt: 4 }}>
-        <IOSListGroup>
-            <IOSTextField
-                fullWidth
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                onClear={() => onChange("")}
-                placeholder="Fluid Name"
-                autoFocus
-                sx={{ borderRadius: "16px" }}
-            />
-        </IOSListGroup>
-    </Box>
-);
-
-const FluidPhasePage = ({ value, onChange }: { value: "liquid" | "gas", onChange: (v: "liquid" | "gas") => void }) => {
-    const [localValue, setLocalValue] = useState(value);
-    const valueRef = useRef(value);
-    const onChangeRef = useRef(onChange);
-    const isDirty = useRef(false);
-
-    useEffect(() => {
-        onChangeRef.current = onChange;
-    }, [onChange]);
-
-    useEffect(() => {
-        return () => {
-            if (isDirty.current) {
-                onChangeRef.current(valueRef.current);
-            }
-        };
-    }, []);
-
-    const handleSelect = (v: "liquid" | "gas") => {
-        setLocalValue(v);
-        valueRef.current = v;
-        isDirty.current = true;
-    };
+const FluidNamePage = ({ value, onChange, navigator }: { value: string, onChange: (v: string) => void, navigator: Navigator }) => {
+    const originalValue = useRef(value);
 
     return (
         <Box sx={{ pt: 4 }}>
             <IOSListGroup>
-                <IOSListItem
-                    label="Liquid"
-                    value={localValue === "liquid" ? <Check color="primary" sx={{ fontSize: 20 }} /> : ""}
-                    onClick={() => handleSelect("liquid")}
-                />
-                <IOSListItem
-                    label="Gas"
-                    value={localValue === "gas" ? <Check color="primary" sx={{ fontSize: 20 }} /> : ""}
-                    onClick={() => handleSelect("gas")}
-                    last
+                <IOSTextField
+                    fullWidth
+                    value={value}
+                    onChange={(e) => onChange(e.target.value)}
+                    onClear={() => onChange("")}
+                    placeholder="Fluid Name"
+                    autoFocus
+                    sx={{ borderRadius: "16px" }}
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            navigator.pop();
+                        } else if (e.key === "Escape") {
+                            e.preventDefault();
+                            onChange(originalValue.current);
+                            navigator.pop();
+                        }
+                    }}
                 />
             </IOSListGroup>
         </Box>
     );
 };
 
+const FluidPhasePage = ({ value, onChange, navigator }: { value: "liquid" | "gas", onChange: (v: "liquid" | "gas") => void, navigator: Navigator }) => (
+    <IOSPickerPage
+        items={[
+            { label: "Liquid", value: "liquid" },
+            { label: "Gas", value: "gas" },
+        ]}
+        selectedValue={value}
+        onSelect={(selected) => {
+            onChange(selected);
+            navigator.pop();
+        }}
+        onCancel={() => navigator.pop()}
+    />
+);
+
 // --- Helper for Number Input ---
 const NumberInputPage = ({
     value,
     onChange,
     placeholder,
-    autoFocus
+    autoFocus,
+    onBack
 }: {
     value: number | undefined,
     onChange: (val: number) => void,
     placeholder: string,
-    autoFocus?: boolean
+    autoFocus?: boolean,
+    onBack?: () => void
 }) => {
     const [localValue, setLocalValue] = useState(value?.toString() ?? "");
 
@@ -137,6 +125,15 @@ const NumberInputPage = ({
                     placeholder={placeholder}
                     autoFocus={autoFocus}
                     type="number"
+                    onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                            e.preventDefault();
+                            onBack?.();
+                        } else if (e.key === "Escape") {
+                            e.preventDefault();
+                            onBack?.();
+                        }
+                    }}
                 />
             </IOSListGroup>
         </Box>
@@ -155,50 +152,60 @@ export const NodeSelectionPage = ({
     currentNodeId: string
 }) => {
     const availableNodes = nodes.filter(n => n.id !== currentNodeId && n.fluid);
+    const handleSelect = (nodeId: string) => {
+        const selectedNode = availableNodes.find(n => n.id === nodeId);
+        if (selectedNode) {
+            onSelect(selectedNode);
+        }
+    };
+
+    const items = availableNodes.map((n) => {
+        const fluid = n.fluid!;
+        const isLiquid = fluid.phase === "liquid";
+        const secondaryText = isLiquid
+            ? `ρ: ${fluid.density ?? "-"} ${fluid.densityUnit ?? "kg/m3"}, μ: ${fluid.viscosity ?? "-"} ${fluid.viscosityUnit ?? "cP"}`
+            : `MW: ${fluid.molecularWeight ?? "-"}, Z: ${fluid.zFactor ?? "-"}, k: ${fluid.specificHeatRatio ?? "-"}, μ: ${fluid.viscosity ?? "-"} ${fluid.viscosityUnit ?? "cP"}`;
+
+        return {
+            label: n.label || n.id,
+            value: n.id,
+            secondary: secondaryText,
+            icon: (
+                <Box sx={{
+                    width: 32,
+                    height: 32,
+                    borderRadius: "50%",
+                    background: isLiquid ? "linear-gradient(#00C4F9,#0076F0)" : "linear-gradient(#FF6B6B,#FF2D2D)",
+                    color: "white",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "14px",
+                    fontWeight: "bold"
+                }}>
+                    {isLiquid ? "L" : "G"}
+                </Box>
+            ),
+        };
+    });
+
+    if (items.length === 0) {
+        return (
+            <Box sx={{ pt: 2 }}>
+                <IOSListGroup header="Select Node to Copy From">
+                    <IOSListItem label="No other nodes with fluid data" />
+                </IOSListGroup>
+            </Box>
+        );
+    }
 
     return (
-        <Box sx={{ pt: 2 }}>
-            <IOSListGroup header="Select Node to Copy From">
-                {availableNodes.length === 0 ? (
-                    <IOSListItem label="No other nodes with fluid data" />
-                ) : (
-                    availableNodes.map((n, index) => {
-                        const fluid = n.fluid!;
-                        const isLiquid = fluid.phase === "liquid";
-                        const secondaryText = isLiquid
-                            ? `ρ: ${fluid.density ?? "-"} ${fluid.densityUnit ?? "kg/m3"}, μ: ${fluid.viscosity ?? "-"} ${fluid.viscosityUnit ?? "cP"}`
-                            : `MW: ${fluid.molecularWeight ?? "-"}, Z: ${fluid.zFactor ?? "-"}, k: ${fluid.specificHeatRatio ?? "-"}, μ: ${fluid.viscosity ?? "-"} ${fluid.viscosityUnit ?? "cP"}`;
-
-                        return (
-                            <IOSListItem
-                                key={n.id}
-                                label={n.label || n.id}
-                                secondary={secondaryText}
-                                icon={
-                                    <Box sx={{
-                                        width: 32,
-                                        height: 32,
-                                        borderRadius: "50%",
-                                        background: isLiquid ? "linear-gradient(#00C4F9,#0076F0)" : "linear-gradient(#FF6B6B,#FF2D2D)", // Red for Gas
-                                        color: "white",
-                                        display: "flex",
-                                        alignItems: "center",
-                                        justifyContent: "center",
-                                        fontSize: "14px",
-                                        fontWeight: "bold"
-                                    }}>
-                                        {isLiquid ? "L" : "G"}
-                                    </Box>
-                                }
-                                onClick={() => onSelect(n)}
-                                last={index === availableNodes.length - 1}
-                                chevron={false}
-                            />
-                        );
-                    })
-                )}
-            </IOSListGroup>
-        </Box>
+        <IOSPickerPage
+            items={items}
+            onSelect={handleSelect}
+            groupHeader="Select Node to Copy From"
+            autoFocus
+        />
     );
 };
 
@@ -216,6 +223,7 @@ export const NodeFluidPage = ({ node, onUpdateNode, navigator }: { node: NodePro
                 <FluidNamePage
                     value={currentFluid.id}
                     onChange={(v) => onUpdateNode(node.id, { fluid: { ...currentFluid, id: v } })}
+                    navigator={nav}
                 />
             );
         });
@@ -230,6 +238,7 @@ export const NodeFluidPage = ({ node, onUpdateNode, navigator }: { node: NodePro
                 <FluidPhasePage
                     value={currentFluid.phase as "liquid" | "gas"}
                     onChange={(v) => onUpdateNode(node.id, { fluid: { ...currentFluid, phase: v } })}
+                    navigator={nav}
                 />
             );
         });
@@ -329,6 +338,7 @@ export const NodeFluidPage = ({ node, onUpdateNode, navigator }: { node: NodePro
                                     onChange={(val) => onUpdateNode(node.id, { fluid: { ...currentFluid, molecularWeight: val } })}
                                     placeholder="Molecular Weight"
                                     autoFocus
+                                    onBack={() => nav.pop()}
                                 />
                             );
                         })}
@@ -347,6 +357,7 @@ export const NodeFluidPage = ({ node, onUpdateNode, navigator }: { node: NodePro
                                     onChange={(val) => onUpdateNode(node.id, { fluid: { ...currentFluid, zFactor: val } })}
                                     placeholder="Z Factor"
                                     autoFocus
+                                    onBack={() => nav.pop()}
                                 />
                             );
                         })}
@@ -365,6 +376,7 @@ export const NodeFluidPage = ({ node, onUpdateNode, navigator }: { node: NodePro
                                     onChange={(val) => onUpdateNode(node.id, { fluid: { ...currentFluid, specificHeatRatio: val } })}
                                     placeholder="Specific Heat Ratio"
                                     autoFocus
+                                    onBack={() => nav.pop()}
                                 />
                             );
                         })}

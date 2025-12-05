@@ -3,6 +3,7 @@ import { Cancel } from "@mui/icons-material";
 
 type Props = TextFieldProps & {
     onClear?: () => void;
+    onKeyDown?: (event: React.KeyboardEvent) => void;
 };
 
 export function IOSTextField({ sx, onClear, value, InputProps, ...props }: Props) {
@@ -12,6 +13,7 @@ export function IOSTextField({ sx, onClear, value, InputProps, ...props }: Props
     return (
         <TextField
             {...props}
+            onKeyDown={props.onKeyDown}
             value={value}
             variant="outlined"
             InputProps={{
