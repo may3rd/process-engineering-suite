@@ -1,15 +1,13 @@
 "use client";
 
 import { useMemo, useCallback, useEffect, useState, useRef } from "react";
+import type { ComponentType } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import {
   Button,
-  ButtonGroup,
   Stack,
   Box,
   IconButton,
-  ToggleButton,
-  Tooltip,
   Paper,
   useTheme,
   Dialog,
@@ -45,7 +43,6 @@ import {
   Cable as CableIcon,
   InsertDriveFileOutlined as NoteAddIcon,
 } from "@mui/icons-material";
-import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
 import { useNetworkHotkeys } from "@/hooks/useNetworkHotkeys";
 import { useNodeFlowState } from "@/hooks/useNodeFlowState";
 import { EditorToolbar } from "./editor/EditorToolbar";
@@ -58,36 +55,35 @@ import {
   ReactFlowProvider,
   useReactFlow,
   ConnectionMode,
+  MarkerType,
+  applyNodeChanges,
   type Edge,
   type Node,
   type Connection,
   type NodeChange,
-  MarkerType,
-  applyNodeChanges,
   type DefaultEdgeOptions,
   type HandleType,
   type OnConnectStartParams,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
 import PressureNode from "@/components/nodes/PressureNode";
-import BackgroundNode from "@/components/customBackgrounds/BackgroundNode";
 import PipeEdge from "@/components/nodes/PipeEdge";
 import CustomBackground from "@/components/customBackgrounds/CustomBackground";
-import { NetworkState, type NodeProps, type PipeProps } from "@/lib/types";
+import { type NodeProps, type PipeProps } from "@/lib/types";
 import { recalculatePipeFittingLosses } from "@eng-suite/physics";
-import { convertUnit } from "@eng-suite/physics";
 import { useColorMode } from "@/contexts/ColorModeContext";
 import { getPipeEdge } from "@/utils/edgeUtils";
-import { getPressureNode, validateNodeConfiguration } from "@/utils/nodeUtils";
-import ViewSettingsDialog from "@/components/ViewSettingsDialog";
+import { getPressureNode } from "@/utils/nodeUtils";
 import { type ViewSettings } from "@/lib/types";
 import { useCopyPaste } from "@/hooks/useCopyPaste";
 import { CustomCursor } from "./CustomCursor";
 import { glassDialogSx } from "@eng-suite/ui-kit";
 import { useNetworkStore } from "@/store/useNetworkStore";
 
-// ... other imports
-
+/**
+ * Generates a sequential pipe name (P-001, P-002, …) that is unique
+ * within the current network definition.
+ */
 const generateUniquePipeName = (pipes: PipeProps[]): string => {
   let counter = 1;
   while (true) {
@@ -99,6 +95,25 @@ const generateUniquePipeName = (pipes: PipeProps[]): string => {
   }
 };
 
+/**
+ * Generic helper that produces sequential ids with a prefix (prefix-001, ...).
+ * Skips over any identifiers already present in the supplied list.
+ */
+const generateSequentialId = (existingIds: string[], prefix: string): string => {
+  let counter = 1;
+  let candidate = `${prefix}-${String(counter).padStart(3, "0")}`;
+
+  while (existingIds.includes(candidate)) {
+    counter += 1;
+    candidate = `${prefix}-${String(counter).padStart(3, "0")}`;
+  }
+
+  return candidate;
+};
+
+/**
+ * High-level editor wrapper that wires ReactFlowProvider with the actual canvas.
+ */
 export function NetworkEditor({
   height = 520,
   forceLightMode = false,
@@ -128,9 +143,19 @@ export function NetworkEditor({
   );
 }
 
-const nodeTypes = { pressure: PressureNode, background: BackgroundNode } as any;
-const edgeTypes = { pipe: PipeEdge } as any;
+/** Custom node palette shared with React Flow. */
+const nodeTypes = {
+  pressure: PressureNode,
+} satisfies Record<string, ComponentType<any>>;
+/** Custom edge palette shared with React Flow. */
+const edgeTypes = {
+  pipe: PipeEdge,
+} satisfies Record<string, ComponentType<any>>;
 
+/**
+ * The main canvas component containing most of the interaction logic.
+ * Handles state bridging between the store and React Flow plus tools UI.
+ */
 function EditorCanvas({
   height,
   forceLightMode,
@@ -352,6 +377,9 @@ function EditorCanvas({
     markerEnd: { type: MarkerType.ArrowClosed, color: "#94a3b8" },
   };
 
+  /**
+   * Syncs React Flow node changes with local selection state and persisted positions.
+   */
   const handleNodesChange = useCallback(
     (changes: NodeChange<Node>[]) => {
       // Update local nodes for smooth dragging feedback
@@ -409,6 +437,9 @@ function EditorCanvas({
     [network, onNetworkChange, selectedNodeIds]
   );
 
+  /**
+   * Validates and creates a new pipe between the requested nodes.
+   */
   const handleConnect = useCallback(
     (connection: Connection) => {
       if (!connection.source || !connection.target || !onNetworkChange) return;
@@ -432,8 +463,12 @@ function EditorCanvas({
       const startNode = network.nodes.find(node => node.id === connection.source);
       const gasFlowModel: PipeProps["gasFlowModel"] =
         startNode?.fluid?.phase?.toLowerCase() === "gas" ? "adiabatic" : undefined;
+      const newPipeId = generateSequentialId(
+        network.pipes.map((pipe) => pipe.id),
+        "pipe",
+      );
       const newPipe = {
-        id: `pipe-${connection.source}-${connection.target}-${Date.now()}`,
+        id: newPipeId,
         name: generateUniquePipeName(network.pipes),
         startNodeId: connection.source,
         endNodeId: connection.target,
@@ -472,6 +507,7 @@ function EditorCanvas({
   // Hotkey logic moved to useNetworkHotkeys hook
   // ───────────────────────────────────────────────────────────────────────
 
+  /** Rotates the currently selected node clockwise by 90°. */
   const handleRotateCW = useCallback(() => {
     if (!selectedId || selectedType !== "node") return;
     const node = network.nodes.find((n) => n.id === selectedId);
@@ -486,6 +522,7 @@ function EditorCanvas({
     onNetworkChange?.({ ...network, nodes: updatedNodes });
   }, [network, selectedId, selectedType, onNetworkChange]);
 
+  /** Rotates the currently selected node counter-clockwise by 90°. */
   const handleRotateCCW = useCallback(() => {
     if (!selectedId || selectedType !== "node") return;
     const node = network.nodes.find((n) => n.id === selectedId);
@@ -500,6 +537,7 @@ function EditorCanvas({
     onNetworkChange?.({ ...network, nodes: updatedNodes });
   }, [network, selectedId, selectedType, onNetworkChange]);
 
+  /** Flips a horizontal node so inlet/outlet are swapped visually. */
   const handleSwapLeftRight = useCallback(() => {
     if (!selectedId || selectedType !== "node") return;
     const node = network.nodes.find((n) => n.id === selectedId);
@@ -517,6 +555,7 @@ function EditorCanvas({
     onNetworkChange?.({ ...network, nodes: updatedNodes });
   }, [network, selectedId, selectedType, onNetworkChange]);
 
+  /** Flips a vertical node so inlet/outlet are swapped visually. */
   const handleSwapUpDown = useCallback(() => {
     if (!selectedId || selectedType !== "node") return;
     const node = network.nodes.find((n) => n.id === selectedId);
@@ -624,7 +663,10 @@ function EditorCanvas({
         position.y = Math.round(position.y / snapGrid[1]) * snapGrid[1];
       }
 
-      const newNodeId = `node-${Date.now()}`;
+      const newNodeId = generateSequentialId(
+        network.nodes.map((node) => node.id),
+        "node",
+      );
       const sourceNode = network.nodes.find((node) => node.id === fromId);
       const copiedFluid = sourceNode?.fluid ? { ...sourceNode.fluid } : { id: "fluid", phase: "liquid" as "liquid" | "gas" };
       const newNode = {
@@ -648,8 +690,12 @@ function EditorCanvas({
           : network.nodes.find(node => node.id === pipeStartNodeId);
       const gasFlowModel: PipeProps["gasFlowModel"] =
         pipeStartNode?.fluid?.phase?.toLowerCase() === "gas" ? "adiabatic" : undefined;
+      const newPipeId = generateSequentialId(
+        network.pipes.map((pipe) => pipe.id),
+        "pipe",
+      );
       const newPipe = {
-        id: `pipe-${startsFromSourceHandle ? fromId : newNodeId}-${startsFromSourceHandle ? newNodeId : fromId}-${Date.now()}`,
+        id: newPipeId,
         name: generateUniquePipeName(network.pipes),
         startNodeId: pipeStartNodeId,
         endNodeId: startsFromSourceHandle ? newNodeId : fromId,
@@ -723,7 +769,10 @@ function EditorCanvas({
         position.x -= NODE_SIZE / 2;
         position.y -= NODE_SIZE / 2;
 
-        const newNodeId = `node-${Date.now()}`;
+        const newNodeId = generateSequentialId(
+          network.nodes.map((node) => node.id),
+          "node",
+        );
         const newNode = {
           id: newNodeId,
           label: `Node ${network.nodes.length + 1}`,
