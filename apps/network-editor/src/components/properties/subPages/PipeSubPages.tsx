@@ -3,7 +3,7 @@ import { glassInputSx, glassSelectSx, glassRadioSx, glassDialogSx } from "@eng-s
 import { QuantityInput, QUANTITY_UNIT_OPTIONS } from "../QuantityInput";
 import { getScheduleEntries, nearest_pipe_diameter, PIPE_FITTING_OPTIONS } from "./PipeDimension";
 import { PipeProps, PipePatch, FittingType, ViewSettings, NodeProps, NodePatch, UpdateStatus } from "@/lib/types";
-import { IOSListGroup, IOSListItem, IOSTextField, IOSQuantityPage, IOSPickerPage, IOSPickerItem } from "@eng-suite/ui-kit";
+import { IOSListGroup, IOSListItem, IOSQuantityPage, IOSPickerPage, IOSPickerItem, IOSTextInputPage, IOSNumberInputPage } from "@eng-suite/ui-kit";
 import { VelocityCriteriaPage } from './VelocityCriteriaPage';
 import { SERVICE_TYPES } from "@/utils/velocityCriteria";
 import { Check, ArrowForwardIos, Add, Remove, AutoFixHigh, ContentCopy, Close, ErrorOutline } from "@mui/icons-material";
@@ -94,87 +94,45 @@ const getValueColor = (status?: UpdateStatus) => status === "manual" ? USER_INPU
 // --- Name & Description ---
 
 export const NamePage = ({ value, onChange, navigator }: { value: string, onChange: (v: string) => void, navigator: Navigator }) => {
-    const originalValue = useRef(value);
-
     return (
-        <Box sx={{ p: 2 }}>
-            <IOSTextField
-                fullWidth
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                onClear={() => onChange("")}
-                placeholder="Name"
-                autoFocus
-                onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                        e.preventDefault();
-                        navigator.pop();
-                    } else if (e.key === "Escape") {
-                        e.preventDefault();
-                        onChange(originalValue.current);
-                        navigator.pop();
-                    }
-                }}
-            />
-        </Box>
+        <IOSTextInputPage
+            label="Name"
+            value={value}
+            placeholder="Name"
+            autoFocus
+            onCommit={(text) => onChange(text)}
+            onBack={() => navigator.pop()}
+        />
     );
 };
 
 export const DescriptionPage = ({ value, onChange, navigator }: { value: string, onChange: (v: string) => void, navigator: Navigator }) => {
-    const originalValue = useRef(value);
-
     return (
-        <Box sx={{ p: 2 }}>
-            <IOSTextField
-                fullWidth
-                value={value}
-                onChange={(e) => onChange(e.target.value)}
-                onClear={() => onChange("")}
-                placeholder="Description"
-                multiline
-                rows={4}
-                autoFocus
-                onKeyDown={(e) => {
-                    if (e.key === "Escape") {
-                        e.preventDefault();
-                        onChange(originalValue.current);
-                        navigator.pop();
-                    }
-                    // Enter is allowed for multiline
-                }}
-            />
-        </Box>
+        <IOSTextInputPage
+            label="Description"
+            value={value}
+            placeholder="Description"
+            multiline
+            rows={4}
+            autoFocus
+            onCommit={(text) => onChange(text)}
+            onBack={() => navigator.pop()}
+        />
     );
 };
 
 // --- Fluid ---
 
 const FluidNamePage = ({ value, onChange, navigator }: { value: string, onChange: (v: string) => void, navigator: Navigator }) => {
-    const originalValue = useRef(value);
-
     return (
-        <Box sx={{ pt: 4 }}>
-            <IOSListGroup>
-                <IOSTextField
-                    fullWidth
-                    value={value}
-                    onChange={(e) => onChange(e.target.value)}
-                    onClear={() => onChange("")}
-                    placeholder="Fluid Name"
-                    autoFocus
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                            e.preventDefault();
-                            navigator.pop();
-                        } else if (e.key === "Escape") {
-                            e.preventDefault();
-                            onChange(originalValue.current);
-                            navigator.pop();
-                        }
-                    }}
-                />
-            </IOSListGroup>
-        </Box>
+        <IOSTextInputPage
+            label="Fluid Name"
+            value={value}
+            placeholder="Fluid Name"
+            autoFocus
+            onCommit={(text) => onChange(text)}
+            onBack={() => navigator.pop()}
+        />
     );
 };
 
@@ -192,91 +150,6 @@ const FluidPhasePage = ({ value, onChange, navigator }: { value: "liquid" | "gas
         onCancel={() => navigator.pop()}
     />
 );
-
-// --- Helper for Number Input ---
-export const NumberInputPage = ({
-    value,
-    onChange,
-    placeholder,
-    autoFocus,
-    min,
-    onBack
-}: {
-    value: number | undefined,
-    onChange: (val: number | undefined) => void,
-    placeholder: string,
-    autoFocus?: boolean,
-    min?: number,
-    onBack?: () => void
-}) => {
-    const [localValue, setLocalValue] = useState(value?.toString() ?? "");
-
-    useEffect(() => {
-        if (value !== undefined && Number(localValue) !== value) {
-            setLocalValue(value.toString());
-        } else if (value === undefined && localValue !== "") {
-            setLocalValue("");
-        }
-    }, [value]);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newVal = e.target.value;
-        setLocalValue(newVal);
-
-        if (newVal.trim() === "") {
-            onChange(undefined);
-            return;
-        }
-
-        const num = parseFloat(newVal);
-        if (!isNaN(num)) {
-            if (min !== undefined && num < min) {
-                return;
-            }
-            onChange(num);
-        }
-    };
-
-    return (
-        <Box sx={{ pt: 4 }}>
-            <IOSListGroup>
-                <IOSTextField
-                    fullWidth
-                    value={localValue}
-                    onChange={handleChange}
-                    placeholder={placeholder}
-                    autoFocus={autoFocus}
-                    type="number"
-                    sx={{
-                        "& input::-webkit-outer-spin-button, & input::-webkit-inner-spin-button": {
-                            WebkitAppearance: "none",
-                            margin: 0,
-                        },
-                        "& input[type=number]": {
-                            MozAppearance: "textfield",
-                        },
-                    }}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                            e.preventDefault();
-                            // Ensure value is committed before navigating back
-                            const num = parseFloat(localValue);
-                            if (!isNaN(num) && (min === undefined || num >= min)) {
-                                onChange(num);
-                            } else if (localValue.trim() === "") {
-                                onChange(undefined);
-                            }
-                            onBack?.();
-                        } else if (e.key === "Escape") {
-                            e.preventDefault();
-                            onBack?.();
-                        }
-                    }}
-                />
-            </IOSListGroup>
-        </Box>
-    );
-};
 
 export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, onUpdatePipe: (id: string, patch: PipePatch) => void, navigator: Navigator }) => {
     const fluid = pipe.fluid || { id: "fluid", phase: "liquid" };
@@ -423,11 +296,14 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                             if (!currentPipe) return null;
                             const currentFluid = currentPipe.fluid || { id: "fluid", phase: "liquid" };
                             return (
-                                <NumberInputPage
+                                <IOSNumberInputPage
+                                    label="Molecular Weight"
                                     value={currentFluid.molecularWeight}
-                                    onChange={(val) => onUpdatePipe(pipe.id, { fluid: { ...currentFluid, molecularWeight: val } })}
                                     placeholder="Molecular Weight"
+                                    min={0}
                                     autoFocus
+                                    onCommit={(val) => onUpdatePipe(pipe.id, { fluid: { ...currentFluid, molecularWeight: val } })}
+                                    onBack={() => nav.pop()}
                                 />
                             );
                         })}
@@ -442,11 +318,13 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                             if (!currentPipe) return null;
                             const currentFluid = currentPipe.fluid || { id: "fluid", phase: "liquid" };
                             return (
-                                <NumberInputPage
+                                <IOSNumberInputPage
+                                    label="Z Factor"
                                     value={currentFluid.zFactor}
-                                    onChange={(val) => onUpdatePipe(pipe.id, { fluid: { ...currentFluid, zFactor: val } })}
                                     placeholder="Z Factor"
                                     autoFocus
+                                    onCommit={(val) => onUpdatePipe(pipe.id, { fluid: { ...currentFluid, zFactor: val } })}
+                                    onBack={() => nav.pop()}
                                 />
                             );
                         })}
@@ -461,11 +339,13 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                             if (!currentPipe) return null;
                             const currentFluid = currentPipe.fluid || { id: "fluid", phase: "liquid" };
                             return (
-                                <NumberInputPage
+                                <IOSNumberInputPage
+                                    label="Specific Heat Ratio"
                                     value={currentFluid.specificHeatRatio}
-                                    onChange={(val) => onUpdatePipe(pipe.id, { fluid: { ...currentFluid, specificHeatRatio: val } })}
                                     placeholder="Specific Heat Ratio"
                                     autoFocus
+                                    onCommit={(val) => onUpdatePipe(pipe.id, { fluid: { ...currentFluid, specificHeatRatio: val } })}
+                                    onBack={() => nav.pop()}
                                 />
                             );
                         })}
@@ -1006,12 +886,14 @@ export const ControlValvePage = ({ pipe, onUpdatePipe, navigator, viewSettings, 
             if (!currentPipe) return null;
             const currentCV = currentPipe.controlValve || { id: "cv", inputMode: "pressure_drop" };
             return (
-                <NumberInputPage
+                <IOSNumberInputPage
+                    label="CV Value"
                     value={currentCV.cv}
-                    onChange={(v) => onUpdatePipe(pipe.id, { controlValve: { ...currentCV, cv: v, cg: undefined } })}
                     placeholder="CV Value"
-                    autoFocus
                     min={0}
+                    autoFocus
+                    onCommit={(v) => onUpdatePipe(pipe.id, { controlValve: { ...currentCV, cv: v, cg: undefined } })}
+                    onBack={() => nav.pop()}
                 />
             );
         });
@@ -1023,12 +905,14 @@ export const ControlValvePage = ({ pipe, onUpdatePipe, navigator, viewSettings, 
             if (!currentPipe) return null;
             const currentCV = currentPipe.controlValve || { id: "cv", inputMode: "pressure_drop" };
             return (
-                <NumberInputPage
+                <IOSNumberInputPage
+                    label="Cg Value"
                     value={currentCV.cg}
-                    onChange={(v) => onUpdatePipe(pipe.id, { controlValve: { ...currentCV, cg: v, cv: undefined } })}
                     placeholder="Cg Value"
-                    autoFocus
                     min={0}
+                    autoFocus
+                    onCommit={(v) => onUpdatePipe(pipe.id, { controlValve: { ...currentCV, cg: v, cv: undefined } })}
+                    onBack={() => nav.pop()}
                 />
             );
         });
@@ -1198,12 +1082,14 @@ export const OrificePage = ({ pipe, onUpdatePipe, navigator, viewSettings, start
             if (!currentPipe) return null;
             const currentOrifice = currentPipe.orifice || { id: "orifice", inputMode: "beta_ratio" };
             return (
-                <NumberInputPage
+                <IOSNumberInputPage
+                    label="Beta Ratio"
                     value={currentOrifice.betaRatio}
-                    onChange={(v) => onUpdatePipe(pipe.id, { orifice: { ...currentOrifice, betaRatio: v } })}
                     placeholder="Beta Ratio"
-                    autoFocus
                     min={0}
+                    autoFocus
+                    onCommit={(v) => onUpdatePipe(pipe.id, { orifice: { ...currentOrifice, betaRatio: v } })}
+                    onBack={() => nav.pop()}
                 />
             );
         });
@@ -1411,12 +1297,14 @@ export const PipeFittingsPage = ({ pipe, onUpdatePipe, navigator }: { pipe: Pipe
             const currentPipe = net.pipes.find(p => p.id === pipe.id);
             if (!currentPipe) return null;
             return (
-                <NumberInputPage
+                <IOSNumberInputPage
+                    label="User K Value"
                     value={currentPipe.userK}
-                    onChange={(v) => onUpdatePipe(pipe.id, { userK: v })}
                     placeholder="User K Value"
-                    autoFocus
                     min={0}
+                    autoFocus
+                    onCommit={(v) => onUpdatePipe(pipe.id, { userK: v })}
+                    onBack={() => nav.pop()}
                 />
             );
         });

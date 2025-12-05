@@ -1,12 +1,9 @@
 import { Box } from "@mui/material";
 import { QuantityInput, QUANTITY_UNIT_OPTIONS } from "../QuantityInput";
-import { IOSQuantityPage, IOSPickerPage } from "@eng-suite/ui-kit";
+import { IOSQuantityPage, IOSPickerPage, IOSListGroup, IOSListItem, IOSTextInputPage, IOSNumberInputPage } from "@eng-suite/ui-kit";
 import { NodeProps, NodePatch } from "@/lib/types";
-import { IOSListGroup } from "@eng-suite/ui-kit";
 import { Navigator } from "../../PropertiesPanel";
-import { IOSListItem } from "@eng-suite/ui-kit";
 import { Check, ContentCopy } from "@mui/icons-material";
-import { IOSTextField } from "@eng-suite/ui-kit";
 import { useState, useEffect, useRef } from "react";
 
 // --- Pressure ---
@@ -38,35 +35,16 @@ export const TemperaturePage = ({ node, onUpdateNode, navigator }: { node: NodeP
 );
 
 // --- Fluid Sub-Pages ---
-const FluidNamePage = ({ value, onChange, navigator }: { value: string, onChange: (v: string) => void, navigator: Navigator }) => {
-    const originalValue = useRef(value);
-
-    return (
-        <Box sx={{ pt: 4 }}>
-            <IOSListGroup>
-                <IOSTextField
-                    fullWidth
-                    value={value}
-                    onChange={(e) => onChange(e.target.value)}
-                    onClear={() => onChange("")}
-                    placeholder="Fluid Name"
-                    autoFocus
-                    sx={{ borderRadius: "16px" }}
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                            e.preventDefault();
-                            navigator.pop();
-                        } else if (e.key === "Escape") {
-                            e.preventDefault();
-                            onChange(originalValue.current);
-                            navigator.pop();
-                        }
-                    }}
-                />
-            </IOSListGroup>
-        </Box>
-    );
-};
+const FluidNamePage = ({ value, onChange, navigator }: { value: string, onChange: (v: string) => void, navigator: Navigator }) => (
+    <IOSTextInputPage
+        label="Fluid Name"
+        value={value}
+        placeholder="Fluid Name"
+        autoFocus
+        onCommit={(next) => onChange(next)}
+        onBack={() => navigator.pop()}
+    />
+);
 
 const FluidPhasePage = ({ value, onChange, navigator }: { value: "liquid" | "gas", onChange: (v: "liquid" | "gas") => void, navigator: Navigator }) => (
     <IOSPickerPage
@@ -82,63 +60,6 @@ const FluidPhasePage = ({ value, onChange, navigator }: { value: "liquid" | "gas
         onCancel={() => navigator.pop()}
     />
 );
-
-// --- Helper for Number Input ---
-const NumberInputPage = ({
-    value,
-    onChange,
-    placeholder,
-    autoFocus,
-    onBack
-}: {
-    value: number | undefined,
-    onChange: (val: number) => void,
-    placeholder: string,
-    autoFocus?: boolean,
-    onBack?: () => void
-}) => {
-    const [localValue, setLocalValue] = useState(value?.toString() ?? "");
-
-    useEffect(() => {
-        if (value !== undefined && Number(localValue) !== value) {
-            setLocalValue(value.toString());
-        }
-    }, [value]);
-
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const newVal = e.target.value;
-        setLocalValue(newVal);
-
-        const num = parseFloat(newVal);
-        if (!isNaN(num) && newVal.trim() !== "") {
-            onChange(num);
-        }
-    };
-
-    return (
-        <Box sx={{ pt: 4 }}>
-            <IOSListGroup>
-                <IOSTextField
-                    fullWidth
-                    value={localValue}
-                    onChange={handleChange}
-                    placeholder={placeholder}
-                    autoFocus={autoFocus}
-                    type="number"
-                    onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                            e.preventDefault();
-                            onBack?.();
-                        } else if (e.key === "Escape") {
-                            e.preventDefault();
-                            onBack?.();
-                        }
-                    }}
-                />
-            </IOSListGroup>
-        </Box>
-    );
-};
 
 // --- Node Selection for Copying Fluid ---
 
@@ -333,11 +254,13 @@ export const NodeFluidPage = ({ node, onUpdateNode, navigator }: { node: NodePro
                             if (!currentNode) return null;
                             const currentFluid = currentNode.fluid || { id: "fluid", phase: "liquid" };
                             return (
-                                <NumberInputPage
+                                <IOSNumberInputPage
+                                    label="Molecular Weight"
                                     value={currentFluid.molecularWeight}
-                                    onChange={(val) => onUpdateNode(node.id, { fluid: { ...currentFluid, molecularWeight: val } })}
                                     placeholder="Molecular Weight"
+                                    min={0}
                                     autoFocus
+                                    onCommit={(val) => onUpdateNode(node.id, { fluid: { ...currentFluid, molecularWeight: val } })}
                                     onBack={() => nav.pop()}
                                 />
                             );
@@ -352,11 +275,12 @@ export const NodeFluidPage = ({ node, onUpdateNode, navigator }: { node: NodePro
                             if (!currentNode) return null;
                             const currentFluid = currentNode.fluid || { id: "fluid", phase: "liquid" };
                             return (
-                                <NumberInputPage
+                                <IOSNumberInputPage
+                                    label="Z Factor"
                                     value={currentFluid.zFactor}
-                                    onChange={(val) => onUpdateNode(node.id, { fluid: { ...currentFluid, zFactor: val } })}
                                     placeholder="Z Factor"
                                     autoFocus
+                                    onCommit={(val) => onUpdateNode(node.id, { fluid: { ...currentFluid, zFactor: val } })}
                                     onBack={() => nav.pop()}
                                 />
                             );
@@ -371,11 +295,12 @@ export const NodeFluidPage = ({ node, onUpdateNode, navigator }: { node: NodePro
                             if (!currentNode) return null;
                             const currentFluid = currentNode.fluid || { id: "fluid", phase: "liquid" };
                             return (
-                                <NumberInputPage
+                                <IOSNumberInputPage
+                                    label="Specific Heat Ratio"
                                     value={currentFluid.specificHeatRatio}
-                                    onChange={(val) => onUpdateNode(node.id, { fluid: { ...currentFluid, specificHeatRatio: val } })}
                                     placeholder="Specific Heat Ratio"
                                     autoFocus
+                                    onCommit={(val) => onUpdateNode(node.id, { fluid: { ...currentFluid, specificHeatRatio: val } })}
                                     onBack={() => nav.pop()}
                                 />
                             );

@@ -5,4 +5,6 @@ export * from './IOSListItem';
 export * from './IOSTextField';
 export * from './IOSQuantityPage';
 export * from './IOSPickerPage';
+export * from './IOSTextInputPage';
+export * from './IOSNumberInputPage';
 export * from './TopFloatingToolbar';

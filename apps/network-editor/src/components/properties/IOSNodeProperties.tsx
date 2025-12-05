@@ -1,6 +1,6 @@
 import { NodeProps, NodePatch, NetworkState, PipeProps, UpdateStatus } from "@/lib/types";
 import React from "react";
-import { IOSListGroup, IOSListItem, glassListGroupSx, IOSTextField } from "@eng-suite/ui-kit";
+import { IOSListGroup, IOSListItem, glassListGroupSx, IOSTextInputPage } from "@eng-suite/ui-kit";
 import { Navigator } from "../PropertiesPanel";
 import { Box, TextField, Typography, useTheme, Stack, Menu, MenuItem } from "@mui/material";
 import { FloatingNavigationPanel } from "./FloatingNavigationPanel";
@@ -28,17 +28,15 @@ const USER_INPUT_COLOR = "#007AFF";
 
 const getValueColor = (status?: string) => status === 'manual' ? USER_INPUT_COLOR : "inherit";
 
-const NamePage = ({ value, onChange }: { value: string, onChange: (v: string) => void }) => (
-    <Box sx={{ p: 2 }}>
-        <IOSTextField
-            fullWidth
-            value={value}
-            onChange={(e) => onChange(e.target.value)}
-            onClear={() => onChange("")}
-            placeholder="Label"
-            autoFocus
-        />
-    </Box>
+const NamePage = ({ value, onChange, navigator }: { value: string, onChange: (v: string) => void, navigator: Navigator }) => (
+    <IOSTextInputPage
+        label="Label"
+        value={value}
+        placeholder="Label"
+        autoFocus
+        onCommit={(text) => onChange(text)}
+        onBack={() => navigator.pop()}
+    />
 );
 
 export function IOSNodeProperties({
@@ -80,6 +78,7 @@ export function IOSNodeProperties({
                 <NamePage
                     value={currentNode.label || ""}
                     onChange={(v) => onUpdateNode(node.id, { label: v })}
+                    navigator={nav}
                 />
             );
         });
