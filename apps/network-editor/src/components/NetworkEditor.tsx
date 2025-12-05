@@ -921,12 +921,14 @@ function EditorCanvas({
           connectionMode={ConnectionMode.Strict}
           maxZoom={16}
           minZoom={0.1}
-          panActivationKeyCode={undefined} // We handle space panning manually
+          panActivationKeyCode={"Space"} // We handle space panning manually
           deleteKeyCode={['Delete', 'Backspace']}
           selectNodesOnDrag={true}
           nodesConnectable={!isPanMode}
           connectOnClick={!isPanMode}
           nodesDraggable={!isPanMode}
+          panOnScroll={!isPanMode}
+          zoomOnScroll={isPanMode ? true : false}
           panOnDrag={panModeEnabled || [1, 2]} // Pan on left click if in pan mode, or middle/right click always
           selectionKeyCode={isPanMode ? null : "Shift"} // Use Shift for selection if not in pan mode
           multiSelectionKeyCode={isPanMode ? null : "Meta"}
