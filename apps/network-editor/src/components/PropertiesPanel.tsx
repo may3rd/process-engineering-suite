@@ -83,6 +83,23 @@ export function PropertiesPanel() {
 
   const navigator: Navigator = { push, pop };
 
+  useEffect(() => {
+    if (!selectedElement) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape" || event.defaultPrevented) return;
+
+      if (stack.length > 1) {
+        pop();
+      } else {
+        onClose();
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedElement, stack.length, pop, onClose]);
+
   // Reset stack on selection change
   useEffect(() => {
     if (!selectedElement) {

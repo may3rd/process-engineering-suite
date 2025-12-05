@@ -161,13 +161,22 @@ export function IOSNumberInputPage({
         }
     };
 
+    useEffect(() => {
+        const handleGlobalKeyDown = (event: KeyboardEvent) => {
+            if (event.key === "Escape") {
+                event.preventDefault();
+                handleCancel();
+            }
+        };
+
+        window.addEventListener("keydown", handleGlobalKeyDown);
+        return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+    }, [handleCancel]);
+
     const handleKeyDown = (event: React.KeyboardEvent) => {
         if (event.key === "Enter") {
             event.preventDefault();
             commitValue();
-        } else if (event.key === "Escape") {
-            event.preventDefault();
-            handleCancel();
         }
     };
 

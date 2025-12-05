@@ -66,11 +66,13 @@ const FluidPhasePage = ({ value, onChange, navigator }: { value: "liquid" | "gas
 export const NodeSelectionPage = ({
     nodes,
     onSelect,
-    currentNodeId
+    currentNodeId,
+    onCancel,
 }: {
     nodes: NodeProps[],
     onSelect: (node: NodeProps) => void,
-    currentNodeId: string
+    currentNodeId: string,
+    onCancel?: () => void,
 }) => {
     const availableNodes = nodes.filter(n => n.id !== currentNodeId && n.fluid);
     const handleSelect = (nodeId: string) => {
@@ -110,22 +112,18 @@ export const NodeSelectionPage = ({
         };
     });
 
-    if (items.length === 0) {
-        return (
-            <Box sx={{ pt: 2 }}>
-                <IOSListGroup header="Select Node to Copy From">
-                    <IOSListItem label="No other nodes with fluid data" />
-                </IOSListGroup>
-            </Box>
-        );
-    }
-
     return (
         <IOSPickerPage
             items={items}
             onSelect={handleSelect}
             groupHeader="Select Node to Copy From"
             autoFocus
+            onCancel={onCancel}
+            emptyState={(
+                <IOSListGroup header="Select Node to Copy From">
+                    <IOSListItem label="No other nodes with fluid data" />
+                </IOSListGroup>
+            )}
         />
     );
 };
@@ -205,6 +203,7 @@ export const NodeFluidPage = ({ node, onUpdateNode, navigator }: { node: NodePro
                             nav.pop();
                         }
                     }}
+                    onCancel={() => nav.pop()}
                 />
             );
         });

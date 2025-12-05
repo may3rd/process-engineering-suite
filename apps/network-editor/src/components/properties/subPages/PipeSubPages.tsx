@@ -224,6 +224,7 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                             nav.pop();
                         }
                     }}
+                    onCancel={() => nav.pop()}
                 />
             );
         });

@@ -132,26 +132,14 @@ export function IOSPickerPage<T extends string | number>({
         return isSelected ? <Check color="primary" sx={{ fontSize: 16 }} /> : "";
     }, []);
 
-    if (items.length === 0) {
-        return (
-            <Box sx={{ pt: 2 }}>
-                {emptyState || (
-                    <IOSListGroup>
-                        <IOSListItem label="No items available" />
-                    </IOSListGroup>
-                )}
-            </Box>
-        );
-    }
-
-    return (
-        <Box
-            ref={containerRef}
-            sx={{ pt: 2, outline: "none" }}
-            tabIndex={0}
-            onKeyDown={handleKeyDown}
-        >
-            {header}
+    const renderListContent = items.length === 0
+        ? (
+            emptyState || (
+                <IOSListGroup>
+                    <IOSListItem label="No items available" />
+                </IOSListGroup>
+            )
+        ) : (
             <IOSListGroup header={groupHeader}>
                 {items.map((item, index) => {
                     const isSelected = item.value !== undefined && selectedValue !== undefined && item.value === selectedValue;
@@ -176,6 +164,17 @@ export function IOSPickerPage<T extends string | number>({
                     );
                 })}
             </IOSListGroup>
+        );
+
+    return (
+        <Box
+            ref={containerRef}
+            sx={{ pt: 2, outline: "none" }}
+            tabIndex={0}
+            onKeyDown={handleKeyDown}
+        >
+            {header}
+            {renderListContent}
             {footer}
         </Box>
     );
