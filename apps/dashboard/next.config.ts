@@ -50,7 +50,7 @@ const nextConfig: NextConfig = {
 
         // This is the internal destination to the Network Editor app
         // We use a fixed port (3001) for local testing
-        destination: `${networkEditorOrigin}/network-editor/:path*`,
+        destination: `${networkEditorOrigin}/:path*`,
       },
       {
         source: "/docs/:path*",
