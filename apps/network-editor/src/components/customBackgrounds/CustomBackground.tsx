@@ -7,8 +7,13 @@ type ColumnPatternProps = {
     color: string;
 };
 
+
 function ColumnPattern({ color, columnWidth = 350 }: ColumnPatternProps) {
-    return <rect width={columnWidth} height={'100%'} fill={color} />;
+    const rgba = (r: number, g: number, b: number, a: number) => `rgba(${r}, ${g}, ${b}, ${a})`;
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
+    const bgColor = isDark ? 'rgba(30, 41, 59, 0.7)' : 'rgba(255, 255, 255, 0.8)';
+    return <rect width={columnWidth} height={'100%'} fill={bgColor} />;
 }
 
 export type CustomBackgroundProps = {

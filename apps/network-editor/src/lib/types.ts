@@ -13,15 +13,20 @@ export type Coordinate = {
   y: number;
 };
 
+export type UpdateStatus = 'manual' | 'auto';
+
 export type NodeProps = {
   id: string;
   label: string;
   position: Coordinate;
   pressure?: number;
   pressureUnit?: string;
+  pressureUpdateStatus?: UpdateStatus;
   temperature?: number;
   temperatureUnit?: string;
+  temperatureUpdateStatus?: UpdateStatus;
   fluid?: Fluid;
+  fluidUpdateStatus?: UpdateStatus;
   rotation?: number; // 0, 90, 180, 270
 };
 
@@ -99,6 +104,7 @@ export type PipeProps = {
   pipeSchedule?: PipeSchedule,
   diameter?: number;
   diameterUnit?: string;
+  diameterUpdateStatus?: UpdateStatus;
   diameterInputMode?: "nps" | "diameter";
   pipeDiameter?: number,
   pipeDiameterUnit?: string,
@@ -110,6 +116,7 @@ export type PipeProps = {
   roughnessUnit?: string;
   length?: number;
   lengthUnit?: string;
+  lengthUpdateStatus?: UpdateStatus;
   elevation?: number;
   elevationUnit?: string;
   flowAndFittingLoss?: number;
@@ -137,8 +144,10 @@ export type PipeProps = {
   designFlowRateDisplayUnit?: string,
   equivalentLength?: number,
   fluid?: Fluid;
+  fluidUpdateStatus?: UpdateStatus;
   massFlowRate?: number;
   massFlowRateUnit?: string;
+  massFlowRateUpdateStatus?: UpdateStatus;
   velocity?: number;
   velocityUnit?: string;
   designMargin?: number,

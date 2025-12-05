@@ -1,4 +1,4 @@
-import { NodeProps, NodePatch, NetworkState, PipeProps } from "@/lib/types";
+import { NodeProps, NodePatch, NetworkState, PipeProps, UpdateStatus } from "@/lib/types";
 import React from "react";
 import { IOSListGroup, IOSListItem, glassListGroupSx, IOSTextField } from "@eng-suite/ui-kit";
 import { Navigator } from "../PropertiesPanel";
@@ -23,6 +23,10 @@ type Props = {
     onNetworkChange?: (network: NetworkState) => void;
     footerNode?: HTMLDivElement | null;
 };
+
+const USER_INPUT_COLOR = "#007AFF";
+
+const getValueColor = (status?: string) => status === 'manual' ? USER_INPUT_COLOR : "inherit";
 
 const NamePage = ({ value, onChange }: { value: string, onChange: (v: string) => void }) => (
     <Box sx={{ p: 2 }}>
@@ -85,7 +89,7 @@ export function IOSNodeProperties({
         navigator.push("Fluid", (net: NetworkState, nav: Navigator) => {
             const currentNode = net.nodes.find(n => n.id === node.id);
             if (!currentNode) return null;
-            return <NodeFluidPage node={currentNode} onUpdateNode={onUpdateNode} navigator={nav} />;
+            return <NodeFluidPage node={currentNode} onUpdateNode={(id, patch) => onUpdateNode(id, { ...patch, fluidUpdateStatus: 'manual' })} navigator={nav} />;
         });
     };
 
@@ -93,7 +97,7 @@ export function IOSNodeProperties({
         navigator.push("Pressure", (net: NetworkState, nav: Navigator) => {
             const currentNode = net.nodes.find(n => n.id === node.id);
             if (!currentNode) return null;
-            return <PressurePage node={currentNode} onUpdateNode={onUpdateNode} />;
+            return <PressurePage node={currentNode} onUpdateNode={(id, patch) => onUpdateNode(id, { ...patch, pressureUpdateStatus: 'manual' })} />;
         });
     };
 
@@ -101,7 +105,7 @@ export function IOSNodeProperties({
         navigator.push("Temperature", (net: NetworkState, nav: Navigator) => {
             const currentNode = net.nodes.find(n => n.id === node.id);
             if (!currentNode) return null;
-            return <TemperaturePage node={currentNode} onUpdateNode={onUpdateNode} />;
+            return <TemperaturePage node={currentNode} onUpdateNode={(id, patch) => onUpdateNode(id, { ...patch, temperatureUpdateStatus: 'manual' })} />;
         });
     };
 
@@ -124,12 +128,14 @@ export function IOSNodeProperties({
                     const targetUnit = node.pressureUnit || "kPa";
                     updates.pressure = convertUnit(state.pressure, "Pa", targetUnit);
                     updates.pressureUnit = targetUnit;
+                    updates.pressureUpdateStatus = 'auto' as UpdateStatus;
                 }
 
                 if (state.temperature !== undefined) {
                     const targetUnit = node.temperatureUnit || "C";
                     updates.temperature = convertUnit(state.temperature, "K", targetUnit);
                     updates.temperatureUnit = targetUnit;
+                    updates.temperatureUpdateStatus = 'auto' as UpdateStatus;
                 }
             }
         }
@@ -137,6 +143,7 @@ export function IOSNodeProperties({
         // 2. Copy Fluid if Node has none
         if (!node.fluid && connectedPipe.fluid) {
             updates.fluid = { ...connectedPipe.fluid };
+            updates.fluidUpdateStatus = 'auto' as UpdateStatus;
         }
 
         if (Object.keys(updates).length > 0) {
@@ -164,8 +171,10 @@ export function IOSNodeProperties({
                     ...n,
                     pressure: updated.pressure,
                     pressureUnit: updated.pressureUnit,
+                    pressureUpdateStatus: 'auto' as UpdateStatus,
                     temperature: updated.temperature,
                     temperatureUnit: updated.temperatureUnit,
+                    temperatureUpdateStatus: 'auto' as UpdateStatus,
                 };
             }
             return n;
@@ -323,13 +332,13 @@ export function IOSNodeProperties({
             <IOSListGroup>
                 <IOSListItem
                     label="Label"
-                    value={node.label}
+                    value={<span style={{ color: USER_INPUT_COLOR }}>{node.label}</span>}
                     onClick={openNamePage}
                     chevron
                 />
                 <IOSListItem
                     label="Fluid"
-                    value={node.fluid?.id || "None"}
+                    value={<span style={{ color: getValueColor(node.fluidUpdateStatus) }}>{node.fluid?.id || "None"}</span>}
                     onClick={openFluidPage}
                     chevron
                     last
@@ -339,13 +348,13 @@ export function IOSNodeProperties({
             <IOSListGroup>
                 <IOSListItem
                     label="Pressure"
-                    value={`${node.pressure?.toFixed(2) ?? "-"} ${node.pressureUnit ?? ""}`}
+                    value={<span style={{ color: getValueColor(node.pressureUpdateStatus) }}>{`${node.pressure?.toFixed(2) ?? "-"} ${node.pressureUnit ?? ""}`}</span>}
                     onClick={openPressurePage}
                     chevron
                 />
                 <IOSListItem
                     label="Temperature"
-                    value={`${node.temperature?.toFixed(2) ?? "-"} ${node.temperatureUnit ?? ""}`}
+                    value={<span style={{ color: getValueColor(node.temperatureUpdateStatus) }}>{`${node.temperature?.toFixed(2) ?? "-"} ${node.temperatureUnit ?? ""}`}</span>}
                     onClick={openTemperaturePage}
                     chevron
                     last

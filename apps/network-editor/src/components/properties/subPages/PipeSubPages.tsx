@@ -2,7 +2,7 @@ import { Box, TextField, FormControl, InputLabel, Select, MenuItem, Stack, Typog
 import { glassInputSx, glassSelectSx, glassRadioSx, glassDialogSx } from "@eng-suite/ui-kit";
 import { QuantityInput, QUANTITY_UNIT_OPTIONS } from "../QuantityInput";
 import { getScheduleEntries, nearest_pipe_diameter, PIPE_FITTING_OPTIONS } from "./PipeDimension";
-import { PipeProps, PipePatch, FittingType, ViewSettings, NodeProps, NodePatch } from "@/lib/types";
+import { PipeProps, PipePatch, FittingType, ViewSettings, NodeProps, NodePatch, UpdateStatus } from "@/lib/types";
 import { IOSListGroup } from "@eng-suite/ui-kit";
 import { IOSListItem } from "@eng-suite/ui-kit";
 import { IOSTextField } from "@eng-suite/ui-kit";
@@ -627,7 +627,8 @@ export const DiameterPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProp
                         const newDiameter = nearest_pipe_diameter(currentPipe.pipeNPD, v);
                         onUpdatePipe(pipe.id, {
                             pipeSchedule: v,
-                            ...(newDiameter !== undefined ? { diameter: newDiameter, diameterUnit: "mm" } : {})
+                            ...(newDiameter !== undefined ? { diameter: newDiameter, diameterUnit: "mm" } : {}),
+                            diameterUpdateStatus: 'manual' as UpdateStatus
                         });
                     }}
                 />
@@ -647,7 +648,8 @@ export const DiameterPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProp
                         const newDiameter = nearest_pipe_diameter(v, currentPipe.pipeSchedule ?? "40");
                         onUpdatePipe(pipe.id, {
                             pipeNPD: v,
-                            ...(newDiameter !== undefined ? { diameter: newDiameter, diameterUnit: "mm" } : {})
+                            ...(newDiameter !== undefined ? { diameter: newDiameter, diameterUnit: "mm" } : {}),
+                            diameterUpdateStatus: 'manual' as UpdateStatus
                         });
                     }}
                 />
@@ -670,7 +672,7 @@ export const DiameterPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProp
                     unit={currentPipe[unitField] ?? "mm"}
                     units={["mm", "cm", "m", "in", "ft"]}
                     unitFamily="length"
-                    onValueChange={(v) => onUpdatePipe(pipe.id, { [field]: v })}
+                    onValueChange={(v) => onUpdatePipe(pipe.id, { [field]: v, diameterUpdateStatus: 'manual' as UpdateStatus })}
                     onUnitChange={(u) => onUpdatePipe(pipe.id, { [unitField]: u })}
                     min={0}
                     autoFocus
@@ -838,7 +840,7 @@ export const LengthPage = ({ pipe, onUpdatePipe, startNode, endNode }: { pipe: P
 
         if (gradient && gradient > 0) {
             const newLength = targetDeltaP / gradient;
-            onUpdatePipe(pipe.id, { length: newLength });
+            onUpdatePipe(pipe.id, { length: newLength, lengthUpdateStatus: 'auto' as UpdateStatus });
         }
     };
 
@@ -849,7 +851,7 @@ export const LengthPage = ({ pipe, onUpdatePipe, startNode, endNode }: { pipe: P
             unit={pipe.lengthUnit ?? "m"}
             units={QUANTITY_UNIT_OPTIONS.length}
             unitFamily="length"
-            onValueChange={(v) => onUpdatePipe(pipe.id, { length: v })}
+            onValueChange={(v) => onUpdatePipe(pipe.id, { length: v, lengthUpdateStatus: 'manual' as UpdateStatus })}
             onUnitChange={(u) => onUpdatePipe(pipe.id, { lengthUnit: u })}
             min={0}
             autoFocus
@@ -1544,9 +1546,9 @@ export function PipeSummaryPage({ pipe, viewSettings, navigator }: { pipe: PipeP
     return (
         <Box sx={{ pt: 2 }}>
             <IOSListGroup>
-                <IOSListItem label="Pipe" value={results?.pipeLengthK?.toFixed(3) ?? "-"} />
-                <IOSListItem label="Fittings" value={results?.fittingK?.toFixed(3) ?? "-"} />
-                <IOSListItem label="Total" value={results?.totalK?.toFixed(3) ?? "-"} last />
+                <IOSListItem label="Pipe K" value={results?.pipeLengthK?.toFixed(3) ?? "-"} />
+                <IOSListItem label="Fittings K" value={results?.fittingK?.toFixed(3) ?? "-"} />
+                <IOSListItem label="Total K" value={results?.totalK?.toFixed(3) ?? "-"} last />
             </IOSListGroup>
 
             <IOSListGroup>

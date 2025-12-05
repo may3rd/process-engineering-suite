@@ -85,7 +85,7 @@ function PressureNode({ data }: { data: NodeData }) {
 
   const selectionShadow = baseShadow;
 
-  const scaleAmount = isSelected ? 1 : 1;
+  const scaleAmount = isSelected ? 1.2 : 1;
   const circleSize = 20;
 
   // Handle colors
@@ -243,9 +243,9 @@ function PressureNode({ data }: { data: NodeData }) {
             borderRadius: "50%",
             background: fillColor,
             boxShadow: myShadow,
-            animation: isSelected ? "pulse-node-selected 2s infinite" : "none",
             transform: `scale(${scaleAmount})`,
             transition: "background 0.2s ease, box-shadow 0.2s ease, transform 0.15s ease",
+            animation: isSelected ? "pulse-node-selected 2s infinite" : "none",
             position: "absolute",
             top: 0,
             left: 0,
@@ -278,36 +278,33 @@ function PressureNode({ data }: { data: NodeData }) {
           </div>
         )}
       </div>
-      <div
-        style={{
-          backdropFilter: "blur(4px)",
-          position: "absolute",
-          top: circleSize + 4,
-          left: "50%",
-          transform: "translateX(-50%)",
-          textAlign: "center",
-          fontSize: 9,
-          color: textPrimary,
-          background: alpha(paperBackground, 0.7),
-          padding: "2px 4px",
-          borderRadius: 4,
-          pointerEvents: "none",
-          userSelect: "none",
-          whiteSpace: "nowrap",
-          border: `1px solid ${theme.palette.divider}`,
-          zIndex: 10,
-        }}
-      >
-        {data.labelLines && data.labelLines.length > 0 ? (
-          data.labelLines.map((line, i) => (
+      {/* Pressure Node Label */}
+      {data.labelLines && data.labelLines.length > 0 &&
+        <div
+          style={{
+            backdropFilter: "blur(4px)",
+            position: "absolute",
+            top: circleSize + 4,
+            left: "50%",
+            transform: "translateX(-50%)",
+            textAlign: "center",
+            fontSize: 9,
+            color: textPrimary,
+            background: alpha(paperBackground, 0.7),
+            padding: "2px 4px",
+            borderRadius: 4,
+            pointerEvents: "none",
+            userSelect: "none",
+            whiteSpace: "nowrap",
+            border: `1px solid ${theme.palette.divider}`,
+            zIndex: 2,
+          }}
+        >
+          {data.labelLines.map((line, i) => (
             <div key={i}>{line}</div>
-          ))
-        ) : (
-          showPressures && typeof pressure === "number"
-            ? `${label} (${convertUnit(pressure, pressureUnit, displayPressureUnit || pressureUnit).toFixed(2)} ${displayPressureUnit || pressureUnit || ""})`
-            : label
-        )}
-      </div>
+          ))}
+        </div>
+      }
 
       {isHovered && data.node && data.showHoverCard && (
         <HoverCard

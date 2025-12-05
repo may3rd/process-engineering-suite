@@ -54,6 +54,7 @@ import {
   Background,
   Controls,
   MiniMap,
+  Panel,
   ReactFlowProvider,
   useReactFlow,
   ConnectionMode,
@@ -216,11 +217,6 @@ function EditorCanvas({
   };
   const onSelectionChangeProp = setMultiSelection;
 
-  // ... rest of component
-
-  // viewSettings state is now passed as prop
-
-
   const getPressureUnit = (system: ViewSettings["unitSystem"]) => {
     switch (system) {
       case "imperial": return "psig";
@@ -274,9 +270,6 @@ function EditorCanvas({
         const isSelected = selectedType === "node" && selectedId === node.id;
         return mapNodeToReactFlow(node, isSelected);
       });
-
-
-
       return nodes;
     },
     [network.nodes, network.backgroundImage, network.backgroundImageSize, network.backgroundImageOpacity, network.backgroundImagePosition, network.backgroundImageLocked, selectedId, selectedType, mapNodeToReactFlow]
@@ -332,14 +325,8 @@ function EditorCanvas({
   const handlePaste = useCallback((ids: string[]) => {
     pastedNodeIdsRef.current = new Set(ids);
   }, []);
-
-  const onPaste = handlePaste;
-
-  useEffect(() => {
-    if (selectedType === "pipe" && selectedId) {
-      const selectedPipe = network.pipes.find(pipe => pipe.id === selectedId);
-    }
-  }, [selectedType, selectedId, network.pipes]);
+  
+  useCopyPaste(handlePaste);
 
   const rfEdges = useMemo<Edge[]>(
     () =>
@@ -407,9 +394,6 @@ function EditorCanvas({
             };
           }
 
-          // Identify moved nodes
-          // const movedNodeIds = new Set(dragEndedChanges.map(c => c.id)); // No longer needed for label reset
-
           // Update node positions
           updatedNetwork = {
             ...updatedNetwork,
@@ -463,7 +447,7 @@ function EditorCanvas({
         roughness: 0.0457, // Default roughness
         roughnessUnit: "mm",
         fluid: startNode?.fluid ? { ...startNode.fluid } : undefined,
-        gasFlowModel,
+        gasFlowModel: "adiabatic" as "adiabatic" | "isothermal",
         direction: "forward" as "forward" | "backward",
         boundaryPressure: startNode?.pressure,
         boundaryPressureUnit: startNode?.pressureUnit,
@@ -558,8 +542,6 @@ function EditorCanvas({
 
   const { screenToFlowPosition, getNodes, getViewport, setViewport } = useReactFlow();
   const NODE_SIZE = 20;
-
-  useCopyPaste(onPaste);
 
   const { isSpacePanning } = useNetworkHotkeys({
     onDelete,
@@ -895,7 +877,10 @@ function EditorCanvas({
           }}
 
           // Explicit click opens the panel
-          onEdgeClick={(_, edge) => onSelect(edge.id, "pipe", { openPanel: true })}
+          onEdgeClick={(_, edge) => {
+            // Explicitly preserves panel state (open if already open, closed if closed)
+            onSelect(edge.id, "pipe", { openPanel: true })
+          }}
           onPaneClick={handlePaneClick}
           onPaneContextMenu={handlePaneContextMenu}
           onNodesChange={handleNodesChange}
@@ -906,10 +891,9 @@ function EditorCanvas({
               // Implicitly preserves panel state (open if already open, closed if closed)
               if (nodes.length > 0) onSelect(nodes[0].id, "node");
               if (edges.length > 0) onSelect(edges[0].id, "pipe");
-            } else if (nodes.length + edges.length === 0) {
+            } else {
               onSelect(null, null, { openPanel: false });
             }
-
             // Always pass up the full selection for multi-delete support
             onSelectionChangeProp?.({ nodes: nodes.map(n => n.id), edges: edges.map(e => e.id) });
           }, [onSelect, onSelectionChangeProp])}
@@ -932,10 +916,10 @@ function EditorCanvas({
           panOnDrag={panModeEnabled || [1, 2]} // Pan on left click if in pan mode, or middle/right click always
           selectionKeyCode={isPanMode ? null : "Shift"} // Use Shift for selection if not in pan mode
           multiSelectionKeyCode={isPanMode ? null : "Meta"}
+          proOptions={{ hideAttribution: true }}
           style={{ cursor: editorCursor }}
         >
           <CustomBackground
-            color={theme.palette.background.paper}
             backgroundImage={network.backgroundImage}
             backgroundImageSize={network.backgroundImageSize}
             backgroundImagePosition={network.backgroundImagePosition}
@@ -958,6 +942,9 @@ function EditorCanvas({
             style={{ background: "transparent", opacity: 0.5, width: 140, height: 90, border: "1px solid rgba(0, 0, 0, 0.3)" }}
           />
           <Controls />
+          <Panel position="center-left">
+            {/* todo add the adding node panel with drag & drop functionality */}
+          </Panel>
         </ReactFlow>
         <CustomCursor isAddingNode={isAddingNode} nodeSize={NODE_SIZE} containerRef={reactFlowWrapperRef} />
         <style jsx global>{`

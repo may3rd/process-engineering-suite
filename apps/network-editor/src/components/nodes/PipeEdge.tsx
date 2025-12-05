@@ -374,7 +374,7 @@ export default function PipeEdge({
                     }}
                 />
             )}
-
+            {/* Label Layer */}
             <EdgeLabelRenderer>
                 {labelLines.length > 0 && (
                     <div
