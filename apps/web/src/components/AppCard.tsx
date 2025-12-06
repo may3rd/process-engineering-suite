@@ -45,7 +45,7 @@ export const AppCard = ({ title, description, icon, href, status = "active" }: A
             onClick={() => {
                 if (isActive && href) {
                     const separator = href.includes('?') ? '&' : '?';
-                    window.location.href = `${href}${separator}theme=${theme.palette.mode}`;
+                    window.location.href = `${href}`;
                 }
             }}
         >
