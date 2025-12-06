@@ -2,7 +2,7 @@
   "redirects": [
     {
       "source": "/network-editor",
-      "destination": "https://network-editor.vercel.app",
+      "destination": "https://network-editor.vercel.app/network-editor",
       "permanent": false
     }
   ]

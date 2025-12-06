@@ -1,10 +1,19 @@
+export enum FluidState {
+    Gas = 'Gas/Vapor',
+    Liquid = 'Liquid',
+    Water = 'Water',
+    Oil = 'Oil',
+    Air = 'Air',
+    Steam = 'Steam'
+  }
+
 export interface Fluid {
     name?: string;
     density?: number;
     densityUnit?: string;
     viscosity?: number;
     viscosityUnit?: string;
-    phase?: "liquid" | "gas";
+    phase?: FluidState;
     molecularWeight?: number;
     zFactor?: number;
     specificHeatRatio?: number;
