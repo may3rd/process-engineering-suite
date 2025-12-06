@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/network-editor",
+      "destination": "https://network-editor.vercel.app",
+      "permanent": false
+    }
+  ]
+}
