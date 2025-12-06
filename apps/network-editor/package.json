@@ -7,7 +7,7 @@
         "build": "next build",
         "start": "next start",
         "lint": "eslint --max-warnings 0",
-        "typegen": "next typegen && tsc --noEmit"
+        "check-types": "tsc --noEmit"
     },
     "dependencies": {
         "@emotion/react": "^11.14.0",

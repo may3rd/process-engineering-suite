@@ -4,7 +4,7 @@ A unified platform for process design, hydraulic analysis, and equipment sizing.
 
 ## Apps
 
-- **Dashboard** (`apps/dashboard`): The main entry point for the suite. Provides navigation to different tools and manages global settings like theme.
+- **Dashboard** (`apps/web`): The main entry point for the suite. Provides navigation to different tools and manages global settings like theme.
 - **Network Editor** (`apps/network-editor`): A powerful tool for sketching and simulating fluid networks. Features include:
   - Drag-and-drop interface using React Flow.
   - Hydraulic calculations for incompressible flow.

@@ -16,7 +16,7 @@ const createProxyTarget = (
   if (isVercel) {
     const fallback = stripTrailingSlash(productionFallback);
     console.warn(
-      `[dashboard] "${envKey}" not provided. Falling back to "${fallback}".`,
+      `[web] "${envKey}" not provided. Falling back to "${fallback}".`,
     );
     return fallback;
   }

@@ -6,7 +6,7 @@ This is a monorepo containing a suite of tools for process engineering, built wi
 ## Project Structure
 
 ### Apps
-- **`apps/dashboard`**: The main landing page.
+- **`apps/web`**: The main landing page.
   - **Key Files**:
     - `src/app/page.tsx`: Dashboard layout with app cards.
     - `src/components/TopToolbar.tsx`: Navigation bar with theme toggle.
