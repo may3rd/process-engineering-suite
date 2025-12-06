@@ -13,7 +13,7 @@ export interface Fluid {
     densityUnit?: string;
     viscosity?: number;
     viscosityUnit?: string;
-    phase?: FluidState;
+    phase?: "liquid" | "gas";
     molecularWeight?: number;
     zFactor?: number;
     specificHeatRatio?: number;
