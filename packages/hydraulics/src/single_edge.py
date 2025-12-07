@@ -1,5 +1,14 @@
 from dataclasses import dataclass
 from typing import Optional
+
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.network import Network
+from packages.hydraulics.src.models.pipe_section import PipeSection
+from packages.hydraulics.src.models.result import (
+    CalculationResults,
+    ResultSummary,
+    PressureDropDetails as PressureDropCalculationResults,
+)
 from packages.hydraulics.src.utils.units import convert
 
 @dataclass
@@ -28,22 +37,11 @@ class PipeSection:
     piping_fitting_safety_factor: float = 1.0
     # Add any additional properties or methods here
     
-@dataclass
-class ResultSummary:
-    pass
-
-@dataclass
-class FluidState:
-    pass
-
-@dataclass
-class CalculationResults:
-    inlet_fluid_state: FluidState
-    outlet_fluid_state: FluidState
-    result_summary: ResultSummary
-    
-def calculate_pipe_section(
+def calculate_single_edge(
     pipe_section: PipeSection,
 ) -> CalculationResults:
+"""
+Calculate the single edge of a pipe section.
+"""
     # Implement the calculation logic here
     return None
