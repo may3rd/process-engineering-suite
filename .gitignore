@@ -27,6 +27,22 @@ out/
 build
 dist
 
+# Python backend
+__pycache__/
+*.py[cod]
+*.so
+*.egg-info/
+.eggs/
+.venv/
+venv/
+.python-version
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+coverage.*
+htmlcov/
+
 
 # Debug
 npm-debug.log*
