@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from network_hydraulic.calculators.elevation import ElevationCalculator
-from network_hydraulic.calculators.fittings import FittingLossCalculator
-from network_hydraulic.calculators.hydraulics import FrictionCalculator
-from network_hydraulic.calculators.normalization import NormalizedLossCalculator
-from network_hydraulic.models.components import ControlValve
-from network_hydraulic.models.fluid import Fluid
-from network_hydraulic.models.pipe_section import Fitting, PipeSection
+from packages.hydraulics.src.calculators.elevation import ElevationCalculator
+from packages.hydraulics.src.calculators.fittings import FittingLossCalculator
+from packages.hydraulics.src.calculators.hydraulics import FrictionCalculator
+from packages.hydraulics.src.calculators.normalization import NormalizedLossCalculator
+from packages.hydraulics.src.models.components import ControlValve
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.pipe_section import Fitting, PipeSection
 
 
 def _fluid() -> Fluid:

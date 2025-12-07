@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from typing import Protocol
 
-from network_hydraulic.models.pipe_section import PipeSection
+from packages.hydraulics.src.models.pipe_section import PipeSection
 
 
 class LossCalculator(Protocol):

@@ -2,7 +2,7 @@
 
 Example:
 
-    from network_hydraulic.io import results as results_io
+    from packages.hydraulics.src.io import results as results_io
     results_io.write_output(Path("out.yaml"), network, result)
 """
 from __future__ import annotations
@@ -15,29 +15,29 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional
 
 import yaml
 
-from network_hydraulic.models.fluid import GAS_CONSTANT
-from network_hydraulic.models.output_units import OutputUnits
-from network_hydraulic.models.pipe_section import PipeSection
-from network_hydraulic.models.topology import TopologyEdge, TopologyGraph
-from network_hydraulic.models.results import PressureDropDetails
-from network_hydraulic.utils.units import convert as convert_units
+from packages.hydraulics.src.models.fluid import GAS_CONSTANT
+from packages.hydraulics.src.models.output_units import OutputUnits
+from packages.hydraulics.src.models.pipe_section import PipeSection
+from packages.hydraulics.src.models.topology import TopologyEdge, TopologyGraph
+from packages.hydraulics.src.models.results import PressureDropDetails
+from packages.hydraulics.src.utils.units import convert as convert_units
 
 STANDARD_TEMPERATURE = 273.15  # 0 °C
 STANDARD_PRESSURE = 101_325.0  # 1 atm
 
 if TYPE_CHECKING:  # pragma: no cover - hints only
-    from network_hydraulic.models.network import Network
-    from network_hydraulic.models.pipe_section import PipeSection
-    from network_hydraulic.models.results import (
+    from packages.hydraulics.src.models.network import Network
+    from packages.hydraulics.src.models.pipe_section import PipeSection
+    from packages.hydraulics.src.models.results import (
         FittingBreakdown,
         NetworkResult,
         ResultSummary,
         SectionResult,
         StatePoint,
     )
-    from network_hydraulic.models.fluid import Fluid
-    from network_hydraulic.models.pipe_section import Fitting
-    from network_hydraulic.models.network_system import (
+    from packages.hydraulics.src.models.fluid import Fluid
+    from packages.hydraulics.src.models.pipe_section import Fitting
+    from packages.hydraulics.src.models.network_system import (
         NetworkResultBundle,
         NetworkSystem,
         NetworkSystemResult,

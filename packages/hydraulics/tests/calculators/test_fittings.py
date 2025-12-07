@@ -2,9 +2,9 @@ import math
 
 import pytest
 
-from network_hydraulic.calculators.fittings import INCHES_PER_METER, FittingLossCalculator
-from network_hydraulic.models.fluid import Fluid
-from network_hydraulic.models.pipe_section import Fitting, PipeSection
+from packages.hydraulics.src.calculators.fittings import INCHES_PER_METER, FittingLossCalculator
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.pipe_section import Fitting, PipeSection
 
 
 def make_fluid(temperature: float = 298.0, pressure: float = 101325.0, **overrides) -> Fluid:

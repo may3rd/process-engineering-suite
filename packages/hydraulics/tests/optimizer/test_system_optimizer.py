@@ -1,17 +1,17 @@
 from __future__ import annotations
 
-from network_hydraulic.models.components import ControlValve
-from network_hydraulic.models.fluid import Fluid
-from network_hydraulic.models.network import Network
-from network_hydraulic.models.network_system import (
+from packages.hydraulics.src.models.components import ControlValve
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.network import Network
+from packages.hydraulics.src.models.network_system import (
     NetworkBundle,
     NetworkSystem,
     NetworkSystemSettings,
     NetworkOptimizerSettings,
     SystemOptimizerSettings,
 )
-from network_hydraulic.models.pipe_section import PipeSection
-from network_hydraulic.optimizer.system_optimizer import NetworkSystemOptimizer
+from packages.hydraulics.src.models.pipe_section import PipeSection
+from packages.hydraulics.src.optimizer.system_optimizer import NetworkSystemOptimizer
 
 
 def _bundle_with_adjustable_valve(bundle_id: str = "net") -> NetworkBundle:

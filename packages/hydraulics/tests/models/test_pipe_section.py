@@ -1,8 +1,8 @@
 import pytest
 
-from network_hydraulic.models.pipe_section import PipeSection, Fitting
-from network_hydraulic.models.components import ControlValve, Orifice
-from network_hydraulic.models.fluid import Fluid
+from packages.hydraulics.src.models.pipe_section import PipeSection, Fitting
+from packages.hydraulics.src.models.components import ControlValve, Orifice
+from packages.hydraulics.src.models.fluid import Fluid
 
 
 def make_pipe_section(**overrides) -> PipeSection:

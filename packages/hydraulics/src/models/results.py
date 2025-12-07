@@ -2,7 +2,7 @@
 
 Example:
 
-    from network_hydraulic.models.results import NetworkResult
+    from packages.hydraulics.src.models.results import NetworkResult
 
     result = NetworkResult()
 """

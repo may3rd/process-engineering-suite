@@ -1,10 +1,10 @@
 import pytest
 from unittest.mock import patch, MagicMock
 
-from network_hydraulic.calculators.valves import ControlValveCalculator
-from network_hydraulic.models.components import ControlValve
-from network_hydraulic.models.fluid import Fluid
-from network_hydraulic.models.pipe_section import PipeSection
+from packages.hydraulics.src.calculators.valves import ControlValveCalculator
+from packages.hydraulics.src.models.components import ControlValve
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.pipe_section import PipeSection
 
 
 def make_section(control_valve: ControlValve, **overrides) -> PipeSection:
@@ -119,7 +119,7 @@ def test_valve_calculator_raises_on_invalid_conditions(
         calc.calculate(section)
 
 
-@patch("network_hydraulic.calculators.valves.ControlValveCalculator._kv_liquid_simplified")
+@patch("packages.hydraulics.src.calculators.valves.ControlValveCalculator._kv_liquid_simplified")
 def test_simplified_liquid_calculation_is_used_as_fallback(mock_simplified_calc):
     """Test that the simplified liquid Kv calculation is used when fluid properties are missing."""
     mock_simplified_calc.return_value = 1.0  # Dummy Kv value

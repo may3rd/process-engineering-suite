@@ -1,7 +1,7 @@
 """Auxiliary models for valves/orifices used inside pipe sections.
 
 Example:
-    from network_hydraulic.models.components import ControlValve
+    from packages.hydraulics.src.models.components import ControlValve
 
     valve = ControlValve(tag="CV-1", cv=20.0, cg=None, pressure_drop=1000.0, C1=20.0)
 """

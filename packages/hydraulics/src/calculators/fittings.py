@@ -7,10 +7,10 @@ from typing import Dict, Optional, Tuple
 
 from fluids.friction import friction_factor
 
-from network_hydraulic.calculators.base import LossCalculator
-from network_hydraulic.models.fluid import Fluid
-from network_hydraulic.models.pipe_section import Fitting, PipeSection
-from network_hydraulic.models.results import FittingBreakdown
+from packages.hydraulics.src.calculators.base import LossCalculator
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.pipe_section import Fitting, PipeSection
+from packages.hydraulics.src.models.results import FittingBreakdown
 
 INCHES_PER_METER = 1 / 0.0254
 

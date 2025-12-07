@@ -1,10 +1,10 @@
 import pytest
 from unittest.mock import patch
 
-from network_hydraulic.calculators.orifices import OrificeCalculator
-from network_hydraulic.models.components import Orifice
-from network_hydraulic.models.fluid import Fluid
-from network_hydraulic.models.pipe_section import PipeSection
+from packages.hydraulics.src.calculators.orifices import OrificeCalculator
+from packages.hydraulics.src.models.components import Orifice
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.pipe_section import PipeSection
 
 
 def make_section(orifice: Orifice, **overrides) -> PipeSection:
@@ -70,7 +70,7 @@ def test_orifice_raises_with_no_spec():
 
 
 @patch(
-    "network_hydraulic.calculators.orifices.differential_pressure_meter_solver",
+    "packages.hydraulics.src.calculators.orifices.differential_pressure_meter_solver",
     side_effect=Exception("Solver failed"),
 )
 def test_orifice_handles_solver_failure_gracefully(mock_solver):

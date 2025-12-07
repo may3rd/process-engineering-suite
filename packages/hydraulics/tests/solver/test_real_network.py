@@ -7,8 +7,8 @@ from __future__ import annotations
 from pathlib import Path
 import pytest
 
-from network_hydraulic.io.loader import ConfigurationLoader
-from network_hydraulic.solver.network_solver import NetworkSolver
+from packages.hydraulics.src.io.loader import ConfigurationLoader
+from packages.hydraulics.src.solver.network_solver import NetworkSolver
 
 FIXTURE_DIR = Path(__file__).resolve().parent
 

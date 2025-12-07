@@ -4,9 +4,9 @@ from pathlib import Path
 from numpy import outer
 import pytest
 
-from network_hydraulic.io.loader import ConfigurationLoader
-from network_hydraulic.solver.network_solver import NetworkSolver
-from network_hydraulic.utils.units import convert
+from packages.hydraulics.src.io.loader import ConfigurationLoader
+from packages.hydraulics.src.solver.network_solver import NetworkSolver
+from packages.hydraulics.src.utils.units import convert
 
 FIXTURE_DIR = Path(__file__).resolve().parent
 

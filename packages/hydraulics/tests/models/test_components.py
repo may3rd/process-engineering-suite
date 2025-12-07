@@ -1,6 +1,6 @@
 import pytest
 
-from network_hydraulic.models.components import ControlValve, Orifice
+from packages.hydraulics.src.models.components import ControlValve, Orifice
 
 
 def make_control_valve(**overrides) -> ControlValve:

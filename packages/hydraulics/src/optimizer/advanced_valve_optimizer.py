@@ -4,7 +4,7 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Optional, Tuple
 
-from network_hydraulic.models.network import Network
+from packages.hydraulics.src.models.network import Network
 from .valve_optimizer import optimize_control_valves
 
 

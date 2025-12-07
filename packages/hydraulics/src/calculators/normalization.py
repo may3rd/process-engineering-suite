@@ -3,8 +3,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from network_hydraulic.calculators.base import LossCalculator
-from network_hydraulic.models.pipe_section import PipeSection
+from packages.hydraulics.src.calculators.base import LossCalculator
+from packages.hydraulics.src.models.pipe_section import PipeSection
 
 
 @dataclass

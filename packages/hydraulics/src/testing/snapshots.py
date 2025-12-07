@@ -3,13 +3,13 @@ from __future__ import annotations
 
 from typing import Any, Dict, Optional
 
-from network_hydraulic.models.results import (
+from packages.hydraulics.src.models.results import (
     NetworkResult,
     PressureDropDetails,
     SectionResult,
     StatePoint,
 )
-from network_hydraulic.models.network_system import NetworkSystemResult, NetworkResultBundle
+from packages.hydraulics.src.models.network_system import NetworkSystemResult, NetworkResultBundle
 
 
 def _round_value(value: Optional[float], precision: int = 9) -> Optional[float]:

@@ -1,6 +1,6 @@
 import pytest
 
-from network_hydraulic.models.fluid import Fluid
+from packages.hydraulics.src.models.fluid import Fluid
 
 
 def make_fluid(**overrides) -> Fluid:

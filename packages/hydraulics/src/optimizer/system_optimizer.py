@@ -4,16 +4,16 @@ from __future__ import annotations
 import logging
 from typing import Optional
 
-from network_hydraulic.models.network_system import (
+from packages.hydraulics.src.models.network_system import (
     NetworkBundle,
     NetworkOptimizerSettings,
     NetworkSystem,
     SystemOptimizerSettings,
 )
-from network_hydraulic.optimizer.advanced_valve_optimizer import (
+from packages.hydraulics.src.optimizer.advanced_valve_optimizer import (
     advanced_optimize_control_valves,
 )
-from network_hydraulic.optimizer.valve_optimizer import optimize_control_valves
+from packages.hydraulics.src.optimizer.valve_optimizer import optimize_control_valves
 
 logger = logging.getLogger(__name__)
 

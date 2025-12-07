@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from typing import Optional
-from .utils.units import convert
+from packages.hydraulics.src.utils.units import convert
 
 @dataclass
 class PipeSection:

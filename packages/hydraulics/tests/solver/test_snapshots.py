@@ -6,11 +6,11 @@ from typing import List, Tuple
 
 import pytest
 
-from network_hydraulic.io.loader import ConfigurationLoader
-from network_hydraulic.solver.network_solver import NetworkSolver
-from network_hydraulic.solver.network_system_solver import NetworkSystemSolver
-from network_hydraulic.optimizer.system_optimizer import NetworkSystemOptimizer
-from network_hydraulic.testing.snapshots import snapshot_payload, system_snapshot_payload
+from packages.hydraulics.src.io.loader import ConfigurationLoader
+from packages.hydraulics.src.solver.network_solver import NetworkSolver
+from packages.hydraulics.src.solver.network_system_solver import NetworkSystemSolver
+from packages.hydraulics.src.optimizer.system_optimizer import NetworkSystemOptimizer
+from packages.hydraulics.src.testing.snapshots import snapshot_payload, system_snapshot_payload
 
 FIXTURE_ROOT = Path(__file__).resolve().parents[1] / "fixtures"
 NETWORKS_DIR = FIXTURE_ROOT / "networks"

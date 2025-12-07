@@ -4,9 +4,9 @@ import pytest
 
 from pathlib import Path
 
-from network_hydraulic.io.loader import ConfigurationLoader
-from network_hydraulic.optimizer.system_optimizer import NetworkSystemOptimizer
-from network_hydraulic.solver.network_system_solver import NetworkSystemSolver
+from packages.hydraulics.src.io.loader import ConfigurationLoader
+from packages.hydraulics.src.optimizer.system_optimizer import NetworkSystemOptimizer
+from packages.hydraulics.src.solver.network_system_solver import NetworkSystemSolver
 
 
 def _system_config() -> dict:

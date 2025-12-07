@@ -1,8 +1,8 @@
 import pytest
 
-from network_hydraulic.calculators.hydraulics import FrictionCalculator
-from network_hydraulic.models.fluid import Fluid
-from network_hydraulic.models.pipe_section import PipeSection
+from packages.hydraulics.src.calculators.hydraulics import FrictionCalculator
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.pipe_section import PipeSection
 
 
 def make_fluid(**overrides) -> Fluid:

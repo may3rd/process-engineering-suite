@@ -1,9 +1,9 @@
 import pytest
 
-from network_hydraulic.calculators.orifices import OrificeCalculator
-from network_hydraulic.models.components import Orifice
-from network_hydraulic.models.fluid import Fluid
-from network_hydraulic.models.pipe_section import PipeSection
+from packages.hydraulics.src.calculators.orifices import OrificeCalculator
+from packages.hydraulics.src.models.components import Orifice
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.pipe_section import PipeSection
 
 
 def make_section(orifice: Orifice, **overrides) -> PipeSection:

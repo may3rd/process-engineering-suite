@@ -12,10 +12,10 @@ from fluids.flow_meter import (
     dP_orifice,
 )
 
-from network_hydraulic.calculators.base import LossCalculator
-from network_hydraulic.models.components import Orifice
-from network_hydraulic.models.fluid import Fluid
-from network_hydraulic.models.pipe_section import PipeSection
+from packages.hydraulics.src.calculators.base import LossCalculator
+from packages.hydraulics.src.models.components import Orifice
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.pipe_section import PipeSection
 
 logger = logging.getLogger(__name__)
 

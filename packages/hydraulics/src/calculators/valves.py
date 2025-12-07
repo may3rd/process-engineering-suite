@@ -7,9 +7,9 @@ from typing import Callable, Optional
 
 from fluids.control_valve import convert_flow_coefficient, size_control_valve_g, size_control_valve_l
 
-from network_hydraulic.calculators.base import LossCalculator
-from network_hydraulic.models.fluid import Fluid
-from network_hydraulic.models.pipe_section import PipeSection
+from packages.hydraulics.src.calculators.base import LossCalculator
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.pipe_section import PipeSection
 
 MIN_PRESSURE = 1.0  # Pa to avoid zero/negative outlet pressures
 

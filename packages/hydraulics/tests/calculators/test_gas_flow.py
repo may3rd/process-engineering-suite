@@ -1,6 +1,6 @@
 import pytest
 
-from network_hydraulic.calculators import gas_flow
+from packages.hydraulics.src.calculators import gas_flow
 
 
 def test_solve_adiabatic_zero_length_returns_boundary():

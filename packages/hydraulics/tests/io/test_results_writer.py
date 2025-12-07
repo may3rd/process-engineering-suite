@@ -4,11 +4,11 @@ from pathlib import Path
 import pytest
 import yaml
 
-from network_hydraulic.io import results as results_io
-from network_hydraulic.models.fluid import Fluid, GAS_CONSTANT
-from network_hydraulic.models.network import Network
-from network_hydraulic.models.pipe_section import PipeSection
-from network_hydraulic.models.results import (
+from packages.hydraulics.src.io import results as results_io
+from packages.hydraulics.src.models.fluid import Fluid, GAS_CONSTANT
+from packages.hydraulics.src.models.network import Network
+from packages.hydraulics.src.models.pipe_section import PipeSection
+from packages.hydraulics.src.models.results import (
     CalculationOutput,
     NetworkResult,
     PressureDropDetails,
@@ -16,9 +16,9 @@ from network_hydraulic.models.results import (
     SectionResult,
     StatePoint,
 )
-from network_hydraulic.models.output_units import OutputUnits
-from network_hydraulic.models.network_system import NetworkResultBundle, NetworkSystemResult
-from network_hydraulic.utils.units import convert
+from packages.hydraulics.src.models.output_units import OutputUnits
+from packages.hydraulics.src.models.network_system import NetworkResultBundle, NetworkSystemResult
+from packages.hydraulics.src.utils.units import convert
 
 
 def build_section(section_id: str = "sec-1") -> PipeSection:

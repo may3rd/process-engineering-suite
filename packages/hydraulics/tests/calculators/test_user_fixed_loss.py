@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from network_hydraulic.calculators.user_fixed_loss import UserFixedLossCalculator
-from network_hydraulic.models.pipe_section import Fitting, PipeSection
+from packages.hydraulics.src.calculators.user_fixed_loss import UserFixedLossCalculator
+from packages.hydraulics.src.models.pipe_section import Fitting, PipeSection
 
 
 def build_section() -> PipeSection:

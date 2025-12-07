@@ -1,2 +1,2 @@
-"""Shared testing utilities for network_hydraulic."""
+"""Shared testing utilities for packages.hydraulics.src."""
 

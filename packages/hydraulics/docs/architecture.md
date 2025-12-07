@@ -9,11 +9,13 @@ The framework separates data modeling, hydraulic calculations, IO, and orchestra
 5. **CLI**: Provides entry points for running calculations with configuration files and selecting output formats.
 
 ## Data Flow
+
 ```
 config -> loader -> Network -> solver -> CalculationOutput / ResultSummary -> report
 ```
 
 ## Extension Points
+
 - Add new loss calculators by implementing the `LossCalculator` protocol.
-- Support additional file formats by adding serializers in `network_hydraulic.io`.
+- Support additional file formats by adding serializers in `packages.hydraulics.src.io`.
 - Introduce alternative fluids, fittings libraries, or empirical correlations in the models layer.

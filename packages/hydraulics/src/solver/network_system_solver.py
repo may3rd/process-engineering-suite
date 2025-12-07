@@ -5,14 +5,14 @@ import logging
 from dataclasses import dataclass, field
 from typing import Dict
 
-from network_hydraulic.models.network_system import (
+from packages.hydraulics.src.models.network_system import (
     NetworkBundle,
     NetworkResultBundle,
     NetworkSystem,
     NetworkSystemResult,
     SharedNodeGroup,
 )
-from network_hydraulic.solver.network_solver import NetworkSolver
+from packages.hydraulics.src.solver.network_solver import NetworkSolver
 
 logger = logging.getLogger(__name__)
 

@@ -1,12 +1,12 @@
 import pytest
 from fluids.control_valve import convert_flow_coefficient, size_control_valve_g, size_control_valve_l
 
-from network_hydraulic.calculators.valves import ControlValveCalculator
-from network_hydraulic.calculators.orifices import OrificeCalculator
-from network_hydraulic.models.components import ControlValve
-from network_hydraulic.models.fluid import Fluid
-from network_hydraulic.models.pipe_section import PipeSection
-from network_hydraulic.solver.network_solver import NetworkSolver
+from packages.hydraulics.src.calculators.valves import ControlValveCalculator
+from packages.hydraulics.src.calculators.orifices import OrificeCalculator
+from packages.hydraulics.src.models.components import ControlValve
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.pipe_section import PipeSection
+from packages.hydraulics.src.solver.network_solver import NetworkSolver
 
 
 def make_section(control_valve: ControlValve, **overrides) -> PipeSection:

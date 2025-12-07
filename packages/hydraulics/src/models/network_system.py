@@ -4,8 +4,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Dict, List
 
-from network_hydraulic.models.network import Network
-from network_hydraulic.models.results import NetworkResult
+from packages.hydraulics.src.models.network import Network
+from packages.hydraulics.src.models.results import NetworkResult
 
 
 @dataclass(slots=True)

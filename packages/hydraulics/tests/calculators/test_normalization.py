@@ -1,5 +1,5 @@
-from network_hydraulic.calculators.normalization import NormalizedLossCalculator
-from network_hydraulic.models.pipe_section import PipeSection
+from packages.hydraulics.src.calculators.normalization import NormalizedLossCalculator
+from packages.hydraulics.src.models.pipe_section import PipeSection
 
 
 def make_section(**overrides) -> PipeSection:

@@ -4,10 +4,10 @@ from typing import Iterable, List
 
 import pytest
 
-from network_hydraulic.models.fluid import Fluid
-from network_hydraulic.models.network import Network
-from network_hydraulic.models.pipe_section import Fitting, PipeSection
-from network_hydraulic.solver.network_solver import NetworkSolver
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.network import Network
+from packages.hydraulics.src.models.pipe_section import Fitting, PipeSection
+from packages.hydraulics.src.solver.network_solver import NetworkSolver
 
 
 def _make_test_fluid() -> Fluid:

@@ -1,4 +1,4 @@
-from network_hydraulic.models.fluid import Fluid
+from packages.hydraulics.src.models.fluid import Fluid
 
 
 def test_fluid_defaults() -> None:

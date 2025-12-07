@@ -4,9 +4,9 @@ from pathlib import Path
 
 import pytest
 
-from network_hydraulic.io.loader import ConfigurationLoader
-from network_hydraulic.models.pipe_section import Fitting
-from network_hydraulic.utils.units import convert
+from packages.hydraulics.src.io.loader import ConfigurationLoader
+from packages.hydraulics.src.models.pipe_section import Fitting
+from packages.hydraulics.src.utils.units import convert
 
 
 def section_cfg(**overrides):

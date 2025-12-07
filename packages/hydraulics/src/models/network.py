@@ -3,7 +3,7 @@
 
 Example:
 
-    from network_hydraulic.models import fluid, network
+    from packages.hydraulics.src.models import fluid, network
 
     fluid_model = fluid.Fluid(...)
     net = network.Network(name="demo", description="Sample", fluid=fluid_model)
@@ -15,11 +15,11 @@ import logging
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from network_hydraulic.models.fluid import Fluid
-from network_hydraulic.models.pipe_section import PipeSection
-from network_hydraulic.models.results import CalculationOutput, ResultSummary
-from network_hydraulic.models.output_units import OutputUnits
-from network_hydraulic.models.topology import TopologyGraph, build_topology_from_sections
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.pipe_section import PipeSection
+from packages.hydraulics.src.models.results import CalculationOutput, ResultSummary
+from packages.hydraulics.src.models.output_units import OutputUnits
+from packages.hydraulics.src.models.topology import TopologyGraph, build_topology_from_sections
 
 logger = logging.getLogger(__name__)
 

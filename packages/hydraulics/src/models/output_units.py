@@ -2,7 +2,7 @@
 
 Example:
 
-    from network_hydraulic.models.output_units import OutputUnits
+    from packages.hydraulics.src.models.output_units import OutputUnits
 
     units = OutputUnits(pressure="kPag", temperature="degC")
 """
@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import asdict, dataclass
 from typing import Dict
 
-from network_hydraulic.utils.units import convert
+from packages.hydraulics.src.utils.units import convert
 
 
 @dataclass(slots=True)

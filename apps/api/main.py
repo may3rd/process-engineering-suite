@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from engsuite.hydraulics.src.single_edge import calculate_single_edge
-from engsuite.hydraulics.src.propagation import propagate
+from packages.hydraulics.src.single_edge import calculate_pipe_section, PipeSection, CalculationResults, ResultSummary, FluidState
 
 app = FastAPI(title="Process Engineering Suite API")
 
@@ -16,20 +15,22 @@ app.add_middleware(
 @app.post("/hydraulics/edge/{edge_id}")
 async def recalc_edge(edge_id: str, payload: dict):
     edge = payload["edge"]
-    inlet_p = payload.get("inletPressurePa")          # from upstream node
-    inlet_t = payload.get("inletTemperatureC", 25)
+    pipe_section = PipeSection(
+        id=edge["id"],
+        name=edge["name"],
+    )
+    
+    # if not result.valid:
+    #     return {"edge_id": edge_id, "result": None}
 
-    result = calculate_single_edge(edge, inlet_p, inlet_t)
+    # # Propagate instantly
+    # propagated = propagate(payload["fullState"], edge_id)
+    # propagated = propagate(payload["fullState"], edge_id)
 
-    if not result.valid:
-        return {"edge_id": edge_id, "result": None}
-
-    # Propagate instantly
-    propagated = propagate(payload["fullState"], edge_id)
-    propagated = propagate(payload["fullState"], edge_id)
-
-    return {
-        "edge_id": edge_id,
-        "result": result.__dict__,
-        "propagated": propagated
-    }
+    # return {
+    #     "edge_id": edge_id,
+    #     "result": result.__dict__,
+    #     "propagated": propagated
+    # }
+    
+    return None

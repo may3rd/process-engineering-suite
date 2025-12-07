@@ -2,7 +2,7 @@
 
 Example:
 
-    from network_hydraulic.models.pipe_section import PipeSection, Fitting
+    from packages.hydraulics.src.models.pipe_section import PipeSection, Fitting
     section = PipeSection(
         id="sec-1",
         schedule="40",
@@ -21,9 +21,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import List, Optional
 
-from network_hydraulic.models.components import ControlValve, Orifice
-from network_hydraulic.models.results import CalculationOutput, ResultSummary
-from network_hydraulic.models.fluid import Fluid
+from packages.hydraulics.src.models.components import ControlValve, Orifice
+from packages.hydraulics.src.models.results import CalculationOutput, ResultSummary
+from packages.hydraulics.src.models.fluid import Fluid
 
 ALLOWED_FITTING_TYPES = [
     "elbow_90",
@@ -110,6 +110,7 @@ class PipeSection:
     from_pipe_id: Optional[str] = None
     to_pipe_id: Optional[str] = None
     equivalent_length: Optional[float] = None
+    
     @property
     def start_node_id(self) -> Optional[str]:
         return self.from_pipe_id

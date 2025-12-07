@@ -27,7 +27,7 @@ dev = [
 ]
 
 [project.scripts]
-network-hydraulic = "network_hydraulic.cli.app:main"
+network-hydraulic = "packages.hydraulics.src.cli.app:main"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

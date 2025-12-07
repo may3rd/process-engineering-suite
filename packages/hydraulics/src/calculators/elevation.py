@@ -3,9 +3,9 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Optional
 
-from network_hydraulic.calculators.base import LossCalculator
-from network_hydraulic.models.fluid import Fluid
-from network_hydraulic.models.pipe_section import PipeSection
+from packages.hydraulics.src.calculators.base import LossCalculator
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.pipe_section import PipeSection
 
 GRAVITY = 9.80665  # m/s^2, standard gravity
 GAS_PHASES = {"gas", "vapor"}

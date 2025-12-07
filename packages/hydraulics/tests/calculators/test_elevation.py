@@ -1,6 +1,6 @@
-from network_hydraulic.calculators.elevation import ElevationCalculator
-from network_hydraulic.models.fluid import Fluid
-from network_hydraulic.models.pipe_section import PipeSection
+from packages.hydraulics.src.calculators.elevation import ElevationCalculator
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.pipe_section import PipeSection
 
 
 def make_fluid(**overrides) -> Fluid:

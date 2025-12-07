@@ -4,7 +4,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Optional, Callable, Set
 
-from network_hydraulic.models.pipe_section import PipeSection
+from packages.hydraulics.src.models.pipe_section import PipeSection
 
 
 @dataclass(slots=True)

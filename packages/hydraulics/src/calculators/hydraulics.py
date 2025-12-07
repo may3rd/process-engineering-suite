@@ -8,9 +8,9 @@ from typing import Optional
 from fluids.friction import friction_factor as colebrook_friction_factor
 from fluids.friction import Shacham_1980 as shacham_friction_factor
 
-from network_hydraulic.calculators.base import LossCalculator
-from network_hydraulic.models.fluid import Fluid
-from network_hydraulic.models.pipe_section import PipeSection
+from packages.hydraulics.src.calculators.base import LossCalculator
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.pipe_section import PipeSection
 
 
 @dataclass

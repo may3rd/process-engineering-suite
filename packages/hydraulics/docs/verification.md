@@ -22,7 +22,7 @@ The script:
 
 1. Loads the config via `ConfigurationLoader`.
 2. Runs `NetworkSolver`.
-3. Serializes the aggregate + per-section data (pressures, losses, etc.) using `network_hydraulic.testing.snapshots`.
+3. Serializes the aggregate + per-section data (pressures, losses, etc.) using `packages.hydraulics.src.testing.snapshots`.
 4. Writes the JSON payload (sorted keys, rounded floats) to the output path.
 
 ## Adding a New Fixture
@@ -33,4 +33,3 @@ The script:
 4. Run `pytest tests/solver/test_snapshots.py` to ensure the snapshot suite passes.
 
 Snapshots are deterministic: if a change intentionally alters results, rerun the script to refresh the relevant JSON and include the diff in your review. If the change is unintended, the failing test points to the affected fixture so you can investigate.
-

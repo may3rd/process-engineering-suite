@@ -2,7 +2,7 @@
 
 Example:
 
-    from network_hydraulic.io.loader import ConfigurationLoader
+    from packages.hydraulics.src.io.loader import ConfigurationLoader
 
     loader = ConfigurationLoader.from_yaml_path(Path("config/sample.yaml"))
     network = loader.build_network()
@@ -20,10 +20,10 @@ from xml.etree import ElementTree as ET
 
 from ruamel.yaml import YAML
 
-from network_hydraulic.models.components import ControlValve, Orifice
-from network_hydraulic.models.fluid import Fluid
-from network_hydraulic.models.network import Network
-from network_hydraulic.models.network_system import (
+from packages.hydraulics.src.models.components import ControlValve, Orifice
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.network import Network
+from packages.hydraulics.src.models.network_system import (
     NetworkBundle,
     NetworkSystem,
     NetworkSystemSettings,
@@ -32,16 +32,16 @@ from network_hydraulic.models.network_system import (
     SharedNodeGroup,
     SharedNodeMember,
 )
-from network_hydraulic.models.network_system import (
+from packages.hydraulics.src.models.network_system import (
     NetworkBundle,
     NetworkSystem,
     SharedNodeGroup,
     SharedNodeMember,
 )
-from network_hydraulic.models.pipe_section import Fitting, PipeSection
-from network_hydraulic.models.output_units import OutputUnits
-from network_hydraulic.utils.pipe_dimensions import inner_diameter_from_nps
-from network_hydraulic.utils.units import convert as convert_units
+from packages.hydraulics.src.models.pipe_section import Fitting, PipeSection
+from packages.hydraulics.src.models.output_units import OutputUnits
+from packages.hydraulics.src.utils.pipe_dimensions import inner_diameter_from_nps
+from packages.hydraulics.src.utils.units import convert as convert_units
 
 SWAGE_ABSOLUTE_TOLERANCE = 1e-6
 SWAGE_RELATIVE_TOLERANCE = 1e-3

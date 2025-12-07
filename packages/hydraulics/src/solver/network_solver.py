@@ -2,10 +2,10 @@
 
 Example:
 
-    from network_hydraulic.models.fluid import Fluid
-    from network_hydraulic.models.network import Network
-    from network_hydraulic.models.pipe_section import PipeSection, Fitting
-    from network_hydraulic.solver.network_solver import NetworkSolver
+    from packages.hydraulics.src.models.fluid import Fluid
+    from packages.hydraulics.src.models.network import Network
+    from packages.hydraulics.src.models.pipe_section import PipeSection, Fitting
+    from packages.hydraulics.src.solver.network_solver import NetworkSolver
 
     fluid = Fluid(...)
     network = Network(name="test", description=None, fluid=fluid, sections=[...])
@@ -21,16 +21,16 @@ from dataclasses import dataclass
 from math import pi, sqrt
 from typing import Dict, Iterable, List, Optional
 
-from network_hydraulic.calculators.elevation import ElevationCalculator
-from network_hydraulic.calculators.fittings import FittingLossCalculator
-from network_hydraulic.calculators.hydraulics import FrictionCalculator
-from network_hydraulic.calculators.normalization import NormalizedLossCalculator
-from network_hydraulic.calculators.orifices import OrificeCalculator
-from network_hydraulic.calculators.user_fixed_loss import UserFixedLossCalculator
-from network_hydraulic.calculators.valves import ControlValveCalculator
-from network_hydraulic.models.network import Network
-from network_hydraulic.models.pipe_section import PipeSection
-from network_hydraulic.models.results import (
+from packages.hydraulics.src.calculators.elevation import ElevationCalculator
+from packages.hydraulics.src.calculators.fittings import FittingLossCalculator
+from packages.hydraulics.src.calculators.hydraulics import FrictionCalculator
+from packages.hydraulics.src.calculators.normalization import NormalizedLossCalculator
+from packages.hydraulics.src.calculators.orifices import OrificeCalculator
+from packages.hydraulics.src.calculators.user_fixed_loss import UserFixedLossCalculator
+from packages.hydraulics.src.calculators.valves import ControlValveCalculator
+from packages.hydraulics.src.models.network import Network
+from packages.hydraulics.src.models.pipe_section import PipeSection
+from packages.hydraulics.src.models.results import (
     CalculationOutput,
     NetworkResult,
     PressureDropDetails,
@@ -38,8 +38,8 @@ from network_hydraulic.models.results import (
     SectionResult,
     StatePoint,
 )
-from network_hydraulic.models.topology import TopologyGraph
-from network_hydraulic.calculators.gas_flow import (
+from packages.hydraulics.src.models.topology import TopologyGraph
+from packages.hydraulics.src.calculators.gas_flow import (
     UNIVERSAL_GAS_CONSTANT,
     GasState,
     solve_adiabatic,

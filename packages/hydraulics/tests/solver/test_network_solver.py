@@ -5,15 +5,15 @@ from unittest.mock import patch
 import pytest
 from _pytest.logging import LogCaptureFixture
 
-from network_hydraulic.calculators.fittings import FittingLossCalculator
-from network_hydraulic.calculators.hydraulics import FrictionCalculator
-from network_hydraulic.calculators.valves import ControlValveCalculator
-from network_hydraulic.models.components import ControlValve, Orifice
-from network_hydraulic.models.fluid import Fluid
-from network_hydraulic.models.network import Network
-from network_hydraulic.models.pipe_section import Fitting, PipeSection
-from network_hydraulic.models.results import CalculationOutput
-from network_hydraulic.solver.network_solver import NetworkSolver
+from packages.hydraulics.src.calculators.fittings import FittingLossCalculator
+from packages.hydraulics.src.calculators.hydraulics import FrictionCalculator
+from packages.hydraulics.src.calculators.valves import ControlValveCalculator
+from packages.hydraulics.src.models.components import ControlValve, Orifice
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.network import Network
+from packages.hydraulics.src.models.pipe_section import Fitting, PipeSection
+from packages.hydraulics.src.models.results import CalculationOutput
+from packages.hydraulics.src.solver.network_solver import NetworkSolver
 
 
 def make_fluid() -> Fluid:
@@ -211,8 +211,8 @@ def test_solver_uses_section_pressures_for_components_forward():
 
     valve_pressures, orifice_pressures, fake_valve, fake_orifice = _capture_component_pressures()
 
-    with patch("network_hydraulic.calculators.valves.ControlValveCalculator.calculate", new=fake_valve), patch(
-        "network_hydraulic.calculators.orifices.OrificeCalculator.calculate", new=fake_orifice
+    with patch("packages.hydraulics.src.calculators.valves.ControlValveCalculator.calculate", new=fake_valve), patch(
+        "packages.hydraulics.src.calculators.orifices.OrificeCalculator.calculate", new=fake_orifice
     ):
         solver = NetworkSolver(default_pipe_diameter=0.1)
         solver.run(network)
@@ -241,8 +241,8 @@ def test_solver_uses_section_pressures_for_components_backward():
 
     valve_pressures, orifice_pressures, fake_valve, fake_orifice = _capture_component_pressures()
 
-    with patch("network_hydraulic.calculators.valves.ControlValveCalculator.calculate", new=fake_valve), patch(
-        "network_hydraulic.calculators.orifices.OrificeCalculator.calculate", new=fake_orifice
+    with patch("packages.hydraulics.src.calculators.valves.ControlValveCalculator.calculate", new=fake_valve), patch(
+        "packages.hydraulics.src.calculators.orifices.OrificeCalculator.calculate", new=fake_orifice
     ):
         solver = NetworkSolver(default_pipe_diameter=0.1)
         solver.run(network)

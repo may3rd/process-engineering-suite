@@ -4,10 +4,10 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Optional, Set
 
-from network_hydraulic.models.network import Network
-from network_hydraulic.models.pipe_section import PipeSection
-from network_hydraulic.models.topology import TopologyGraph
-from network_hydraulic.solver.network_solver import NetworkSolver
+from packages.hydraulics.src.models.network import Network
+from packages.hydraulics.src.models.pipe_section import PipeSection
+from packages.hydraulics.src.models.topology import TopologyGraph
+from packages.hydraulics.src.solver.network_solver import NetworkSolver
 
 
 def optimize_control_valves(network: Network, *, tolerance: float = 10.0) -> Optional[float]:

@@ -1,6 +1,6 @@
 import pytest
 
-from network_hydraulic.models.output_units import OutputUnits
+from packages.hydraulics.src.models.output_units import OutputUnits
 
 
 def test_output_units_post_init_valid_inputs():
