@@ -1,0 +1,147 @@
+network:
+  name: OSBL Butene -1
+  description: null
+  direction: forward
+  boundary_pressure: 32.2
+  boundary_temperature: 42.0
+  gas_flow_model: null
+  fluid:
+    name: Butene-1
+    mass_flow_rate: 1000.0000000000001
+    volumetric_flow_rate: 1.7241379310344829
+    phase: liquid
+    temperature: 42.0
+    pressure: 32.2
+    density: 580.0
+    viscosity: 0.00013
+    molecular_weight: 0.0
+    z_factor: 1.0
+    specific_heat_ratio: 1.0
+    standard_flow_rate: null
+    vapor_pressure: null
+    critical_pressure: null
+  sections:
+  - id: '1'
+    description: null
+    schedule: '40'
+    roughness: 4.57e-05
+    length: 0.0
+    elevation_change: 0.0
+    fitting_type: LR
+    fittings: []
+    direction: null
+    pipe_diameter: 0.05248
+    inlet_diameter: 0.05248
+    outlet_diameter: 0.05248
+    fitting_K: 0.0
+    pipe_length_K: 0.0
+    user_K: null
+    piping_and_fitting_safety_factor: null
+    total_K: 0.0
+    user_specified_fixed_loss: null
+    pipe_NPD: 2.0
+    erosional_constant: 100
+    mach_number: null
+    orifice:
+      tag: FE
+      d_over_D_ratio: null
+      pressure_drop: 0.2
+      pipe_diameter: 0.05248
+      orifice_diameter: null
+      meter_type: null
+      taps: null
+      tap_position: null
+      discharge_coefficient: null
+      expansibility: null
+      calculation_note: Used specified pressure_drop (0.2 Pa).
+    calculation_result:
+      pressure_drop:
+        fitting_K: 0.0
+        pipe_length_K: 0.0
+        user_K: null
+        piping_and_fitting_safety_factor: null
+        total_K: 0.0
+        fitting_breakdown: null
+        reynolds_number: 51840.650110712224
+        flow_scheme: turbulent
+        frictional_factor: 0.0
+        critical_pressure: null
+        pipe_and_fittings: 0.0
+        elevation_change: 0.0
+        control_valve: null
+        orifice: 0.0002
+        user_fixed: null
+        total: 0.0002
+        per_100m: null
+      summary:
+        inlet:
+          pressure: 32.2
+          temperature: 42.0
+          density: 580.0
+          mach_number: null
+          velocity: 0.22140731820307863
+          erosional_velocity: 5.06537248660557
+          flow_momentum: 28.43229632125
+          remarks: OK
+        outlet:
+          pressure: 32.1998
+          temperature: 42.0
+          density: 580.0
+          mach_number: null
+          velocity: 0.22140731820307863
+          erosional_velocity: 5.06537248660557
+          flow_momentum: 28.43229632125
+          remarks: OK
+      flow:
+        volumetric_actual: 1.7241379310344829
+        volumetric_standard: null
+  output_units:
+    pressure: kPag
+    pressure_drop: kPa
+    temperature: degC
+    density: kg/m^3
+    velocity: m/s
+    volumetric_flow_rate: m^3/h
+    mass_flow_rate: kg/h
+    flow_momentum: Pa
+  summary:
+    state:
+      inlet:
+        pressure: 32.2
+        temperature: 42.0
+        density: 580.0
+        mach_number: null
+        velocity: 0.22140731820307863
+        erosional_velocity: 5.06537248660557
+        flow_momentum: 28.43229632125
+        remarks: OK
+      outlet:
+        pressure: 32.1998
+        temperature: 42.0
+        density: 580.0
+        mach_number: null
+        velocity: 0.22140731820307863
+        erosional_velocity: 5.06537248660557
+        flow_momentum: 28.43229632125
+        remarks: OK
+    pressure_drop:
+      fitting_K: null
+      pipe_length_K: null
+      user_K: null
+      piping_and_fitting_safety_factor: null
+      total_K: null
+      fitting_breakdown: null
+      reynolds_number: null
+      flow_scheme: null
+      frictional_factor: null
+      critical_pressure: null
+      pipe_and_fittings: 0.0
+      elevation_change: 0.0
+      control_valve: 0.0
+      orifice: 0.0002
+      user_fixed: 0.0
+      total: 0.0002
+      per_100m: 0.0
+    flow:
+      volumetric_actual: 1.7241379310344829
+      volumetric_standard: null

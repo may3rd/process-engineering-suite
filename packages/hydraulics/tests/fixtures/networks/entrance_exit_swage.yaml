@@ -1,0 +1,45 @@
+network:
+  name: entrance_exit_swage
+  description: Pipe run with inlet/outlet diameter mismatch
+  gas_flow_model: isothermal
+  direction: forward
+  boundary_pressure:
+    value: 500
+    unit: kPag
+  temperature:
+    value: 35
+    unit: degC
+  mass_flow_rate:
+    value: 900
+    unit: kg/h
+  fluid:
+    name: Nitrogen
+    phase: vapor
+    molecular_weight: 28.0
+    z_factor: 0.98
+    specific_heat_ratio: 1.32
+    viscosity: 1.8e-5
+  sections:
+    - id: "SW1"
+      schedule: "40"
+      pipe_NPD: 2.0
+      roughness: 4.57e-5
+      length:
+        value: 120.0
+        unit: m
+      fitting_type: LR
+      inlet_diameter:
+        value: 0.08
+        unit: m
+      outlet_diameter:
+        value: 0.06
+        unit: m
+      pipe_diameter:
+        value: 0.0525
+        unit: m
+      fittings:
+        - {type: pipe_entrance_normal, count: 1}  # Sharp-edged pipe entrance, count in ea
+        - {type: pipe_entrance_raise, count: 1}  # Raised-face entrance, count in ea
+        - {type: pipe_exit, count: 1}  # Pipe discharge to vessel, count in ea
+        - {type: tee_through, count: 1}
+      erosional_constant: 100

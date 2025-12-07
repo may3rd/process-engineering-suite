@@ -1,0 +1,52 @@
+network:
+  name: fittings_loss_fixture
+  description: Pipe run with all supported fittings
+  gas_flow_model: isothermal
+  direction: forward
+  boundary_pressure:
+    value: 600
+    unit: kPag
+  temperature:
+    value: 40
+    unit: degC
+  mass_flow_rate:
+    value: 800
+    unit: kg/h
+  fluid:
+    name: Nitrogen
+    phase: vapor
+    molecular_weight: 28.0
+    z_factor: 0.98
+    specific_heat_ratio: 1.32
+    viscosity: 1.7e-5
+  sections:
+    - id: "FIT1"
+      schedule: "40"
+      pipe_NPD: 2.0
+      roughness: 4.57e-5
+      length:
+        value: 150.0
+        unit: m
+      fitting_type: LR
+      fittings:
+        - {type: elbow_90, count: 1}
+        - {type: elbow_45, count: 1}
+        - {type: u_bend, count: 1}
+        - {type: stub_in_elbow, count: 1}
+        - {type: tee_elbow, count: 1}
+        - {type: tee_through, count: 1}
+        - {type: block_valve_full_line_size, count: 1}
+        - {type: block_valve_reduced_trim_0.9d, count: 1}
+        - {type: block_valve_reduced_trim_0.8d, count: 1}
+        - {type: globe_valve, count: 1}
+        - {type: diaphragm_valve, count: 1}
+        - {type: butterfly_valve, count: 1}
+        - {type: check_valve_swing, count: 1}
+        - {type: lift_check_valve, count: 1}
+        - {type: tilting_check_valve, count: 1}
+        - {type: pipe_entrance_normal, count: 1}
+        - {type: pipe_entrance_raise, count: 1}
+        - {type: pipe_exit, count: 1}
+        - {type: inlet_swage, count: 1}
+        - {type: outlet_swage, count: 1}
+      erosional_constant: 100

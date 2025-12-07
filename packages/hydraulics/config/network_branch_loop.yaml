@@ -1,0 +1,79 @@
+network:
+  name: branch_loop_demo
+  description: Branching & loop network example
+  direction: forward
+  boundary_pressure:
+    value: 101.3
+    unit: kPag
+  boundary_temperature:
+    value: 25
+    unit: degC
+  mass_flow_rate:
+    value: 5.0
+    unit: kg/s
+  fluid:
+    name: natural_gas
+    phase: gas
+    molecular_weight: 16.0
+    z_factor: 0.95
+    specific_heat_ratio: 1.3
+    viscosity:
+      value: 1.2e-5
+      unit: Pa*s
+  sections:
+    - id: source
+      schedule: "40"
+      pipe_NPD: 8.0
+      roughness: 4.57e-5
+      length:
+        value: 50
+        unit: m
+      fitting_type: LR
+      fittings: []
+      flow_splitting_factor: 1.0
+      from_node_id: node-inlet
+      to_node_id: node-junction
+    - id: branch_a
+      schedule: "40"
+      pipe_NPD: 6.0
+      roughness: 4.57e-5
+      length:
+        value: 30
+        unit: m
+      fitting_type: LR
+      fittings: []
+      from_node_id: node-junction
+      to_node_id: node-a
+    - id: branch_b
+      schedule: "40"
+      pipe_NPD: 6.0
+      roughness: 4.57e-5
+      length:
+        value: 45
+        unit: m
+      fitting_type: LR
+      fittings: []
+      from_node_id: node-junction
+      to_node_id: node-b
+    - id: loop_ab
+      schedule: "40"
+      pipe_NPD: 4.0
+      roughness: 4.57e-5
+      length:
+        value: 20
+        unit: m
+      fitting_type: LR
+      fittings: []
+      from_node_id: node-a
+      to_node_id: node-b
+    - id: loop_ba
+      schedule: "40"
+      pipe_NPD: 4.0
+      roughness: 4.57e-5
+      length:
+        value: 20
+        unit: m
+      fitting_type: LR
+      fittings: []
+      from_node_id: node-b
+      to_node_id: node-a

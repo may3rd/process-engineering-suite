@@ -1,0 +1,91 @@
+network:
+  name: sample_network
+  description: Phenol Test
+  direction: forward
+  boundary_pressure:
+    value: 2290.24
+    unit: kPag
+  output_units:
+    pressure: kPag
+    pressure_drop: kPa
+    temperature: degC
+    density: kg/m^3
+    velocity: m/s
+    volumetric_flow_rate: m^3/h
+    mass_flow_rate: kg/h
+    flow_momentum: Pa
+    gas_flow_critical_pressure: kPa
+    length: m
+    small_length: mm
+  mass_flow_rate:
+    value: 90513.6
+    unit: kg/h
+  boundary_temperature:
+    value: 105.19
+    unit: degC
+  fluid:
+    name: liquid
+    phase: liquid
+  sections:
+    - id: "42"
+      schedule: "40"
+      pipe_NPD: 3.0
+      outlet_diameter:
+        value: 0.15408
+        unit: m
+      roughness: 4.57e-5
+      length:
+        value: 0.219
+        unit: m
+      elevation_change:
+        value: 0.219
+        unit: m
+      erosional_constant: 100
+      fitting_type: LR
+    - id: "3"
+      schedule: "40"
+      pipe_NPD: 6.0
+      roughness: 4.57e-5
+      length:
+        value: 21.294
+        unit: m
+      elevation_change:
+        value: 3.975
+        unit: m
+      erosional_constant: 100
+      fitting_type: LR
+      fittings:
+        - {type: elbow_90, count: 6}
+        - {type: tee_elbow, count: 1}
+        - {type: tee_through, count: 2}
+        - {type: block_valve_full_line_size, count: 1}
+        - {type: check_valve_swing, count: 1}
+      user_specified_fixed_loss:
+        value: 15.30
+        unit: kPa
+    - id: "4"
+      schedule: "40"
+      pipe_NPD: 6.0
+      roughness: 4.57e-5
+      length:
+        value: 0.746
+        unit: m
+      erosional_constant: 100
+      fitting_type: LR
+    - id: "5"
+      schedule: "40"
+      pipe_NPD: 6.0
+      roughness: 4.57e-5
+      length:
+        value: 25.97
+        unit: m
+      elevation_change:
+        value: -1.0
+        unit: m
+      erosional_constant: 100
+      fitting_type: LR
+      fittings:
+        - {type: elbow_90, count: 1}
+        - {type: tee_through, count: 1}
+        - {type: check_valve_swing, count: 1}
+      

@@ -1,0 +1,28 @@
+network:
+  name: upstream_only_fixture
+  direction: auto
+  upstream_pressure:
+    value: 250
+    unit: kPag
+  boundary_temperature:
+    value: 40
+    unit: degC
+  mass_flow_rate:
+    value: 1000
+    unit: kg/h
+  fluid:
+    name: nitrogen
+    phase: gas
+    molecular_weight: 28.0
+    z_factor: 0.95
+    specific_heat_ratio: 1.32
+    viscosity: 1.8e-5
+  sections:
+    - id: line-a
+      schedule: "40"
+      roughness: 4.5e-5
+      length: 20
+      elevation_change: 0
+      fitting_type: LR
+      pipe_NPD: 4
+      fittings: []

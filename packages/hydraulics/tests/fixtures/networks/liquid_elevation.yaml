@@ -1,0 +1,39 @@
+network:
+  name: liquid_elevation
+  description: Liquid segment with elevation and user losses
+  direction: forward
+  boundary_pressure:
+    value: 350
+    unit: kPag
+  temperature:
+    value: 40
+    unit: degC
+  mass_flow_rate:
+    value: 12000
+    unit: kg/h
+  fluid:
+    name: ProcessWater
+    phase: liquid
+    density:
+      value: 980
+      unit: kg/m^3
+    viscosity:
+      value: 0.001
+      unit: Pa*s
+  sections:
+    - id: "L1"
+      schedule: "40"
+      pipe_NPD: 4.0
+      roughness: 4.57e-5
+      length:
+        value: 200.0
+        unit: m
+      elevation_change:
+        value: 15.0
+        unit: m
+      user_specified_fixed_loss: 5000.0
+      fitting_type: LR
+      fittings:
+        - {type: elbow_90, count: 2}
+        - {type: tee_through, count: 1}
+      erosional_constant: 100

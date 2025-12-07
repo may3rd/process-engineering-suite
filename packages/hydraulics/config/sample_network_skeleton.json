@@ -1,0 +1,44 @@
+{
+  "network": {
+    "name": "skeleton-json",
+    "direction": "forward",
+    "boundary_pressure": {
+      "value": 101.3,
+      "unit": "kPa"
+    },
+    "boundary_temperature": {
+      "value": 293.15,
+      "unit": "K"
+    },
+    "mass_flow_rate": {
+      "value": 1.5,
+      "unit": "kg/s"
+    },
+    "fluid": {
+      "name": "air",
+      "phase": "gas",
+      "density": {
+        "value": 1.2,
+        "unit": "kg/m^3"
+      },
+      "viscosity": {
+        "value": 1.8e-5,
+        "unit": "Pa*s"
+      },
+      "molecular_weight": 29.0,
+      "z_factor": 1.0,
+      "specific_heat_ratio": 1.4
+    },
+    "sections": [
+      {
+        "id": "skeleton-1",
+        "NPS": 4.0,
+        "schedule": "40",
+        "roughness": {"value": 0.0457, "unit": "mm"},
+        "length": 25.0,
+        "elevation_change": 0.0,
+        "fittings": []
+      }
+    ]
+  }
+}

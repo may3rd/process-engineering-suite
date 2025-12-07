@@ -1,0 +1,73 @@
+network:
+  name: test_valve_network
+  description: Test network with a control valve for Kv fallback
+  direction: forward
+  boundary_pressure:
+    value: 150.0
+    unit: kPag
+  downstream_pressure:
+    value: 120.0
+    unit: kPag
+  gas_flow_model: null
+  design_margin: 0.0
+  mass_flow_rate:
+    value: 10000.0
+    unit: kg/h
+  boundary_temperature:
+    value: 35.0
+    unit: degC
+  output_units:
+    pressure: kPag
+    pressure_drop: kPa
+    temperature: degC
+    density: kg/m^3
+    velocity: m/s
+    volumetric_flow_rate: m^3/h
+    mass_flow_rate: kg/h
+    flow_momentum: Pa
+    gas_flow_critical_pressure: kPa
+    length: m
+    small_length: mm
+  fluid:
+    name: liquid
+    phase: liquid
+    density:
+      value: 998.0
+      unit: kg/m^3
+    viscosity: 0.0008
+    # vapor_pressure and critical_pressure are intentionally omitted
+  sections:
+    - id: "1"
+      description: Line 1 with control valve
+      schedule: "40"
+      pipe_NPD: 3.0
+      roughness: 4.57e-5
+      length:
+        value: 25.0
+        unit: m
+      erosional_constant: 100
+      fitting_type: LR
+    - id: "CV"
+      description: control valve
+      schedule: "40"
+      pipe_NPD: 4.0
+      roughness: 4.57e-5
+      length:
+        value: 0.0
+        unit: m
+      erosional_constant: 100
+      fitting_type: LR
+      control_valve:
+        pressure_drop:
+          value: 70.0
+          unit: kPa
+        adjustable: true
+    - id: "2"
+      schedule: "40"
+      pipe_NPD: 3.0
+      roughness: 4.57e-5
+      length:
+        value: 32.0
+        unit: m
+      erosional_constant: 100
+      fitting_type: LR

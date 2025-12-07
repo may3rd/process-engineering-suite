@@ -1,0 +1,31 @@
+network:
+  name: dual_boundary_fixture
+  direction: auto
+  upstream_pressure:
+    value: 500
+    unit: kPag
+  downstream_pressure:
+    value: 300
+    unit: kPag
+  boundary_temperature:
+    value: 45
+    unit: degC
+  mass_flow_rate:
+    value: 1500
+    unit: kg/h
+  fluid:
+    name: propane
+    phase: gas
+    molecular_weight: 44.0
+    z_factor: 0.9
+    specific_heat_ratio: 1.25
+    viscosity: 1.1e-5
+  sections:
+    - id: line-c
+      schedule: "40"
+      roughness: 4.5e-5
+      length: 30
+      elevation_change: -2.0
+      fitting_type: LR
+      pipe_NPD: 6
+      fittings: []

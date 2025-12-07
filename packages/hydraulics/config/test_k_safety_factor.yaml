@@ -1,0 +1,53 @@
+network:
+  name: sample_network
+  description: Test Piping and Fitting Safety Factor
+  direction: forward
+  boundary_pressure:
+    value: 235.57
+    unit: kPag
+  gas_flow_model: null
+  design_margin: 0.0
+  mass_flow_rate:
+    value: 122899.4
+    unit: kg/h
+  boundary_temperature:
+    value: 168.5
+    unit: degC
+  output_units:
+    pressure: kPag
+    pressure_drop: kPa
+    temperature: degC
+    density: kg/m^3
+    velocity: m/s
+    volumetric_flow_rate: m^3/h
+    mass_flow_rate: kg/h
+    flow_momentum: Pa
+    gas_flow_critical_pressure: kPa
+    length: m
+    small_length: mm
+  fluid:
+    name: liquid
+    phase: liquid
+    density:
+      value: 727.6
+      unit: kg/m^3
+    viscosity:
+      value: 0.174
+      unit: cP
+  sections:
+    - id: "17"
+      description: Line 1
+      schedule: "40"
+      pipe_NPD: 12.0
+      roughness: 4.57e-5
+      length:
+        value: 4.913
+        unit: m
+      erosional_constant: 100
+      fitting_type: LR
+      fittings:
+        - {type: elbow_90, count: 9}
+        - {type: tee_elbow, count: 1}
+        - {type: pipe_entrance_normal, count: 1}
+      piping_and_fitting_safety_factor: null
+      

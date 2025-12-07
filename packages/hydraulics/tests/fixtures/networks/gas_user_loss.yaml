@@ -1,0 +1,33 @@
+network:
+  name: gas_user_loss_fixture
+  description: Gas section with user-specified fixed loss only
+  gas_flow_model: isothermal
+  direction: forward
+  boundary_pressure:
+    value: 320
+    unit: kPag
+  temperature:
+    value: 30
+    unit: degC
+  mass_flow_rate:
+    value: 600
+    unit: kg/h
+  fluid:
+    name: Nitrogen
+    phase: vapor
+    molecular_weight: 28.0
+    z_factor: 0.98
+    specific_heat_ratio: 1.32
+    viscosity: 1.8e-5
+  sections:
+    - id: "GU1"
+      schedule: "40"
+      pipe_NPD: 2.0
+      roughness: 4.57e-5
+      length:
+        value: 0.0
+        unit: m
+      fitting_type: LR
+      user_specified_fixed_loss:
+        value: 8500
+        unit: Pa

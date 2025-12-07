@@ -1,0 +1,35 @@
+network:
+  name: gas_flow_isothermal
+  description: Isothermal Gas Flow Test
+  gas_flow_model: isothermal
+  direction: forward
+  boundary_pressure:
+    value: 700
+    unit: kPag
+  temperature:
+    value: 35
+    unit: degC
+  pressure:
+    value: 700
+    unit: kPag
+  mass_flow_rate:
+    value: 5000.0
+    unit: kg/h
+  fluid:
+    name: Air
+    phase: vapor
+    molecular_weight: 28.0  # Molecular weight, kg/kmol
+    z_factor: 0.99  # Gas compressibility factor Z, dimensionless
+    specific_heat_ratio: 1.4  # Cp/Cv ratio (gamma), dimensionless
+    volumetric_flow_rate: null
+    viscosity: 4.0e-5
+  sections:
+    - id: "1"
+      schedule: "40"
+      pipe_NPD: 3.0
+      roughness: 4.57e-5
+      length:
+        value: 100.0
+        unit: m
+      erosional_constant: 100
+      fitting_type: LR

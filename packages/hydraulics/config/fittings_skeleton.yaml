@@ -1,0 +1,70 @@
+network:  # Top-level network metadata
+  name: fittings_skeleton  # Free-form network name, unitless text
+  description: Skeleton network demonstrating all fitting entries with zero count  # Long-form description, unitless text
+  direction: forward  # Flow direction flag, forward/backward
+  boundary_pressure: null  # Known boundary pressure, Pa (set per direction mode)
+  gas_flow_model: isothermal  # Gas calculation mode, isothermal or adiabatic
+  fluid:  # Fluid properties block
+    name: placeholder  # Fluid identifier, unitless text
+    phase: gas  # Liquid or gas (two-phase not yet supported)
+    mass_flow_rate: 1.0  # Mass flow rate, kg/s
+    volumetric_flow_rate: null  # Volumetric flow rate, m^3/s at flowing conditions
+    temperature: 300.0  # Flowing temperature, K
+    pressure: 1.0e6  # Flowing pressure at reference node, Pa
+    density: 10.0  # Flowing density, kg/m^3
+    molecular_weight: 18.0  # Molecular weight, kg/kmol
+    z_factor: 1.0  # Gas compressibility factor Z, dimensionless
+    specific_heat_ratio: 1.3  # Cp/Cv ratio (gamma), dimensionless
+    viscosity: 1.0e-5  # Dynamic viscosity, Pa·s
+    standard_flow_rate: null  # Standard volumetric flow rate, Sm^3/s
+  sections:  # Ordered list of pipe sections / equipment
+    - id: demo_section  # Section identifier, unitless text
+      schedule: "40"  # Pipe schedule designation, unitless text
+      pipe_NPD: 6.0  # Nominal pipe diameter, inch
+      roughness: 4.6e-5  # Absolute pipe roughness, m
+      length: 10.0  # Straight-pipe physical length, m
+      elevation_change: 0.0  # Elevation change across section (+up / -down), m
+      erosional_constant: 100.0  # API erosional constant C, fps*(lb/ft^3)^0.5 (default 100 continuous, 125 intermittent)
+      fitting_type: LR  # Bend radius family (LR, SR, SCRD), unitless text
+      fittings:  # List of fittings counted individually
+        - {type: elbow_45, count: 0}  # 45° elbow, count in ea
+        - {type: elbow_90, count: 0}  # 90° standard elbow, count in ea
+        - {type: u_bend, count: 0}  # 180° return bend, count in ea
+        - {type: stub_in_elbow, count: 0}  # Stub-in elbow, count in ea
+        - {type: tee_elbow, count: 0}  # Flow through run, branch 90° tee elbow, count in ea
+        - {type: tee_through, count: 0}  # Tee straight-through loss, count in ea
+        - {type: block_valve_full_line_size, count: 0}  # Full-size block valve, count in ea
+        - {type: block_valve_reduced_trim_0.9d, count: 0}  # Block valve 0.9D trim, count in ea
+        - {type: block_valve_reduced_trim_0.8d, count: 0}  # Block valve 0.8D trim, count in ea
+        - {type: globe_valve, count: 0}  # Globe valve, count in ea
+        - {type: diaphragm_valve, count: 0}  # Diaphragm valve, count in ea
+        - {type: butterfly_valve, count: 0}  # Butterfly valve, count in ea
+        - {type: check_valve_swing, count: 0}  # Swing check valve, count in ea
+        - {type: lift_check_valve, count: 0}  # Lift check valve, count in ea
+        - {type: tilting_check_valve, count: 0}  # Tilting check valve, count in ea
+        - {type: pipe_entrance_normal, count: 0}  # Sharp-edged pipe entrance, count in ea
+        - {type: pipe_entrance_raise, count: 0}  # Raised-face entrance, count in ea
+        - {type: pipe_exit, count: 0}  # Pipe discharge to vessel, count in ea
+      pipe_diameter: null  # Manual override straight-pipe diameter, m
+      inlet_diameter: null  # Manual override inlet diameter, m
+      outlet_diameter: null  # Manual override outlet diameter, m
+      user_K: null  # User-supplied total K for fittings/pipe, dimensionless
+      piping_and_fitting_safety_factor: null  # Scalar multiplier on K (default 1.0), dimensionless
+      user_specified_fixed_loss: null  # Fixed pressure drop to add, Pa
+      control_valve:  # Control valve data block
+        tag: CV-DEMO  # Valve tag/identifier, unitless text
+        pressure_drop: null  # Valve pressure drop, Pa (input if known)
+        cv: null  # Flow coefficient Cv (US gpm per sqrt(psi) at 60F)
+        cg: null  # Metric flow coefficient Cg, Sm^3/h per kPa^0.5
+        C1: null  # Valve constant C1, dimensionless (trim-specific)
+        FL: null  # Valve critical pressure ratio factor FL, dimensionless
+        Fd: null  # Valve piping geometry factor Fd, dimensionless
+        xT: null  # Valve pressure recovery factor xT, dimensionless
+        inlet_diameter: null  # Valve inlet ID, m
+        outlet_diameter: null  # Valve outlet ID, m
+        valve_diameter: null  # Valve nominal bore, m
+        adjustable: false  # Let the solver recompute Cv-based drop when true
+      orifice:  # Flow element data
+        tag: FE-DEMO  # Orifice tag/identifier, unitless text
+        d_over_D_ratio: null  # Orifice beta ratio (d/D), dimensionless
+        pressure_drop: null  # Known orifice pressure loss, Pa

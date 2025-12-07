@@ -1,0 +1,44 @@
+network:
+  name: backward_flow_fixture
+  description: Two-section gas network solved backward
+  gas_flow_model: isothermal
+  direction: backward
+  downstream_pressure:
+    value: 300
+    unit: kPag
+  temperature:
+    value: 25
+    unit: degC
+  mass_flow_rate:
+    value: 500
+    unit: kg/h
+  fluid:
+    name: Nitrogen
+    phase: vapor
+    molecular_weight: 28.0
+    z_factor: 0.98
+    specific_heat_ratio: 1.32
+    viscosity: 1.8e-5
+  sections:
+    - id: "B1"
+      schedule: "40"
+      pipe_NPD: 2.0
+      roughness: 4.57e-5
+      length:
+        value: 80.0
+        unit: m
+      fitting_type: LR
+      fittings:
+        - {type: elbow_90, count: 2}
+      erosional_constant: 100
+    - id: "B2"
+      schedule: "40"
+      pipe_NPD: 2.0
+      roughness: 4.57e-5
+      length:
+        value: 40.0
+        unit: m
+      fitting_type: LR
+      fittings:
+        - {type: tee_through, count: 1}
+      erosional_constant: 100

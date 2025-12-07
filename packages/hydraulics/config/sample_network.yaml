@@ -1,0 +1,87 @@
+network:
+  name: sample_network
+  description: Test
+  direction: forward
+  mass_flow_rate:
+    value: 90513.6
+    unit: kg/h
+  boundary_pressure:
+    value: 101.08
+    unit: kPag
+  boundary_temperature:
+    value: 103.42
+    unit: degC
+  gas_flow_model: null
+  design_margin: 0.0
+  output_units:
+    pressure: kPag
+    pressure_drop: kPa
+    temperature: degC
+    density: kg/m^3
+    velocity: m/s
+    volumetric_flow_rate: m^3/h
+    mass_flow_rate: kg/h
+    flow_momentum: Pa
+    gas_flow_critical_pressure: kPa
+    length: m
+    small_length: mm
+  fluid:
+    name: liquid
+    phase: liquid
+    density:
+      value: 783.4
+      unit: kg/m^3
+    viscosity: 2.47e-4
+  sections:
+    - id: "1"
+      description: Line 1
+      schedule: "40"
+      pipe_NPD: 8.0
+      roughness: 4.57e-5
+      length:
+        value: 37.599
+        unit: m
+      elevation_change:
+        value: -23.59
+        unit: m
+      erosional_constant: 100
+      fitting_type: LR
+      fittings:
+        - {type: elbow_90, count: 9}
+        - {type: tee_elbow, count: 1}
+        - {type: pipe_entrance_normal, count: 1}
+    - id: "2"
+      schedule: "40"
+      pipe_NPD: 8.0
+      outlet_diameter:
+        value: 0.10226
+        unit: m
+      roughness: 4.57e-5
+      length:
+        value: 8.639
+        unit: m
+      elevation_change:
+        value: -3.208
+        unit: m
+      erosional_constant: 100
+      fitting_type: LR
+      fittings:
+        - {type: elbow_90, count: 3}
+        - {type: tee_elbow, count: 1}
+        - {type: block_valve_full_line_size, count: 1}
+      user_specified_fixed_loss:
+        value: 5.08
+        unit: kPa
+    - id: "41"
+      schedule: "40"
+      pipe_NPD: 4.0
+      roughness: 4.57e-5
+      length:
+        value: 0.712
+        unit: m
+      elevation_change:
+        value: -0.712
+        unit: m
+      erosional_constant: 100
+      fitting_type: LR
+      

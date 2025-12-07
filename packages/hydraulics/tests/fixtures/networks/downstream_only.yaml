@@ -1,0 +1,26 @@
+network:
+  name: downstream_only_fixture
+  direction: auto
+  downstream_pressure:
+    value: 120
+    unit: kPag
+  boundary_temperature:
+    value: 35
+    unit: degC
+  mass_flow_rate:
+    value: 500
+    unit: kg/h
+  fluid:
+    name: water
+    phase: liquid
+    density: 1000
+    viscosity: 1e-3
+  sections:
+    - id: line-b
+      schedule: "40"
+      roughness: 4.5e-5
+      length: 15
+      elevation_change: 1.0
+      fitting_type: LR
+      pipe_NPD: 3
+      fittings: []

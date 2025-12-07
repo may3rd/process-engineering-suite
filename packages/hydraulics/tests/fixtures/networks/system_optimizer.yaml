@@ -1,0 +1,100 @@
+networks:
+  - id: supply
+    name: supply-net
+    primary: true
+    direction: forward
+    upstream_pressure:
+      value: 400
+      unit: kPag
+    boundary_temperature:
+      value: 40
+      unit: degC
+    mass_flow_rate:
+      value: 1.0
+      unit: kg/s
+    fluid:
+      name: water
+      phase: liquid
+      density: 998
+      viscosity: 8.9e-4
+    sections:
+      - id: supply-inlet
+        schedule: "40"
+        pipe_NPD: 6
+        roughness: 4.5e-5
+        length: 5
+        elevation_change: 0
+        fitting_type: LR
+        fittings: []
+        from_node_id: source
+        to_node_id: junction
+      - id: supply-valve
+        schedule: "40"
+        pipe_NPD: 6
+        roughness: 4.5e-5
+        length: 0
+        elevation_change: 0
+        fitting_type: LR
+        fittings: []
+        from_node_id: junction
+        to_node_id: supply-outlet
+        control_valve:
+          tag: CV-SUP
+          adjustable: true
+
+  - id: branch
+    name: branch-net
+    direction: forward
+    upstream_pressure:
+      value: 220
+      unit: kPag
+    boundary_temperature:
+      value: 40
+      unit: degC
+    mass_flow_rate:
+      value: 0.5
+      unit: kg/s
+    fluid:
+      name: water
+      phase: liquid
+      density: 998
+      viscosity: 8.9e-4
+    sections:
+      - id: branch-valve
+        schedule: "40"
+        pipe_NPD: 4
+        roughness: 4.5e-5
+        length: 0
+        elevation_change: 0
+        fitting_type: LR
+        fittings: []
+        from_node_id: junction
+        to_node_id: branch-outlet
+        control_valve:
+          tag: CV-BR
+          adjustable: true
+
+links:
+  - id: shared-junction
+    members:
+      - network: supply
+        node: junction
+      - network: branch
+        node: junction
+
+system_solver:
+  max_iterations: 5
+  tolerance: 0.5
+  relaxation: 0.7
+
+system_optimizer:
+  enable: true
+  tolerance: 500.0
+  damping_factor: 0.5
+  networks:
+    supply:
+      downstream_pressure:
+        value: 350
+        unit: kPag
+    branch:
+      method: simple

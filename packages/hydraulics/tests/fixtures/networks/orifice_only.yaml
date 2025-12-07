@@ -1,0 +1,46 @@
+network:
+  name: orifice_fixture
+  description: Component-only section with orifice plate
+  direction: forward
+  boundary_pressure:
+    value: 450
+    unit: kPag
+  temperature:
+    value: 25
+    unit: degC
+  mass_flow_rate:
+    value: 6000
+    unit: kg/h
+  fluid:
+    name: Water
+    phase: liquid
+    density:
+      value: 1000
+      unit: kg/m^3
+    viscosity:
+      value: 0.001
+      unit: Pa*s
+  sections:
+    - id: "OR1"
+      schedule: "40"
+      pipe_NPD: 4.0
+      roughness: 4.6e-5
+      length:
+        value: 0.0
+        unit: m
+      elevation_change:
+        value: 0.0
+        unit: m
+      fitting_type: LR
+      orifice:
+        tag: "FE-001"
+        pressure_drop:
+          value: 8000
+          unit: Pa
+        pipe_diameter:
+          value: 0.1023
+          unit: m
+        orifice_diameter:
+          value: 0.0614
+          unit: m
+        d_over_D_ratio: 0.6

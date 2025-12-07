@@ -1,0 +1,51 @@
+network:
+  name: control_valve_fixture
+  description: Component-only section with control valve
+  direction: forward
+  boundary_pressure:
+    value: 500
+    unit: kPag
+  temperature:
+    value: 30
+    unit: degC
+  mass_flow_rate:
+    value: 8000
+    unit: kg/h
+  fluid:
+    name: Water
+    phase: liquid
+    density:
+      value: 998
+      unit: kg/m^3
+    viscosity:
+      value: 0.001
+      unit: Pa*s
+  sections:
+    - id: "CV1"
+      schedule: "40"
+      pipe_NPD: 6.0
+      pipe_diameter:
+        value: 0.15
+        unit: m
+      roughness: 4.6e-5
+      length:
+        value: 0.0
+        unit: m
+      elevation_change:
+        value: 0.0
+        unit: m
+      fitting_type: LR
+      control_valve:
+        tag: "CV-001"
+        pressure_drop:
+          value: 15000
+          unit: Pa
+        inlet_diameter:
+          value: 0.15
+          unit: m
+        outlet_diameter:
+          value: 0.15
+          unit: m
+        valve_diameter:
+          value: 0.15
+          unit: m

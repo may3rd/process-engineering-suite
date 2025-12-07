@@ -1,0 +1,113 @@
+{
+  "network": {
+    "name": "sample_network",
+    "description": "Phenol Test",
+    "direction": "forward",
+    "boundary_pressure": {
+      "value": 101.008,
+      "unit": "kPag"
+    },
+    "gas_flow_model": null,
+    "output_units": {
+      "pressure": "kPag",
+      "pressure_drop": "kPa",
+      "temperature": "degC",
+      "volumetric_flow_rate": "m^3/h",
+      "mass_flow_rate": "kg/h",
+      "flow_momentum": "kPa",
+      "gas_flow_critical_pressure": "kPa"
+    },
+    "mass_flow_rate": {
+      "value": 90513.6,
+      "unit": "kg/h"
+    },
+    "temperature": {
+      "value": 103.42,
+      "unit": "degC"
+    },
+    "pressure": {
+      "value": 101.008,
+      "unit": "kPag"
+    },
+    "fluid": {
+      "name": "liquid",
+      "phase": "liquid"
+    },
+      "density": {
+        "value": 783.4,
+        "unit": "kg/m^3"
+      },
+      "viscosity": 0.000247
+    },
+    "sections": [
+      {
+        "id": "1",
+        "schedule": "40",
+        "pipe_NPD": 8.0,
+        "roughness": 4.6e-05,
+        "length": {
+          "value": 37.599,
+          "unit": "m"
+        },
+        "elevation_change": {
+          "value": -23.59,
+          "unit": "m"
+        },
+        "erosional_constant": 100,
+        "fitting_type": "LR",
+        "fittings": [
+          {
+            "type": "elbow_90",
+            "count": 9
+          },
+          {
+            "type": "tee_elbow",
+            "count": 1
+          },
+          {
+            "type": "pipe_entrance_normal",
+            "count": 1
+          }
+        ]
+      },
+      {
+        "id": "2",
+        "schedule": "40",
+        "pipe_NPD": 8.0,
+        "outlet_diameter": {
+          "value": 0.10226,
+          "unit": "m"
+        },
+        "roughness": 4.6e-05,
+        "length": {
+          "value": 8.639,
+          "unit": "m"
+        },
+        "elevation_change": {
+          "value": -3.208,
+          "unit": "m"
+        },
+        "erosional_constant": 100,
+        "fitting_type": "LR",
+        "fittings": [
+          {
+            "type": "elbow_90",
+            "count": 3
+          },
+          {
+            "type": "tee_elbow",
+            "count": 1
+          },
+          {
+            "type": "block_valve_full_line_size",
+            "count": 1
+          }
+        ],
+        "user_specified_fixed_loss": {
+          "value": 5.08,
+          "unit": "kPa"
+        }
+      }
+    ]
+  }
+}

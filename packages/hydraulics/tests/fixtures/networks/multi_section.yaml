@@ -1,0 +1,66 @@
+network:
+  name: multi_section_fixture
+  description: Three-section mixed network
+  gas_flow_model: isothermal
+  direction: forward
+  boundary_pressure:
+    value: 400
+    unit: kPag
+  temperature:
+    value: 35
+    unit: degC
+  mass_flow_rate:
+    value: 700
+    unit: kg/h
+  fluid:
+    name: Nitrogen
+    phase: vapor
+    molecular_weight: 28.0
+    z_factor: 0.98
+    specific_heat_ratio: 1.32
+    viscosity: 1.8e-5
+  sections:
+    - id: "MS1"
+      schedule: "40"
+      pipe_NPD: 2.0
+      roughness: 4.57e-5
+      length:
+        value: 60.0
+        unit: m
+      fitting_type: LR
+      fittings:
+        - {type: elbow_90, count: 1}
+      erosional_constant: 100
+    - id: "MS2"
+      schedule: "40"
+      pipe_NPD: 2.0
+      roughness: 4.57e-5
+      length:
+        value: 0.0
+        unit: m
+      fitting_type: LR
+      control_valve:
+        tag: "CV-MS"
+        pressure_drop:
+          value: 9000
+          unit: Pa
+        inlet_diameter:
+          value: 0.0525
+          unit: m
+        outlet_diameter:
+          value: 0.0525
+          unit: m
+        valve_diameter:
+          value: 0.0525
+          unit: m
+    - id: "MS3"
+      schedule: "40"
+      pipe_NPD: 2.0
+      roughness: 4.57e-5
+      length:
+        value: 30.0
+        unit: m
+      fitting_type: LR
+      fittings:
+        - {type: tee_through, count: 1}
+      erosional_constant: 100

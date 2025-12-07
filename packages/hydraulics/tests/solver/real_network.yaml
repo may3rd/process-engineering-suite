@@ -1,0 +1,71 @@
+network:
+  name: sample_network
+  description: Phenol Test
+  direction: forward
+  boundary_pressure:
+    value: 101.080
+    unit: kPag
+  gas_flow_model: isothermal
+  temperature:
+    value: 103.42
+    unit: degC
+  mass_flow_rate:
+    value: 1000.0
+    unit: kg/h
+  fluid:
+    name: gas
+    phase: gas
+    volumetric_flow_rate: null
+    density: null
+    molecular_weight: 28.0 # Example value for gas
+    z_factor: 0.9 # Example value for gas
+    specific_heat_ratio: 1.3 # Example value for gas
+    viscosity: 1.2e-5 # Example value for gas
+  sections:
+    - id: "1"
+      schedule: "40"
+      pipe_NPD: 8.0
+      roughness: 4.57e-5
+      length:
+        value: 37.599
+        unit: m
+      erosional_constant: 100
+      fitting_type: LR
+      fittings:
+        - {type: elbow_90, count: 9}
+        - {type: tee_elbow, count: 1}
+        - {type: pipe_entrance_normal, count: 1}
+    - id: "2"
+      schedule: "40"
+      pipe_NPD: 8.0
+      outlet_diameter:
+        value: 0.10226
+        unit: m
+      roughness: 4.57e-5
+      length:
+        value: 8.639
+        unit: m
+      elevation_change:
+        value: -3.208
+        unit: m
+      erosional_constant: 100
+      fitting_type: LR
+      fittings:
+        - {type: elbow_90, count: 3}
+        - {type: tee_elbow, count: 1}
+        - {type: block_valve_full_line_size, count: 1}
+      user_specified_fixed_loss:
+        value: 5.08
+        unit: kPa
+    - id: "41"
+      schedule: "40"
+      pipe_NPD: 4.0
+      roughness: 4.57e-5
+      length:
+        value: 0.712
+        unit: m
+      elevation_change:
+        value: -0.712
+        unit: m
+      erosional_constant: 100
+      fitting_type: LR

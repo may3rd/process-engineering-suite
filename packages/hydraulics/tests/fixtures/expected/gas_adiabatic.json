@@ -1,0 +1,79 @@
+{
+  "config": "tests/fixtures/networks/gas_adiabatic.yaml",
+  "network": "gas_flow_adiabatic",
+  "result": {
+    "aggregate": {
+      "control_valve_pressure_drop": 0.0,
+      "critical_pressure": null,
+      "elevation_change": 0.0,
+      "frictional_factor": null,
+      "normalized_friction_loss": 122332.891662596,
+      "orifice_pressure_drop": 0.0,
+      "pipe_and_fittings": 124088.644397509,
+      "reynolds_number": null,
+      "total_segment_loss": 124088.644397509,
+      "user_specified_fixed_loss": 0.0
+    },
+    "sections": [
+      {
+        "pressure_drop": {
+          "control_valve_pressure_drop": null,
+          "critical_pressure": 67916.190662071,
+          "elevation_change": 0.0,
+          "frictional_factor": 0.018088077,
+          "normalized_friction_loss": 122332.891662596,
+          "orifice_pressure_drop": null,
+          "pipe_and_fittings": 124088.644397509,
+          "reynolds_number": 567373.028932436,
+          "total_segment_loss": 124088.644397509,
+          "user_specified_fixed_loss": null
+        },
+        "section_id": "1",
+        "summary": {
+          "inlet": {
+            "density": 8.860883917,
+            "erosional_velocity": 40.981406578,
+            "flow_momentum": 9573.757479638,
+            "mach_number": 0.092378913,
+            "pipe_velocity": 32.870225794,
+            "pressure": 801325.0,
+            "temperature": 307.62405799,
+            "velocity": 32.870225794
+          },
+          "outlet": {
+            "density": 7.493838505,
+            "erosional_velocity": 44.562876766,
+            "flow_momentum": 11320.227093465,
+            "mach_number": 0.109268107,
+            "pipe_velocity": 38.866497443,
+            "pressure": 677236.355602491,
+            "temperature": 307.414668287,
+            "velocity": 38.866497443
+          }
+        }
+      }
+    ],
+    "summary": {
+      "inlet": {
+        "density": 8.860883917,
+        "erosional_velocity": 40.981406578,
+        "flow_momentum": 9573.757479638,
+        "mach_number": 0.092378913,
+        "pipe_velocity": 32.870225794,
+        "pressure": 801325.0,
+        "temperature": 307.62405799,
+        "velocity": 32.870225794
+      },
+      "outlet": {
+        "density": 7.493838505,
+        "erosional_velocity": 44.562876766,
+        "flow_momentum": 11320.227093465,
+        "mach_number": 0.109268107,
+        "pipe_velocity": 38.866497443,
+        "pressure": 677236.355602491,
+        "temperature": 307.414668287,
+        "velocity": 38.866497443
+      }
+    }
+  }
+}

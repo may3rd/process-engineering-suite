@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<network>
+  <name>skeleton-xml</name>
+  <direction>forward</direction>
+  <boundary_pressure unit="kPa">101.3</boundary_pressure>
+  <boundary_temperature unit="K">293.15</boundary_temperature>
+  <mass_flow_rate unit="kg/s">1.5</mass_flow_rate>
+  <fluid>
+    <name>air</name>
+    <phase>gas</phase>
+    <density unit="kg/m^3">1.2</density>
+    <viscosity unit="Pa*s">1.8e-5</viscosity>
+    <molecular_weight>29.0</molecular_weight>
+    <z_factor>1.0</z_factor>
+    <specific_heat_ratio>1.4</specific_heat_ratio>
+  </fluid>
+  <sections>
+    <section>
+      <id>skeleton-1</id>
+      <schedule>40</schedule>
+      <roughness>1e-4</roughness>
+      <length>25.0</length>
+      <elevation_change>0.0</elevation_change>
+      <fittings/>
+    </section>
+  </sections>
+</network>

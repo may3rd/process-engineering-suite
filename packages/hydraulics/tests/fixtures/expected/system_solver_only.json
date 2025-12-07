@@ -1,0 +1,166 @@
+{
+  "bundles": [
+    {
+      "id": "supply",
+      "network": "supply-net",
+      "result": {
+        "aggregate": {
+          "control_valve_pressure_drop": 0.0,
+          "critical_pressure": null,
+          "elevation_change": 0.0,
+          "frictional_factor": null,
+          "normalized_friction_loss": 41.045512049,
+          "orifice_pressure_drop": 0.0,
+          "pipe_and_fittings": 4.104551205,
+          "reynolds_number": null,
+          "total_segment_loss": 4.104551205,
+          "user_specified_fixed_loss": 0.0
+        },
+        "sections": [
+          {
+            "pressure_drop": {
+              "control_valve_pressure_drop": null,
+              "critical_pressure": null,
+              "elevation_change": 0.0,
+              "frictional_factor": 0.030477184,
+              "normalized_friction_loss": 41.045512049,
+              "orifice_pressure_drop": null,
+              "pipe_and_fittings": 4.104551205,
+              "reynolds_number": 11141.793068844,
+              "total_segment_loss": 4.104551205,
+              "user_specified_fixed_loss": null
+            },
+            "section_id": "supply-line",
+            "summary": {
+              "inlet": {
+                "density": 998.0,
+                "erosional_velocity": 3.861536224,
+                "flow_momentum": 4.15018168,
+                "mach_number": null,
+                "pipe_velocity": 0.064486422,
+                "pressure": 451325.0,
+                "temperature": 308.15,
+                "velocity": 0.064486422
+              },
+              "outlet": {
+                "density": 998.0,
+                "erosional_velocity": 3.861536224,
+                "flow_momentum": 4.15018168,
+                "mach_number": null,
+                "pipe_velocity": 0.064486422,
+                "pressure": 451320.895448795,
+                "temperature": 308.15,
+                "velocity": 0.064486422
+              }
+            }
+          }
+        ],
+        "summary": {
+          "inlet": {
+            "density": 998.0,
+            "erosional_velocity": 3.861536224,
+            "flow_momentum": 4.15018168,
+            "mach_number": null,
+            "pipe_velocity": 0.064486422,
+            "pressure": 451325.0,
+            "temperature": 308.15,
+            "velocity": 0.064486422
+          },
+          "outlet": {
+            "density": 998.0,
+            "erosional_velocity": 3.861536224,
+            "flow_momentum": 4.15018168,
+            "mach_number": null,
+            "pipe_velocity": 0.064486422,
+            "pressure": 451320.895448795,
+            "temperature": 308.15,
+            "velocity": 0.064486422
+          }
+        }
+      }
+    },
+    {
+      "id": "branch",
+      "network": "branch-net",
+      "result": {
+        "aggregate": {
+          "control_valve_pressure_drop": 0.0,
+          "critical_pressure": null,
+          "elevation_change": 0.0,
+          "frictional_factor": null,
+          "normalized_friction_loss": 62.591250684,
+          "orifice_pressure_drop": 0.0,
+          "pipe_and_fittings": 5.007300055,
+          "reynolds_number": null,
+          "total_segment_loss": 5.007300055,
+          "user_specified_fixed_loss": 0.0
+        },
+        "sections": [
+          {
+            "pressure_drop": {
+              "control_valve_pressure_drop": null,
+              "critical_pressure": null,
+              "elevation_change": 0.0,
+              "frictional_factor": 0.034470125,
+              "normalized_friction_loss": 62.591250684,
+              "orifice_pressure_drop": null,
+              "pipe_and_fittings": 5.007300055,
+              "reynolds_number": 6994.945384508,
+              "total_segment_loss": 5.007300055,
+              "user_specified_fixed_loss": null
+            },
+            "section_id": "branch-line",
+            "summary": {
+              "inlet": {
+                "density": 998.0,
+                "erosional_velocity": 3.861536224,
+                "flow_momentum": 3.713697721,
+                "mach_number": null,
+                "pipe_velocity": 0.061001148,
+                "pressure": 451320.895448795,
+                "temperature": 308.15,
+                "velocity": 0.061001148
+              },
+              "outlet": {
+                "density": 998.0,
+                "erosional_velocity": 3.861536224,
+                "flow_momentum": 3.713697721,
+                "mach_number": null,
+                "pipe_velocity": 0.061001148,
+                "pressure": 451315.88814874,
+                "temperature": 308.15,
+                "velocity": 0.061001148
+              }
+            }
+          }
+        ],
+        "summary": {
+          "inlet": {
+            "density": 998.0,
+            "erosional_velocity": 3.861536224,
+            "flow_momentum": 3.713697721,
+            "mach_number": null,
+            "pipe_velocity": 0.061001148,
+            "pressure": 451320.895448795,
+            "temperature": 308.15,
+            "velocity": 0.061001148
+          },
+          "outlet": {
+            "density": 998.0,
+            "erosional_velocity": 3.861536224,
+            "flow_momentum": 3.713697721,
+            "mach_number": null,
+            "pipe_velocity": 0.061001148,
+            "pressure": 451315.88814874,
+            "temperature": 308.15,
+            "velocity": 0.061001148
+          }
+        }
+      }
+    }
+  ],
+  "config": "tests/fixtures/networks/system_solver_only.yaml",
+  "shared_nodes": {
+    "supply::junction": 451320.895448795
+  }
+}
