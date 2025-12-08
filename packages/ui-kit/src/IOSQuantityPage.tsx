@@ -9,8 +9,8 @@ import { useState, useEffect, useMemo, useRef, ReactNode, useCallback } from "re
 type Props = {
     label: string;
     value: number | string;
-    unit: string;
-    units: readonly string[];
+    unit?: string;
+    units?: readonly string[];
     onValueChange?: (value: number | undefined) => void;
     onUnitChange?: (unit: string) => void;
     onChange?: (value: number | undefined, unit: string) => void;
@@ -25,8 +25,8 @@ type Props = {
 export function IOSQuantityPage({
     label,
     value,
-    unit,
-    units,
+    unit = "",
+    units = [],
     onValueChange,
     onUnitChange,
     onChange,
@@ -48,6 +48,7 @@ export function IOSQuantityPage({
     const valueRef = useRef<number | undefined>(typeof value === 'number' ? value : undefined);
     const unitRef = useRef<string>(unit);
     const isDirty = useRef(false);
+    const cancelledRef = useRef(false);
     const initialValueRef = useRef<number | undefined>(valueRef.current);
     const initialUnitRef = useRef<string>(unit);
 
@@ -78,6 +79,7 @@ export function IOSQuantityPage({
         if (typeof value === 'number') {
             valueRef.current = value;
         }
+        cancelledRef.current = false;
     }, [value, formatValue]);
 
     // Sync unit with prop unit
@@ -92,10 +94,10 @@ export function IOSQuantityPage({
         setHighlightedUnitIndex(idx >= 0 ? idx : 0);
     }, [localUnit, units]);
 
-    // Commit changes on unmount
+    // Commit changes on unmount (only if not cancelled)
     useEffect(() => {
         return () => {
-            if (isDirty.current) {
+            if (isDirty.current && !cancelledRef.current) {
                 if (onChangeRef.current) {
                     onChangeRef.current(valueRef.current, unitRef.current);
                 } else {
@@ -156,6 +158,7 @@ export function IOSQuantityPage({
     }, [unit]);
 
     const revertChanges = useCallback(() => {
+        cancelledRef.current = true;
         valueRef.current = initialValueRef.current;
         unitRef.current = initialUnitRef.current;
         setInputValue(formatValue(initialValueRef.current));
@@ -232,12 +235,13 @@ export function IOSQuantityPage({
                     handleUnitSelect(highlightedUnit);
                 }
                 setIsUnitSelectionActive(false);
-            } else if (isInputFocused) {
+            } else {
+                // Always commit and go back on Enter, regardless of focus
                 commitChanges();
                 onBack?.();
             }
         }
-    }, [beginUnitSelection, commitChanges, handleUnitSelect, highlightedUnitIndex, isInputFocused, isUnitSelectionActive, revertChanges, units, onBack]);
+    }, [beginUnitSelection, commitChanges, handleUnitSelect, highlightedUnitIndex, isUnitSelectionActive, revertChanges, units, onBack]);
 
     useEffect(() => {
         window.addEventListener("keydown", handleKeyDown);
@@ -265,18 +269,20 @@ export function IOSQuantityPage({
                 />
             </IOSListGroup>
 
-            <IOSListGroup>
-                {units.map((u) => (
-                    <IOSListItem
-                        key={u}
-                        label={u}
-                        value={u === localUnit ? <Check color="primary" sx={{ fontSize: 16 }} /> : ""}
-                        onClick={() => handleUnitSelect(u)}
-                        selected={isUnitSelectionActive && units[highlightedUnitIndex] === u}
-                        last={u === units[units.length - 1]}
-                    />
-                ))}
-            </IOSListGroup>
+            {units.length > 0 && (
+                <IOSListGroup>
+                    {units.map((u) => (
+                        <IOSListItem
+                            key={u}
+                            label={u}
+                            value={u === localUnit ? <Check color="primary" sx={{ fontSize: 16 }} /> : ""}
+                            onClick={() => handleUnitSelect(u)}
+                            selected={isUnitSelectionActive && units[highlightedUnitIndex] === u}
+                            last={u === units[units.length - 1]}
+                        />
+                    ))}
+                </IOSListGroup>
+            )}
 
             {action && (
                 <Box>

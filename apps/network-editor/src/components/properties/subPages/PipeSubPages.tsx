@@ -297,13 +297,13 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                             if (!currentPipe) return null;
                             const currentFluid = currentPipe.fluid || { id: "fluid", phase: "liquid" };
                             return (
-                                <IOSNumberInputPage
+                                <IOSQuantityPage
                                     label="Molecular Weight"
-                                    value={currentFluid.molecularWeight}
+                                    value={currentFluid.molecularWeight ?? ""}
                                     placeholder="Molecular Weight"
                                     min={0}
                                     autoFocus
-                                    onCommit={(val) => onUpdatePipe(pipe.id, { fluid: { ...currentFluid, molecularWeight: val } })}
+                                    onValueChange={(val) => onUpdatePipe(pipe.id, { fluid: { ...currentFluid, molecularWeight: val } })}
                                     onBack={() => nav.pop()}
                                 />
                             );
@@ -319,12 +319,12 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                             if (!currentPipe) return null;
                             const currentFluid = currentPipe.fluid || { id: "fluid", phase: "liquid" };
                             return (
-                                <IOSNumberInputPage
+                                <IOSQuantityPage
                                     label="Z Factor"
-                                    value={currentFluid.zFactor}
+                                    value={currentFluid.zFactor ?? ""}
                                     placeholder="Z Factor"
                                     autoFocus
-                                    onCommit={(val) => onUpdatePipe(pipe.id, { fluid: { ...currentFluid, zFactor: val } })}
+                                    onValueChange={(val) => onUpdatePipe(pipe.id, { fluid: { ...currentFluid, zFactor: val } })}
                                     onBack={() => nav.pop()}
                                 />
                             );
@@ -340,12 +340,12 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                             if (!currentPipe) return null;
                             const currentFluid = currentPipe.fluid || { id: "fluid", phase: "liquid" };
                             return (
-                                <IOSNumberInputPage
+                                <IOSQuantityPage
                                     label="Specific Heat Ratio"
-                                    value={currentFluid.specificHeatRatio}
+                                    value={currentFluid.specificHeatRatio ?? ""}
                                     placeholder="Specific Heat Ratio"
                                     autoFocus
-                                    onCommit={(val) => onUpdatePipe(pipe.id, { fluid: { ...currentFluid, specificHeatRatio: val } })}
+                                    onValueChange={(val) => onUpdatePipe(pipe.id, { fluid: { ...currentFluid, specificHeatRatio: val } })}
                                     onBack={() => nav.pop()}
                                 />
                             );
@@ -887,13 +887,13 @@ export const ControlValvePage = ({ pipe, onUpdatePipe, navigator, viewSettings, 
             if (!currentPipe) return null;
             const currentCV = currentPipe.controlValve || { id: "cv", inputMode: "pressure_drop" };
             return (
-                <IOSNumberInputPage
+                <IOSQuantityPage
                     label="CV Value"
-                    value={currentCV.cv}
+                    value={currentCV.cv ?? ""}
                     placeholder="CV Value"
                     min={0}
                     autoFocus
-                    onCommit={(v) => onUpdatePipe(pipe.id, { controlValve: { ...currentCV, cv: v, cg: undefined } })}
+                    onValueChange={(v) => onUpdatePipe(pipe.id, { controlValve: { ...currentCV, cv: v, cg: undefined } })}
                     onBack={() => nav.pop()}
                 />
             );
@@ -906,13 +906,13 @@ export const ControlValvePage = ({ pipe, onUpdatePipe, navigator, viewSettings, 
             if (!currentPipe) return null;
             const currentCV = currentPipe.controlValve || { id: "cv", inputMode: "pressure_drop" };
             return (
-                <IOSNumberInputPage
+                <IOSQuantityPage
                     label="Cg Value"
-                    value={currentCV.cg}
+                    value={currentCV.cg ?? ""}
                     placeholder="Cg Value"
                     min={0}
                     autoFocus
-                    onCommit={(v) => onUpdatePipe(pipe.id, { controlValve: { ...currentCV, cg: v, cv: undefined } })}
+                    onValueChange={(v) => onUpdatePipe(pipe.id, { controlValve: { ...currentCV, cg: v, cv: undefined } })}
                     onBack={() => nav.pop()}
                 />
             );
@@ -1083,13 +1083,13 @@ export const OrificePage = ({ pipe, onUpdatePipe, navigator, viewSettings, start
             if (!currentPipe) return null;
             const currentOrifice = currentPipe.orifice || { id: "orifice", inputMode: "beta_ratio" };
             return (
-                <IOSNumberInputPage
+                <IOSQuantityPage
                     label="Beta Ratio"
-                    value={currentOrifice.betaRatio}
+                    value={currentOrifice.betaRatio ?? ""}
                     placeholder="Beta Ratio"
                     min={0}
                     autoFocus
-                    onCommit={(v) => onUpdatePipe(pipe.id, { orifice: { ...currentOrifice, betaRatio: v } })}
+                    onValueChange={(v) => onUpdatePipe(pipe.id, { orifice: { ...currentOrifice, betaRatio: v } })}
                     onBack={() => nav.pop()}
                 />
             );
@@ -1298,13 +1298,13 @@ export const PipeFittingsPage = ({ pipe, onUpdatePipe, navigator }: { pipe: Pipe
             const currentPipe = net.pipes.find(p => p.id === pipe.id);
             if (!currentPipe) return null;
             return (
-                <IOSNumberInputPage
+                <IOSQuantityPage
                     label="User K Value"
-                    value={currentPipe.userK}
+                    value={currentPipe.userK ?? ""}
                     placeholder="User K Value"
                     min={0}
                     autoFocus
-                    onCommit={(v) => onUpdatePipe(pipe.id, { userK: v })}
+                    onValueChange={(v) => onUpdatePipe(pipe.id, { userK: v })}
                     onBack={() => nav.pop()}
                 />
             );
@@ -1610,6 +1610,7 @@ export const BoundaryNodePage = ({ node, onUpdateNode, navigator }: { node: Node
                     onChange={(v, u) => onUpdateNode(node.id, { [field]: v, [unitField]: u })}
                     min={min}
                     autoFocus
+                    onBack={() => nav.pop()}
                 />
             );
         });

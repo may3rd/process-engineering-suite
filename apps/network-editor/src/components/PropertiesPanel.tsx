@@ -87,18 +87,22 @@ export function PropertiesPanel() {
     if (!selectedElement) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== "Escape" || event.defaultPrevented) return;
+      // Only handle Escape key at root level (to close the panel)
+      // Subpage components (IOSQuantityPage, etc.) handle their own Escape via onBack
+      if (event.key !== "Escape") return;
+      if (event.defaultPrevented) return;
 
-      if (stack.length > 1) {
-        pop();
-      } else {
+      // Only handle Escape at root level to close the panel entirely
+      // When stack.length > 1, subpage components handle Escape themselves
+      if (stack.length === 1) {
         onClose();
       }
+      // Don't call pop() for subpages - the subpage component does that via onBack
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedElement, stack.length, pop, onClose]);
+  }, [selectedElement, stack.length, onClose]);
 
   // Reset stack on selection change
   useEffect(() => {

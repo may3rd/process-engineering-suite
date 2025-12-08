@@ -45,6 +45,27 @@
 - Use **Zustand** for global application state (e.g., `useNetworkStore` in Network Editor).
 - Use React Context for app-wide settings like Theme (`ColorModeContext`).
 
+### Input Components (Properties Panel)
+
+The Network Editor uses iOS-style input pages for deferred commit (values only update the store on Enter or navigation back):
+
+| Component | Use Case | Deferred Commit |
+|-----------|----------|-----------------|
+| `IOSQuantityPage` | Numbers with or without units | ✅ Yes |
+| `IOSTextInputPage` | Text input | ✅ Yes |
+| `IOSPickerPage` | Selection from list | Commits on select |
+
+**Behavior:**
+- **Enter** → Commits value, navigates back
+- **Escape** → Reverts to original value, navigates back (no commit)
+
+**Required Props:** All deferred-commit inputs MUST have:
+```tsx
+onBack={() => navigator.pop()}  // or nav.pop() in render functions
+```
+
+**DO NOT** use `IOSNumberInputPage` for new code - use `IOSQuantityPage` with empty `units` instead.
+
 ## Contribution Workflow
 
 1.  Create a new branch for your feature or fix.

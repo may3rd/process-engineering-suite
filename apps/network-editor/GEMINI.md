@@ -53,3 +53,37 @@ The application has recently undergone a major refactor to move state management
 ## Notes for Continuity
 - If you open this project on a new machine, ensure you have the latest `node_modules`.
 - The `GEMINI.md` file (this file) serves as a high-level context for the AI assistant to quickly understand the project state.
+
+## Input Component Patterns (as of Dec 8, 2025)
+
+### Available Input Components (from `@eng-suite/ui-kit`)
+| Component | Use Case | Deferred Commit | Units Support |
+|-----------|----------|-----------------|---------------|
+| `IOSQuantityPage` | Numbers with or without units | ✅ Yes | Optional |
+| `IOSTextInputPage` | Text input | ✅ Yes | No |
+| `IOSPickerPage` | Selection from list | Commits on select | No |
+| `IOSNumberInputPage` | **DEPRECATED** - Use IOSQuantityPage | ✅ Yes | No |
+
+### Deferred Commit Behavior
+All numeric and text inputs use a **deferred commit pattern**:
+- **Enter** → Commits value, navigates back
+- **Escape** → Reverts to original value, navigates back (no commit)
+- **Back click** → Commits value on unmount, navigates back
+
+### Required Props
+All deferred-commit input components MUST have:
+```tsx
+onBack={() => navigator.pop()}  // or nav.pop() in render functions
+```
+
+### Input Counts (audited Dec 8, 2025)
+
+**NodeSubPages.tsx:**
+- 7× `IOSQuantityPage` (Pressure, Temperature, Density, Viscosity, MW, Z Factor, Heat Ratio)
+- 1× `IOSTextInputPage` (Fluid Name)
+- 2× `IOSPickerPage` (Fluid Phase, Node Selection)
+
+**PipeSubPages.tsx:**
+- 19× `IOSQuantityPage` (Mass Flow, Diameter, Length, Roughness, Elevation, Pressure Drop, CV/Cg, Beta Ratio, User K, Fitting Safety Factor, etc.)
+- 3× `IOSTextInputPage` (Name, Description, Fluid Name)
+- 10× `IOSPickerPage` (Phase, Schedule, Input Mode, Direction, etc.)

@@ -253,13 +253,13 @@ export const NodeFluidPage = ({ node, onUpdateNode, navigator }: { node: NodePro
                             if (!currentNode) return null;
                             const currentFluid = currentNode.fluid || { id: "fluid", phase: "liquid" };
                             return (
-                                <IOSNumberInputPage
+                                <IOSQuantityPage
                                     label="Molecular Weight"
-                                    value={currentFluid.molecularWeight}
+                                    value={currentFluid.molecularWeight ?? ""}
                                     placeholder="Molecular Weight"
                                     min={0}
                                     autoFocus
-                                    onCommit={(val) => onUpdateNode(node.id, { fluid: { ...currentFluid, molecularWeight: val } })}
+                                    onValueChange={(val) => onUpdateNode(node.id, { fluid: { ...currentFluid, molecularWeight: val } })}
                                     onBack={() => nav.pop()}
                                 />
                             );
@@ -274,12 +274,12 @@ export const NodeFluidPage = ({ node, onUpdateNode, navigator }: { node: NodePro
                             if (!currentNode) return null;
                             const currentFluid = currentNode.fluid || { id: "fluid", phase: "liquid" };
                             return (
-                                <IOSNumberInputPage
+                                <IOSQuantityPage
                                     label="Z Factor"
-                                    value={currentFluid.zFactor}
+                                    value={currentFluid.zFactor ?? ""}
                                     placeholder="Z Factor"
                                     autoFocus
-                                    onCommit={(val) => onUpdateNode(node.id, { fluid: { ...currentFluid, zFactor: val } })}
+                                    onValueChange={(val) => onUpdateNode(node.id, { fluid: { ...currentFluid, zFactor: val } })}
                                     onBack={() => nav.pop()}
                                 />
                             );
@@ -294,12 +294,12 @@ export const NodeFluidPage = ({ node, onUpdateNode, navigator }: { node: NodePro
                             if (!currentNode) return null;
                             const currentFluid = currentNode.fluid || { id: "fluid", phase: "liquid" };
                             return (
-                                <IOSNumberInputPage
+                                <IOSQuantityPage
                                     label="Specific Heat Ratio"
-                                    value={currentFluid.specificHeatRatio}
+                                    value={currentFluid.specificHeatRatio ?? ""}
                                     placeholder="Specific Heat Ratio"
                                     autoFocus
-                                    onCommit={(val) => onUpdateNode(node.id, { fluid: { ...currentFluid, specificHeatRatio: val } })}
+                                    onValueChange={(val) => onUpdateNode(node.id, { fluid: { ...currentFluid, specificHeatRatio: val } })}
                                     onBack={() => nav.pop()}
                                 />
                             );

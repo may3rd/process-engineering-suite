@@ -50,6 +50,7 @@ export function IOSTextInputPage({
     const [error, setError] = useState<string | null>(null);
     const initialValueRef = useRef(value);
     const dirtyRef = useRef(false);
+    const cancelledRef = useRef(false);
     const onCommitRef = useRef(onCommit);
 
     useEffect(() => {
@@ -60,10 +61,16 @@ export function IOSTextInputPage({
         setLocalValue(value);
         initialValueRef.current = value;
         dirtyRef.current = false;
+        cancelledRef.current = false;
         setError(null);
     }, [value]);
 
     const commitValue = useCallback((shouldClose = true) => {
+        // Skip commit if cancelled
+        if (cancelledRef.current) {
+            return true;
+        }
+
         const next = trim ? localValue.trim() : localValue;
         if (!allowEmpty && next === "") {
             setError("Value is required");
@@ -86,6 +93,7 @@ export function IOSTextInputPage({
     }, [allowEmpty, localValue, onBack, trim]);
 
     const handleCancel = useCallback(() => {
+        cancelledRef.current = true;
         setLocalValue(initialValueRef.current);
         dirtyRef.current = false;
         setError(null);

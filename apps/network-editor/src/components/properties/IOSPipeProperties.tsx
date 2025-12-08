@@ -2,7 +2,7 @@ import { PipeProps, NodeProps, PipePatch, ViewSettings, NetworkState, NodePatch 
 import { convertUnit, computeErosionalVelocity } from "@eng-suite/physics";
 import { getPipeStatus } from "@/utils/velocityCriteria";
 import { getPipeWarnings } from "@/utils/validationUtils";
-import { IOSListGroup, IOSListItem, IOSNumberInputPage } from "@eng-suite/ui-kit";
+import { IOSListGroup, IOSListItem, IOSNumberInputPage, IOSQuantityPage } from "@eng-suite/ui-kit";
 import { Navigator } from "../PropertiesPanel";
 import { Box, IconButton, Typography, useTheme, SvgIcon, SvgIconProps, Dialog, DialogTitle, DialogContent, DialogActions, Button, Stack, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { FloatingNavigationPanel } from "./FloatingNavigationPanel";
@@ -509,13 +509,13 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                         const currentPipe = net.pipes.find(p => p.id === pipe.id);
                         if (!currentPipe) return null;
                         return (
-                            <IOSNumberInputPage
+                            <IOSQuantityPage
                                 label="Erosional Constant"
-                                value={currentPipe.erosionalConstant}
+                                value={currentPipe.erosionalConstant ?? ""}
                                 placeholder="Erosional Constant"
                                 min={0}
                                 autoFocus
-                                onCommit={(v) => onUpdatePipe(pipe.id, { erosionalConstant: v })}
+                                onValueChange={(v) => onUpdatePipe(pipe.id, { erosionalConstant: v })}
                                 onBack={() => nav.pop()}
                             />
                         );

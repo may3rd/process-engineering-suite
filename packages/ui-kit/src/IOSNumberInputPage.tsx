@@ -75,6 +75,7 @@ export function IOSNumberInputPage({
     const [inputValue, setInputValue] = useState(() => formatFn(value));
     const [error, setError] = useState<string | null>(null);
     const dirtyRef = useRef(false);
+    const cancelledRef = useRef(false);
     const initialValueRef = useRef(value);
     const onCommitRef = useRef(onCommit);
 
@@ -86,6 +87,7 @@ export function IOSNumberInputPage({
         setInputValue(formatFn(value));
         initialValueRef.current = value;
         dirtyRef.current = false;
+        cancelledRef.current = false;
         setError(null);
     }, [formatFn, value]);
 
@@ -118,6 +120,11 @@ export function IOSNumberInputPage({
     }, [allowEmpty, max, min]);
 
     const commitValue = useCallback((shouldClose = true) => {
+        // Skip commit if cancelled
+        if (cancelledRef.current) {
+            return true;
+        }
+
         const numericValue = parseFn(inputValue);
         if (!validate(numericValue)) {
             return false;
@@ -139,6 +146,7 @@ export function IOSNumberInputPage({
     }, [inputValue, onBack, parseFn, validate]);
 
     const handleCancel = useCallback(() => {
+        cancelledRef.current = true;
         setInputValue(formatFn(initialValueRef.current));
         dirtyRef.current = false;
         setError(null);
