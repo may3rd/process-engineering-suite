@@ -537,9 +537,10 @@ def calculate_single_edge(input_data: EdgeCalculationInput) -> EdgeCalculationOu
                 output.inlet_pressure = input_data.pressure
                 output.outlet_pressure = input_data.pressure - total_loss
             else:
-                # Backward (B->A): P_B = P_in, P_A = P_in - loss (Flow B->A means P_B > P_A)
+                # Backward direction: Calculate Inlet from Outlet (Back-calculation)
+                # P_inlet = P_boundary + Loss
                 output.outlet_pressure = input_data.pressure
-                output.inlet_pressure = input_data.pressure - total_loss
+                output.inlet_pressure = input_data.pressure + total_loss
             
             # Recalculate densities (important for gas component expansion)
             output.inlet_density = fluid.current_density(output.inlet_temperature, output.inlet_pressure)
