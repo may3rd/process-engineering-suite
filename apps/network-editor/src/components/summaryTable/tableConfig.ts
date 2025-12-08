@@ -611,6 +611,7 @@ export const getPipeSummaryRows = (network: NetworkState, unitSystem: "metric" |
             type: "data",
             label: "INLET Mach Number",
             getValue: (pipe) => {
+                if (pipe.fluid?.phase !== "gas") return "N/A";
                 const val = pipe.resultSummary?.inletState?.machNumber;
                 if (typeof val === 'number') {
                     if (val > 1.0) return { value: val, color: "error.main", helperText: "Mach > 1.0" };
@@ -692,6 +693,7 @@ export const getPipeSummaryRows = (network: NetworkState, unitSystem: "metric" |
             type: "data",
             label: "OUTLET Mach Number",
             getValue: (pipe) => {
+                if (pipe.fluid?.phase !== "gas") return "N/A";
                 const val = pipe.resultSummary?.outletState?.machNumber;
                 if (typeof val === 'number') {
                     if (val > 1.0) return { value: val, color: "error.main", helperText: "Mach > 1.0" };

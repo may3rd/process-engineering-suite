@@ -291,116 +291,175 @@ def calculate_single_edge(input_data: EdgeCalculationInput) -> EdgeCalculationOu
             k_total = output.total_K or 0.0
             is_forward = input_data.direction.lower() == "forward"
             
-            if input_data.gas_flow_model.lower() == "adiabatic":
-                inlet_state, outlet_state = solve_adiabatic(
-                    boundary_pressure=input_data.pressure,
-                    temperature=input_data.temperature,
-                    mass_flow=input_data.mass_flow_rate,
-                    diameter=input_data.pipe_diameter,
-                    length=input_data.length,
-                    friction_factor=friction_factor,
-                    k_total=k_total,
-                    k_additional=0.0,
-                    molar_mass=input_data.fluid_molecular_weight,
-                    z_factor=input_data.fluid_z_factor,
-                    gamma=input_data.fluid_specific_heat_ratio,
-                    is_forward=is_forward,
-                )
-                output.inlet_pressure = inlet_state.pressure
-                output.inlet_temperature = inlet_state.temperature
-                output.inlet_density = inlet_state.density
-                output.inlet_velocity = inlet_state.velocity
-                output.inlet_mach = inlet_state.mach
-                
-                output.outlet_pressure = outlet_state.pressure
-                output.outlet_temperature = outlet_state.temperature
-                output.outlet_density = outlet_state.density
-                output.outlet_velocity = outlet_state.velocity
-                output.outlet_mach = outlet_state.mach
-                
-                output.gas_flow_critical_pressure = outlet_state.gas_flow_critical_pressure
-                
-                # Update total_segment_loss to reflect actual gas flow pressure drop
-                actual_dP = output.inlet_pressure - output.outlet_pressure
-                output.total_segment_loss = actual_dP
-                output.pipe_and_fittings_loss = actual_dP
-            else:
-                # Isothermal
-                final_pressure, final_state = solve_isothermal(
-                    inlet_pressure=input_data.pressure,
-                    temperature=input_data.temperature,
-                    mass_flow=input_data.mass_flow_rate,
-                    diameter=input_data.pipe_diameter,
-                    length=input_data.length,
-                    friction_factor=friction_factor,
-                    k_total=k_total,
-                    k_additional=0.0,
-                    molar_mass=input_data.fluid_molecular_weight,
-                    z_factor=input_data.fluid_z_factor,
-                    gamma=input_data.fluid_specific_heat_ratio,
-                    is_forward=is_forward,
-                )
-                
-                # solve_isothermal returns:
-                # - Forward: final_pressure = outlet (downstream) pressure
-                # - Backward: final_pressure = inlet (upstream) pressure
-                from math import pi, sqrt
-                RGAS = 8314.462618  # J/(kmol*K)
-                area = pi * (input_data.pipe_diameter ** 2) / 4
-                
-                if is_forward:
-                    # Forward: boundary is inlet, final_pressure is outlet
+            if is_forward:
+                # Forward Flow (A->B): Boundary at A. Calculate B.
+                if input_data.gas_flow_model.lower() == "adiabatic":
+                    inlet_state, outlet_state = solve_adiabatic(
+                        boundary_pressure=input_data.pressure,
+                        temperature=input_data.temperature,
+                        mass_flow=input_data.mass_flow_rate,
+                        diameter=input_data.pipe_diameter,
+                        length=input_data.length,
+                        friction_factor=friction_factor,
+                        k_total=k_total,
+                        k_additional=0.0,
+                        molar_mass=input_data.fluid_molecular_weight,
+                        z_factor=input_data.fluid_z_factor,
+                        gamma=input_data.fluid_specific_heat_ratio,
+                        is_forward=True,
+                    )
+                else:
+                    final_pressure, final_state = solve_isothermal(
+                        inlet_pressure=input_data.pressure,
+                        temperature=input_data.temperature,
+                        mass_flow=input_data.mass_flow_rate,
+                        diameter=input_data.pipe_diameter,
+                        length=input_data.length,
+                        friction_factor=friction_factor,
+                        k_total=k_total,
+                        k_additional=0.0,
+                        molar_mass=input_data.fluid_molecular_weight,
+                        z_factor=input_data.fluid_z_factor,
+                        gamma=input_data.fluid_specific_heat_ratio,
+                        is_forward=True,
+                    )
+                    # Construct pseudo-states for mapping below
+                    # (Simplified for isothermal logic reuse)
+                    pass 
+
+                # Common Mapping for Forward
+                if input_data.gas_flow_model.lower() == "adiabatic":
+                    output.inlet_pressure = inlet_state.pressure
+                    output.inlet_temperature = inlet_state.temperature
+                    output.inlet_density = inlet_state.density
+                    output.inlet_velocity = inlet_state.velocity
+                    output.inlet_mach = inlet_state.mach
+                    
+                    output.outlet_pressure = outlet_state.pressure
+                    output.outlet_temperature = outlet_state.temperature
+                    output.outlet_density = outlet_state.density
+                    output.outlet_velocity = outlet_state.velocity
+                    output.outlet_mach = outlet_state.mach
+                    output.gas_flow_critical_pressure = outlet_state.gas_flow_critical_pressure
+                else:
+                    # Isothermal Forward
+                    # final_state is OUTLET
+                    RGAS = 8314.462618
+                    area = 3.14159 * (input_data.pipe_diameter ** 2) / 4
                     output.inlet_pressure = input_data.pressure
                     output.outlet_pressure = final_pressure
+                    output.inlet_temperature = input_data.temperature
+                    output.outlet_temperature = input_data.temperature
                     output.inlet_density = fluid.current_density(input_data.temperature, input_data.pressure)
                     output.outlet_density = final_state.density
                     output.outlet_velocity = final_state.velocity
                     output.outlet_mach = final_state.mach
-                    # Calculate inlet velocity/mach
-                    inlet_velocity = input_data.mass_flow_rate / (output.inlet_density * area)
-                    sonic_velocity = sqrt(input_data.fluid_specific_heat_ratio * input_data.fluid_z_factor * RGAS * input_data.temperature / input_data.fluid_molecular_weight)
-                    output.inlet_velocity = inlet_velocity
-                    output.inlet_mach = inlet_velocity / sonic_velocity
+                    output.inlet_velocity = input_data.mass_flow_rate / (output.inlet_density * area)
+                    sonic_velocity = (input_data.fluid_specific_heat_ratio * input_data.fluid_z_factor * RGAS * input_data.temperature / input_data.fluid_molecular_weight)**0.5
+                    output.inlet_mach = output.inlet_velocity / sonic_velocity
+                    output.gas_flow_critical_pressure = final_state.gas_flow_critical_pressure
+
+            else:
+                # Backward Flow (B->A): Boundary at B (Flow Inlet). Calculate A (Flow Outlet).
+                # We use the solver in "Forward" mode (High->Low) but map inputs/outputs inversely.
+                if input_data.gas_flow_model.lower() == "adiabatic":
+                    # Solver returns (High P State, Low P State)
+                    high_state, low_state = solve_adiabatic(
+                        boundary_pressure=input_data.pressure, # P_B
+                        temperature=input_data.temperature,
+                        mass_flow=input_data.mass_flow_rate,
+                        diameter=input_data.pipe_diameter,
+                        length=input_data.length,
+                        friction_factor=friction_factor,
+                        k_total=k_total,
+                        k_additional=0.0,
+                        molar_mass=input_data.fluid_molecular_weight,
+                        z_factor=input_data.fluid_z_factor,
+                        gamma=input_data.fluid_specific_heat_ratio,
+                        is_forward=True, # Use Forward logic (P_in known -> Find P_out)
+                    )
+                    
+                    # Map High State to B (Outlet aka Flow Inlet), Low State to A (Inlet aka Flow Outlet)
+                    output.outlet_pressure = high_state.pressure
+                    output.outlet_temperature = high_state.temperature
+                    output.outlet_density = high_state.density
+                    output.outlet_velocity = high_state.velocity
+                    output.outlet_mach = high_state.mach
+                    
+                    output.inlet_pressure = low_state.pressure
+                    output.inlet_temperature = low_state.temperature
+                    output.inlet_density = low_state.density
+                    output.inlet_velocity = low_state.velocity
+                    output.inlet_mach = low_state.mach
+                    output.gas_flow_critical_pressure = low_state.gas_flow_critical_pressure
+                    
                 else:
-                    # Backward: boundary is outlet, final_pressure is inlet
+                    # Isothermal Backward
+                    final_pressure, final_state = solve_isothermal(
+                        inlet_pressure=input_data.pressure, # P_B
+                        temperature=input_data.temperature,
+                        mass_flow=input_data.mass_flow_rate,
+                        diameter=input_data.pipe_diameter,
+                        length=input_data.length,
+                        friction_factor=friction_factor,
+                        k_total=k_total,
+                        k_additional=0.0,
+                        molar_mass=input_data.fluid_molecular_weight,
+                        z_factor=input_data.fluid_z_factor,
+                        gamma=input_data.fluid_specific_heat_ratio,
+                        is_forward=True, # Forward Calc logic
+                    )
+                    
+                    # Map High to B, Low to A
+                    RGAS = 8314.462618
+                    area = 3.14159 * (input_data.pipe_diameter ** 2) / 4
+                    
                     output.outlet_pressure = input_data.pressure
-                    output.inlet_pressure = final_pressure
+                    output.inlet_pressure = final_pressure # Low P
+                    
+                    output.outlet_temperature = input_data.temperature
+                    output.inlet_temperature = input_data.temperature
+                    
                     output.outlet_density = fluid.current_density(input_data.temperature, input_data.pressure)
                     output.inlet_density = final_state.density
+                    
                     output.inlet_velocity = final_state.velocity
                     output.inlet_mach = final_state.mach
-                    # Calculate outlet velocity/mach
-                    outlet_velocity = input_data.mass_flow_rate / (output.outlet_density * area)
-                    sonic_velocity = sqrt(input_data.fluid_specific_heat_ratio * input_data.fluid_z_factor * RGAS * input_data.temperature / input_data.fluid_molecular_weight)
-                    output.outlet_velocity = outlet_velocity
-                    output.outlet_mach = outlet_velocity / sonic_velocity
-                
-                output.inlet_temperature = input_data.temperature  # Isothermal - same temp everywhere
-                output.outlet_temperature = input_data.temperature
-                output.gas_flow_critical_pressure = final_state.gas_flow_critical_pressure
-                
-                # Update total_segment_loss to reflect actual gas flow pressure drop
-                actual_dP = output.inlet_pressure - output.outlet_pressure
-                output.total_segment_loss = actual_dP
-                output.pipe_and_fittings_loss = actual_dP
+                    
+                    output.outlet_velocity = input_data.mass_flow_rate / (output.outlet_density * area)
+                    sonic_velocity = (input_data.fluid_specific_heat_ratio * input_data.fluid_z_factor * RGAS * input_data.temperature / input_data.fluid_molecular_weight)**0.5
+                    output.outlet_mach = output.outlet_velocity / sonic_velocity
+                    output.gas_flow_critical_pressure = final_state.gas_flow_critical_pressure
+            
+            # Update total_segment_loss to reflect actual gas flow pressure drop (abs delta)
+            actual_dP = abs(output.inlet_pressure - output.outlet_pressure)
+            output.total_segment_loss = actual_dP
+            output.pipe_and_fittings_loss = actual_dP
             
             # Calculate erosional velocity and flow momentum for gas flow
-            # These are calculated at inlet conditions (most critical point)
+            # For erosional limits, we check the point of highest velocity (Low Pressure point)
+            # If Forward: Outlet (B). If Backward: Inlet (A).
+            # But commonly we check Inlet conditions for sizing?
+            # Code previously checked Inlet Density.
+            # Let's keep checking "Flow Inlet" density (High Pressure)? Or "Flow Outlet" (Low P implies High V)?
+            # Conservatively, Low Pressure -> High Velocity -> Worse Erosion.
+            
+            # Let's calculate for BOTH A and B and let User decide, or store max?
+            # Output only has one `erosional_velocity` field.
+            # Using Inlet Density (A) is standard-ish in this codebase so far?
+            # For Backward flow, this is LOW Pressure. So conservative.
+            
             from math import sqrt
             if output.inlet_density and output.inlet_density > 0:
-                # API 14E formula: Ve = C / sqrt(rho)
-                # C is typically given in imperial units (100-150 for continuous service)
-                # Conversion: C_SI = C_imperial × 0.3048 × sqrt(16.0185) ≈ C_imperial × 1.22
-                # This gives Ve in m/s when rho is in kg/m³
-                C_SI_CONVERSION = 0.3048 * sqrt(16.0185)  # ≈ 1.22
+                C_SI_CONVERSION = 0.3048 * sqrt(16.0185)
                 c_si = input_data.erosional_constant * C_SI_CONVERSION
                 output.erosional_velocity = c_si / sqrt(output.inlet_density)
             
-            # Calculate flow momentum for both inlet and outlet (rho * v^2)
             if output.inlet_density and output.inlet_velocity:
                 output.flow_momentum = output.inlet_density * output.inlet_velocity * output.inlet_velocity
             if output.outlet_density and output.outlet_velocity:
                 output.outlet_flow_momentum = output.outlet_density * output.outlet_velocity * output.outlet_velocity
+
         else:
             # General calculation (Liquid, or discrete Gas components like valves/orifices)
             is_forward = input_data.direction.lower() == "forward"
@@ -410,11 +469,13 @@ def calculate_single_edge(input_data: EdgeCalculationInput) -> EdgeCalculationOu
             output.outlet_temperature = input_data.temperature # Assume isothermal for discrete components
             
             if is_forward:
+                # Forward (A->B): P_A = P_in, P_B = P_in - loss
                 output.inlet_pressure = input_data.pressure
                 output.outlet_pressure = input_data.pressure - total_loss
             else:
+                # Backward (B->A): P_B = P_in, P_A = P_in - loss (Flow B->A means P_B > P_A)
                 output.outlet_pressure = input_data.pressure
-                output.inlet_pressure = input_data.pressure + total_loss
+                output.inlet_pressure = input_data.pressure - total_loss
             
             # Recalculate densities (important for gas component expansion)
             output.inlet_density = fluid.current_density(output.inlet_temperature, output.inlet_pressure)
@@ -451,7 +512,6 @@ def calculate_single_edge(input_data: EdgeCalculationInput) -> EdgeCalculationOu
             
             if fluid.is_gas() and output.inlet_temperature:
                  # Calculate speed of sound for gas
-                 # c = sqrt(gamma * Z * R * T / MW)
                  RGAS = 8314.462618
                  if input_data.fluid_specific_heat_ratio and input_data.fluid_molecular_weight:
                      gamma = input_data.fluid_specific_heat_ratio

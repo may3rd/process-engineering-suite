@@ -182,6 +182,14 @@ export const propagatePressure = (
                 "Pa"
             );
 
+            // Adjust pressure drop for backward flow if elevation is present
+            // By default, pressureDrop (Forward Calc) = Friction + Elevation
+            // For Backward Prop, we need Friction - Elevation
+            // So we subtract 2 * Elevation
+            if (!isForward && updatedPipe.pressureDropCalculationResults?.elevationPressureDrop) {
+                pressureDrop -= 2 * updatedPipe.pressureDropCalculationResults.elevationPressureDrop;
+            }
+
             if (pressureDrop > currentPressurePa) {
                 warnings.push(`Pipe ${pipe.name}: Pressure drop (${(pressureDrop / 1000).toFixed(2)} kPa) exceeds inlet pressure (${(currentPressurePa / 1000).toFixed(2)} kPa). Propagation stopped to avoid negative pressure.`);
                 continue;
@@ -210,11 +218,18 @@ export const propagatePressure = (
             // Also propagate temperature
             // 1. Try to get from pipe results (outletState)
             // 2. Fallback: Isothermal (use current node's temperature)
-            const outletState = updatedPipe.resultSummary?.outletState;
 
-            if (outletState && typeof outletState.temperature === "number") {
+            // Map the correct state based on geometry
+            // If target is End Node (Forward Prop), use Outlet State
+            // If target is Start Node (Backward Prop), use Inlet State
+            const targetIsEnd = targetNodeId === pipe.endNodeId;
+            const targetState = targetIsEnd
+                ? updatedPipe.resultSummary?.outletState
+                : updatedPipe.resultSummary?.inletState;
+
+            if (targetState && typeof targetState.temperature === "number") {
                 const newTargetTemp = convertUnit(
-                    outletState.temperature,
+                    targetState.temperature,
                     "K",
                     targetNode.temperatureUnit || "C"
                 );

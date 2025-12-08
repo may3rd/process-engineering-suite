@@ -109,8 +109,19 @@ export function IOSNodeProperties({
     };
 
     const handleUpdateFromPipe = () => {
-        const connectedPipe = network.pipes.find(p => p.endNodeId === node.id) ||
-            network.pipes.find(p => p.startNodeId === node.id);
+        // Prioritize pipes that have flow directed INTO this node
+        let connectedPipe = network.pipes.find(p =>
+            // Case 1: Node is End (Target Handle) and Flow is Forward (or Undefined)
+            (p.endNodeId === node.id && (p.direction === "forward" || !p.direction)) ||
+            // Case 2: Node is Start (Source Handle) and Flow is Backward
+            (p.startNodeId === node.id && p.direction === "backward")
+        );
+
+        // Fallback: Any connected pipe
+        if (!connectedPipe) {
+            connectedPipe = network.pipes.find(p => p.endNodeId === node.id) ||
+                network.pipes.find(p => p.startNodeId === node.id);
+        }
 
         if (!connectedPipe) return;
 
@@ -123,14 +134,14 @@ export function IOSNodeProperties({
                 : connectedPipe.resultSummary.inletState;
 
             if (state) {
-                if (state.pressure !== undefined) {
+                if (state.pressure != null) {
                     const targetUnit = node.pressureUnit || "kPa";
                     updates.pressure = convertUnit(state.pressure, "Pa", targetUnit);
                     updates.pressureUnit = targetUnit;
                     updates.pressureUpdateStatus = 'auto' as UpdateStatus;
                 }
 
-                if (state.temperature !== undefined) {
+                if (state.temperature != null) {
                     const targetUnit = node.temperatureUnit || "C";
                     updates.temperature = convertUnit(state.temperature, "K", targetUnit);
                     updates.temperatureUnit = targetUnit;
