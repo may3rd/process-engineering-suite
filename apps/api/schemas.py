@@ -169,3 +169,64 @@ class CalculationResponse(BaseModel):
     pressureDropResults: Optional[PressureDropResponse] = None
     resultSummary: Optional[ResultSummaryResponse] = None
     equivalentLength: Optional[float] = None
+
+
+# --- Length Estimation Schemas ---
+
+class LengthEstimationRequest(BaseModel):
+    """Request for solving pipe length from target pressure drop."""
+    id: str
+    name: str
+    
+    # Target pressure drop
+    targetPressureDrop: float  # Pa
+    
+    # Pipe dimensions (SI)
+    pipeDiameter: Optional[float] = None  # mm
+    pipeDiameterUnit: Optional[str] = "mm"
+    inletDiameter: Optional[float] = None
+    inletDiameterUnit: Optional[str] = "mm"
+    outletDiameter: Optional[float] = None
+    outletDiameterUnit: Optional[str] = "mm"
+    roughness: Optional[float] = None  # mm
+    roughnessUnit: Optional[str] = "mm"
+    elevation: Optional[float] = None  # m
+    elevationUnit: Optional[str] = "m"
+    
+    # Flow
+    massFlowRate: Optional[float] = None  # kg/h
+    massFlowRateUnit: Optional[str] = "kg/h"
+    boundaryPressure: Optional[float] = None  # kPag
+    boundaryPressureUnit: Optional[str] = "kPag"
+    boundaryTemperature: Optional[float] = None  # C or K
+    boundaryTemperatureUnit: Optional[str] = "C"
+    
+    # Fittings
+    fittingType: Optional[str] = "LR"
+    fittings: Optional[List[FittingRequest]] = None
+    schedule: Optional[str] = "40"
+    userK: Optional[float] = None
+    pipingFittingSafetyFactor: Optional[float] = None
+    
+    # Fluid
+    fluid: Optional[FluidRequest] = None
+    
+    # Direction
+    direction: Optional[str] = "forward"
+    gasFlowModel: Optional[str] = "isothermal"
+    
+    # Solver bounds
+    lengthMin: Optional[float] = 0.1  # meters
+    lengthMax: Optional[float] = 10000.0  # meters
+    tolerance: Optional[float] = 10.0  # Pa
+
+
+class LengthEstimationResponse(BaseModel):
+    """Response from length estimation."""
+    pipeId: str
+    success: bool
+    estimatedLength: Optional[float] = None  # meters
+    error: Optional[str] = None
+    converged: bool = False
+    finalError: Optional[float] = None  # Pa
+    iterations: int = 0

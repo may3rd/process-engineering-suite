@@ -1479,11 +1479,14 @@ export function PipeSummaryPage({ pipe, viewSettings, navigator }: { pipe: PipeP
     };
 
     const formatUserSpecifiedDrop = () => {
-        if (pipe.pipeSectionType === "control valve" && pipe.controlValve?.inputMode === "pressure_drop") {
-            return formatPressure(pipe.controlValve.pressureDrop);
+        // For control valve and orifice sections, user drop is shown in separate fields
+        // so "User Specified Drop" should be 0.00 (not applicable to these components)
+        if (pipe.pipeSectionType === "control valve" || pipe.pipeSectionType === "orifice") {
+            return "-";
         }
-        if (pipe.pipeSectionType === "orifice" && pipe.orifice?.inputMode === "pressure_drop") {
-            return formatPressure(pipe.orifice.pressureDrop);
+        // For pipeline sections, show userSpecifiedPressureDrop from calculation results
+        if (results?.userSpecifiedPressureDrop) {
+            return formatPressure(results.userSpecifiedPressureDrop);
         }
         return "-";
     };
@@ -1530,7 +1533,6 @@ export function PipeSummaryPage({ pipe, viewSettings, navigator }: { pipe: PipeP
             <IOSListGroup>
                 <IOSListItem label="Pipe & Fitting" value={formatPressure(results?.pipeAndFittingPressureDrop) ?? "-"} />
                 <IOSListItem label="Elevation Change" value={formatPressure(results?.elevationPressureDrop) ?? "-"} />
-                <IOSListItem label="User supplied K" value="-" />
                 <IOSListItem label="Control Valve drop" value={formatPressure(results?.controlValvePressureDrop) ?? "-"} />
                 <IOSListItem label="Orifice drop" value={formatPressure(results?.orificePressureDrop) ?? "-"} />
                 <IOSListItem

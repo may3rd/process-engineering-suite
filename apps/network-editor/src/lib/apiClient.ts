@@ -140,3 +140,104 @@ export async function calculatePipeWithFallback(
     console.warn("API unavailable, falling back to local calculation:", result.error);
     return localCalculateFn(pipe);
 }
+
+
+// --- Length Estimation API ---
+
+export interface LengthEstimationRequest {
+    id: string;
+    name: string;
+    targetPressureDrop: number; // Pa
+    pipeDiameter?: number;
+    pipeDiameterUnit?: string;
+    inletDiameter?: number;
+    inletDiameterUnit?: string;
+    outletDiameter?: number;
+    outletDiameterUnit?: string;
+    roughness?: number;
+    roughnessUnit?: string;
+    elevation?: number;
+    elevationUnit?: string;
+    massFlowRate?: number;
+    massFlowRateUnit?: string;
+    boundaryPressure?: number;
+    boundaryPressureUnit?: string;
+    boundaryTemperature?: number;
+    boundaryTemperatureUnit?: string;
+    fittingType?: string;
+    fittings?: { type: string; count: number }[];
+    schedule?: string;
+    userK?: number;
+    pipingFittingSafetyFactor?: number;
+    fluid?: {
+        phase: string;
+        density?: number;
+        viscosity?: number;
+        viscosityUnit?: string;
+        molecularWeight?: number;
+        zFactor?: number;
+        specificHeatRatio?: number;
+    };
+    direction?: string;
+    gasFlowModel?: string;
+    lengthMin?: number;
+    lengthMax?: number;
+    tolerance?: number;
+}
+
+export interface LengthEstimationResult {
+    pipeId: string;
+    success: boolean;
+    estimatedLength?: number; // meters
+    error?: string;
+    converged: boolean;
+    finalError?: number; // Pa
+    iterations: number;
+}
+
+/**
+ * Solve for pipe length given a target pressure drop via the Python backend.
+ * 
+ * Uses Brent's method for robust root-finding.
+ * 
+ * @param request - Length estimation parameters
+ * @returns Promise with estimated length result
+ */
+export async function solveLengthFromPressureDropAPI(
+    request: LengthEstimationRequest
+): Promise<LengthEstimationResult> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/hydraulics/solve-length`, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(request),
+        });
+
+        if (!response.ok) {
+            throw new Error(`API error: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        return {
+            pipeId: data.pipeId,
+            success: data.success,
+            estimatedLength: data.estimatedLength,
+            error: data.error,
+            converged: data.converged ?? false,
+            finalError: data.finalError,
+            iterations: data.iterations ?? 0,
+        };
+    } catch (error) {
+        console.error("Failed to solve length via API:", error);
+        return {
+            pipeId: request.id,
+            success: false,
+            error: error instanceof Error ? error.message : "Unknown error",
+            converged: false,
+            iterations: 0,
+        };
+    }
+}

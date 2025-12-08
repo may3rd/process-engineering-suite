@@ -9,10 +9,103 @@ type PropagationResult = {
     warnings: string[];
 };
 
-export const propagatePressure = (
+// Helper: Calculate pressure drop for a specific length, handling elevation/Fwd/Bwd
+const calculateProbeDrop = async (
+    length: number,
+    basePipe: PipeProps,
+    isForward: boolean,
+    calculateFn: (p: PipeProps) => Promise<PipeProps>,
+    fluid?: any
+): Promise<number> => {
+    let probe: PipeProps = { ...basePipe, length, lengthUnit: "m" };
+    if (!probe.fluid && fluid) {
+        probe.fluid = { ...fluid };
+    }
+    probe = await calculateFn(probe);
+    let drop = probe.pressureDropCalculationResults?.totalSegmentPressureDrop || 0;
+
+    // Adjust for backward flow elevation
+    if (!isForward && probe.pressureDropCalculationResults?.elevationPressureDrop) {
+        drop -= 2 * probe.pressureDropCalculationResults.elevationPressureDrop;
+    }
+    return drop;
+};
+
+// Helper: Secant Method for Gas Length
+const solveGasLength = async (
+    targetDeltaP: number,
+    basePipe: PipeProps,
+    isForward: boolean,
+    calculateFn: (p: PipeProps) => Promise<PipeProps>,
+    fluid?: any
+): Promise<{ length: number | null; converged: boolean; finalError: number }> => {
+    // Initial Guesses - use larger values for gas pipes (typically longer)
+    let x0 = 5;
+    let x1 = 100;
+
+    let f0 = (await calculateProbeDrop(x0, basePipe, isForward, calculateFn, fluid)) - targetDeltaP;
+    let f1 = (await calculateProbeDrop(x1, basePipe, isForward, calculateFn, fluid)) - targetDeltaP;
+
+    console.log(`[GasLength] Target ΔP: ${(targetDeltaP / 1000).toFixed(2)} kPa`);
+    console.log(`[GasLength] Initial: x0=${x0}m, f0=${(f0 / 1000).toFixed(3)} kPa | x1=${x1}m, f1=${(f1 / 1000).toFixed(3)} kPa`);
+
+    const MAX_ITER = 20;
+    const TOLERANCE = 1; // 100 Pa
+
+    for (let i = 0; i < MAX_ITER; i++) {
+        console.log(`[GasLength] Iter ${i}: x1=${x1.toFixed(2)}m, f1=${(f1 / 1000).toFixed(4)} kPa (error=${Math.abs(f1).toFixed(0)} Pa)`);
+
+        if (Math.abs(f1) < TOLERANCE) {
+            console.log(`[GasLength] Converged at ${x1.toFixed(2)}m with error ${Math.abs(f1).toFixed(0)} Pa`);
+            return { length: x1, converged: true, finalError: f1 };
+        }
+
+        if (Math.abs(f1 - f0) < 1e-6) {
+            // Prevent division by zero / stagnation - try extending search
+            console.log(`[GasLength] Stagnation detected, extending x1`);
+            x1 = x1 * 1.5;
+            f1 = (await calculateProbeDrop(x1, basePipe, isForward, calculateFn, fluid)) - targetDeltaP;
+            continue;
+        }
+
+        const x_new = x1 - f1 * (x1 - x0) / (f1 - f0);
+
+        // Safety bounds
+        if (x_new <= 0) {
+            // If shoots negative, try smaller range
+            console.log(`[GasLength] Negative length, resetting to small range`);
+            x0 = 1;
+            x1 = 10;
+            f0 = (await calculateProbeDrop(x0, basePipe, isForward, calculateFn, fluid)) - targetDeltaP;
+            f1 = (await calculateProbeDrop(x1, basePipe, isForward, calculateFn, fluid)) - targetDeltaP;
+            continue;
+        }
+
+        // Limit step size to prevent overshooting
+        if (x_new > x1 * 10) {
+            console.log(`[GasLength] Large step detected, limiting growth`);
+            x0 = x1;
+            f0 = f1;
+            x1 = x1 * 2; // Double instead of jump
+            f1 = (await calculateProbeDrop(x1, basePipe, isForward, calculateFn, fluid)) - targetDeltaP;
+            continue;
+        }
+
+        x0 = x1;
+        f0 = f1;
+        x1 = x_new;
+        f1 = (await calculateProbeDrop(x1, basePipe, isForward, calculateFn, fluid)) - targetDeltaP;
+    }
+
+    console.log(`[GasLength] MAX_ITER reached. Best: ${x1.toFixed(2)}m, error=${Math.abs(f1).toFixed(0)} Pa`);
+    return { length: x1, converged: Math.abs(f1) < TOLERANCE, finalError: f1 };
+};
+
+export const propagatePressure = async (
     startNodeId: string,
-    network: NetworkState
-): PropagationResult => {
+    network: NetworkState,
+    calculatePipeFn?: (pipe: PipeProps) => Promise<PipeProps>
+): Promise<PropagationResult> => {
     const nodesMap = new Map<string, NodeProps>();
     network.nodes.forEach(node => nodesMap.set(node.id, { ...node }));
 
@@ -92,32 +185,83 @@ export const propagatePressure = (
                 const p1 = convertUnit(currentNode.pressure, currentNode.pressureUnit || "kPag", "Pa");
                 const p2 = convertUnit(targetNode.pressure, targetNode.pressureUnit || "kPag", "Pa");
 
-                // Pressure drop needed (must be positive for flow)
+                // Total Pressure Drop required (P_current - P_target)
+                // Note: Can be negative if flow is downhill (pressure gain)
                 const targetDeltaP = p1 - p2;
 
-                if (targetDeltaP <= 0) {
-                    // Impossible flow condition for estimation
-                    warnings.push(`Pipe ${pipe.name}: Cannot estimate length. Upstream pressure (${p1.toFixed(0)} Pa) is less than or equal to downstream (${p2.toFixed(0)} Pa). Propagation stopped to avoid overwriting target.`);
-                    continue;
+                const calculateFn = calculatePipeFn || (async (p: PipeProps) => recalculatePipeFittingLosses(p));
+
+                // --- GAS FLOW: Iterative Shooting Method ---
+                if (pipe.fluid?.phase === "gas") {
+                    const result = await solveGasLength(targetDeltaP, updatedPipe, isForward, calculateFn, currentNode.fluid);
+
+                    if (result.length && result.length > 0) {
+                        updatedPipe.length = result.length;
+                        updatedPipe.lengthUnit = "m";
+                        if (result.converged) {
+                            warnings.push(`Pipe ${pipe.name} (Gas): Estimated length to be ${result.length.toFixed(2)}m.`);
+                        } else {
+                            warnings.push(`Pipe ${pipe.name} (Gas): Estimated length ~${result.length.toFixed(2)}m (convergence incomplete, error=${(Math.abs(result.finalError) / 1000).toFixed(3)} kPa).`);
+                        }
+                    } else {
+                        warnings.push(`Pipe ${pipe.name} (Gas): Could not estimate length.`);
+                    }
                 }
+                // --- LIQUID FLOW: Single-shot Linear Extrapolation ---
+                else {
+                    // Probe 1: Friction Gradient (Length=1m, Elev=0, No fittings)
+                    // This isolates the pressure drop per meter due to pipe friction
+                    let frictionProbe: PipeProps = {
+                        ...updatedPipe,
+                        length: 1,
+                        lengthUnit: "m",
+                        elevation: 0,
+                        elevationUnit: "m",
+                        fittings: [], // Remove fittings to get pure pipe gradient
+                        userK: 0
+                    };
 
-                // Create temp pipe with 1m length to find gradient
-                let tempPipe: PipeProps = { ...updatedPipe, length: 1, lengthUnit: "m" };
+                    // Inject fluid if missing
+                    if (!frictionProbe.fluid && currentNode.fluid) {
+                        frictionProbe.fluid = { ...currentNode.fluid };
+                    }
 
-                // Inject fluid if missing
-                if (!tempPipe.fluid && currentNode.fluid) {
-                    tempPipe.fluid = { ...currentNode.fluid };
-                }
+                    frictionProbe = await calculateFn(frictionProbe);
+                    const frictionGradient = frictionProbe.pressureDropCalculationResults?.totalSegmentPressureDrop || 0;
 
-                tempPipe = recalculatePipeFittingLosses(tempPipe);
+                    // Probe 2: Fixed Losses (Length=0, Original Elev, Original Fittings)
+                    // This isolates Elevation change and Fitting losses
+                    let fixedLossProbe: PipeProps = {
+                        ...updatedPipe,
+                        length: 0,
+                        lengthUnit: "m"
+                    };
 
-                const gradient = tempPipe.pressureDropCalculationResults?.totalSegmentPressureDrop;
+                    if (!fixedLossProbe.fluid && currentNode.fluid) {
+                        fixedLossProbe.fluid = { ...currentNode.fluid };
+                    }
 
-                if (gradient && gradient > 0) {
-                    const estimatedLength = targetDeltaP / gradient;
-                    updatedPipe.length = estimatedLength;
-                    updatedPipe.lengthUnit = "m";
-                    warnings.push(`Pipe ${pipe.name}: Estimated length to be ${estimatedLength.toFixed(2)}m based on target pressure.`);
+                    fixedLossProbe = await calculateFn(fixedLossProbe);
+                    let fixedDrop = fixedLossProbe.pressureDropCalculationResults?.totalSegmentPressureDrop || 0;
+
+                    // Adjust Fixed Drop for Backward Flow (Elevation inversion)
+                    if (!isForward && fixedLossProbe.pressureDropCalculationResults?.elevationPressureDrop) {
+                        fixedDrop -= 2 * fixedLossProbe.pressureDropCalculationResults.elevationPressureDrop;
+                    }
+
+                    // Required Friction Drop = Total Required Drop - Fixed Drop
+                    const reqFrictionDrop = targetDeltaP - fixedDrop;
+
+                    if (frictionGradient > 0 && reqFrictionDrop > 0) {
+                        const estimatedLength = reqFrictionDrop / frictionGradient;
+                        updatedPipe.length = estimatedLength;
+                        updatedPipe.lengthUnit = "m";
+                        warnings.push(`Pipe ${pipe.name}: Estimated length to be ${estimatedLength.toFixed(2)}m based on target pressure.`);
+                    } else if (reqFrictionDrop <= 0) {
+                        warnings.push(`Pipe ${pipe.name}: Cannot estimate length. Target pressure requires negative friction loss (Impossible). Check elevation or target pressure.`);
+                    } else {
+                        warnings.push(`Pipe ${pipe.name}: Cannot estimate length. Computed friction gradient is 0.`);
+                    }
                 }
             }
 
@@ -161,7 +305,9 @@ export const propagatePressure = (
             }
 
             // Recalculate pipe physics with new boundary conditions (and potentially new length)
-            updatedPipe = recalculatePipeFittingLosses(updatedPipe);
+            // Use the same calculate function as was used during estimation (API or fallback)
+            const finalCalculateFn = calculatePipeFn || (async (p: PipeProps) => recalculatePipeFittingLosses(p));
+            updatedPipe = await finalCalculateFn(updatedPipe);
 
             updatedPipesMap.set(updatedPipe.id, updatedPipe);
 

@@ -5,21 +5,23 @@ export enum FluidState {
     Oil = 'Oil',
     Air = 'Air',
     Steam = 'Steam'
-  }
+}
 
 export interface Fluid {
+    id: string; // Added to match Network Editor
     name?: string;
     density?: number;
     densityUnit?: string;
     viscosity?: number;
     viscosityUnit?: string;
-    phase?: "liquid" | "gas";
+    phase: "liquid" | "gas";
     molecularWeight?: number;
     zFactor?: number;
     specificHeatRatio?: number;
 }
 
 export interface ControlValve {
+    id: string; // Added to match Network Editor
     cv?: number;
     pressureDrop?: number;
     pressureDropUnit?: string;
@@ -30,18 +32,19 @@ export interface ControlValve {
 }
 
 export interface Orifice {
+    id: string; // Added to match Network Editor
     diameter?: number;
     pressureDrop?: number;
     pressureDropUnit?: string;
-    inputMode?: "diameter" | "pressure_drop" | "beta_ratio";
+    inputMode?: "pressure_drop" | "beta_ratio";
     betaRatio?: number; // Added
 }
 
 export interface FittingType {
     type: string;
     count: number;
-    k_each?: number; // Added based on error
-    k_total?: number; // Added
+    k_each: number;
+    k_total: number;
 }
 
 export interface PressureDropCalculationResults {
@@ -67,8 +70,8 @@ export interface PressureDropCalculationResults {
 }
 
 export interface resultSummary { // Renamed to match import
-    outletState?: pipeState; // Changed to pipeState to be more generic/inclusive
-    inletState?: pipeState; // Added
+    outletState: pipeState; // Changed to pipeState to be more generic/inclusive
+    inletState: pipeState; // Added
 }
 
 // Added missing type
@@ -89,7 +92,7 @@ export interface PipeProps {
     boundaryPressureUnit?: string;
     boundaryTemperature?: number;
     boundaryTemperatureUnit?: string;
-    pipeSectionType?: string;
+    pipeSectionType?: "pipeline" | "control valve" | "orifice";
     controlValve?: ControlValve;
     orifice?: Orifice;
     fluid?: Fluid;
@@ -127,7 +130,7 @@ export interface PipeProps {
     userSpecifiedPressureLossUnit?: string; // Added
     elevation?: number; // Added
     elevationUnit?: string; // Added
-    gasFlowModel?: string; // Added
+    gasFlowModel?: "isothermal" | "adiabatic"; // Added
 
     pressureDropCalculationResults?: PressureDropCalculationResults;
     resultSummary?: resultSummary;

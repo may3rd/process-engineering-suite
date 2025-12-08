@@ -161,13 +161,15 @@ export function IOSNodeProperties({
         }
     };
 
-    const handlePropagatePressure = () => {
+    const calculatePipe = useNetworkStore((state) => state.calculatePipe);
+
+    const handlePropagatePressure = async () => {
         if (!onNetworkChange) {
             console.error("onNetworkChange is required for pressure propagation");
             return;
         }
 
-        const result = propagatePressure(node.id, network);
+        const result = await propagatePressure(node.id, network, calculatePipe);
 
         if (result.warnings.length > 0) {
             alert(`Propagation completed with warnings:\n\n${result.warnings.join("\n")}`);

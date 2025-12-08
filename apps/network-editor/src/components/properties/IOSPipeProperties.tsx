@@ -4,7 +4,7 @@ import { getPipeStatus } from "@/utils/velocityCriteria";
 import { getPipeWarnings } from "@/utils/validationUtils";
 import { IOSListGroup, IOSListItem, IOSNumberInputPage } from "@eng-suite/ui-kit";
 import { Navigator } from "../PropertiesPanel";
-import { Box, IconButton, Typography, useTheme, SvgIcon, SvgIconProps, Dialog, DialogTitle, DialogContent, DialogActions, Button, Stack } from "@mui/material";
+import { Box, IconButton, Typography, useTheme, SvgIcon, SvgIconProps, Dialog, DialogTitle, DialogContent, DialogActions, Button, Stack, ToggleButton, ToggleButtonGroup } from "@mui/material";
 import { FloatingNavigationPanel } from "./FloatingNavigationPanel";
 import { Add, Check, Timeline, Close, ErrorOutline } from "@mui/icons-material";
 import { RefObject, useEffect, useRef, useState } from "react";
@@ -401,14 +401,38 @@ export function IOSPipeProperties({ pipe, startNode, endNode, onUpdatePipe, onUp
                 />
                 <IOSListItem
                     label="Direction"
-                    value={pipe.direction === "backward" ? "Backward" : "Forward"}
-                    valueColor={USER_INPUT_COLOR}
-                    onClick={() => navigator.push("Direction", (net, nav) => {
-                        const currentPipe = net.pipes.find(p => p.id === pipe.id);
-                        if (!currentPipe) return null;
-                        return <DirectionPage pipe={currentPipe} onUpdatePipe={onUpdatePipe} navigator={nav} />;
-                    })}
-                    chevron
+                    value={
+                        <ToggleButtonGroup
+                            value={pipe.direction ?? "forward"}
+                            exclusive
+                            onChange={(e, newDir) => {
+                                if (newDir) onUpdatePipe(pipe.id, { direction: newDir });
+                            }}
+                            size="small"
+                            sx={{
+                                height: 28,
+                                mr: "-8px",
+                                '& .MuiToggleButton-root': {
+                                    textTransform: 'none',
+                                    fontSize: '13px',
+                                    px: 1.75,
+                                    py: 0.5,
+                                    color: 'text.primary',
+                                    borderColor: 'divider',
+                                    '&.Mui-selected': {
+                                        backgroundColor: USER_INPUT_COLOR,
+                                        color: '#fff',
+                                        '&:hover': {
+                                            backgroundColor: USER_INPUT_COLOR,
+                                        }
+                                    }
+                                }
+                            }}
+                        >
+                            <ToggleButton value="forward">Forward</ToggleButton>
+                            <ToggleButton value="backward">Backward</ToggleButton>
+                        </ToggleButtonGroup>
+                    }
                 />
                 {pipe.fluid?.phase === "gas" && (
                     <IOSListItem

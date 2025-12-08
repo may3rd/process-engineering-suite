@@ -191,6 +191,7 @@ interface NetworkStore {
     setUseAPICalculation: (enabled: boolean) => void;
     recalculatePipeViaAPI: (pipeId: string) => Promise<void>;
     recalculateAllPipesViaAPI: () => Promise<void>;
+    calculatePipe: (pipe: PipeProps) => Promise<PipeProps>;
 }
 
 const defaultViewSettings: ViewSettings = {
@@ -601,5 +602,9 @@ export const useNetworkStore = create<NetworkStore>((set, get) => ({
         } finally {
             set({ isCalculating: false });
         }
+    },
+
+    calculatePipe: async (pipe: PipeProps): Promise<PipeProps> => {
+        return calculatePipeAsync(pipe);
     },
 }));

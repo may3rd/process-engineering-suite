@@ -108,6 +108,9 @@ class EdgeCalculationOutput:
     user_fixed_loss: Optional[float] = None
     total_segment_loss: Optional[float] = None
     
+    # Normalized friction loss (Pa per 100m pipe)
+    normalized_friction_loss: Optional[float] = None
+    
     # Gas flow specific
     gas_flow_critical_pressure: Optional[float] = None
     
@@ -240,11 +243,15 @@ def calculate_single_edge(input_data: EdgeCalculationInput) -> EdgeCalculationOu
             elevation_calc.calculate(section)
             output.elevation_loss = pressure_drop.elevation_change
         
-        # Calculate user fixed losses
-        if input_data.user_specified_fixed_loss:
+        # Calculate user fixed losses (only for pipeline sections, not CV/Orifice)
+        is_component_section = input_data.pipe_section_type in ("control valve", "orifice")
+        if input_data.user_specified_fixed_loss and not is_component_section:
             user_loss_calc = UserFixedLossCalculator()
             user_loss_calc.calculate(section)
             output.user_fixed_loss = pressure_drop.user_specified_fixed_loss
+        elif is_component_section:
+            # Explicitly set to 0 for component sections
+            output.user_fixed_loss = 0.0
         
         # Calculate control valve pressure drop (if control valve section)
         if input_data.control_valve and input_data.pipe_section_type == "control valve":
@@ -276,9 +283,59 @@ def calculate_single_edge(input_data: EdgeCalculationInput) -> EdgeCalculationOu
                 # Log but don't fail - orifice calculation is optional
                 output.error = f"Orifice calculation error: {orifice_error}"
         
-        output.total_segment_loss = pressure_drop.total_segment_loss
         output.user_K = section.user_K
         output.piping_fitting_safety_factor = section.piping_and_fitting_safety_factor
+        
+        # Set total_segment_loss based on section type
+        # For pipeline: use calculated pressure_drop.total_segment_loss
+        # For control valve: use control_valve_pressure_drop
+        # For orifice: use orifice_pressure_drop
+        if input_data.pipe_section_type == "control valve":
+            output.total_segment_loss = output.control_valve_pressure_drop or 0.0
+        elif input_data.pipe_section_type == "orifice":
+            output.total_segment_loss = output.orifice_pressure_drop or 0.0
+        else:
+            output.total_segment_loss = pressure_drop.total_segment_loss
+        
+        # Calculate normalized friction loss (kPa per 100m) for pipelines
+        if input_data.pipe_section_type == "pipeline" and input_data.length and input_data.length > 0:
+            pipe_and_fittings = output.pipe_and_fittings_loss or 0.0
+            # Normalized = (pipe_and_fittings / length) * 100
+            output.normalized_friction_loss = (pipe_and_fittings / input_data.length) * 100.0
+        
+        # Enforce mutual exclusivity based on pipe section type
+        # Pipeline: has pipe & fittings, elevation; no CV/orifice
+        # Control Valve: only CV loss; zero pipe/fittings/elevation/orifice
+        # Orifice: only orifice loss; zero pipe/fittings/elevation/CV
+        if input_data.pipe_section_type == "pipeline":
+            output.control_valve_pressure_drop = None
+            output.control_valve_cv = None
+            output.control_valve_cg = None
+            output.orifice_pressure_drop = None
+            output.orifice_beta_ratio = None
+            output.orifice_discharge_coefficient = None
+        elif input_data.pipe_section_type == "control valve":
+            output.pipe_and_fittings_loss = None
+            output.elevation_loss = None
+            output.user_fixed_loss = None
+            output.orifice_pressure_drop = None
+            output.orifice_beta_ratio = None
+            output.orifice_discharge_coefficient = None
+            output.fitting_K = None
+            output.pipe_length_K = None
+            output.equivalent_length = None
+            output.normalized_friction_loss = None
+        elif input_data.pipe_section_type == "orifice":
+            output.pipe_and_fittings_loss = None
+            output.elevation_loss = None
+            output.user_fixed_loss = None
+            output.control_valve_pressure_drop = None
+            output.control_valve_cv = None
+            output.control_valve_cg = None
+            output.fitting_K = None
+            output.pipe_length_K = None
+            output.equivalent_length = None
+            output.normalized_friction_loss = None
         
         # Set state points
         output.inlet_pressure = input_data.pressure
@@ -531,6 +588,177 @@ def calculate_single_edge(input_data: EdgeCalculationInput) -> EdgeCalculationOu
                  if output.outlet_velocity:
                      output.outlet_mach = output.outlet_velocity / speed_of_sound
         
+        output.success = True
+        
+    except Exception as e:
+        output.error = str(e)
+    
+    return output
+
+
+# --- Length Estimation Function ---
+
+@dataclass
+class LengthEstimationInput:
+    """Input for solving pipe length from target pressure drop."""
+    pipe_id: str
+    pipe_name: str
+    
+    # Target pressure drop (Pa)
+    target_pressure_drop: float = 0.0
+    
+    # Dimensions (all in SI: m, m)
+    pipe_diameter: float = 0.0
+    inlet_diameter: Optional[float] = None
+    outlet_diameter: Optional[float] = None
+    roughness: float = 0.0457 / 1000  # default 0.0457mm in meters
+    elevation_change: float = 0.0
+    
+    # Fittings
+    fitting_type: str = "LR"
+    fittings: List[Fitting] = field(default_factory=list)
+    schedule: str = "40"
+    user_K: Optional[float] = None
+    piping_fitting_safety_factor: float = 0.0
+    
+    # Flow conditions (SI units: kg/s, K, Pa)
+    mass_flow_rate: float = 0.0
+    temperature: float = 298.15
+    pressure: float = 101325.0
+    
+    # Fluid properties
+    fluid_phase: str = "liquid"
+    fluid_density: Optional[float] = None
+    fluid_viscosity: float = 0.001
+    fluid_molecular_weight: Optional[float] = None
+    fluid_z_factor: Optional[float] = None
+    fluid_specific_heat_ratio: Optional[float] = None
+    
+    # Direction
+    direction: str = "forward"
+    
+    # Gas flow model
+    gas_flow_model: str = "isothermal"
+    
+    # Search bounds (meters)
+    length_min: float = 0.1
+    length_max: float = 10000.0
+    
+    # Tolerance (Pa)
+    tolerance: float = 1.0
+
+
+@dataclass
+class LengthEstimationOutput:
+    """Output from length estimation."""
+    pipe_id: str
+    success: bool
+    estimated_length: Optional[float] = None  # meters
+    error: Optional[str] = None
+    converged: bool = False
+    final_error: Optional[float] = None  # Pa
+    iterations: int = 0
+
+
+def solve_length_from_pressure_drop(input_data: LengthEstimationInput) -> LengthEstimationOutput:
+    """
+    Solve for pipe length given a target pressure drop using Brent's method.
+    
+    This is the inverse problem: given a target ΔP, find the length L such that
+    the calculated pressure drop matches the target.
+    
+    Args:
+        input_data: LengthEstimationInput with target pressure drop and pipe properties
+        
+    Returns:
+        LengthEstimationOutput with estimated length and convergence status
+    """
+    from scipy.optimize import brentq
+    
+    output = LengthEstimationOutput(
+        pipe_id=input_data.pipe_id,
+        success=False,
+    )
+    
+    try:
+        target_dp = input_data.target_pressure_drop
+        
+        if target_dp <= 0:
+            output.error = "Target pressure drop must be positive"
+            return output
+        
+        def pressure_drop_error(length: float) -> float:
+            """Calculate the error between computed ΔP and target ΔP for a given length."""
+            calc_input = EdgeCalculationInput(
+                pipe_id=input_data.pipe_id,
+                pipe_name=input_data.pipe_name,
+                length=length,
+                pipe_diameter=input_data.pipe_diameter,
+                inlet_diameter=input_data.inlet_diameter,
+                outlet_diameter=input_data.outlet_diameter,
+                roughness=input_data.roughness,
+                elevation_change=input_data.elevation_change,
+                fitting_type=input_data.fitting_type,
+                fittings=input_data.fittings,
+                schedule=input_data.schedule,
+                user_K=input_data.user_K,
+                piping_fitting_safety_factor=input_data.piping_fitting_safety_factor,
+                mass_flow_rate=input_data.mass_flow_rate,
+                temperature=input_data.temperature,
+                pressure=input_data.pressure,
+                fluid_phase=input_data.fluid_phase,
+                fluid_density=input_data.fluid_density,
+                fluid_viscosity=input_data.fluid_viscosity,
+                fluid_molecular_weight=input_data.fluid_molecular_weight,
+                fluid_z_factor=input_data.fluid_z_factor,
+                fluid_specific_heat_ratio=input_data.fluid_specific_heat_ratio,
+                direction=input_data.direction,
+                gas_flow_model=input_data.gas_flow_model,
+            )
+            
+            calc_output = calculate_single_edge(calc_input)
+            
+            if not calc_output.success or calc_output.total_segment_loss is None:
+                # Return a large error to push solver away from invalid regions
+                return 1e9
+            
+            # For backward flow, adjust for elevation inversion
+            computed_dp = calc_output.total_segment_loss
+            if input_data.direction == "backward" and calc_output.elevation_loss:
+                computed_dp -= 2 * calc_output.elevation_loss
+            
+            return computed_dp - target_dp
+        
+        # Check if the target is achievable within bounds
+        f_min = pressure_drop_error(input_data.length_min)
+        f_max = pressure_drop_error(input_data.length_max)
+        
+        if f_min * f_max > 0:
+            # Root is not bracketed - try to find better bounds
+            if f_min > 0 and f_max > 0:
+                output.error = f"Target pressure drop {target_dp/1000:.2f} kPa is too small. Minimum achievable is higher."
+            elif f_min < 0 and f_max < 0:
+                output.error = f"Target pressure drop {target_dp/1000:.2f} kPa is too large. Maximum achievable at {input_data.length_max}m is lower."
+            return output
+        
+        # Use Brent's method for robust root-finding
+        estimated_length, result = brentq(
+            pressure_drop_error,
+            input_data.length_min,
+            input_data.length_max,
+            xtol=0.001,  # 1mm length tolerance
+            rtol=1e-6,
+            maxiter=50,
+            full_output=True,
+        )
+        
+        # Verify the result
+        final_error = pressure_drop_error(estimated_length)
+        
+        output.estimated_length = estimated_length
+        output.converged = abs(final_error) <= input_data.tolerance
+        output.final_error = final_error
+        output.iterations = result.iterations if hasattr(result, 'iterations') else 0
         output.success = True
         
     except Exception as e:

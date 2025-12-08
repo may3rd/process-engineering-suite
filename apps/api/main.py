@@ -26,6 +26,8 @@ from schemas import (
     ResultSummaryResponse,
     StatePointResponse,
     FittingBreakdownResponse,
+    LengthEstimationRequest,
+    LengthEstimationResponse,
 )
 from packages.hydraulics.src.single_edge import (
     calculate_single_edge,
@@ -274,6 +276,7 @@ def _convert_output_to_response(pipe_id: str, output) -> CalculationResponse:
         
         userSpecifiedPressureDrop=output.user_fixed_loss,  # Pa
         totalSegmentPressureDrop=output.total_segment_loss,  # Pa
+        normalizedPressureDrop=output.normalized_friction_loss,  # Pa per 100m
         gasFlowCriticalPressure=output.gas_flow_critical_pressure,  # Pa
     )
     
@@ -362,3 +365,131 @@ async def calculate_edge(edge_id: str, request: PipeSectionRequest):
 async def health_check():
     """Health check endpoint."""
     return {"status": "healthy", "service": "hydraulics-api"}
+
+
+@app.post("/hydraulics/solve-length")
+async def solve_length(request: LengthEstimationRequest):
+    """
+    Solve for pipe length given a target pressure drop.
+    
+    Uses Brent's method (scipy.optimize.brentq) for robust root-finding.
+    
+    This is the inverse of the normal calculation: instead of computing
+    pressure drop for a given length, we find the length that produces
+    a specific pressure drop.
+    """
+    from schemas import LengthEstimationRequest, LengthEstimationResponse
+    from packages.hydraulics.src.single_edge import (
+        solve_length_from_pressure_drop,
+        LengthEstimationInput,
+    )
+    from packages.hydraulics.src.models.pipe_section import Fitting
+    from packages.hydraulics.src.utils.units import convert
+    
+    logger.info(f"📥 Received length estimation request for pipe: {request.id}")
+    logger.debug(f"   Target ΔP: {request.targetPressureDrop/1000:.2f} kPa")
+    
+    try:
+        # Convert units
+        diameter_unit = request.pipeDiameterUnit or "mm"
+        diameter = convert(request.pipeDiameter or 0.0, diameter_unit, "m")
+        
+        inlet_diameter = None
+        if request.inletDiameter:
+            inlet_diameter = convert(request.inletDiameter, request.inletDiameterUnit or "mm", "m")
+        
+        outlet_diameter = None
+        if request.outletDiameter:
+            outlet_diameter = convert(request.outletDiameter, request.outletDiameterUnit or "mm", "m")
+        
+        roughness = convert(request.roughness or 0.0457, request.roughnessUnit or "mm", "m")
+        
+        mass_flow_rate = convert(request.massFlowRate or 0.0, request.massFlowRateUnit or "kg/h", "kg/s")
+        
+        pressure_unit = request.boundaryPressureUnit or "kPag"
+        pressure_pa = convert(request.boundaryPressure or 101.325, pressure_unit.replace("g", ""), "Pa")
+        pressure = pressure_pa + 101325  # Absolute
+        
+        temp_value = request.boundaryTemperature or 25.0
+        temp_unit = request.boundaryTemperatureUnit or "C"
+        if temp_unit == "K" and temp_value < 200:
+            temp_unit = "C"
+        temperature = convert(temp_value, temp_unit, "K")
+        
+        # Fluid
+        fluid = request.fluid
+        viscosity = 0.001
+        if fluid and fluid.viscosity:
+            viscosity = convert(fluid.viscosity, fluid.viscosityUnit or "cP", "Pa*s")
+        
+        density = fluid.density if fluid else None
+        molecular_weight = fluid.molecularWeight if fluid else None
+        z_factor = fluid.zFactor if fluid else None
+        specific_heat_ratio = fluid.specificHeatRatio if fluid else None
+        
+        # Fittings
+        fittings = []
+        if request.fittings:
+            for f in request.fittings:
+                try:
+                    fittings.append(Fitting(type=f.type, count=f.count))
+                except ValueError:
+                    pass
+        
+        # Create input
+        estimation_input = LengthEstimationInput(
+            pipe_id=request.id,
+            pipe_name=request.name,
+            target_pressure_drop=request.targetPressureDrop,
+            pipe_diameter=diameter,
+            inlet_diameter=inlet_diameter,
+            outlet_diameter=outlet_diameter,
+            roughness=roughness,
+            elevation_change=request.elevation or 0.0,
+            fitting_type=request.fittingType or "LR",
+            fittings=fittings,
+            schedule=request.schedule or "40",
+            user_K=request.userK,
+            piping_fitting_safety_factor=(request.pipingFittingSafetyFactor or 0) / 100.0,
+            mass_flow_rate=mass_flow_rate,
+            temperature=temperature,
+            pressure=pressure,
+            fluid_phase=fluid.phase if fluid and fluid.phase else "liquid",
+            fluid_density=density,
+            fluid_viscosity=viscosity,
+            fluid_molecular_weight=molecular_weight,
+            fluid_z_factor=z_factor,
+            fluid_specific_heat_ratio=specific_heat_ratio,
+            direction=request.direction or "forward",
+            gas_flow_model=request.gasFlowModel or "isothermal",
+            length_min=request.lengthMin or 0.1,
+            length_max=request.lengthMax or 10000.0,
+            tolerance=request.tolerance or 10.0,
+        )
+        
+        # Run solver
+        output = solve_length_from_pressure_drop(estimation_input)
+        
+        if output.success:
+            logger.info(f"✅ Length estimation successful for pipe: {request.id}")
+            logger.debug(f"   Estimated length: {output.estimated_length:.2f}m, converged: {output.converged}")
+        else:
+            logger.warning(f"⚠️ Length estimation failed for pipe: {request.id} - {output.error}")
+        
+        return LengthEstimationResponse(
+            pipeId=request.id,
+            success=output.success,
+            estimatedLength=output.estimated_length,
+            error=output.error,
+            converged=output.converged,
+            finalError=output.final_error,
+            iterations=output.iterations,
+        )
+        
+    except Exception as e:
+        logger.error(f"❌ Exception for length estimation {request.id}: {str(e)}")
+        return LengthEstimationResponse(
+            pipeId=request.id,
+            success=False,
+            error=str(e),
+        )
