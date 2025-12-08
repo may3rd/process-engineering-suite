@@ -521,7 +521,8 @@ export const useNetworkStore = create<NetworkStore>((set, get) => ({
     },
 
     resetNetwork: () => {
-        const newNetwork = createNetworkWithDerivedValues();
+        // Load the example network without local calculations
+        const newNetwork = createInitialNetwork();
         set({
             network: newNetwork,
             selection: null,
@@ -531,6 +532,8 @@ export const useNetworkStore = create<NetworkStore>((set, get) => ({
             historyIndex: 0,
             isPanelOpen: false // Reset panel state
         });
+        // Trigger API recalculation for all pipes
+        get().recalculateAllPipesViaAPI();
     },
 
     clearNetwork: () => {

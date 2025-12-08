@@ -1493,11 +1493,22 @@ export function PipeSummaryPage({ pipe, viewSettings, navigator }: { pipe: PipeP
             <IOSListGroup>
                 <IOSListItem label="Pipe K" value={results?.pipeLengthK?.toFixed(3) ?? "-"} />
                 <IOSListItem label="Fittings K" value={results?.fittingK?.toFixed(3) ?? "-"} />
-                <IOSListItem label="Total K" value={results?.totalK?.toFixed(3) ?? "-"} last />
+                <IOSListItem label="Sub-Total K" value={(() => {
+                    const pipeK = results?.pipeLengthK ?? 0;
+                    const fittingK = results?.fittingK ?? 0;
+                    const subTotal = pipeK + fittingK;
+                    return subTotal > 0 ? subTotal.toFixed(3) : "-";
+                })()} />
+                <IOSListItem
+                    label="Total K"
+                    value={results?.totalK?.toFixed(3) ?? "-"}
+                    last
+                />
             </IOSListGroup>
 
             <IOSListGroup>
                 <IOSListItem label="Reynolds Number" value={results?.reynoldsNumber?.toFixed(0) ?? "-"} />
+                <IOSListItem label="Flow Scheme" value={results?.flowScheme ?? "-"} />
                 <IOSListItem label="Friction Factor" value={results?.frictionalFactor?.toFixed(4) ?? "-"} />
                 <IOSListItem label="Velocity" value={formatVelocity(velocity) ?? "-"} last />
             </IOSListGroup>

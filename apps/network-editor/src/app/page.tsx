@@ -12,18 +12,8 @@ import {
   createInitialNetwork,
   NetworkState,
 } from "@/lib/types";
-import { recalculatePipeFittingLosses } from "@eng-suite/physics";
 import { parseExcelNetwork } from "@/utils/excelImport";
 import { useNetworkStore } from "@/store/useNetworkStore";
-// import { convertUnit } from "@eng-suite/physics";
-
-const createNetworkWithDerivedValues = () =>
-  applyFittingLosses(createInitialNetwork());
-
-const applyFittingLosses = (network: NetworkState): NetworkState => ({
-  ...network,
-  pipes: network.pipes.map(recalculatePipeFittingLosses) as any,
-});
 
 export default function Home() {
   const {
@@ -39,6 +29,7 @@ export default function Home() {
     isExporting,
     setIsExporting,
     isPanelOpen,
+    recalculateAllPipesViaAPI,
   } = useNetworkStore();
 
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -231,15 +222,12 @@ export default function Home() {
           if (!parsed || typeof parsed !== "object" || !Array.isArray(parsed.nodes) || !Array.isArray(parsed.pipes)) {
             throw new Error("File does not contain a valid network");
           }
-          const nextNetwork = applyFittingLosses(parsed as NetworkState);
-          setNetwork(nextNetwork);
-          // Selection and history reset are handled in setNetwork if needed, 
-          // but here we might want to explicitly reset history if it's a new load.
-          // The store's setNetwork appends to history. 
-          // We might need a specific 'loadNetwork' action in the store to reset history.
-          // For now, let's use setNetwork, which will add to history. 
-          // If we want to reset history, we should add a resetHistory action or use clearNetwork then setNetwork.
-          // Actually, let's just use setNetwork. The user might want to undo the load.
+          // Set network first, then trigger API recalculation
+          // This uses the Python API for calculations instead of local TypeScript
+          setNetwork(parsed as NetworkState);
+
+          // Trigger API recalculation for all pipes
+          recalculateAllPipesViaAPI();
         } catch (error) {
           console.error("Failed to load network file", error);
           alert("Unable to load the selected file. Please ensure it is a valid NHF/JSON snapshot.");
@@ -258,7 +246,7 @@ export default function Home() {
       };
       reader.readAsText(file);
     },
-    [setNetwork]
+    [setNetwork, recalculateAllPipesViaAPI]
   );
 
   const handleImportExcelClick = useCallback(() => {
@@ -272,8 +260,12 @@ export default function Home() {
     try {
       const newState = await parseExcelNetwork(file);
       if (newState) {
-        const nextNetwork = applyFittingLosses(newState);
-        setNetwork(nextNetwork);
+        // Set network first, then trigger API recalculation
+        // This uses the Python API for calculations instead of local TypeScript
+        setNetwork(newState);
+
+        // Trigger API recalculation for all pipes
+        recalculateAllPipesViaAPI();
       }
     } catch (error) {
       console.error("Failed to import Excel file", error);
@@ -283,7 +275,7 @@ export default function Home() {
         excelInputRef.current.value = "";
       }
     }
-  }, [setNetwork]);
+  }, [setNetwork, recalculateAllPipesViaAPI]);
 
   return (
     <>

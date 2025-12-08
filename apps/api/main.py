@@ -32,6 +32,8 @@ from packages.hydraulics.src.single_edge import (
     EdgeCalculationInput,
 )
 from packages.hydraulics.src.models.pipe_section import Fitting
+from packages.hydraulics.src.models.components import ControlValve, Orifice
+from packages.hydraulics.src.utils.units import convert
 
 
 app = FastAPI(
@@ -56,77 +58,66 @@ app.add_middleware(
 
 def _convert_units_to_si(request: PipeSectionRequest) -> EdgeCalculationInput:
     """
-    Convert request units to SI units for calculation.
+    Convert request units to SI units for calculation using the convert() helper.
     
-    Frontend units:
-    - length: m (already SI)
-    - diameter: mm → m
-    - roughness: mm → m
-    - massFlowRate: kg/h → kg/s
-    - pressure: kPag/kPa → Pa (absolute)
-    - temperature: C → K
-    - viscosity: cP → Pa·s
-    - density: kg/m³ (already SI)
-    
-    Note: The frontend stores temperature in Celsius even though unit says K.
+    Target SI units:
+    - length: m
+    - diameter: m
+    - roughness: m
+    - massFlowRate: kg/s
+    - pressure: Pa (absolute)
+    - temperature: K
+    - viscosity: Pa*s
+    - density: kg/m³
     """
-    # Convert diameters from mm to m
-    diameter = (request.pipeDiameter or request.diameter or 0.0) / 1000
-    inlet_diameter = (request.inletDiameter / 1000) if request.inletDiameter else None
-    outlet_diameter = (request.outletDiameter / 1000) if request.outletDiameter else None
+    # Convert diameters (default unit is mm)
+    diameter_unit = request.pipeDiameterUnit or request.diameterUnit or "mm"
+    diameter_value = request.pipeDiameter or request.diameter or 0.0
+    diameter = convert(diameter_value, diameter_unit, "m")
     
-    # Convert roughness from mm to m
-    roughness = (request.roughness or 0.0457) / 1000
+    inlet_diameter = None
+    if request.inletDiameter:
+        inlet_unit = request.inletDiameterUnit or "mm"
+        inlet_diameter = convert(request.inletDiameter, inlet_unit, "m")
     
-    # Convert mass flow rate from kg/h to kg/s
-    mass_flow_rate = (request.massFlowRate or 0.0) / 3600
+    outlet_diameter = None
+    if request.outletDiameter:
+        outlet_unit = request.outletDiameterUnit or "mm"
+        outlet_diameter = convert(request.outletDiameter, outlet_unit, "m")
+    
+    # Convert roughness (default unit is mm)
+    roughness_value = request.roughness or 0.0457
+    roughness_unit = request.roughnessUnit or "mm"
+    roughness = convert(roughness_value, roughness_unit, "m")
+    
+    # Convert mass flow rate (default unit is kg/h)
+    mass_flow_value = request.massFlowRate or 0.0
+    mass_flow_unit = request.massFlowRateUnit or "kg/h"
+    mass_flow_rate = convert(mass_flow_value, mass_flow_unit, "kg/s")
     
     # Convert pressure to Pa (absolute)
-    # Frontend sends kPag (gauge) or kPa
+    # Frontend sends gauge pressure, need to add atmospheric
     pressure_value = request.boundaryPressure or 101.325
     pressure_unit = request.boundaryPressureUnit or "kPa"
+    # Convert to Pa first, then add atmospheric for absolute
+    pressure_pa = convert(pressure_value, pressure_unit.replace("g", ""), "Pa")  # Remove 'g' from kPag
+    pressure = pressure_pa + 101325  # Add atmospheric for absolute
     
-    if pressure_unit in ("kPag", "kPa"):
-        # Assume gauge pressure, add atmospheric
-        pressure = pressure_value * 1000 + 101325  # kPa → Pa + atmospheric
-    elif pressure_unit == "Pa":
-        pressure = pressure_value + 101325
-    elif pressure_unit == "bar":
-        pressure = pressure_value * 100000 + 101325
-    elif pressure_unit == "psi":
-        pressure = pressure_value * 6894.76 + 101325
-    else:
-        pressure = pressure_value * 1000 + 101325  # Default kPa gauge
-    
-    # Convert temperature from Celsius to Kelvin
+    # Convert temperature to K
     # The frontend stores temperature in C even if unit says K
     temp_value = request.boundaryTemperature or 25.0
     temp_unit = request.boundaryTemperatureUnit or "C"
+    # Handle case where frontend says K but value is actually C
+    if temp_unit == "K" and temp_value < 200:
+        temp_unit = "C"
+    temperature = convert(temp_value, temp_unit, "K")
     
-    if temp_unit in ("C", "°C", "degC"):
-        temperature = temp_value + 273.15
-    elif temp_unit == "K":
-        # Frontend likely sends C even when unit says K, so check the value range
-        if temp_value < 200:  # More likely to be Celsius
-            temperature = temp_value + 273.15
-        else:
-            temperature = temp_value
-    elif temp_unit in ("F", "°F", "degF"):
-        temperature = (temp_value - 32) * 5/9 + 273.15
-    else:
-        temperature = temp_value + 273.15  # Default assume Celsius
-    
-    # Convert viscosity from cP to Pa·s (if provided in cP)
+    # Convert viscosity (default unit is cP)
     fluid = request.fluid
     viscosity = 0.001  # default 1 cP = 0.001 Pa·s
     if fluid and fluid.viscosity:
         viscosity_unit = fluid.viscosityUnit or "cP"
-        if viscosity_unit in ("cP", "cp", "centipoise"):
-            viscosity = fluid.viscosity / 1000
-        elif viscosity_unit in ("Pa.s", "Pa·s", "Pas"):
-            viscosity = fluid.viscosity
-        else:
-            viscosity = fluid.viscosity / 1000  # Default cP
+        viscosity = convert(fluid.viscosity, viscosity_unit, "Pa*s")
     
     # Density (already in kg/m³)
     density = None
@@ -152,21 +143,67 @@ def _convert_units_to_si(request: PipeSectionRequest) -> EdgeCalculationInput:
             except ValueError:
                 pass
     
+    # Automatically add swage fittings if inlet/outlet diameter differs from pipe diameter
+    # This ensures the K value for reducers/expanders is properly calculated
+    def needs_swage(upstream: float, downstream: float, tolerance: float = 0.001) -> bool:
+        """Check if a swage is needed between two diameters."""
+        if upstream is None or downstream is None:
+            return False
+        if upstream <= 0 or downstream <= 0:
+            return False
+        return abs(upstream - downstream) > tolerance
+    
+    def has_fitting(fittings_list: list, fit_type: str) -> bool:
+        """Check if a fitting type already exists in the list."""
+        return any(f.type == fit_type for f in fittings_list)
+    
+    if needs_swage(inlet_diameter, diameter) and not has_fitting(fittings, "inlet_swage"):
+        fittings.append(Fitting(type="inlet_swage", count=1))
+        
+    if needs_swage(diameter, outlet_diameter) and not has_fitting(fittings, "outlet_swage"):
+        fittings.append(Fitting(type="outlet_swage", count=1))
+    
     # User specified pressure loss conversion
     user_fixed_loss = None
     if request.userSpecifiedPressureLoss:
         user_loss_unit = request.userSpecifiedPressureLossUnit or "kPa"
-        if user_loss_unit == "kPa":
-            user_fixed_loss = request.userSpecifiedPressureLoss * 1000
-        elif user_loss_unit == "Pa":
-            user_fixed_loss = request.userSpecifiedPressureLoss
-        elif user_loss_unit == "bar":
-            user_fixed_loss = request.userSpecifiedPressureLoss * 100000
-        elif user_loss_unit == "psi":
-            user_fixed_loss = request.userSpecifiedPressureLoss * 6894.76
-        else:
-            user_fixed_loss = request.userSpecifiedPressureLoss * 1000
+        user_fixed_loss = convert(request.userSpecifiedPressureLoss, user_loss_unit, "Pa")
     
+    # Control Valve conversion
+    control_valve = None
+    if request.controlValve:
+        cv_req = request.controlValve
+        cv_pressure_drop_pa = None
+        if cv_req.pressureDrop:
+            unit = cv_req.pressureDropUnit or "kPa"
+            cv_pressure_drop_pa = convert(cv_req.pressureDrop, unit, "Pa")
+            
+        control_valve = ControlValve(
+            tag=request.name if request.pipeSectionType == "control valve" else None,
+            cv=cv_req.cv,
+            cg=cv_req.cg,
+            pressure_drop=cv_pressure_drop_pa,
+            C1=cv_req.C1,
+            xT=cv_req.xT,
+        )
+
+    # Orifice conversion
+    orifice = None
+    if request.orifice:
+        orf_req = request.orifice
+        orf_pressure_drop_pa = None
+        if orf_req.pressureDrop:
+            unit = orf_req.pressureDropUnit or "kPa"
+            orf_pressure_drop_pa = convert(orf_req.pressureDrop, unit, "Pa")
+            
+        orifice = Orifice(
+            tag=request.name if request.pipeSectionType == "orifice" else None,
+            d_over_D_ratio=orf_req.betaRatio,
+            pressure_drop=orf_pressure_drop_pa,
+            pipe_diameter=diameter,
+            orifice_diameter=orf_req.diameter,
+        )
+
     return EdgeCalculationInput(
         pipe_id=request.id,
         pipe_name=request.name,
@@ -196,6 +233,10 @@ def _convert_units_to_si(request: PipeSectionRequest) -> EdgeCalculationInput:
         direction=request.direction or "forward",
         gas_flow_model=request.gasFlowModel or "isothermal",
         user_specified_fixed_loss=user_fixed_loss,
+        pipe_section_type=request.pipeSectionType or "pipeline",
+        control_valve=control_valve,
+        orifice=orifice,
+        erosional_constant=request.erosionalConstant or 100.0,
     )
 
 
@@ -224,6 +265,13 @@ def _convert_output_to_response(pipe_id: str, output) -> CalculationResponse:
         flowScheme=output.flow_scheme,
         pipeAndFittingPressureDrop=output.pipe_and_fittings_loss,  # Pa
         elevationPressureDrop=output.elevation_loss,  # Pa
+        
+        controlValvePressureDrop=output.control_valve_pressure_drop,
+        controlValveCV=output.control_valve_cv,
+        controlValveCg=output.control_valve_cg,
+        
+        orificePressureDrop=output.orifice_pressure_drop,
+        
         userSpecifiedPressureDrop=output.user_fixed_loss,  # Pa
         totalSegmentPressureDrop=output.total_segment_loss,  # Pa
         gasFlowCriticalPressure=output.gas_flow_critical_pressure,  # Pa
@@ -236,6 +284,8 @@ def _convert_output_to_response(pipe_id: str, output) -> CalculationResponse:
         density=output.inlet_density,
         velocity=output.inlet_velocity,
         machNumber=output.inlet_mach,
+        erosionalVelocity=output.erosional_velocity,
+        flowMomentum=output.flow_momentum,
     )
     
     outlet_state = StatePointResponse(
@@ -244,6 +294,8 @@ def _convert_output_to_response(pipe_id: str, output) -> CalculationResponse:
         density=output.outlet_density,
         velocity=output.outlet_velocity,
         machNumber=output.outlet_mach,
+        erosionalVelocity=output.erosional_velocity,  # Same for both points
+        flowMomentum=output.outlet_flow_momentum,  # Outlet flow momentum
     )
     
     return CalculationResponse(
