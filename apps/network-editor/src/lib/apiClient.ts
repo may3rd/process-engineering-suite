@@ -52,6 +52,7 @@ export async function calculatePipeSectionAPI(pipe: PipeProps): Promise<Calculat
                 userK: data.pressureDropResults.userK,
                 pipingFittingSafetyFactor: data.pressureDropResults.pipingFittingSafetyFactor,
                 totalK: data.pressureDropResults.totalK,
+                fittingBreakdown: data.pressureDropResults.fittingBreakdown,
                 reynoldsNumber: data.pressureDropResults.reynoldsNumber,
                 frictionalFactor: data.pressureDropResults.frictionalFactor,
                 flowScheme: data.pressureDropResults.flowScheme,

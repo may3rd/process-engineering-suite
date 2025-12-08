@@ -71,7 +71,8 @@ export const getPipeSummaryRows = (network: NetworkState, unitSystem: "metric" |
     };
 
     const getFittingK = (pipe: PipeProps, type: string, decimals = 3) => {
-        const fitting = pipe.fittings?.find((f) => f.type === type);
+        const breakdown = pipe.pressureDropCalculationResults?.fittingBreakdown;
+        const fitting = breakdown?.find((f) => f.type === type);
         return fitting ? formatNumber(fitting.k_each, decimals) : "";
     };
 

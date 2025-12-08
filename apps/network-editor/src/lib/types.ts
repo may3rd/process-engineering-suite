@@ -56,6 +56,7 @@ export type PressureDropCalculationResults = {
   reynoldsNumber?: number,
   frictionalFactor?: number,
   flowScheme?: string,
+  fittingBreakdown?: FittingType[],
   pipeAndFittingPressureDrop?: number,
   elevationPressureDrop?: number,
   controlValvePressureDrop?: number,

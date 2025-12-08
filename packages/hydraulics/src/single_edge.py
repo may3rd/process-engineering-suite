@@ -8,6 +8,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 import logging
 from typing import List, Optional
+import math
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +27,7 @@ from packages.hydraulics.src.models.results import (
     PressureDropDetails,
     ResultSummary,
     StatePoint,
+    FittingBreakdown,
 )
 
 
@@ -99,6 +101,7 @@ class EdgeCalculationOutput:
     user_K: Optional[float] = None
     total_K: Optional[float] = None
     piping_fitting_safety_factor: Optional[float] = None
+    fitting_breakdown: List[FittingBreakdown] = field(default_factory=list)
     
     # Calculation results
     reynolds_number: Optional[float] = None
@@ -225,6 +228,7 @@ def calculate_single_edge(input_data: EdgeCalculationInput) -> EdgeCalculationOu
         fitting_calc = FittingLossCalculator(fluid=fluid, default_pipe_diameter=input_data.pipe_diameter)
         fitting_calc.calculate(section)
         output.fitting_K = section.fitting_K
+        output.fitting_breakdown = section.calculation_output.pressure_drop.fitting_breakdown or []
         
         # Calculate friction losses
         friction_calc = FrictionCalculator(fluid=fluid, default_pipe_diameter=input_data.pipe_diameter)
@@ -424,12 +428,16 @@ def calculate_single_edge(input_data: EdgeCalculationInput) -> EdgeCalculationOu
                     output.gas_flow_critical_pressure = final_state.gas_flow_critical_pressure
 
             else:
-                # Backward Flow (B->A): Boundary at B (Flow Inlet). Calculate A (Flow Outlet).
-                # We use the solver in "Forward" mode (High->Low) but map inputs/outputs inversely.
+                # Backward Flow (B->A):
+                # User interpretation: Back-Calculation (Find Upstream given Downstream)
+                # Boundary Pressure is P_outlet (Low P). Find P_inlet (High P).
+                # Flow physically moves High -> Low.
+                
                 if input_data.gas_flow_model.lower() == "adiabatic":
-                    # Solver returns (High P State, Low P State)
-                    high_state, low_state = solve_adiabatic(
-                        boundary_pressure=input_data.pressure, # P_B
+                    # solve_adiabatic with is_forward=False calculates Inlet from Outlet
+                    # Returns (Inlet State, Outlet State)
+                    inlet_state, outlet_state = solve_adiabatic(
+                        boundary_pressure=input_data.pressure, # Treated as Outlet/Downstream
                         temperature=input_data.temperature,
                         mass_flow=input_data.mass_flow_rate,
                         diameter=input_data.pipe_diameter,
@@ -440,27 +448,28 @@ def calculate_single_edge(input_data: EdgeCalculationInput) -> EdgeCalculationOu
                         molar_mass=input_data.fluid_molecular_weight,
                         z_factor=input_data.fluid_z_factor,
                         gamma=input_data.fluid_specific_heat_ratio,
-                        is_forward=True, # Use Forward logic (P_in known -> Find P_out)
+                        is_forward=False, # Back-Calculation
                     )
                     
-                    # Map High State to B (Outlet aka Flow Inlet), Low State to A (Inlet aka Flow Outlet)
-                    output.outlet_pressure = high_state.pressure
-                    output.outlet_temperature = high_state.temperature
-                    output.outlet_density = high_state.density
-                    output.outlet_velocity = high_state.velocity
-                    output.outlet_mach = high_state.mach
+                    output.inlet_pressure = inlet_state.pressure
+                    output.inlet_temperature = inlet_state.temperature
+                    output.inlet_density = inlet_state.density
+                    output.inlet_velocity = inlet_state.velocity
+                    output.inlet_mach = inlet_state.mach
                     
-                    output.inlet_pressure = low_state.pressure
-                    output.inlet_temperature = low_state.temperature
-                    output.inlet_density = low_state.density
-                    output.inlet_velocity = low_state.velocity
-                    output.inlet_mach = low_state.mach
-                    output.gas_flow_critical_pressure = low_state.gas_flow_critical_pressure
+                    output.outlet_pressure = outlet_state.pressure
+                    output.outlet_temperature = outlet_state.temperature
+                    output.outlet_density = outlet_state.density
+                    output.outlet_velocity = outlet_state.velocity
+                    output.outlet_mach = outlet_state.mach
+                    output.gas_flow_critical_pressure = outlet_state.gas_flow_critical_pressure
                     
                 else:
                     # Isothermal Backward
-                    final_pressure, final_state = solve_isothermal(
-                        inlet_pressure=input_data.pressure, # P_B
+                    # solve_isothermal with is_forward=False calculates Inlet from Outlet
+                    # Returns (Inlet Pressure, Inlet State)
+                    estimated_inlet_pressure, inlet_state = solve_isothermal(
+                        inlet_pressure=input_data.pressure, # Treated as Outlet/Downstream
                         temperature=input_data.temperature,
                         mass_flow=input_data.mass_flow_rate,
                         diameter=input_data.pipe_diameter,
@@ -471,29 +480,29 @@ def calculate_single_edge(input_data: EdgeCalculationInput) -> EdgeCalculationOu
                         molar_mass=input_data.fluid_molecular_weight,
                         z_factor=input_data.fluid_z_factor,
                         gamma=input_data.fluid_specific_heat_ratio,
-                        is_forward=True, # Forward Calc logic
+                        is_forward=False, # Back-Calculation
                     )
                     
-                    # Map High to B, Low to A
-                    RGAS = 8314.462618
-                    area = 3.14159 * (input_data.pipe_diameter ** 2) / 4
+                    # For Isothermal, T is constant
+                    # Solver returns Inlet state. We need to manually construct Outlet state (Boundary conditions)
+                    
+                    output.inlet_pressure = estimated_inlet_pressure
+                    output.inlet_temperature = input_data.temperature
+                    output.inlet_density = inlet_state.density
+                    output.inlet_velocity = inlet_state.velocity
+                    output.inlet_mach = inlet_state.mach
                     
                     output.outlet_pressure = input_data.pressure
-                    output.inlet_pressure = final_pressure # Low P
-                    
                     output.outlet_temperature = input_data.temperature
-                    output.inlet_temperature = input_data.temperature
-                    
                     output.outlet_density = fluid.current_density(input_data.temperature, input_data.pressure)
-                    output.inlet_density = final_state.density
                     
-                    output.inlet_velocity = final_state.velocity
-                    output.inlet_mach = final_state.mach
-                    
+                    # Calculate outlet velocity/mach
+                    RGAS = 8314.462618
+                    area = math.pi * (input_data.pipe_diameter ** 2) / 4
                     output.outlet_velocity = input_data.mass_flow_rate / (output.outlet_density * area)
                     sonic_velocity = (input_data.fluid_specific_heat_ratio * input_data.fluid_z_factor * RGAS * input_data.temperature / input_data.fluid_molecular_weight)**0.5
                     output.outlet_mach = output.outlet_velocity / sonic_velocity
-                    output.gas_flow_critical_pressure = final_state.gas_flow_critical_pressure
+                    output.gas_flow_critical_pressure = inlet_state.gas_flow_critical_pressure
             
             # Update total_segment_loss to reflect actual gas flow pressure drop (abs delta)
             actual_dP = abs(output.inlet_pressure - output.outlet_pressure)

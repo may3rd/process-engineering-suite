@@ -262,6 +262,10 @@ def _convert_output_to_response(pipe_id: str, output) -> CalculationResponse:
         userK=output.user_K,
         pipingFittingSafetyFactor=output.piping_fitting_safety_factor,
         totalK=output.total_K,
+        fittingBreakdown=[
+            {"type": f.type, "count": f.count, "k_each": f.k_each, "k_total": f.k_total}
+            for f in output.fitting_breakdown
+        ] if output.fitting_breakdown else None,
         reynoldsNumber=output.reynolds_number,
         frictionalFactor=output.frictional_factor,
         flowScheme=output.flow_scheme,
