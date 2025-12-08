@@ -273,6 +273,7 @@ def _convert_output_to_response(pipe_id: str, output) -> CalculationResponse:
         controlValveCg=output.control_valve_cg,
         
         orificePressureDrop=output.orifice_pressure_drop,
+        orificeBetaRatio=output.orifice_beta_ratio,
         
         userSpecifiedPressureDrop=output.user_fixed_loss,  # Pa
         totalSegmentPressureDrop=output.total_segment_loss,  # Pa
@@ -341,8 +342,8 @@ async def calculate_edge(edge_id: str, request: PipeSectionRequest):
         
         if output.success:
             logger.info(f"✅ Calculation successful for edge: {edge_id}")
-            logger.debug(f"   Results: K_total={output.total_K:.4f}, Re={output.reynolds_number:.1f}, Flow={output.flow_scheme}")
-            logger.debug(f"   Pressure drop: {output.total_segment_loss:.2f} Pa ({(output.total_segment_loss or 0)/1000:.4f} kPa)")
+            logger.debug(f"   Results: K_total={output.total_K if output.total_K is not None else 'N/A'}, Re={output.reynolds_number if output.reynolds_number is not None else 'N/A'}, Flow={output.flow_scheme}")
+            logger.debug(f"   Pressure drop: {output.total_segment_loss if output.total_segment_loss is not None else 'N/A'} Pa ({(output.total_segment_loss or 0)/1000:.4f} kPa)")
         else:
             logger.warning(f"⚠️ Calculation failed for edge: {edge_id} - {output.error}")
         

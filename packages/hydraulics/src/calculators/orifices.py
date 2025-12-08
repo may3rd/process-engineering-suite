@@ -54,10 +54,41 @@ class OrificeCalculator(LossCalculator):
         if has_drop:
             pipe_diameter = self._maybe_pipe_diameter(section)
             drop = max(orifice.pressure_drop or 0.0, 0.0)
-            self._backfill_geometry_from_drop(orifice, pipe_diameter)
-            orifice.calculation_note = (
-                f"Used specified pressure_drop ({self._format_drop(drop)})."
-            )
+            
+            # If only pressure_drop is provided (no geometry), solve for beta ratio
+            if not has_ratio and not has_orifice_diameter:
+                mass_flow = self._mass_flow_rate(section, mass_flow_override)
+                if mass_flow and pipe_diameter and drop > 0:
+                    try:
+                        beta = self._solve_beta_from_drop(
+                            section, drop, pipe_diameter, mass_flow, inlet_pressure_override
+                        )
+                        orifice.d_over_D_ratio = beta
+                        orifice.orifice_diameter = beta * pipe_diameter
+                        orifice.pipe_diameter = pipe_diameter
+                        orifice.calculation_note = (
+                            f"Calculated beta ratio ({beta:.4f}) from pressure_drop ({self._format_drop(drop)})."
+                        )
+                    except Exception as exc:
+                        logger.warning(
+                            "Failed to solve beta from drop for section %s: %s",
+                            section.id,
+                            exc,
+                        )
+                        self._backfill_geometry_from_drop(orifice, pipe_diameter)
+                        orifice.calculation_note = (
+                            f"Used specified pressure_drop ({self._format_drop(drop)}). Could not determine beta ratio."
+                        )
+                else:
+                    self._backfill_geometry_from_drop(orifice, pipe_diameter)
+                    orifice.calculation_note = (
+                        f"Used specified pressure_drop ({self._format_drop(drop)}). Missing flow or diameter for beta calculation."
+                    )
+            else:
+                self._backfill_geometry_from_drop(orifice, pipe_diameter)
+                orifice.calculation_note = (
+                    f"Used specified pressure_drop ({self._format_drop(drop)})."
+                )
         elif mass_flow is None:
             drop = 0.0
             orifice.pressure_drop = drop
@@ -252,6 +283,111 @@ class OrificeCalculator(LossCalculator):
             return self.mass_flow_rate
         return None
 
+    def _solve_beta_from_drop(
+        self,
+        section: PipeSection,
+        target_drop: float,
+        pipe_diameter: float,
+        mass_flow: float,
+        inlet_pressure_override: Optional[float],
+    ) -> float:
+        """Solve for beta ratio that produces the target pressure drop using bisection."""
+        inlet_pressure = (
+            inlet_pressure_override
+            if inlet_pressure_override is not None
+            else self._inlet_pressure(section)
+        )
+        if inlet_pressure is None or inlet_pressure <= 0:
+            raise ValueError("Cannot solve beta: inlet pressure must be positive")
+        if section.temperature is None or section.temperature <= 0:
+            raise ValueError("Cannot solve beta: temperature must be positive")
+        if section.pressure is None or section.pressure <= 0:
+            raise ValueError("Cannot solve beta: pressure must be positive")
+
+        density = self._fluid_density(section.temperature, section.pressure)
+        viscosity = self._fluid_viscosity()
+        isentropic_exponent = self._isentropic_exponent()
+
+        def compute_drop_for_beta(beta: float) -> float:
+            """Compute pressure drop for a given beta ratio."""
+            orifice_diameter = beta * pipe_diameter
+            try:
+                outlet_pressure = differential_pressure_meter_solver(
+                    D=pipe_diameter,
+                    D2=orifice_diameter,
+                    P1=inlet_pressure,
+                    P2=None,
+                    rho=density,
+                    mu=viscosity,
+                    k=isentropic_exponent,
+                    m=mass_flow,
+                    meter_type='orifice',
+                    taps=None,
+                    tap_position=None,
+                    C_specified=None,
+                    epsilon_specified=None,
+                )
+                discharge_coefficient, _ = differential_pressure_meter_C_epsilon(
+                    D=pipe_diameter,
+                    D2=orifice_diameter,
+                    m=mass_flow,
+                    P1=inlet_pressure,
+                    P2=outlet_pressure,
+                    rho=density,
+                    mu=viscosity,
+                    k=isentropic_exponent,
+                    meter_type='orifice',
+                    taps=None,
+                    tap_position=None,
+                    C_specified=None,
+                    epsilon_specified=None,
+                )
+                return dP_orifice(
+                    pipe_diameter,
+                    orifice_diameter,
+                    inlet_pressure,
+                    outlet_pressure,
+                    discharge_coefficient,
+                )
+            except Exception:
+                return float('inf')  # Invalid beta returns infinite drop
+
+        # Bisection search for beta in range [0.1, 0.99]
+        # Smaller beta = larger drop, larger beta = smaller drop
+        beta_low = 0.1
+        beta_high = 0.99
+        
+        drop_low = compute_drop_for_beta(beta_low)
+        drop_high = compute_drop_for_beta(beta_high)
+        
+        # Check if target is achievable
+        if target_drop > drop_low:
+            # Target drop is larger than max possible (smallest beta)
+            return beta_low  # Return minimum beta
+        if target_drop < drop_high:
+            # Target drop is smaller than min possible (largest beta)
+            return beta_high  # Return maximum beta
+        
+        # Bisection iterations
+        for _ in range(50):
+            beta_mid = (beta_low + beta_high) / 2
+            drop_mid = compute_drop_for_beta(beta_mid)
+            
+            if abs(drop_mid - target_drop) < 1.0:  # 1 Pa tolerance
+                return beta_mid
+            
+            if drop_mid > target_drop:
+                # Need larger beta (smaller drop)
+                beta_low = beta_mid
+            else:
+                # Need smaller beta (larger drop)
+                beta_high = beta_mid
+        
+        return (beta_low + beta_high) / 2
+
     @staticmethod
-    def _format_drop(drop: float) -> str:
+    def _format_drop(drop: Optional[float]) -> str:
+        if drop is None:
+            return "N/A"
         return f"{drop:.6g} Pa"
+

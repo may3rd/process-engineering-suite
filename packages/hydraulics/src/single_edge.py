@@ -6,7 +6,10 @@ across a single pipe section, coordinating the various calculators.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+import logging
 from typing import List, Optional
+
+logger = logging.getLogger(__name__)
 
 from packages.hydraulics.src.calculators.fittings import FittingLossCalculator
 from packages.hydraulics.src.calculators.hydraulics import FrictionCalculator
@@ -255,6 +258,7 @@ def calculate_single_edge(input_data: EdgeCalculationInput) -> EdgeCalculationOu
         
         # Calculate control valve pressure drop (if control valve section)
         if input_data.control_valve and input_data.pipe_section_type == "control valve":
+            logger.info("Calculating control valve pressure drop")
             try:
                 cv_calc = ControlValveCalculator(fluid=fluid)
                 cv_calc.calculate(section, inlet_pressure_override=input_data.pressure)
@@ -268,6 +272,7 @@ def calculate_single_edge(input_data: EdgeCalculationInput) -> EdgeCalculationOu
         
         # Calculate orifice pressure drop (if orifice section)
         if input_data.orifice and input_data.pipe_section_type == "orifice":
+            logger.info("Calculating orifice pressure drop")
             try:
                 orifice_calc = OrificeCalculator(
                     fluid=fluid,
@@ -279,8 +284,10 @@ def calculate_single_edge(input_data: EdgeCalculationInput) -> EdgeCalculationOu
                 if section.orifice:
                     output.orifice_beta_ratio = section.orifice.d_over_D_ratio
                     output.orifice_discharge_coefficient = section.orifice.discharge_coefficient
+                    logger.info(f"Orifice calculation complete: beta_ratio={section.orifice.d_over_D_ratio}, note={section.orifice.calculation_note}")
             except Exception as orifice_error:
                 # Log but don't fail - orifice calculation is optional
+                logger.error(f"Orifice calculation error: {orifice_error}")
                 output.error = f"Orifice calculation error: {orifice_error}"
         
         output.user_K = section.user_K

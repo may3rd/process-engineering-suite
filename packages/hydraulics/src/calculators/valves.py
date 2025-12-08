@@ -218,7 +218,9 @@ class ControlValveCalculator(LossCalculator):
         return 0.5 * (lower + upper)
 
     @staticmethod
-    def _format_drop(drop: float) -> str:
+    def _format_drop(drop: Optional[float]) -> str:
+        if drop is None:
+            return "N/A"
         return f"{drop:.6g} Pa"
 
     @staticmethod
