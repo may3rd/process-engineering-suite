@@ -6,6 +6,7 @@ import {
     ToggleButton,
     Box,
     useTheme,
+    Chip,
 } from "@mui/material";
 import {
     Add as AddIcon,
@@ -29,13 +30,16 @@ import {
     Settings as SettingsIcon,
     Cable as CableIcon,
     InsertDriveFileOutlined as NoteAddIcon,
+    Cloud as CloudIcon,
+    CloudOff as CloudOffIcon,
 } from "@mui/icons-material";
 import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
 import { useColorMode } from "@/contexts/ColorModeContext";
 import ViewSettingsDialog from "@/components/ViewSettingsDialog";
 import { NetworkState, ViewSettings } from "@/lib/types";
-import { useState, useRef, ChangeEvent } from "react";
+import { useState, useRef, useEffect, ChangeEvent } from "react";
 import { glassToolBarButtonGroupSx } from "@eng-suite/ui-kit";
+import { checkAPIHealth } from "@/lib/apiClient";
 
 type EditorToolbarProps = {
     network: NetworkState;
@@ -114,6 +118,19 @@ export function EditorToolbar({
     const { toggleColorMode } = useColorMode();
     const [viewSettingsDialogOpen, setViewSettingsDialogOpen] = useState(false);
     const backgroundInputRef = useRef<HTMLInputElement | null>(null);
+    const [apiStatus, setApiStatus] = useState<'checking' | 'connected' | 'disconnected'>('checking');
+
+    // Check API health periodically
+    useEffect(() => {
+        const checkHealth = async () => {
+            const healthy = await checkAPIHealth();
+            setApiStatus(healthy ? 'connected' : 'disconnected');
+        };
+
+        checkHealth();
+        const interval = setInterval(checkHealth, 30000); // Check every 30 seconds
+        return () => clearInterval(interval);
+    }, []);
 
     const handleUploadBackground = (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -432,6 +449,25 @@ export function EditorToolbar({
                 </Stack>
 
                 <Box sx={{ flexGrow: 1 }} />
+
+                {/* API Status Indicator */}
+                <Tooltip title={apiStatus === 'connected' ? 'Python API Connected' : apiStatus === 'disconnected' ? 'Python API Disconnected (using local calculation)' : 'Checking API...'} arrow>
+                    <Chip
+                        icon={apiStatus === 'connected' ? <CloudIcon /> : <CloudOffIcon />}
+                        label={apiStatus === 'connected' ? 'API' : 'Local'}
+                        size="small"
+                        color={apiStatus === 'connected' ? 'success' : 'default'}
+                        variant={apiStatus === 'connected' ? 'filled' : 'outlined'}
+                        sx={{
+                            pointerEvents: 'auto',
+                            opacity: apiStatus === 'checking' ? 0.5 : 1,
+                            cursor: 'default',
+                            '& .MuiChip-icon': {
+                                fontSize: 16,
+                            },
+                        }}
+                    />
+                </Tooltip>
 
                 {onToggleSnapshot && (
                     <Tooltip title="Network Snapshot">

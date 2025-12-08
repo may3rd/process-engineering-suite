@@ -1463,8 +1463,8 @@ export function PipeSummaryPage({ pipe, viewSettings, navigator }: { pipe: PipeP
         return `${convertedValue.toFixed(2)} ${unit}`;
     };
 
-    const formatVelocity = (value: number | undefined) => {
-        if (value === undefined) return "-";
+    const formatVelocity = (value: number | undefined | null) => {
+        if (value === undefined || value === null) return "-";
 
         const unitSystem = viewSettings.unitSystem;
         let unit = "m/s";

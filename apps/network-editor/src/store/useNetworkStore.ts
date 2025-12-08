@@ -10,11 +10,135 @@ import {
     createInitialNetwork
 } from '@/lib/types';
 import { recalculatePipeFittingLosses } from "@eng-suite/physics";
+import { calculatePipeSectionAPI, checkAPIHealth, type CalculationResult } from "@/lib/apiClient";
+
+// API configuration
+let useAPIForCalculations = true; // Enable API by default
+let apiHealthy = false;
+
+// Debounce timeout for API recalculation
+let recalcDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+const RECALC_DEBOUNCE_MS = 500; // Wait 500ms after last update before calling API
+
+// Check API health on module load
+if (typeof window !== 'undefined') {
+    checkAPIHealth().then(healthy => {
+        apiHealthy = healthy;
+        console.log(`🔌 Python API health: ${healthy ? '✅ available' : '❌ unavailable'}`);
+        if (healthy) {
+            console.log('   API calculations enabled - changes will sync to Python backend');
+        } else {
+            console.log('   Using local TypeScript calculations (start API with: uvicorn main:app --reload)');
+        }
+    });
+}
+
+/**
+ * Calculate pipe fitting losses using local TypeScript calculation.
+ */
+const calculatePipeSync = (pipe: PipeProps): PipeProps => {
+    return recalculatePipeFittingLosses(pipe) as PipeProps;
+};
+
+/**
+ * Async calculation via Python API with local fallback.
+ */
+const calculatePipeAsync = async (pipe: PipeProps): Promise<PipeProps> => {
+    if (!useAPIForCalculations || !apiHealthy) {
+        console.log(`📊 Local calc for ${pipe.name}: API ${apiHealthy ? 'disabled' : 'unavailable'}`);
+        return calculatePipeSync(pipe);
+    }
+
+    console.log(`🌐 API calc for ${pipe.name}...`);
+    try {
+        const result = await calculatePipeSectionAPI(pipe);
+        if (result.success && result.pressureDropResults) {
+            console.log(`   ✅ ${pipe.name}: K=${result.pressureDropResults.totalK?.toFixed(2)}, ΔP=${result.pressureDropResults.totalSegmentPressureDrop?.toFixed(2)} kPa`);
+            return {
+                ...pipe,
+                pressureDropCalculationResults: result.pressureDropResults,
+                resultSummary: result.resultSummary,
+                equivalentLength: result.equivalentLength,
+                fittingK: result.pressureDropResults.fittingK,
+                pipeLengthK: result.pressureDropResults.pipeLengthK,
+                totalK: result.pressureDropResults.totalK,
+            };
+        } else {
+            console.warn(`   ⚠️ ${pipe.name}: API error - ${result.error}`);
+        }
+    } catch (error) {
+        console.warn(`   ❌ ${pipe.name}: API failed, using local:`, error);
+    }
+
+    return calculatePipeSync(pipe);
+};
+
+/**
+ * Schedule debounced API recalculation for specific pipes.
+ * This is called after pipe updates to sync with Python backend.
+ * 
+ * @param get - Store getter function
+ * @param pipeIds - Array of pipe IDs to recalculate. If empty, recalculates all.
+ */
+let pendingPipeIds: Set<string> = new Set();
+
+const scheduleAPIRecalculation = (get: () => NetworkStore, pipeIds: string[] = []) => {
+    if (!apiHealthy || !useAPIForCalculations) return;
+
+    // Add new pipe IDs to pending set
+    pipeIds.forEach(id => pendingPipeIds.add(id));
+
+    if (recalcDebounceTimer) {
+        clearTimeout(recalcDebounceTimer);
+    }
+
+    recalcDebounceTimer = setTimeout(async () => {
+        const store = get();
+        const { network } = store;
+
+        // Get pipes to recalculate
+        const idsToRecalc = pendingPipeIds.size > 0
+            ? Array.from(pendingPipeIds)
+            : network.pipes.map(p => p.id);
+
+        const pipesToRecalc = network.pipes.filter(p => idsToRecalc.includes(p.id));
+
+        if (pipesToRecalc.length === 0) {
+            pendingPipeIds.clear();
+            return;
+        }
+
+        console.log(`🔄 Syncing ${pipesToRecalc.length} pipe(s) to Python API: ${pipesToRecalc.map(p => p.name).join(', ')}`);
+
+        try {
+            const updatedPipes = await Promise.all(
+                pipesToRecalc.map(calculatePipeAsync)
+            );
+
+            // Create a map for quick lookup
+            const updatedPipeMap = new Map(updatedPipes.map(p => [p.id, p]));
+
+            store.setNetwork(current => ({
+                ...current,
+                pipes: current.pipes.map(pipe =>
+                    updatedPipeMap.has(pipe.id) ? updatedPipeMap.get(pipe.id)! : pipe
+                ),
+            }));
+
+            console.log(`✅ API sync complete for ${pipesToRecalc.length} pipe(s)`);
+        } catch (error) {
+            console.error('❌ API sync failed:', error);
+        } finally {
+            // Clear pending IDs after processing
+            pendingPipeIds.clear();
+        }
+    }, RECALC_DEBOUNCE_MS);
+};
 
 // Helper functions
 const applyFittingLosses = (network: NetworkState): NetworkState => ({
     ...network,
-    pipes: network.pipes.map(recalculatePipeFittingLosses) as any,
+    pipes: network.pipes.map(calculatePipeSync) as any,
 });
 
 const createNetworkWithDerivedValues = () =>
@@ -42,6 +166,8 @@ interface NetworkStore {
     isConnectingMode: boolean;
     isExporting: boolean;
     isPanelOpen: boolean;
+    isCalculating: boolean;
+    useAPICalculation: boolean;
 
     // Actions
     setNetwork: (network: NetworkState | ((prev: NetworkState) => NetworkState)) => void;
@@ -62,6 +188,9 @@ interface NetworkStore {
     setIsAnimationEnabled: (enabled: boolean) => void;
     setIsConnectingMode: (enabled: boolean) => void;
     setIsExporting: (exporting: boolean) => void;
+    setUseAPICalculation: (enabled: boolean) => void;
+    recalculatePipeViaAPI: (pipeId: string) => Promise<void>;
+    recalculateAllPipesViaAPI: () => Promise<void>;
 }
 
 const defaultViewSettings: ViewSettings = {
@@ -112,6 +241,8 @@ export const useNetworkStore = create<NetworkStore>((set, get) => ({
     isAnimationEnabled: false,
     isConnectingMode: false,
     isExporting: false,
+    isCalculating: false,
+    useAPICalculation: useAPIForCalculations,
 
     // Actions
     setNetwork: (networkOrUpdater) => {
@@ -268,7 +399,7 @@ export const useNetworkStore = create<NetworkStore>((set, get) => ({
                 if (Object.keys(pipePatch).length === 0) {
                     return pipe;
                 }
-                return recalculatePipeFittingLosses({ ...pipe, ...pipePatch }) as any;
+                return calculatePipeSync({ ...pipe, ...pipePatch });
             });
 
             return {
@@ -277,6 +408,15 @@ export const useNetworkStore = create<NetworkStore>((set, get) => ({
                 pipes: nextPipes,
             };
         });
+
+        // Schedule API recalculation for affected pipes only
+        const { network } = get();
+        const affectedPipeIds = network.pipes
+            .filter(pipe => pipe.startNodeId === id || pipe.endNodeId === id)
+            .map(pipe => pipe.id);
+        if (affectedPipeIds.length > 0) {
+            scheduleAPIRecalculation(get, affectedPipeIds);
+        }
     },
 
     updatePipe: (id, patch) => {
@@ -328,10 +468,13 @@ export const useNetworkStore = create<NetworkStore>((set, get) => ({
                 pipes: current.pipes.map(pipe => {
                     if (pipe.id !== id) return pipe;
                     const updatedPipe = { ...pipe, ...finalPipePatch };
-                    return recalculatePipeFittingLosses(updatedPipe) as any;
+                    return calculatePipeSync(updatedPipe);
                 }),
             };
         });
+
+        // Schedule API recalculation for this pipe only
+        scheduleAPIRecalculation(get, [id]);
     },
 
     deleteSelection: () => {
@@ -416,4 +559,44 @@ export const useNetworkStore = create<NetworkStore>((set, get) => ({
     setIsAnimationEnabled: (enabled) => set({ isAnimationEnabled: enabled }),
     setIsConnectingMode: (enabled) => set({ isConnectingMode: enabled }),
     setIsExporting: (exporting) => set({ isExporting: exporting }),
+
+    setUseAPICalculation: (enabled) => {
+        useAPIForCalculations = enabled;
+        set({ useAPICalculation: enabled });
+    },
+
+    recalculatePipeViaAPI: async (pipeId) => {
+        const { network } = get();
+        const pipe = network.pipes.find(p => p.id === pipeId);
+        if (!pipe) return;
+
+        set({ isCalculating: true });
+        try {
+            const updatedPipe = await calculatePipeAsync(pipe);
+            get().setNetwork(current => ({
+                ...current,
+                pipes: current.pipes.map(p => p.id === pipeId ? updatedPipe : p),
+            }));
+        } finally {
+            set({ isCalculating: false });
+        }
+    },
+
+    recalculateAllPipesViaAPI: async () => {
+        const { network } = get();
+        if (network.pipes.length === 0) return;
+
+        set({ isCalculating: true });
+        try {
+            const updatedPipes = await Promise.all(
+                network.pipes.map(calculatePipeAsync)
+            );
+            get().setNetwork(current => ({
+                ...current,
+                pipes: updatedPipes,
+            }));
+        } finally {
+            set({ isCalculating: false });
+        }
+    },
 }));
