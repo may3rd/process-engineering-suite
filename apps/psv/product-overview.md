@@ -21,7 +21,7 @@ Process Engineering Suite module for managing overpressure protective systems (O
 - **Audit/Revision**: versions, approver, timestamp, change summary.
 
 ## Frontend (React) Overview
-- **Tech**: React + TS, suite UI kit, React Query for data, routing with customer/plant/unit/area/project params, form validation (Zod/Yup), chart/table components for results. English-only UI; SI/US unit toggle.
+- **Tech**: React + TS, suite UI kit + Material UI, React Query for data, routing with customer/plant/unit/area/project params, form validation (Zod/Yup), chart/table components for results. English-only UI; SI/US unit toggle; responsive layouts for mobile/desktop.
 - **Views**: 
   - Hierarchy browser with list and map of sites/units.
   - Project dashboard with OPS count, risk status, and recent changes.

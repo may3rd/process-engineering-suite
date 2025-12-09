@@ -1,0 +1,36 @@
+{
+    "name": "psv",
+    "version": "0.1.0",
+    "private": true,
+    "scripts": {
+        "dev": "next dev -p 3003",
+        "build": "next build",
+        "start": "next start",
+        "lint": "eslint --max-warnings 0",
+        "check-types": "tsc --noEmit"
+    },
+    "dependencies": {
+        "@emotion/react": "^11.14.0",
+        "@emotion/styled": "^11.14.1",
+        "@mui/icons-material": "^7.3.6",
+        "@mui/material": "^7.3.6",
+        "@mui/material-nextjs": "^7.3.6",
+        "@mui/x-data-grid": "^7.28.0",
+        "next": "^16.0.7",
+        "react": "19.2.0",
+        "react-dom": "19.2.0",
+        "zustand": "^5.0.9",
+        "@eng-suite/ui-kit": "*",
+        "@repo/ui": "*"
+    },
+    "devDependencies": {
+        "@repo/eslint-config": "*",
+        "@repo/typescript-config": "*",
+        "@types/node": "^20",
+        "@types/react": "^19",
+        "@types/react-dom": "^19",
+        "eslint": "^9",
+        "eslint-config-next": "16.0.3",
+        "typescript": "^5"
+    }
+}

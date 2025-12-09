@@ -1,0 +1,792 @@
+"use client";
+
+import {
+    Box,
+    Tabs,
+    Tab,
+    Typography,
+    Chip,
+    Paper,
+    Divider,
+    List,
+    ListItem,
+    ListItemIcon,
+    ListItemText,
+    useTheme,
+    Card,
+    CardContent,
+    Button,
+    IconButton,
+    Tooltip,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+} from "@mui/material";
+import {
+    Info,
+    Warning as WarningIcon,
+    LocalFireDepartment,
+    Block,
+    BrokenImage,
+    FlashOff,
+    WaterDrop,
+    Air,
+    AttachFile,
+    Description,
+    Note,
+    CheckCircle,
+    Edit,
+    Add,
+    Star,
+} from "@mui/icons-material";
+import { usePsvStore } from "@/store/usePsvStore";
+import { ScenarioCause, OverpressureScenario, SizingCase } from "@/data/types";
+import { getAttachmentsByPsv, getNotesByPsv, getEquipmentLinksByPsv, equipment, getUserById } from "@/data/mockData";
+
+interface TabPanelProps {
+    children?: React.ReactNode;
+    index: number;
+    value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+    const { children, value, index, ...other } = props;
+
+    return (
+        <div
+            role="tabpanel"
+            hidden={value !== index}
+            id={`psv-tabpanel-${index}`}
+            aria-labelledby={`psv-tab-${index}`}
+            {...other}
+        >
+            {value === index && <Box sx={{ py: 3 }}>{children}</Box>}
+        </div>
+    );
+}
+
+// Overview Tab Content
+function OverviewTab() {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
+    const { selectedPsv } = usePsvStore();
+
+    if (!selectedPsv) return null;
+
+    const equipmentLinks = getEquipmentLinksByPsv(selectedPsv.id);
+    const linkedEquipment = equipmentLinks.map(link => {
+        const equip = equipment.find(e => e.id === link.equipmentId);
+        return { ...link, equipment: equip };
+    });
+
+    const owner = getUserById(selectedPsv.ownerId);
+
+    return (
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+            {/* Basic Info Card */}
+            <Card>
+                <CardContent>
+                    <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
+                        Basic Information
+                    </Typography>
+                    <Box sx={{ display: 'grid', gap: 2 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Typography color="text.secondary">Tag</Typography>
+                            <Typography fontWeight={500}>{selectedPsv.tag}</Typography>
+                        </Box>
+                        <Divider />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Typography color="text.secondary">Name</Typography>
+                            <Typography fontWeight={500}>{selectedPsv.name}</Typography>
+                        </Box>
+                        <Divider />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Typography color="text.secondary">Type</Typography>
+                            <Chip label={selectedPsv.type.replace('_', ' ')} size="small" sx={{ textTransform: 'capitalize' }} />
+                        </Box>
+                        <Divider />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Typography color="text.secondary">Design Code</Typography>
+                            <Chip label={selectedPsv.designCode} size="small" color="primary" variant="outlined" />
+                        </Box>
+                        <Divider />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Typography color="text.secondary">Owner</Typography>
+                            <Typography fontWeight={500}>{owner?.name || 'Unknown'}</Typography>
+                        </Box>
+                    </Box>
+                </CardContent>
+            </Card>
+
+            {/* Operating Conditions Card */}
+            <Card>
+                <CardContent>
+                    <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
+                        Operating Conditions
+                    </Typography>
+                    <Box sx={{ display: 'grid', gap: 2 }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Typography color="text.secondary">Service Fluid</Typography>
+                            <Typography fontWeight={500}>{selectedPsv.serviceFluid}</Typography>
+                        </Box>
+                        <Divider />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Typography color="text.secondary">Fluid Phase</Typography>
+                            <Chip
+                                label={selectedPsv.fluidPhase}
+                                size="small"
+                                color={selectedPsv.fluidPhase === 'gas' ? 'info' : selectedPsv.fluidPhase === 'liquid' ? 'primary' : 'warning'}
+                                sx={{ textTransform: 'capitalize' }}
+                            />
+                        </Box>
+                        <Divider />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Typography color="text.secondary">Set Pressure</Typography>
+                            <Typography fontWeight={600} color="primary.main">{selectedPsv.setPressure} barg</Typography>
+                        </Box>
+                        <Divider />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Typography color="text.secondary">MAWP</Typography>
+                            <Typography fontWeight={600}>{selectedPsv.mawp} barg</Typography>
+                        </Box>
+                        <Divider />
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                            <Typography color="text.secondary">Set/MAWP Ratio</Typography>
+                            <Typography fontWeight={500}>{((selectedPsv.setPressure / selectedPsv.mawp) * 100).toFixed(0)}%</Typography>
+                        </Box>
+                    </Box>
+                </CardContent>
+            </Card>
+
+            {/* Protected Equipment */}
+            <Card sx={{ gridColumn: { md: 'span 2' } }}>
+                <CardContent>
+                    <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
+                        Protected Equipment
+                    </Typography>
+                    {linkedEquipment.length > 0 ? (
+                        <TableContainer>
+                            <Table size="small">
+                                <TableHead>
+                                    <TableRow>
+                                        <TableCell>Tag</TableCell>
+                                        <TableCell>Description</TableCell>
+                                        <TableCell>Type</TableCell>
+                                        <TableCell>Design Pressure</TableCell>
+                                        <TableCell>Relationship</TableCell>
+                                    </TableRow>
+                                </TableHead>
+                                <TableBody>
+                                    {linkedEquipment.map((link) => (
+                                        <TableRow key={link.id}>
+                                            <TableCell>
+                                                <Typography fontWeight={500}>{link.equipment?.tag}</Typography>
+                                            </TableCell>
+                                            <TableCell>{link.equipment?.description}</TableCell>
+                                            <TableCell sx={{ textTransform: 'capitalize' }}>{link.equipment?.type.replace('_', ' ')}</TableCell>
+                                            <TableCell>{link.equipment?.designPressure} barg</TableCell>
+                                            <TableCell sx={{ textTransform: 'capitalize' }}>{link.relationship.replace('_', ' ')}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </TableContainer>
+                    ) : (
+                        <Typography color="text.secondary">No equipment linked</Typography>
+                    )}
+                </CardContent>
+            </Card>
+
+            {/* Tags */}
+            <Card sx={{ gridColumn: { md: 'span 2' } }}>
+                <CardContent>
+                    <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
+                        Tags
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                        {selectedPsv.tags.map((tag) => (
+                            <Chip key={tag} label={tag} variant="outlined" />
+                        ))}
+                        {selectedPsv.tags.length === 0 && (
+                            <Typography color="text.secondary">No tags</Typography>
+                        )}
+                    </Box>
+                </CardContent>
+            </Card>
+        </Box>
+    );
+}
+
+// Scenarios Tab Content
+function ScenariosTab() {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
+    const { scenarioList, selectedPsv } = usePsvStore();
+
+    const getCauseIcon = (cause: ScenarioCause) => {
+        switch (cause) {
+            case 'blocked_outlet':
+                return <Block />;
+            case 'fire_case':
+            case 'external_fire':
+                return <LocalFireDepartment />;
+            case 'tube_rupture':
+                return <BrokenImage />;
+            case 'utility_failure':
+            case 'power_failure':
+                return <FlashOff />;
+            case 'thermal_expansion':
+                return <WaterDrop />;
+            default:
+                return <WarningIcon />;
+        }
+    };
+
+    const getCauseLabel = (cause: ScenarioCause) => {
+        return cause.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    };
+
+    if (!selectedPsv) return null;
+
+    return (
+        <Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6" fontWeight={600}>
+                    Overpressure Scenarios
+                </Typography>
+                <Button variant="contained" startIcon={<Add />} size="small">
+                    Add Scenario
+                </Button>
+            </Box>
+
+            {scenarioList.length > 0 ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {scenarioList.map((scenario) => (
+                        <Card key={scenario.id}>
+                            <CardContent>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                        <Box
+                                            sx={{
+                                                width: 40,
+                                                height: 40,
+                                                borderRadius: 2,
+                                                backgroundColor: scenario.cause.includes('fire')
+                                                    ? 'rgba(239, 68, 68, 0.15)'
+                                                    : isDark ? 'rgba(251, 191, 36, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                color: scenario.cause.includes('fire') ? 'error.main' : 'secondary.main',
+                                            }}
+                                        >
+                                            {getCauseIcon(scenario.cause)}
+                                        </Box>
+                                        <Box>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Typography variant="h6" fontWeight={600}>
+                                                    {getCauseLabel(scenario.cause)}
+                                                </Typography>
+                                                {scenario.isGoverning && (
+                                                    <Chip
+                                                        label="Governing"
+                                                        size="small"
+                                                        color="warning"
+                                                        icon={<Star sx={{ fontSize: 14 }} />}
+                                                    />
+                                                )}
+                                            </Box>
+                                            <Typography variant="body2" color="text.secondary">
+                                                {scenario.description}
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                    <Tooltip title="Edit">
+                                        <IconButton size="small">
+                                            <Edit fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Box>
+
+                                <Box
+                                    sx={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                                        gap: 2,
+                                        p: 2,
+                                        borderRadius: 2,
+                                        backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
+                                        mb: 2,
+                                    }}
+                                >
+                                    <Box>
+                                        <Typography variant="caption" color="text.secondary">Relieving Rate</Typography>
+                                        <Typography variant="body1" fontWeight={600}>{scenario.relievingRate.toLocaleString()} kg/h</Typography>
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="caption" color="text.secondary">Relieving Pressure</Typography>
+                                        <Typography variant="body1" fontWeight={600}>{scenario.relievingPressure} barg</Typography>
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="caption" color="text.secondary">Relieving Temp</Typography>
+                                        <Typography variant="body1" fontWeight={600}>{scenario.relievingTemp} °C</Typography>
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="caption" color="text.secondary">Accumulation</Typography>
+                                        <Typography variant="body1" fontWeight={600}>{scenario.accumulationPct}%</Typography>
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="caption" color="text.secondary">Phase</Typography>
+                                        <Chip label={scenario.phase} size="small" sx={{ textTransform: 'capitalize' }} />
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="caption" color="text.secondary">Required Capacity</Typography>
+                                        <Typography variant="body1" fontWeight={600} color="primary.main">
+                                            {scenario.requiredCapacity.toLocaleString()} kg/h
+                                        </Typography>
+                                    </Box>
+                                </Box>
+
+                                <Box sx={{ mb: 2 }}>
+                                    <Typography variant="subtitle2" sx={{ mb: 1 }}>Assumptions</Typography>
+                                    <List dense disablePadding>
+                                        {scenario.assumptions.map((assumption, idx) => (
+                                            <ListItem key={idx} disablePadding sx={{ py: 0.25 }}>
+                                                <ListItemIcon sx={{ minWidth: 28 }}>
+                                                    <CheckCircle sx={{ fontSize: 16, color: 'success.main' }} />
+                                                </ListItemIcon>
+                                                <ListItemText primary={assumption} primaryTypographyProps={{ variant: 'body2' }} />
+                                            </ListItem>
+                                        ))}
+                                    </List>
+                                </Box>
+
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                    {scenario.codeRefs.map((ref, idx) => (
+                                        <Chip key={idx} label={ref} size="small" variant="outlined" />
+                                    ))}
+                                </Box>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </Box>
+            ) : (
+                <Paper sx={{ py: 6, textAlign: 'center' }}>
+                    <WarningIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                    <Typography variant="h6" color="text.secondary">
+                        No scenarios defined
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Add overpressure scenarios to size this device
+                    </Typography>
+                    <Button variant="contained" startIcon={<Add />}>
+                        Add First Scenario
+                    </Button>
+                </Paper>
+            )}
+        </Box>
+    );
+}
+
+// Sizing Tab Content
+function SizingTab() {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
+    const { sizingCaseList, scenarioList, selectedPsv } = usePsvStore();
+
+    const getScenarioName = (scenarioId: string) => {
+        const scenario = scenarioList.find(s => s.id === scenarioId);
+        if (!scenario) return 'Unknown';
+        return scenario.cause.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    };
+
+    const getStatusColor = (status: string): "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" => {
+        switch (status) {
+            case 'approved':
+                return 'success';
+            case 'verified':
+                return 'info';
+            case 'calculated':
+                return 'warning';
+            case 'draft':
+                return 'default';
+            default:
+                return 'default';
+        }
+    };
+
+    if (!selectedPsv) return null;
+
+    return (
+        <Box>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h6" fontWeight={600}>
+                    Sizing Cases
+                </Typography>
+                <Button variant="contained" startIcon={<Add />} size="small">
+                    New Sizing
+                </Button>
+            </Box>
+
+            {sizingCaseList.length > 0 ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {sizingCaseList.map((sizing) => (
+                        <Card key={sizing.id}>
+                            <CardContent>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                    <Box>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                            <Typography variant="h6" fontWeight={600}>
+                                                {getScenarioName(sizing.scenarioId)}
+                                            </Typography>
+                                            <Chip
+                                                label={sizing.status}
+                                                size="small"
+                                                color={getStatusColor(sizing.status)}
+                                                sx={{ textTransform: 'capitalize' }}
+                                            />
+                                        </Box>
+                                        <Typography variant="body2" color="text.secondary">
+                                            {sizing.standard} • {sizing.method.toUpperCase()} method • Rev {sizing.revisionNo}
+                                        </Typography>
+                                    </Box>
+                                    <Tooltip title="Edit">
+                                        <IconButton size="small">
+                                            <Edit fontSize="small" />
+                                        </IconButton>
+                                    </Tooltip>
+                                </Box>
+
+                                <Box
+                                    sx={{
+                                        display: 'grid',
+                                        gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                                        gap: 3,
+                                    }}
+                                >
+                                    {/* Inputs */}
+                                    <Box
+                                        sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
+                                        }}
+                                    >
+                                        <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Inputs</Typography>
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Mass Flow</Typography>
+                                                <Typography variant="body2" fontWeight={500}>{sizing.inputs.massFlowRate.toLocaleString()} kg/h</Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">MW</Typography>
+                                                <Typography variant="body2" fontWeight={500}>{sizing.inputs.molecularWeight}</Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Temperature</Typography>
+                                                <Typography variant="body2" fontWeight={500}>{sizing.inputs.temperature} °C</Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Pressure</Typography>
+                                                <Typography variant="body2" fontWeight={500}>{sizing.inputs.pressure} barg</Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Z Factor</Typography>
+                                                <Typography variant="body2" fontWeight={500}>{sizing.inputs.compressibilityZ}</Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">k (Cp/Cv)</Typography>
+                                                <Typography variant="body2" fontWeight={500}>{sizing.inputs.specificHeatRatio}</Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Backpressure</Typography>
+                                                <Typography variant="body2" fontWeight={500}>{sizing.inputs.backpressure} barg</Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">BP Type</Typography>
+                                                <Typography variant="body2" fontWeight={500} sx={{ textTransform: 'capitalize' }}>
+                                                    {sizing.inputs.backpressureType.replace('_', ' ')}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </Box>
+
+                                    {/* Outputs */}
+                                    <Box
+                                        sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            backgroundColor: isDark ? 'rgba(56, 189, 248, 0.08)' : 'rgba(2, 132, 199, 0.05)',
+                                            border: `1px solid ${isDark ? 'rgba(56, 189, 248, 0.2)' : 'rgba(2, 132, 199, 0.15)'}`,
+                                        }}
+                                    >
+                                        <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Results</Typography>
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Required Area</Typography>
+                                                <Typography variant="body2" fontWeight={600} color="primary.main">
+                                                    {sizing.outputs.requiredArea.toLocaleString()} mm²
+                                                </Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Selected Orifice</Typography>
+                                                <Typography variant="h5" fontWeight={700} color="primary.main">
+                                                    {sizing.outputs.selectedOrifice}
+                                                </Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Orifice Area</Typography>
+                                                <Typography variant="body2" fontWeight={500}>{sizing.outputs.orificeArea.toLocaleString()} mm²</Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">% Used</Typography>
+                                                <Typography variant="body2" fontWeight={600} color={sizing.outputs.percentUsed > 90 ? 'warning.main' : 'text.primary'}>
+                                                    {sizing.outputs.percentUsed.toFixed(1)}%
+                                                </Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Rated Capacity</Typography>
+                                                <Typography variant="body2" fontWeight={500}>{sizing.outputs.ratedCapacity.toLocaleString()} kg/h</Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Flow Type</Typography>
+                                                <Chip
+                                                    label={sizing.outputs.isCriticalFlow ? 'Critical' : 'Subcritical'}
+                                                    size="small"
+                                                    color={sizing.outputs.isCriticalFlow ? 'success' : 'info'}
+                                                />
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                </Box>
+
+                                {/* Messages */}
+                                {sizing.outputs.messages.length > 0 && (
+                                    <Box sx={{ mt: 2 }}>
+                                        <List dense disablePadding>
+                                            {sizing.outputs.messages.map((msg, idx) => (
+                                                <ListItem key={idx} disablePadding sx={{ py: 0.25 }}>
+                                                    <ListItemIcon sx={{ minWidth: 28 }}>
+                                                        <Info sx={{ fontSize: 16, color: 'info.main' }} />
+                                                    </ListItemIcon>
+                                                    <ListItemText primary={msg} primaryTypographyProps={{ variant: 'body2' }} />
+                                                </ListItem>
+                                            ))}
+                                        </List>
+                                    </Box>
+                                )}
+                            </CardContent>
+                        </Card>
+                    ))}
+                </Box>
+            ) : (
+                <Paper sx={{ py: 6, textAlign: 'center' }}>
+                    <Air sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                    <Typography variant="h6" color="text.secondary">
+                        No sizing cases
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Create a sizing case from an overpressure scenario
+                    </Typography>
+                    <Button variant="contained" startIcon={<Add />}>
+                        New Sizing Case
+                    </Button>
+                </Paper>
+            )}
+        </Box>
+    );
+}
+
+// Attachments Tab Content
+function AttachmentsTab() {
+    const { selectedPsv } = usePsvStore();
+
+    if (!selectedPsv) return null;
+
+    const attachments = getAttachmentsByPsv(selectedPsv.id);
+    const notes = getNotesByPsv(selectedPsv.id);
+
+    const formatFileSize = (bytes: number) => {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+        return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+    };
+
+    const formatDate = (dateStr: string) => {
+        return new Date(dateStr).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit',
+        });
+    };
+
+    return (
+        <Box>
+            {/* Attachments Section */}
+            <Box sx={{ mb: 4 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6" fontWeight={600}>
+                        Attachments
+                    </Typography>
+                    <Button variant="outlined" startIcon={<AttachFile />} size="small">
+                        Upload File
+                    </Button>
+                </Box>
+
+                {attachments.length > 0 ? (
+                    <List disablePadding>
+                        {attachments.map((att) => (
+                            <ListItem
+                                key={att.id}
+                                sx={{
+                                    border: 1,
+                                    borderColor: 'divider',
+                                    borderRadius: 2,
+                                    mb: 1,
+                                }}
+                            >
+                                <ListItemIcon>
+                                    <Description color="primary" />
+                                </ListItemIcon>
+                                <ListItemText
+                                    primary={att.fileName}
+                                    secondary={`${formatFileSize(att.size)} • Uploaded ${formatDate(att.createdAt)}`}
+                                />
+                                <Button size="small">Download</Button>
+                            </ListItem>
+                        ))}
+                    </List>
+                ) : (
+                    <Paper variant="outlined" sx={{ py: 4, textAlign: 'center' }}>
+                        <AttachFile sx={{ fontSize: 32, color: 'text.secondary', mb: 1 }} />
+                        <Typography color="text.secondary">No attachments</Typography>
+                    </Paper>
+                )}
+            </Box>
+
+            {/* Notes Section */}
+            <Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6" fontWeight={600}>
+                        Notes
+                    </Typography>
+                    <Button variant="outlined" startIcon={<Note />} size="small">
+                        Add Note
+                    </Button>
+                </Box>
+
+                {notes.length > 0 ? (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {notes.map((note) => {
+                            const author = getUserById(note.createdBy);
+                            return (
+                                <Card key={note.id} variant="outlined">
+                                    <CardContent>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                            <Typography variant="subtitle2" fontWeight={600}>
+                                                {author?.name || 'Unknown'}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {formatDate(note.createdAt)}
+                                            </Typography>
+                                        </Box>
+                                        <Typography variant="body2">{note.body}</Typography>
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </Box>
+                ) : (
+                    <Paper variant="outlined" sx={{ py: 4, textAlign: 'center' }}>
+                        <Note sx={{ fontSize: 32, color: 'text.secondary', mb: 1 }} />
+                        <Typography color="text.secondary">No notes</Typography>
+                    </Paper>
+                )}
+            </Box>
+        </Box>
+    );
+}
+
+// Main Component
+export function ProtectiveSystemDetail() {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
+    const { selectedPsv, activeTab, setActiveTab, selectPsv } = usePsvStore();
+
+    if (!selectedPsv) {
+        return null;
+    }
+
+    const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+        setActiveTab(newValue);
+    };
+
+    return (
+        <Box>
+            {/* Header */}
+            <Paper sx={{ p: 3, mb: 3 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+                            <Typography variant="h4" fontWeight={700}>
+                                {selectedPsv.tag}
+                            </Typography>
+                            <Chip
+                                label={selectedPsv.status.replace('_', ' ')}
+                                color={selectedPsv.status === 'approved' || selectedPsv.status === 'issued' ? 'success' : selectedPsv.status === 'in_review' ? 'warning' : 'default'}
+                                sx={{ textTransform: 'capitalize' }}
+                            />
+                        </Box>
+                        <Typography variant="body1" color="text.secondary">
+                            {selectedPsv.name}
+                        </Typography>
+                    </Box>
+                    <Button variant="outlined" onClick={() => selectPsv(null)}>
+                        Close
+                    </Button>
+                </Box>
+            </Paper>
+
+            {/* Tabs */}
+            <Paper sx={{ mb: 3 }}>
+                <Tabs
+                    value={activeTab}
+                    onChange={handleTabChange}
+                    indicatorColor="primary"
+                    textColor="primary"
+                    sx={{
+                        borderBottom: 1,
+                        borderColor: 'divider',
+                        '& .MuiTab-root': {
+                            minHeight: 56,
+                        },
+                    }}
+                >
+                    <Tab label="Overview" />
+                    <Tab label="Scenarios" />
+                    <Tab label="Sizing" />
+                    <Tab label="Attachments" />
+                </Tabs>
+            </Paper>
+
+            {/* Tab Panels */}
+            <TabPanel value={activeTab} index={0}>
+                <OverviewTab />
+            </TabPanel>
+            <TabPanel value={activeTab} index={1}>
+                <ScenariosTab />
+            </TabPanel>
+            <TabPanel value={activeTab} index={2}>
+                <SizingTab />
+            </TabPanel>
+            <TabPanel value={activeTab} index={3}>
+                <AttachmentsTab />
+            </TabPanel>
+        </Box>
+    );
+}
