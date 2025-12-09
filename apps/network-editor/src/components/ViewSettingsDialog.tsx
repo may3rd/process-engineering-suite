@@ -16,7 +16,7 @@ import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { ViewSettings } from "@/lib/types";
-import { IOSListGroup , IOSListItem , glassDialogSx } from "@eng-suite/ui-kit";
+import { IOSListGroup, IOSListItem, glassDialogSx } from "@eng-suite/ui-kit";
 import { useState } from "react";
 
 type Props = {
@@ -227,6 +227,10 @@ export default function ViewSettingsDialog({ open, onClose, settings, onSettings
                                 <IOSListItem
                                     label="Hover Card"
                                     control={<Switch checked={settings.node.hoverCard} onChange={() => toggleNodeSetting("hoverCard")} />}
+                                />
+                                <IOSListItem
+                                    label="Auto Update Conditions"
+                                    control={<Switch checked={settings.node.autoUpdateConditions ?? false} onChange={() => toggleNodeSetting("autoUpdateConditions")} />}
                                     last
                                 />
                             </IOSListGroup>

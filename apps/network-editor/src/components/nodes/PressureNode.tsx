@@ -30,6 +30,7 @@ type NodeData = {
   isConnectingMode?: boolean;
   isCtrlPressed?: boolean;
   showHoverCard?: boolean;
+  autoUpdateConditions?: boolean;
   pipes?: PipeProps[];
 };
 
@@ -238,8 +239,10 @@ function PressureNode({ id, data }: { id: string, data: NodeData }) {
     return results && results.length > 0 ? results[0] : null;
   }, [flowRole, pipesAtTarget, pipesAtSource, data.pipes]);
 
-  // Sync derived values to store (Computing Flows)
+  // Sync derived values to store (Computing Flows) - only if autoUpdateConditions is enabled
   useEffect(() => {
+    // Skip if auto-update is disabled
+    if (!data.autoUpdateConditions) return;
     if (!drivingPipe) return;
 
     const patch: Partial<NodeProps> = {};

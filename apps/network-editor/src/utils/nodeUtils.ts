@@ -69,6 +69,7 @@ export const getPressureNode = ({
             rotation: node.rotation,
             node, // Pass full node data for hover card
             showHoverCard: viewSettings.node.hoverCard,
+            autoUpdateConditions: viewSettings.node.autoUpdateConditions ?? false,
             isConnectingMode,
             isCtrlPressed,
             pipes,

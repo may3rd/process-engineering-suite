@@ -37,6 +37,7 @@ import {
     Cloud as CloudIcon,
     CloudOff as CloudOffIcon,
     MoreVert as MoreVertIcon,
+    Sync as SyncIcon,
 } from "@mui/icons-material";
 import DirectionsRunIcon from '@mui/icons-material/DirectionsRun';
 import { useColorMode } from "@/contexts/ColorModeContext";
@@ -368,6 +369,23 @@ export function EditorToolbar({
                         <ListItemText>{isAnimationEnabled ? 'Stop Animation' : 'Flow Animation'}</ListItemText>
                     </MenuItem>
                 )}
+                <MenuItem onClick={() => {
+                    setViewSettings({
+                        ...viewSettings,
+                        node: {
+                            ...viewSettings.node,
+                            autoUpdateConditions: !viewSettings.node.autoUpdateConditions,
+                        },
+                    });
+                    setMoreMenuAnchor(null);
+                }}>
+                    <ListItemIcon>
+                        <SyncIcon fontSize="small" sx={{ color: viewSettings.node.autoUpdateConditions ? 'success.main' : 'inherit' }} />
+                    </ListItemIcon>
+                    <ListItemText>
+                        {viewSettings.node.autoUpdateConditions ? 'Auto Update: ON' : 'Auto Update: OFF'}
+                    </ListItemText>
+                </MenuItem>
                 <MenuItem onClick={() => { setViewSettingsDialogOpen(true); setMoreMenuAnchor(null); }}>
                     <ListItemIcon><SettingsIcon fontSize="small" /></ListItemIcon>
                     <ListItemText>View Settings</ListItemText>
@@ -636,6 +654,34 @@ export function EditorToolbar({
                                     </ToggleButton>
                                 </Tooltip>
                             )}
+                            <Tooltip title="Auto Update Conditions">
+                                <ToggleButton
+                                    value="autoUpdate"
+                                    selected={viewSettings.node.autoUpdateConditions ?? false}
+                                    onChange={() => {
+                                        setViewSettings({
+                                            ...viewSettings,
+                                            node: {
+                                                ...viewSettings.node,
+                                                autoUpdateConditions: !viewSettings.node.autoUpdateConditions,
+                                            },
+                                        });
+                                    }}
+                                    sx={{ height: 40, border: 'none', gap: 0.5, px: 1 }}
+                                >
+                                    <SyncIcon />
+                                    <Box
+                                        component="span"
+                                        sx={{
+                                            fontSize: 11,
+                                            fontWeight: 700,
+                                            color: viewSettings.node.autoUpdateConditions ? '#22c55e' : '#ef4444',
+                                        }}
+                                    >
+                                        {viewSettings.node.autoUpdateConditions ? 'ON' : 'OFF'}
+                                    </Box>
+                                </ToggleButton>
+                            </Tooltip>
                             <ViewSettingsDialog
                                 open={viewSettingsDialogOpen}
                                 onClose={() => setViewSettingsDialogOpen(false)}

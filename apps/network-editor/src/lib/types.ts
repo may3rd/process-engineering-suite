@@ -652,6 +652,7 @@ export type ViewSettings = {
     pressure: boolean;
     temperature: boolean;
     hoverCard: boolean;
+    autoUpdateConditions: boolean;
     decimals: {
       pressure: number;
       temperature: number;

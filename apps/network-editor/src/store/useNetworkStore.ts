@@ -201,6 +201,7 @@ const defaultViewSettings: ViewSettings = {
         pressure: false,
         temperature: false,
         hoverCard: false,
+        autoUpdateConditions: false,
         decimals: {
             pressure: 2,
             temperature: 2,
