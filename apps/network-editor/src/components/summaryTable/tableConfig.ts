@@ -2,14 +2,15 @@ import { NetworkState, PipeProps } from "@/lib/types";
 import { convertUnit } from "@eng-suite/physics";
 
 export type RowConfig<T> =
-    | { type: "section"; label: string }
+    | { type: "section"; label: string; hideInPrint?: boolean }
     | {
         type: "data";
         label: string;
         unit?: string;
         getValue: (item: T) => string | number | undefined | null | { value: string | number | undefined | null; subLabel?: string; color?: string; helperText?: string; fontWeight?: string; helperTextFontWeight?: string };
         subLabel?: string;
-        decimals?: number
+        decimals?: number;
+        hideInPrint?: boolean;
     };
 
 const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
@@ -126,6 +127,7 @@ export const getPipeSummaryRows = (network: NetworkState, unitSystem: "metric" |
             label: "Design Volumetric Flow Rate",
             // Unit varies by phase, so we display it per-cell via subLabel
             unit: undefined,
+            hideInPrint: true,
             getValue: (pipe) => {
                 const massFlow = pipe.designMassFlowRate || pipe.massFlowRate;
                 const density = pipe.resultSummary?.inletState?.density;

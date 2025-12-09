@@ -153,18 +153,41 @@ export function Providers({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<'light' | 'dark'>('dark');
 
   useEffect(() => {
-    // Check URL params for theme
+    // Priority: 1) URL params (from dashboard navigation), 2) localStorage, 3) default dark
     const searchParams = new URLSearchParams(window.location.search);
     const themeParam = searchParams.get('theme');
+
     if (themeParam === 'light' || themeParam === 'dark') {
       setMode(themeParam);
+      // Also save to localStorage for consistency
+      try {
+        localStorage.setItem('ept-pes-theme', JSON.stringify(themeParam));
+      } catch { /* ignore */ }
+    } else {
+      // Check localStorage
+      try {
+        const savedTheme = localStorage.getItem('ept-pes-theme');
+        if (savedTheme) {
+          const parsed = JSON.parse(savedTheme);
+          if (parsed === 'light' || parsed === 'dark') {
+            setMode(parsed);
+          }
+        }
+      } catch { /* ignore */ }
     }
   }, []);
 
   const colorMode = useMemo(
     () => ({
       toggleColorMode: () => {
-        setMode((prevMode) => (prevMode === 'light' ? 'dark' : 'light'));
+        setMode((prevMode) => {
+          const newMode = prevMode === 'light' ? 'dark' : 'light';
+          // Save to localStorage
+          try {
+            localStorage.setItem('ept-pes-theme', JSON.stringify(newMode));
+          } catch { /* ignore */ }
+          return newMode;
+        });
       },
     }),
     [],

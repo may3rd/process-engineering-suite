@@ -224,6 +224,42 @@ const defaultViewSettings: ViewSettings = {
     },
 };
 
+// Storage key for view settings
+const VIEW_SETTINGS_STORAGE_KEY = 'ept-pes-view-settings';
+
+// Load view settings from localStorage
+const loadViewSettings = (): ViewSettings => {
+    if (typeof window === 'undefined') return defaultViewSettings;
+
+    try {
+        const stored = localStorage.getItem(VIEW_SETTINGS_STORAGE_KEY);
+        if (stored) {
+            const parsed = JSON.parse(stored);
+            // Merge with defaults to handle any new fields
+            return {
+                ...defaultViewSettings,
+                ...parsed,
+                node: { ...defaultViewSettings.node, ...parsed.node },
+                pipe: { ...defaultViewSettings.pipe, ...parsed.pipe },
+            };
+        }
+    } catch {
+        console.warn('Failed to load view settings from localStorage');
+    }
+    return defaultViewSettings;
+};
+
+// Save view settings to localStorage
+const saveViewSettings = (settings: ViewSettings): void => {
+    if (typeof window === 'undefined') return;
+
+    try {
+        localStorage.setItem(VIEW_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+    } catch {
+        console.warn('Failed to save view settings to localStorage');
+    }
+};
+
 export const useNetworkStore = create<NetworkStore>((set, get) => ({
     // Initial State
     network: createNetworkWithDerivedValues(),
@@ -236,7 +272,7 @@ export const useNetworkStore = create<NetworkStore>((set, get) => ({
     history: [createNetworkWithDerivedValues()],
     historyIndex: 0,
 
-    viewSettings: defaultViewSettings,
+    viewSettings: loadViewSettings(),
     showSummary: false,
     showSnapshot: false,
     isAnimationEnabled: false,
@@ -552,11 +588,14 @@ export const useNetworkStore = create<NetworkStore>((set, get) => ({
 
     // UI Actions
     setViewSettings: (settingsOrUpdater) => {
-        set((state) => ({
-            viewSettings: typeof settingsOrUpdater === 'function'
+        set((state) => {
+            const newSettings = typeof settingsOrUpdater === 'function'
                 ? settingsOrUpdater(state.viewSettings)
-                : settingsOrUpdater
-        }));
+                : settingsOrUpdater;
+            // Persist to localStorage
+            saveViewSettings(newSettings);
+            return { viewSettings: newSettings };
+        });
     },
     setShowSummary: (show) => set({ showSummary: show }),
     setShowSnapshot: (show) => set({ showSnapshot: show }),

@@ -247,14 +247,14 @@ export default function ViewSettingsDialog({ open, onClose, settings, onSettings
                                     control={<Switch checked={settings.pipe.length} onChange={() => togglePipeSetting("length")} />}
                                 />
                                 <IOSListItem
-                                    label="Velocity"
-                                    value={<DecimalStepper value={settings.pipe.decimals?.velocity} onChange={(v) => handlePipeDecimalChange("velocity", v)} />}
-                                    control={<Switch checked={settings.pipe.velocity} onChange={() => togglePipeSetting("velocity")} />}
-                                />
-                                <IOSListItem
                                     label="Pressure Drop (ΔP)"
                                     value={<DecimalStepper value={settings.pipe.decimals?.deltaP} onChange={(v) => handlePipeDecimalChange("deltaP", v)} />}
                                     control={<Switch checked={settings.pipe.deltaP} onChange={() => togglePipeSetting("deltaP")} />}
+                                />
+                                <IOSListItem
+                                    label="Velocity"
+                                    value={<DecimalStepper value={settings.pipe.decimals?.velocity} onChange={(v) => handlePipeDecimalChange("velocity", v)} />}
+                                    control={<Switch checked={settings.pipe.velocity} onChange={() => togglePipeSetting("velocity")} />}
                                 />
                                 <IOSListItem
                                     label="dP/100m"

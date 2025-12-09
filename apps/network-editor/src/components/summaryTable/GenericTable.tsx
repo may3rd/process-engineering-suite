@@ -145,6 +145,14 @@ export function GenericTable<T>({
                         color: black;
                         background-color: white;
                     }
+                    /* Preserve red color for error values in print */
+                    #summary-table-print-area .cell-error-value {
+                        color: #ff0000 !important;
+                    }
+                    /* Preserve orange/amber color for warning values in print */
+                    #summary-table-print-area .cell-warning-value {
+                        color: #ed6c02 !important;
+                    }
                     #summary-table-print-area {
                         position: absolute;
                         left: 0;
@@ -295,6 +303,16 @@ export function GenericTable<T>({
                     .cell-sublabel, .cell-helper-text {
                         font-size: 0.5rem !important;
                     }
+                    
+                    /* Hide error/warning helper text in print (velocity > erosional, mach > 0.5, etc.) */
+                    .cell-helper-text-error, .cell-helper-text-warning {
+                        display: none !important;
+                    }
+                    
+                    /* Hide specific rows in print mode */
+                    .hide-in-print {
+                        display: none !important;
+                    }
 
                     /* Hide scrollbars */
                     ::-webkit-scrollbar { display: none; }
@@ -392,7 +410,7 @@ export function GenericTable<T>({
                                     }
 
                                     return (
-                                        <TableRow hover key={index}>
+                                        <TableRow hover key={index} className={row.hideInPrint ? 'hide-in-print' : ''}>
                                             <TableCell className="col-property" component="th" scope="row" sx={(theme) => ({
                                                 minWidth: 240,
                                                 width: 240,
@@ -438,7 +456,15 @@ export function GenericTable<T>({
                                                 const cellHelperTextFontWeight = typeof result === 'object' && result !== null ? result.helperTextFontWeight : "bold";
 
                                                 return (
-                                                    <TableCell key={keyExtractor(item)} align="center" sx={{ borderRight: '1px solid #e0e0e0', color: cellColor, fontWeight: cellFontWeight }}>
+                                                    <TableCell
+                                                        key={keyExtractor(item)}
+                                                        align="center"
+                                                        className={
+                                                            cellColor === 'error.main' ? 'cell-error-value' :
+                                                                cellColor === 'warning.main' ? 'cell-warning-value' : ''
+                                                        }
+                                                        sx={{ borderRight: '1px solid #e0e0e0', color: cellColor, fontWeight: cellFontWeight }}
+                                                    >
                                                         {formatNumber(value, row.decimals)}
                                                         {cellSubLabel && (
                                                             <Typography className="cell-sublabel" variant="caption" display="block" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
@@ -446,7 +472,15 @@ export function GenericTable<T>({
                                                             </Typography>
                                                         )}
                                                         {cellHelperText && (
-                                                            <Typography className="cell-helper-text" variant="caption" display="block" color={cellColor || "text.secondary"} sx={{ fontSize: '0.7rem', fontWeight: cellHelperTextFontWeight }}>
+                                                            <Typography
+                                                                className={`cell-helper-text ${cellColor === 'error.main' ? 'cell-helper-text-error' :
+                                                                        cellColor === 'warning.main' ? 'cell-helper-text-warning' : ''
+                                                                    }`}
+                                                                variant="caption"
+                                                                display="block"
+                                                                color={cellColor || "text.secondary"}
+                                                                sx={{ fontSize: '0.7rem', fontWeight: cellHelperTextFontWeight }}
+                                                            >
                                                                 {cellHelperText}
                                                             </Typography>
                                                         )}
@@ -514,8 +548,7 @@ export function GenericTable<T>({
                             <div style={{ flex: 1, display: 'flex', borderRight: '1px solid black', borderBottom: 'none' }}>
                                 <div className="footer-cell" style={{ width: '60px', justifyContent: 'center', borderRight: '1px solid black', borderBottom: 'none', padding: '2px' }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%' }}>
-                                        <span style={{ fontWeight: 'bold', fontStyle: 'italic', color: '#0070c0', fontSize: '10pt' }}>GC</span>
-                                        <span style={{ fontWeight: 'bold', fontStyle: 'italic', color: '#0070c0', fontSize: '10pt' }}>ME</span>
+                                        <span style={{ fontWeight: 'bold', fontStyle: 'italic', color: '#0070c0', fontSize: '10pt' }}>GCME</span>
                                     </div>
                                 </div>
                                 <div className="footer-cell" style={{ flex: 1, justifyContent: 'center', fontWeight: 'bold', textAlign: 'center', borderBottom: 'none' }}>

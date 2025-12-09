@@ -4,6 +4,7 @@ import { ThemeProvider, createTheme, CssBaseline, Theme, Components } from "@mui
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { ReactNode, useState, useMemo, useEffect } from "react";
 import { ColorModeContext } from "@/contexts/ColorModeContext";
+import { STORAGE_KEYS, getStoredValue, setStoredValue } from "@eng-suite/ui-kit";
 
 const getDesignTokens = (mode: 'light' | 'dark') => {
     const isDark = mode === 'dark';
@@ -152,11 +153,9 @@ export function Providers({ children }: { children: ReactNode }) {
     const [mode, setMode] = useState<'light' | 'dark'>('dark');
 
     useEffect(() => {
-        // Check local storage for saved theme
-        const savedMode = localStorage.getItem('theme') as 'light' | 'dark';
-        if (savedMode) {
-            setMode(savedMode);
-        }
+        // Check local storage for saved theme using shared storage utility
+        const savedMode = getStoredValue<'light' | 'dark'>(STORAGE_KEYS.THEME, 'dark');
+        setMode(savedMode);
     }, []);
 
     const colorMode = useMemo(
@@ -164,7 +163,7 @@ export function Providers({ children }: { children: ReactNode }) {
             toggleColorMode: () => {
                 setMode((prevMode) => {
                     const newMode = prevMode === 'light' ? 'dark' : 'light';
-                    localStorage.setItem('theme', newMode);
+                    setStoredValue(STORAGE_KEYS.THEME, newMode);
                     return newMode;
                 });
             },
