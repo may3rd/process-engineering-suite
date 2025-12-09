@@ -1,6 +1,6 @@
 "use client";
 
-import { Button, Box, Typography, Stack, Slide, Paper, Dialog, DialogTitle, DialogContent, IconButton } from "@mui/material";
+import { Button, Box, Typography, Stack, Slide, Paper, Dialog, DialogTitle, DialogContent, IconButton, SwipeableDrawer } from "@mui/material";
 import { Close as CloseIcon } from "@mui/icons-material";
 import { useCallback, useState, useEffect, useRef, ChangeEvent } from "react";
 import { toPng } from "html-to-image";
@@ -14,12 +14,14 @@ import {
 } from "@/lib/types";
 import { parseExcelNetwork } from "@/utils/excelImport";
 import { useNetworkStore } from "@/store/useNetworkStore";
+import { useIsMobile } from "@/hooks/useIsMobile";
 
 export default function Home() {
   const {
     network,
     setNetwork,
     selection,
+    selectElement,
     resetNetwork,
     clearNetwork,
     showSummary,
@@ -32,6 +34,7 @@ export default function Home() {
     recalculateAllPipesViaAPI,
   } = useNetworkStore();
 
+  const { isMobile } = useIsMobile();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const excelInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -343,23 +346,49 @@ export default function Home() {
             />
           </Box>
 
-          <Slide direction="left" in={!!selection && isPanelOpen} mountOnEnter unmountOnExit timeout={{ enter: 300, exit: 300 }}>
-            <Paper
-              elevation={0}
-              sx={{
-                position: "absolute",
-                top: 0,
-                right: "0px",
-                bottom: 0,
-                width: "340px",
-                borderRadius: "27px",
-                zIndex: 10,
-                backgroundColor: "transparent",
+          {/* Desktop: Slide-in panel from right */}
+          {!isMobile && (
+            <Slide direction="left" in={!!selection && isPanelOpen} mountOnEnter unmountOnExit timeout={{ enter: 300, exit: 300 }}>
+              <Paper
+                elevation={0}
+                sx={{
+                  position: "absolute",
+                  top: 0,
+                  right: "0px",
+                  bottom: 0,
+                  width: "340px",
+                  borderRadius: "27px",
+                  zIndex: 10,
+                  backgroundColor: "transparent",
+                }}
+              >
+                <PropertiesPanel />
+              </Paper>
+            </Slide>
+          )}
+
+          {/* Mobile: Full-screen swipeable drawer from bottom */}
+          {isMobile && (
+            <SwipeableDrawer
+              anchor="bottom"
+              open={!!selection && isPanelOpen}
+              onClose={() => selectElement(null, null)}
+              onOpen={() => { }}
+              disableSwipeToOpen
+              slotProps={{
+                paper: {
+                  sx: {
+                    height: "100%",
+                    borderTopLeftRadius: 24,
+                    borderTopRightRadius: 24,
+                    bgcolor: "background.default",
+                  }
+                }
               }}
             >
               <PropertiesPanel />
-            </Paper>
-          </Slide>
+            </SwipeableDrawer>
+          )}
         </Box>
 
         <Dialog
