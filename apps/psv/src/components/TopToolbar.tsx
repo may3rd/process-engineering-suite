@@ -1,8 +1,9 @@
 "use client";
 
-import { AppBar, Toolbar, Typography, IconButton, Box, TextField, InputAdornment, useTheme } from "@mui/material";
-import { DarkMode, LightMode, Search, ArrowBack } from "@mui/icons-material";
+import { Box, InputBase, useTheme, IconButton, Tooltip } from "@mui/material";
+import { Tune, Search, ArrowBack } from "@mui/icons-material";
 import { useColorMode } from "@/contexts/ColorModeContext";
+import { TopFloatingToolbar } from "@eng-suite/ui-kit";
 import { useRouter } from "next/navigation";
 
 interface TopToolbarProps {
@@ -14,8 +15,8 @@ interface TopToolbarProps {
 export function TopToolbar({ title = "PSV Sizing", showBack = false, onBack }: TopToolbarProps) {
     const theme = useTheme();
     const { toggleColorMode } = useColorMode();
-    const router = useRouter();
     const isDark = theme.palette.mode === 'dark';
+    const router = useRouter();
 
     const handleBack = () => {
         if (onBack) {
@@ -26,81 +27,55 @@ export function TopToolbar({ title = "PSV Sizing", showBack = false, onBack }: T
     };
 
     return (
-        <AppBar
-            position="fixed"
-            elevation={0}
-            sx={{
-                backdropFilter: 'blur(12px)',
-                backgroundColor: isDark ? 'rgba(15, 23, 42, 0.8)' : 'rgba(248, 250, 252, 0.8)',
-                borderBottom: `1px solid ${isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)'}`,
-            }}
-        >
-            <Toolbar sx={{ gap: 2 }}>
-                {showBack && (
+        <TopFloatingToolbar
+            title={title}
+            subtitle={title === "PSV Sizing" ? "Pressure Safety Valve Sizing" : undefined}
+            leadingAction={
+                <Tooltip title="Back to Dashboard">
                     <IconButton
-                        edge="start"
-                        onClick={handleBack}
-                        sx={{ color: 'text.primary' }}
+                        onClick={() => window.location.href = '/'}
+                        size="small"
+                        sx={{
+                            color: 'text.primary',
+                            '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
+                        }}
                     >
                         <ArrowBack />
                     </IconButton>
-                )}
-
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box
+                </Tooltip>
+            }
+            icon={<Tune />}
+            actions={
+                <Box
+                    sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)',
+                        borderRadius: '8px',
+                        px: 2,
+                        py: 0.5,
+                        width: { xs: 180, sm: 240 },
+                        border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                            bgcolor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)',
+                            borderColor: theme.palette.primary.main,
+                        }
+                    }}
+                >
+                    <Search sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />
+                    <InputBase
+                        placeholder="Search..."
                         sx={{
-                            width: 36,
-                            height: 36,
-                            borderRadius: 2,
-                            background: 'linear-gradient(135deg, #0284c7 0%, #38bdf8 100%)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            color: 'white',
-                            fontWeight: 700,
-                            fontSize: '1rem',
-                        }}
-                    >
-                        PSV
-                    </Box>
-                    <Typography
-                        variant="h6"
-                        sx={{
-                            fontWeight: 600,
                             color: 'text.primary',
-                            display: { xs: 'none', sm: 'block' },
-                        }}
-                    >
-                        {title}
-                    </Typography>
-                </Box>
-
-                <Box sx={{ flexGrow: 1, display: 'flex', justifyContent: 'center', maxWidth: 400, mx: 'auto' }}>
-                    <TextField
-                        size="small"
-                        placeholder="Search protective systems..."
-                        fullWidth
-                        slotProps={{
-                            input: {
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <Search sx={{ color: 'text.secondary', fontSize: 20 }} />
-                                    </InputAdornment>
-                                ),
-                            }
-                        }}
-                        sx={{
-                            '& .MuiOutlinedInput-root': {
-                                backgroundColor: isDark ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.03)',
-                            },
+                            fontSize: '0.875rem',
+                            width: '100%',
                         }}
                     />
                 </Box>
-
-                <IconButton onClick={toggleColorMode} sx={{ color: 'text.primary' }}>
-                    {isDark ? <LightMode /> : <DarkMode />}
-                </IconButton>
-            </Toolbar>
-        </AppBar>
+            }
+            onToggleTheme={toggleColorMode}
+            isDarkMode={isDark}
+        />
     );
 }

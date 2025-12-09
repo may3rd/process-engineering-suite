@@ -54,7 +54,8 @@ export default function Dashboard() {
                             title="Pressure Safety Valve Sizing"
                             description="PSV sizing based on ASME and EN standards. Includes data from vendor's catalog."
                             icon={<TuneIcon fontSize="large" />}
-                            status="coming_soon"
+                            href="/psv"
+                            status="active"
                         />
                     </Grid>
 

@@ -39,7 +39,7 @@ export function Breadcrumbs() {
                 py: 1.5,
                 px: 2,
                 backgroundColor: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(255, 255, 255, 0.5)',
-                borderRadius: 2,
+                borderRadius: "14px",
                 backdropFilter: 'blur(8px)',
             }}
         >

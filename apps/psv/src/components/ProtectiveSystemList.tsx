@@ -174,7 +174,7 @@ export function ProtectiveSystemList() {
                                         gridTemplateColumns: '1fr 1fr',
                                         gap: 1,
                                         p: 1.5,
-                                        borderRadius: 2,
+                                        borderRadius: "14px",
                                         backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
                                     }}
                                 >

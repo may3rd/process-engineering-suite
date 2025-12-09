@@ -1,6 +1,6 @@
 "use client";
 
-import { Assignment, Timeline, MoreVert as MoreVertIcon, FileUpload as ImportIcon, Refresh as RefreshIcon } from "@mui/icons-material";
+import { Assignment, Timeline, MoreVert as MoreVertIcon, FileUpload as ImportIcon, Refresh as RefreshIcon, ArrowBack } from "@mui/icons-material";
 import { Button, ButtonGroup, Tooltip, IconButton, useTheme, Menu, MenuItem, ListItemIcon, ListItemText } from "@mui/material";
 import { useState } from "react";
 import { TopFloatingToolbar } from "@eng-suite/ui-kit";
@@ -16,7 +16,7 @@ type Props = {
     onImportExcel: () => void;
 };
 
-export function Header({
+export function TopToolbar({
     network,
     onNetworkChange,
     onReset,
@@ -41,6 +41,20 @@ export function Header({
             <TopFloatingToolbar
                 title="Pipeline Network Builder"
                 subtitle={isMobile ? undefined : "Sketch networks, edit properties, print summary table and export network as PNG."}
+                leadingAction={
+                    <Tooltip title="Back to Dashboard">
+                        <IconButton
+                            onClick={() => window.location.href = '/'}
+                            size="small"
+                            sx={{
+                                color: 'text.primary',
+                                '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
+                            }}
+                        >
+                            <ArrowBack />
+                        </IconButton>
+                    </Tooltip>
+                }
                 icon={<Timeline />}
                 actions={
                     isMobile ? (

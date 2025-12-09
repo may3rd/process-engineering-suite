@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "./providers";
+import { TopToolbar } from "@/components/TopToolbar";
+import { Box } from "@mui/material";
 
 const inter = localFont({
     src: "./fonts/Inter-roman.var.woff2",
@@ -21,8 +23,25 @@ export default function RootLayout({
 }>) {
     return (
         <html lang="en" suppressHydrationWarning>
-            <body className={inter.className} suppressHydrationWarning>
-                <Providers>{children}</Providers>
+            <body className={inter.className}>
+                <Providers>
+                    <Box
+                        sx={{
+                            position: "fixed",
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            zIndex: 1000,
+                            boxShadow: "0 2px 10px rgba(0, 0, 0, 0.1)",
+                            backdropFilter: "blur(4px)",
+                        }}
+                    >
+                        <TopToolbar />
+                    </Box>
+                    {/* Spacer to account for fixed toolbar height */}
+                    <Box sx={{ height: 72 }} />
+                    {children}
+                </Providers>
             </body>
         </html>
     );

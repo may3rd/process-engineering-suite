@@ -7,7 +7,7 @@ import { toPng } from "html-to-image";
 import { SummaryTable } from "@/components/SummaryTable";
 import { NetworkEditor } from "@/components/NetworkEditor";
 import { PropertiesPanel } from "@/components/PropertiesPanel";
-import { Header } from "@/components/Header";
+import { TopToolbar } from "@/components/TopToolbar";
 import {
   createInitialNetwork,
   NetworkState,
@@ -303,7 +303,7 @@ export default function Home() {
           style={{ display: "none" }}
           onChange={handleExcelFileChange}
         />
-        <Header
+        <TopToolbar
           network={network}
           onNetworkChange={handleNetworkChange}
           onReset={resetNetwork}

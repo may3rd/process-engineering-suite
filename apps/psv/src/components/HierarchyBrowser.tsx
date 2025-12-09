@@ -142,7 +142,7 @@ export function HierarchyBrowser() {
     return (
         <Paper
             sx={{
-                borderRadius: 3,
+                borderRadius: "20px",
                 overflow: 'hidden',
             }}
         >

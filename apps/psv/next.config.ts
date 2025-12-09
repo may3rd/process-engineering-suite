@@ -1,7 +1,18 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-    transpilePackages: ["@eng-suite/ui-kit", "@repo/ui"],
+    transpilePackages: ["@eng-suite/physics", "@eng-suite/ui-kit"],
+    basePath: "/psv",
+    async redirects() {
+        return [
+            {
+                source: "/",
+                destination: "/psv",
+                permanent: false,
+                basePath: false,
+            },
+        ];
+    },
 };
 
 export default nextConfig;

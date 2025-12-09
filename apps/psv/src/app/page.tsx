@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Container } from "@mui/material";
-import { TopToolbar } from "@/components/TopToolbar";
+
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { HierarchyBrowser } from "@/components/HierarchyBrowser";
 import { ProtectiveSystemList } from "@/components/ProtectiveSystemList";
@@ -29,9 +29,7 @@ export default function PsvApp() {
 
     return (
         <Box sx={{ minHeight: '100vh', pb: 4 }}>
-            <TopToolbar title="PSV Sizing" />
-
-            <Container maxWidth="xl" sx={{ pt: 10 }}>
+            <Container maxWidth="xl" sx={{ pt: 4 }}>
                 <Box sx={{ mb: 3 }}>
                     <Breadcrumbs />
                 </Box>

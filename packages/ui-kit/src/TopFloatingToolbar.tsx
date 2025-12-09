@@ -8,6 +8,7 @@ export interface TopFloatingToolbarProps {
     title?: string;
     subtitle?: string;
     icon?: ReactNode;
+    leadingAction?: ReactNode;
     actions?: ReactNode;
     onToggleTheme?: () => void;
     isDarkMode?: boolean;
@@ -17,6 +18,7 @@ export const TopFloatingToolbar = ({
     title = "E-PT",
     subtitle,
     icon,
+    leadingAction,
     actions,
     onToggleTheme,
     isDarkMode = false,
@@ -41,7 +43,8 @@ export const TopFloatingToolbar = ({
             }}
         >
             {/* Left Side: Branding */}
-            <Stack direction="row" alignItems="center" spacing={2}>
+            <Stack direction="row" alignItems="center" spacing={1.5}>
+                {leadingAction}
                 {icon && (
                     <Box
                         sx={{

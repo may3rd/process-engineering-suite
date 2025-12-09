@@ -34,6 +34,11 @@ const networkEditorOrigin = createProxyTarget(
   "https://process-engineering-suite-network-e.vercel.app",
   "http://localhost:3002",
 );
+const psvOrigin = createProxyTarget(
+  "PSV_URL",
+  "https://process-engineering-suite-psv.vercel.app",
+  "http://localhost:3003",
+);
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -45,16 +50,16 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        // This is the incoming request path seen by the Dashboard
+        source: "/docs/:path*",
+        destination: `${docsAppOrigin}/docs/:path*`,
+      },
+      {
         source: "/network-editor/:path*",
-
-        // This is the internal destination to the Network Editor app
-        // We use a fixed port (3001) for local testing
         destination: `${networkEditorOrigin}/network-editor/:path*`,
       },
       {
-        source: "/docs/:path*",
-        destination: `${docsAppOrigin}/docs/:path*`,
+        source: "/psv/:path*",
+        destination: `${psvOrigin}/psv/:path*`,
       },
     ];
   },

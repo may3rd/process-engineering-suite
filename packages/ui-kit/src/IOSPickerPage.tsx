@@ -50,7 +50,7 @@ export function IOSPickerPage<T extends string | number>({
             return -1;
         }
         const selectedIndex = focusableIndexes.find(({ item }) => item.value !== undefined && item.value === selectedValue);
-        return selectedIndex ? selectedIndex.index : focusableIndexes[0].index;
+        return selectedIndex ? selectedIndex.index : focusableIndexes[0]?.index ?? -1;
     }, [focusableIndexes, selectedValue]);
 
     const [focusedIndex, setFocusedIndex] = useState(initialIndex);
@@ -85,8 +85,8 @@ export function IOSPickerPage<T extends string | number>({
     const focusEdge = useCallback((position: "first" | "last") => {
         if (focusableIndexes.length === 0) return;
         const idx = position === "first"
-            ? focusableIndexes[0].index
-            : focusableIndexes[focusableIndexes.length - 1].index;
+            ? focusableIndexes[0]?.index ?? -1
+            : focusableIndexes[focusableIndexes.length - 1]?.index ?? -1;
         setFocusedIndex(idx);
     }, [focusableIndexes]);
 
