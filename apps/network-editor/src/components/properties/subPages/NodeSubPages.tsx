@@ -5,6 +5,7 @@ import { NodeProps, NodePatch } from "@/lib/types";
 import { Navigator } from "../../PropertiesPanel";
 import { Check, ContentCopy } from "@mui/icons-material";
 import { useState, useEffect, useRef } from "react";
+import { validateTemperature, validatePressure, validateMolecularWeight, validateZFactor, validateSpecificHeatRatio, validatePositive } from "@/lib/validationRules";
 
 // --- Pressure ---
 export const PressurePage = ({ node, onUpdateNode, navigator }: { node: NodeProps, onUpdateNode: (id: string, patch: NodePatch) => void, navigator: Navigator }) => (
@@ -15,6 +16,7 @@ export const PressurePage = ({ node, onUpdateNode, navigator }: { node: NodeProp
         units={QUANTITY_UNIT_OPTIONS.pressure}
         unitFamily="pressure"
         onChange={(v, u) => onUpdateNode(node.id, { pressure: v, pressureUnit: u })}
+        validate={(v, u) => validatePressure(v, u)}
         autoFocus
         onBack={() => navigator.pop()}
     />
@@ -29,6 +31,7 @@ export const TemperaturePage = ({ node, onUpdateNode, navigator }: { node: NodeP
         units={QUANTITY_UNIT_OPTIONS.temperature}
         unitFamily="temperature"
         onChange={(v, u) => onUpdateNode(node.id, { temperature: v, temperatureUnit: u })}
+        validate={validateTemperature}
         autoFocus
         onBack={() => navigator.pop()}
     />
@@ -257,7 +260,7 @@ export const NodeFluidPage = ({ node, onUpdateNode, navigator }: { node: NodePro
                                     label="Molecular Weight"
                                     value={currentFluid.molecularWeight ?? ""}
                                     placeholder="Molecular Weight"
-                                    min={0}
+                                    validate={(v) => validateMolecularWeight(v)}
                                     autoFocus
                                     onValueChange={(val) => onUpdateNode(node.id, { fluid: { ...currentFluid, molecularWeight: val } })}
                                     onBack={() => nav.pop()}
@@ -278,6 +281,7 @@ export const NodeFluidPage = ({ node, onUpdateNode, navigator }: { node: NodePro
                                     label="Z Factor"
                                     value={currentFluid.zFactor ?? ""}
                                     placeholder="Z Factor"
+                                    validate={(v) => validateZFactor(v)}
                                     autoFocus
                                     onValueChange={(val) => onUpdateNode(node.id, { fluid: { ...currentFluid, zFactor: val } })}
                                     onBack={() => nav.pop()}
@@ -298,6 +302,7 @@ export const NodeFluidPage = ({ node, onUpdateNode, navigator }: { node: NodePro
                                     label="Specific Heat Ratio"
                                     value={currentFluid.specificHeatRatio ?? ""}
                                     placeholder="Specific Heat Ratio"
+                                    validate={(v) => validateSpecificHeatRatio(v)}
                                     autoFocus
                                     onValueChange={(val) => onUpdateNode(node.id, { fluid: { ...currentFluid, specificHeatRatio: val } })}
                                     onBack={() => nav.pop()}

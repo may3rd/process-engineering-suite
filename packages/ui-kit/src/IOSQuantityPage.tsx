@@ -1,10 +1,16 @@
-import { Box } from "@mui/material";
+import { Box, Typography } from "@mui/material";
 import { Check } from "@mui/icons-material";
 import { IOSTextField } from "./IOSTextField";
 import { IOSListGroup } from "./IOSListGroup";
 import { IOSListItem } from "./IOSListItem";
 import { convertUnit, UnitFamily } from "@eng-suite/physics";
 import { useState, useEffect, useMemo, useRef, ReactNode, useCallback } from "react";
+
+export type ValidationResult = {
+    valid: boolean;
+    error?: string;   // Hard error (blocks save)
+    warning?: string; // Soft warning (allows save)
+};
 
 type Props = {
     label: string;
@@ -20,6 +26,8 @@ type Props = {
     autoFocus?: boolean;
     action?: ReactNode;
     onBack?: () => void;
+    /** Custom validation function. Return { valid: false, error: "..." } to block, or { valid: true, warning: "..." } for soft warning. */
+    validate?: (value: number, unit: string) => ValidationResult;
 };
 
 export function IOSQuantityPage({
@@ -36,10 +44,12 @@ export function IOSQuantityPage({
     autoFocus,
     action,
     onBack,
+    validate,
 }: Props) {
     const [inputValue, setInputValue] = useState<string>("");
     const [localUnit, setLocalUnit] = useState<string>(unit);
     const [error, setError] = useState<string | null>(null);
+    const [warning, setWarning] = useState<string | null>(null);
     const [isUnitSelectionActive, setIsUnitSelectionActive] = useState(false);
     const [highlightedUnitIndex, setHighlightedUnitIndex] = useState(() => Math.max(0, units.indexOf(unit)));
     const [isInputFocused, setIsInputFocused] = useState(false);
@@ -120,6 +130,8 @@ export function IOSQuantityPage({
             if (text === "") {
                 valueRef.current = undefined;
                 isDirty.current = true;
+                setError(null);
+                setWarning(null);
             }
             return;
         }
@@ -135,11 +147,26 @@ export function IOSQuantityPage({
             valueRef.current = parsed;
             isDirty.current = true;
 
-            // Validation (Visual only)
-            if (min !== undefined && parsed < min) {
+            // Run custom validation if provided
+            if (validate) {
+                const result = validate(parsed, localUnit);
+                if (!result.valid) {
+                    setError(result.error || "Invalid value");
+                    setWarning(null);
+                } else if (result.warning) {
+                    setError(null);
+                    setWarning(result.warning);
+                } else {
+                    setError(null);
+                    setWarning(null);
+                }
+            } else if (min !== undefined && parsed < min) {
+                // Fallback to simple min validation
                 setError(`Value cannot be less than ${min}`);
+                setWarning(null);
             } else {
                 setError(null);
+                setWarning(null);
             }
         }
     };
@@ -259,13 +286,22 @@ export function IOSQuantityPage({
                         setInputValue("");
                         valueRef.current = undefined;
                         isDirty.current = true;
+                        setError(null);
+                        setWarning(null);
                     }}
                     placeholder={placeholder || label}
                     autoFocus={autoFocus}
                     error={!!error}
-                    helperText={error}
+                    helperText={error || warning}
                     onFocus={() => setIsInputFocused(true)}
                     onBlur={() => setIsInputFocused(false)}
+                    sx={warning && !error ? {
+                        '& .MuiOutlinedInput-root': {
+                            '& fieldset': { borderColor: '#f59e0b' },
+                            '&:hover fieldset': { borderColor: '#d97706' },
+                        },
+                        '& .MuiFormHelperText-root': { color: '#f59e0b' },
+                    } : undefined}
                 />
             </IOSListGroup>
 
