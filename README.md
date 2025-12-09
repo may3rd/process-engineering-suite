@@ -65,6 +65,45 @@ To build all apps and packages:
 npm run build
 ```
 
+### Docker Usage
+
+#### Development Environment (With Hot Reload)
+Run the entire suite (API, Web, Editor) with hot reloading enabled. Volume mounts ensure code changes are reflected immediately.
+
+```bash
+docker-compose -f infra/docker-compose.yml up --build
+```
+- **Web**: http://localhost:3000
+- **Editor**: http://localhost:3002
+- **API**: http://localhost:8000/docs
+
+#### Production / Single Image Deployment
+Build a single image containing all services (managed by supervisord). Suitable for deployment.
+
+```bash
+# Build
+docker build -t process-engineering-suite .
+
+# Run
+docker run -p 3000:3000 -p 3002:3002 -p 8000:8000 process-engineering-suite
+```
+
+#### Hybrid Development (Recommended)
+Run the Python API in Docker (to avoid environment setup) while running the Frontend locally (for maximum performance).
+
+1. Start only the API:
+   ```bash
+   docker-compose -f infra/docker-compose.yml up --build api
+   ```
+2. In a new terminal, start the frontend:
+   ```bash
+   npm run dev
+   ```
+
+#### Updating Code
+- **Development**: Code changes are reflected automatically due to volume mounts. If you add new dependencies, run `docker-compose -f infra/docker-compose.yml build`.
+- **Production**: Re-run the `docker build` command to bake changes into a new image.
+
 ## Key Features
 
 - **Theme Synchronization**: Seamlessly switch between Light and Dark modes from the Dashboard, with preferences persisted across applications.

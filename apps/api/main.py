@@ -19,7 +19,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 
-from schemas import (
+from .schemas import (
     PipeSectionRequest,
     CalculationResponse,
     PressureDropResponse,
@@ -383,7 +383,7 @@ async def solve_length(request: LengthEstimationRequest):
     pressure drop for a given length, we find the length that produces
     a specific pressure drop.
     """
-    from schemas import LengthEstimationRequest, LengthEstimationResponse
+    from .schemas import LengthEstimationRequest, LengthEstimationResponse
     from packages.hydraulics.src.single_edge import (
         solve_length_from_pressure_drop,
         LengthEstimationInput,

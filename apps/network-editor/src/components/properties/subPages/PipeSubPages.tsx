@@ -7,6 +7,8 @@ import { IOSListGroup, IOSListItem, IOSQuantityPage, IOSPickerPage, IOSPickerIte
 import { VelocityCriteriaPage } from './VelocityCriteriaPage';
 import { SERVICE_TYPES } from "@/utils/velocityCriteria";
 import { Check, ArrowForwardIos, Add, Remove, AutoFixHigh, ContentCopy, Close, ErrorOutline } from "@mui/icons-material";
+import { convertUnit } from "@eng-suite/physics";
+import { solveLengthFromPressureDropAPI, LengthEstimationRequest } from "@/lib/apiClient";
 
 // ... (existing code)
 
@@ -82,9 +84,7 @@ export function ServiceTypePage({ value, onChange, navigator }: { value: string,
     );
 }
 import { Navigator } from "../../PropertiesPanel";
-import { convertUnit } from "@eng-suite/physics";
 import { NodeSelectionPage } from "./NodeSubPages";
-import { recalculatePipeFittingLosses } from "@eng-suite/physics";
 
 import { useState, useEffect, useRef } from "react";
 
@@ -735,7 +735,7 @@ export const RoughnessPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipePro
 );
 
 export const LengthPage = ({ pipe, onUpdatePipe, startNode, endNode, navigator }: { pipe: PipeProps, onUpdatePipe: (id: string, patch: PipePatch) => void, startNode?: NodeProps, endNode?: NodeProps, navigator: Navigator }) => {
-    const handleEstimate = () => {
+    const handleEstimate = async () => {
         if (!startNode || !endNode || !pipe.diameter || !pipe.massFlowRate) return;
 
         const p1 = startNode.pressure;
@@ -751,27 +751,55 @@ export const LengthPage = ({ pipe, onUpdatePipe, startNode, endNode, navigator }
 
         if (targetDeltaP <= 0) return;
 
-        // Create temp pipe with 1m length to find gradient
-        // This matches the logic in pressurePropagation.ts
-        let tempPipe: PipeProps = { ...pipe, length: 1, lengthUnit: "m" };
+        // Use Python API for robust estimation (Gas & Liquid)
+        try {
+            // Helper to get fluid properties
+            const fluid = pipe.fluid || startNode.fluid;
+            if (!fluid) return;
 
-        // Ensure we have necessary fluid properties from the start node if not on pipe
-        if (!tempPipe.fluid && startNode.fluid) {
-            tempPipe.fluid = { ...startNode.fluid };
-        }
+            // Prepare API Request
+            const request: LengthEstimationRequest = {
+                id: pipe.id,
+                name: pipe.name || "Pipe",
+                targetPressureDrop: targetDeltaP,
+                pipeDiameter: pipe.diameter,
+                pipeDiameterUnit: pipe.diameterUnit || "mm",
+                massFlowRate: pipe.massFlowRate,
+                massFlowRateUnit: pipe.massFlowRateUnit || "kg/h",
+                roughness: pipe.roughness || 0.0457,
+                roughnessUnit: pipe.roughnessUnit || "mm",
+                elevation: pipe.elevation || 0,
+                elevationUnit: pipe.elevationUnit || "m",
+                boundaryPressure: p1Pa, // Boundary Pressure (Upstream)
+                boundaryPressureUnit: "Pa",
+                boundaryTemperature: startNode.temperature || 298.15,
+                boundaryTemperatureUnit: startNode.temperatureUnit || "K",
+                fluid: {
+                    phase: fluid.phase || "liquid",
+                    density: fluid.density,
+                    viscosity: fluid.viscosity,
+                    viscosityUnit: fluid.viscosityUnit,
+                    molecularWeight: fluid.molecularWeight,
+                    zFactor: fluid.zFactor,
+                    specificHeatRatio: fluid.specificHeatRatio
+                },
+                direction: pipe.direction || "forward",
+                gasFlowModel: pipe.gasFlowModel || "isothermal",
+                lengthMin: 0.1,
+                lengthMax: 100000,
+                tolerance: 10 // 10 Pa tolerance
+            };
 
-        // We need to ensure the temp pipe has the correct boundary conditions for calculation
-        // The recalculatePipeFittingLosses function uses the pipe's properties and fluid
-        // It doesn't take external node props, so we rely on what's in the pipe object.
-        // However, for density/viscosity, it uses the fluid object.
+            const result = await solveLengthFromPressureDropAPI(request);
 
-        tempPipe = recalculatePipeFittingLosses(tempPipe) as any;
+            if (result.success && result.estimatedLength) {
+                onUpdatePipe(pipe.id, { length: result.estimatedLength, lengthUnit: "m", lengthUpdateStatus: 'auto' as UpdateStatus });
+            } else {
+                console.warn("Length estimation failed:", result.error);
+            }
 
-        const gradient = tempPipe.pressureDropCalculationResults?.totalSegmentPressureDrop;
-
-        if (gradient && gradient > 0) {
-            const newLength = targetDeltaP / gradient;
-            onUpdatePipe(pipe.id, { length: newLength, lengthUpdateStatus: 'auto' as UpdateStatus });
+        } catch (e) {
+            console.error("Failed to estimate length:", e);
         }
     };
 
