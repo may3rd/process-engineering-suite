@@ -43,3 +43,6 @@ This is a monorepo containing a suite of tools for process engineering, built wi
 - **State Management**: The Network Editor uses `zustand` for complex state. Avoid prop drilling.
 - **Type Safety**: Strict TypeScript is enforced. Be careful with shared types between `network-editor` and `physics-engine`.
 - **Styling**: Use MUI `sx` prop with theme-aware values for consistency.
+- **Hydraulics**:
+  - **Bi-Directional Flow**: Supported via native checks.
+  - **Backward Propagation**: Uses `InletState` of the pipe directly. No node swapping or manual drop adjustments are needed as the engine handles the physics of the segment direction.

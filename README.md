@@ -70,3 +70,4 @@ npm run build
 - **Theme Synchronization**: Seamlessly switch between Light and Dark modes from the Dashboard, with preferences persisted across applications.
 - **Glassmorphism Design**: A modern, consistent UI aesthetic across all tools.
 - **Real-time Calculations**: Instant feedback on hydraulic network performance.
+- **Bi-Directional Flow Simulation**: Supports both forward and backward flow calculations, ensuring correct pressure drop and elevation handling regardless of flow direction.

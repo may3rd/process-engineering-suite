@@ -66,6 +66,17 @@ onBack={() => navigator.pop()}  // or nav.pop() in render functions
 
 **DO NOT** use `IOSNumberInputPage` for new code - use `IOSQuantityPage` with empty `units` instead.
 
+### Hydraulic Logic
+
+**Pipe Direction & Propagation:**
+- **Forward**: Fluid flows from Start Node → End Node. The pressure of the End Node is calculated based on the Start Node.
+- **Backward**: Fluid flows from Start Node -> End Node. But the pressure at the Start node is calculated based on the End Node.
+- The physics engine uses the defined direction to calculate pressure drops (including elevation signs).
+- **Propagation**:
+    - **Forward**: Target uses pipe `OutletState`.
+    - **Backward**: Target uses pipe `InletState`.
+    - Direction is handled natively without creating proxy pipes.
+
 ## Contribution Workflow
 
 1.  Create a new branch for your feature or fix.
