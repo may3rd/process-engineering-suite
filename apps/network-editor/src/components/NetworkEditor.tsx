@@ -152,6 +152,12 @@ const edgeTypes = {
   pipe: PipeEdge,
 } satisfies Record<string, ComponentType<any>>;
 
+const defaultEdgeOptions: DefaultEdgeOptions = {
+  style: { strokeWidth: 2, stroke: "#94a3b8" },
+  type: "smoothstep",
+  markerEnd: { type: MarkerType.ArrowClosed, color: "#94a3b8" },
+};
+
 /**
  * The main canvas component containing most of the interaction logic.
  * Handles state bridging between the store and React Flow plus tools UI.
@@ -350,7 +356,7 @@ function EditorCanvas({
   const handlePaste = useCallback((ids: string[]) => {
     pastedNodeIdsRef.current = new Set(ids);
   }, []);
-  
+
   useCopyPaste(handlePaste);
 
   const rfEdges = useMemo<Edge[]>(
@@ -371,11 +377,7 @@ function EditorCanvas({
     [network.pipes, selectedId, selectedType, viewSettings, theme, forceLightMode, isAnimationEnabled, isConnectingMode]
   );
 
-  const defaultEdgeOptions: DefaultEdgeOptions = {
-    style: { strokeWidth: 2, stroke: "#94a3b8" },
-    type: "smoothstep",
-    markerEnd: { type: MarkerType.ArrowClosed, color: "#94a3b8" },
-  };
+
 
   /**
    * Syncs React Flow node changes with local selection state and persisted positions.

@@ -7,7 +7,7 @@ import {
 } from "@xyflow/react";
 import { useTheme } from "@mui/material";
 import { ErrorOutline } from "@mui/icons-material";
-import { useState, useRef, useLayoutEffect, useEffect, useCallback } from "react";
+import { useState, useRef, useLayoutEffect, useEffect, useCallback, memo } from "react";
 import { HoverCard } from "./HoverCard";
 import { PipeProps } from "@/lib/types";
 import { convertUnit } from "@eng-suite/physics";
@@ -15,7 +15,7 @@ import { getPipeStatus } from "@/utils/velocityCriteria";
 import { getPipeWarnings } from "@/utils/validationUtils";
 import { useNetworkStore } from "@/store/useNetworkStore";
 
-export default function PipeEdge({
+function PipeEdge({
     id,
     sourceX,
     sourceY,
@@ -491,3 +491,5 @@ export default function PipeEdge({
         </>
     );
 }
+
+export default memo(PipeEdge);
