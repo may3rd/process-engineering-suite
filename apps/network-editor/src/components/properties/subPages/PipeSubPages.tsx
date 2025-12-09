@@ -9,6 +9,7 @@ import { SERVICE_TYPES } from "@/utils/velocityCriteria";
 import { Check, ArrowForwardIos, Add, Remove, AutoFixHigh, ContentCopy, Close, ErrorOutline } from "@mui/icons-material";
 import { convertUnit } from "@eng-suite/physics";
 import { solveLengthFromPressureDropAPI, LengthEstimationRequest } from "@/lib/apiClient";
+import { validatePositive, validateNonNegative, validateMolecularWeight, validateZFactor, validateSpecificHeatRatio, validateBetaRatio, validateErosionalConstant, validatePressure, validateTemperature } from "@/lib/validationRules";
 
 // ... (existing code)
 
@@ -301,7 +302,7 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                                     label="Molecular Weight"
                                     value={currentFluid.molecularWeight ?? ""}
                                     placeholder="Molecular Weight"
-                                    min={0}
+                                    validate={(v) => validateMolecularWeight(v)}
                                     autoFocus
                                     onValueChange={(val) => onUpdatePipe(pipe.id, { fluid: { ...currentFluid, molecularWeight: val } })}
                                     onBack={() => nav.pop()}
@@ -323,6 +324,7 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                                     label="Z Factor"
                                     value={currentFluid.zFactor ?? ""}
                                     placeholder="Z Factor"
+                                    validate={(v) => validateZFactor(v)}
                                     autoFocus
                                     onValueChange={(val) => onUpdatePipe(pipe.id, { fluid: { ...currentFluid, zFactor: val } })}
                                     onBack={() => nav.pop()}
@@ -344,6 +346,7 @@ export const FluidPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProps, 
                                     label="Specific Heat Ratio"
                                     value={currentFluid.specificHeatRatio ?? ""}
                                     placeholder="Specific Heat Ratio"
+                                    validate={(v) => validateSpecificHeatRatio(v)}
                                     autoFocus
                                     onValueChange={(val) => onUpdatePipe(pipe.id, { fluid: { ...currentFluid, specificHeatRatio: val } })}
                                     onBack={() => nav.pop()}
@@ -450,7 +453,7 @@ export const MassFlowRatePage = ({ pipe, onUpdatePipe, navigator }: { pipe: Pipe
         unitFamily="massFlowRate"
         onValueChange={(v) => onUpdatePipe(pipe.id, { massFlowRate: v })}
         onUnitChange={(u) => onUpdatePipe(pipe.id, { massFlowRateUnit: u })}
-        min={0}
+        validate={(v) => validateNonNegative(v, "Mass Flow Rate")}
         autoFocus
         onBack={() => navigator.pop()}
     />
@@ -603,7 +606,7 @@ export const DiameterPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipeProp
                     unitFamily="length"
                     onValueChange={(v) => onUpdatePipe(pipe.id, { [field]: v, diameterUpdateStatus: 'manual' as UpdateStatus })}
                     onUnitChange={(u) => onUpdatePipe(pipe.id, { [unitField]: u })}
-                    min={0}
+                    validate={(v) => validatePositive(v, label)}
                     autoFocus
                     onBack={() => navigator.pop()}
                 />
@@ -728,7 +731,7 @@ export const RoughnessPage = ({ pipe, onUpdatePipe, navigator }: { pipe: PipePro
         unitFamily="lengthSmall"
         onValueChange={(v) => onUpdatePipe(pipe.id, { roughness: v })}
         onUnitChange={(u) => onUpdatePipe(pipe.id, { roughnessUnit: u })}
-        min={0}
+        validate={(v) => validateNonNegative(v, "Roughness")}
         autoFocus
         onBack={() => navigator.pop()}
     />
@@ -812,7 +815,7 @@ export const LengthPage = ({ pipe, onUpdatePipe, startNode, endNode, navigator }
             unitFamily="length"
             onValueChange={(v) => onUpdatePipe(pipe.id, { length: v, lengthUpdateStatus: 'manual' as UpdateStatus })}
             onUnitChange={(u) => onUpdatePipe(pipe.id, { lengthUnit: u })}
-            min={0}
+            validate={(v) => validateNonNegative(v, "Length")}
             autoFocus
             action={
                 <IOSListGroup>
@@ -1114,8 +1117,8 @@ export const OrificePage = ({ pipe, onUpdatePipe, navigator, viewSettings, start
                 <IOSQuantityPage
                     label="Beta Ratio"
                     value={currentOrifice.betaRatio ?? ""}
-                    placeholder="Beta Ratio"
-                    min={0}
+                    placeholder="Beta Ratio (d/D)"
+                    validate={(v) => validateBetaRatio(v)}
                     autoFocus
                     onValueChange={(v) => onUpdatePipe(pipe.id, { orifice: { ...currentOrifice, betaRatio: v } })}
                     onBack={() => nav.pop()}
@@ -1617,26 +1620,39 @@ export function PipeSummaryPage({ pipe, viewSettings, navigator }: { pipe: PipeP
 
 export const BoundaryNodePage = ({ node, onUpdateNode, navigator }: { node: NodeProps, onUpdateNode: (id: string, patch: NodePatch) => void, navigator: Navigator }) => {
 
-    const openQuantityPage = (
-        label: string,
-        field: "pressure" | "temperature",
-        unitField: "pressureUnit" | "temperatureUnit",
-        units: readonly string[],
-        family: any, // UnitFamily
-        min?: number
-    ) => {
-        navigator.push(label, (net, nav) => {
+    const openPressurePage = () => {
+        navigator.push("Pressure", (net, nav) => {
             const currentNode = net.nodes.find(n => n.id === node.id);
             if (!currentNode) return null;
             return (
                 <IOSQuantityPage
-                    label={label}
-                    value={currentNode[field] ?? ""}
-                    unit={currentNode[unitField] ?? units[0]}
-                    units={units}
-                    unitFamily={family}
-                    onChange={(v, u) => onUpdateNode(node.id, { [field]: v, [unitField]: u })}
-                    min={min}
+                    label="Pressure"
+                    value={currentNode.pressure ?? ""}
+                    unit={currentNode.pressureUnit ?? "kPag"}
+                    units={QUANTITY_UNIT_OPTIONS.pressure}
+                    unitFamily="pressure"
+                    onChange={(v, u) => onUpdateNode(node.id, { pressure: v, pressureUnit: u })}
+                    validate={(v, u) => validatePressure(v, u)}
+                    autoFocus
+                    onBack={() => nav.pop()}
+                />
+            );
+        });
+    };
+
+    const openTemperaturePage = () => {
+        navigator.push("Temperature", (net, nav) => {
+            const currentNode = net.nodes.find(n => n.id === node.id);
+            if (!currentNode) return null;
+            return (
+                <IOSQuantityPage
+                    label="Temperature"
+                    value={currentNode.temperature ?? ""}
+                    unit={currentNode.temperatureUnit ?? "C"}
+                    units={QUANTITY_UNIT_OPTIONS.temperature}
+                    unitFamily="temperature"
+                    onChange={(v, u) => onUpdateNode(node.id, { temperature: v, temperatureUnit: u })}
+                    validate={validateTemperature}
                     autoFocus
                     onBack={() => nav.pop()}
                 />
@@ -1651,14 +1667,14 @@ export const BoundaryNodePage = ({ node, onUpdateNode, navigator }: { node: Node
                     label="Pressure"
                     value={`${node.pressure?.toFixed(2) ?? "-"} ${node.pressureUnit ?? ""}`}
                     valueColor={getValueColor(node.pressureUpdateStatus)}
-                    onClick={() => openQuantityPage("Pressure", "pressure", "pressureUnit", QUANTITY_UNIT_OPTIONS.pressure, "pressure", 0)}
+                    onClick={openPressurePage}
                     chevron
                 />
                 <IOSListItem
                     label="Temperature"
                     value={`${node.temperature?.toFixed(2) ?? "-"} ${node.temperatureUnit ?? ""}`}
                     valueColor={getValueColor(node.temperatureUpdateStatus)}
-                    onClick={() => openQuantityPage("Temperature", "temperature", "temperatureUnit", QUANTITY_UNIT_OPTIONS.temperature, "temperature")}
+                    onClick={openTemperaturePage}
                     chevron
                     last
                 />
