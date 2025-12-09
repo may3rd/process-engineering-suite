@@ -192,6 +192,7 @@ interface NetworkStore {
     recalculatePipeViaAPI: (pipeId: string) => Promise<void>;
     recalculateAllPipesViaAPI: () => Promise<void>;
     calculatePipe: (pipe: PipeProps) => Promise<PipeProps>;
+    loadViewSettingsFromStorage: () => void;
 }
 
 const defaultViewSettings: ViewSettings = {
@@ -273,7 +274,7 @@ export const useNetworkStore = create<NetworkStore>((set, get) => ({
     history: [createNetworkWithDerivedValues()],
     historyIndex: 0,
 
-    viewSettings: loadViewSettings(),
+    viewSettings: defaultViewSettings,
     showSummary: false,
     showSnapshot: false,
     isAnimationEnabled: false,
@@ -646,5 +647,9 @@ export const useNetworkStore = create<NetworkStore>((set, get) => ({
 
     calculatePipe: async (pipe: PipeProps): Promise<PipeProps> => {
         return calculatePipeAsync(pipe);
+    },
+
+    loadViewSettingsFromStorage: () => {
+        set({ viewSettings: loadViewSettings() });
     },
 }));

@@ -201,7 +201,12 @@ function EditorCanvas({
     showSummary,
     setShowSummary,
     multiSelection,
+    loadViewSettingsFromStorage,
   } = useNetworkStore();
+
+  useEffect(() => {
+    loadViewSettingsFromStorage();
+  }, [loadViewSettingsFromStorage]);
 
   const [snapToGrid, setSnapToGrid] = useState(true);
   const [showGrid, setShowGrid] = useState(false);
