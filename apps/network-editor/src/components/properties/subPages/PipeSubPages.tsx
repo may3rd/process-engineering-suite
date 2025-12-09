@@ -55,19 +55,10 @@ const VelocityCriteriaDialog = ({ open, onClose }: { open: boolean, onClose: () 
 export function ServiceTypePage({ value, onChange, navigator }: { value: string, onChange: (val: string) => void, navigator: Navigator }) {
     const [openVelocityCriteria, setOpenVelocityCriteria] = useState(false);
 
-    const pickerItems: IOSPickerItem<string>[] = [
-        ...SERVICE_TYPES.map((type) => ({
-            label: type,
-            value: type,
-        })),
-        {
-            label: "Velocity criteria...",
-            onSelect: () => setOpenVelocityCriteria(true),
-            renderValue: () => <ArrowForwardIos sx={{ fontSize: 16, color: "primary.main" }} />,
-            textColor: "primary.main",
-            chevron: true,
-        },
-    ];
+    const pickerItems: IOSPickerItem<string>[] = SERVICE_TYPES.map((type) => ({
+        label: type,
+        value: type,
+    }));
 
     return (
         <>
@@ -79,6 +70,22 @@ export function ServiceTypePage({ value, onChange, navigator }: { value: string,
                     navigator.pop();
                 }}
                 onCancel={() => navigator.pop()}
+                footer={
+                    <Box sx={{ pl: 2, pt: 0, mt: 0, pb: 1 }}>
+                        <Typography
+                            variant="body2"
+                            sx={{
+                                color: "primary.main",
+                                cursor: "pointer",
+                                textDecoration: "none",
+                                "&:hover": { textDecoration: "underline" }
+                            }}
+                            onClick={() => setOpenVelocityCriteria(true)}
+                        >
+                            Velocity criteria...
+                        </Typography>
+                    </Box>
+                }
             />
             <VelocityCriteriaDialog open={openVelocityCriteria} onClose={() => setOpenVelocityCriteria(false)} />
         </>
