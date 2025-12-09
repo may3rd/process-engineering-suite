@@ -1,14 +1,16 @@
 // components/PressureNode.tsx
 
 import { memo, useState, useRef, type CSSProperties } from "react";
-import { Handle, Position } from "@xyflow/react";
+import { Handle, Position, useNodesData, useNodeConnections } from "@xyflow/react";
 import { useTheme, alpha } from "@mui/material";
 import { ErrorOutline } from "@mui/icons-material";
 import { convertUnit } from "@eng-suite/physics";
 import { HoverCard } from "./HoverCard";
-import { NodeProps } from "@/lib/types";
+import { NodeProps, PipeProps } from "@/lib/types";
 import { getNodeWarnings } from "@/utils/validationUtils";
 import { glassNodeSx, glassLabelSx } from "@eng-suite/ui-kit";
+import { useNetworkStore } from "@/store/useNetworkStore";
+import { useEffect, useMemo } from "react";
 
 type NodeRole = "source" | "sink" | "middle" | "isolated" | "neutral";
 
@@ -28,7 +30,7 @@ type NodeData = {
   isConnectingMode?: boolean;
   isCtrlPressed?: boolean;
   showHoverCard?: boolean;
-  pipes?: import("@/lib/types").PipeProps[];
+  pipes?: PipeProps[];
 };
 
 const ROLE_COLORS_LIGHT: Record<NodeRole, string> = {
@@ -47,17 +49,13 @@ const ROLE_COLORS_DARK: Record<NodeRole, string> = {
   neutral: "#60a5fa", // Blue 400
 };
 
-function PressureNode({ data }: { data: NodeData }) {
+function PressureNode({ id, data }: { id: string, data: NodeData }) {
+  const updateNode = useNetworkStore(state => state.updateNode);
   const theme = useTheme();
   const isDark = !data.forceLightMode && theme.palette.mode === "dark";
 
   const {
-    label,
     isSelected,
-    showPressures,
-    pressure,
-    pressureUnit,
-    displayPressureUnit,
     flowRole = "neutral",
     needsAttention = false,
     rotation = 0,
@@ -65,7 +63,6 @@ function PressureNode({ data }: { data: NodeData }) {
 
   const roleColors = isDark ? ROLE_COLORS_DARK : ROLE_COLORS_LIGHT;
   const roleColor = roleColors[flowRole] ?? roleColors.neutral;
-
 
   // If forced light mode, use hardcoded light mode colors, otherwise use theme
   const textPrimary = data.forceLightMode ? "#000000" : theme.palette.text.primary;
@@ -190,6 +187,122 @@ function PressureNode({ data }: { data: NodeData }) {
   const shadowBandage = isDark ?
     "0 1px 2px rgba(255, 255, 255, 0.35)" :
     "0 1px 2px rgba(0, 0, 0, 0.35)"
+
+  // declare data for fluid, pressure, pressure unit, temperature, and temperature unit
+  let fluid = data.node?.fluid;
+  let pressure = data.node?.pressure;
+  let pressureUnit = data.node?.pressureUnit;
+  let temperature = data.node?.temperature;
+  let temperatureUnit = data.node?.temperatureUnit;
+
+  // get pipes connected to node
+  const pipesAtTarget = useNodeConnections({
+    handleType: "target",
+  });
+  const pipesAtSource = useNodeConnections({
+    handleType: "source",
+  });
+
+  // Determine the driving pipe for pressure/temperature/fluid "Computing Flows"
+  const drivingPipe = useMemo(() => {
+    let sourceOfP = "";
+
+    if (flowRole === "source") {
+      sourceOfP = "none";
+    } else if (flowRole === "sink") {
+      sourceOfP = pipesAtTarget.length > 0 ? "target" : "source";
+    } else {
+      const targetDirections = pipesAtTarget.map(pipe => data.pipes?.find(p => p.id === pipe.edgeId)?.direction);
+      const sourceDirections = pipesAtSource.map(pipe => data.pipes?.find(p => p.id === pipe.edgeId)?.direction);
+
+      if (targetDirections[0] === "forward" && sourceDirections[0] === "forward") {
+        sourceOfP = "target";
+      } else if (targetDirections[0] === "backward" && sourceDirections[0] === "backward") {
+        sourceOfP = "source";
+      } else {
+        sourceOfP = "none";
+      }
+    }
+
+    let results: PipeProps[] | undefined;
+    if (sourceOfP === "target") {
+      results = pipesAtTarget
+        .map(pipe => data.pipes?.find(p => p.id === pipe.edgeId))
+        .filter((p): p is PipeProps => !!p);
+    } else if (sourceOfP === "source") {
+      results = pipesAtSource
+        .map(pipe => data.pipes?.find(p => p.id === pipe.edgeId))
+        .filter((p): p is PipeProps => !!p);
+    }
+
+    return results && results.length > 0 ? results[0] : null;
+  }, [flowRole, pipesAtTarget, pipesAtSource, data.pipes]);
+
+  // Sync derived values to store (Computing Flows)
+  useEffect(() => {
+    if (!drivingPipe) return;
+
+    const patch: Partial<NodeProps> = {};
+    let hasChanges = false;
+
+    // Fluid propagation
+    if (!data.node?.fluid && drivingPipe.fluid) {
+      // Only set if node has no fluid, or maybe we should overwrite if not manual?
+      // Assuming fill-empty behavior for safety, or full propagation if desired.
+      // User prompt implied "automatic update", so strictly we should propagate changes too.
+      // However, to match previous logic 'if (!data.node?.fluid)', we stick to fill-only or check strict equality.
+      // Let's adopt a safe "auto-update unless manual" stance if possible, OR just fill empty.
+      // The user code was: if (!data.node?.fluid) -> fill.
+      // We will assume "Computing Flows" means keeping it in sync.
+      if (JSON.stringify(data.node?.fluid) !== JSON.stringify(drivingPipe.fluid)) {
+        patch.fluid = { ...drivingPipe.fluid };
+        hasChanges = true;
+      }
+    }
+
+    // Pressure/Temperature propagation
+    const updatePT = (resultState: { pressure?: number; temperature?: number } | undefined, boundaryPUnit: string | undefined, boundaryTUnit: string | undefined) => {
+      if (!resultState) return;
+
+      const targetPUnit = boundaryPUnit || "Pa";
+      const targetTUnit = boundaryTUnit || "K";
+
+      // Pressure
+      if (data.node?.pressureUpdateStatus !== 'manual' && resultState.pressure !== undefined) {
+        const newP = convertUnit(resultState.pressure, "Pa", targetPUnit);
+        // Tolerance check to avoid infinite loops with floats
+        const currentP = data.node?.pressure;
+        if (currentP === undefined || Math.abs(currentP - newP) > 0.001 || data.node?.pressureUnit !== targetPUnit) {
+          patch.pressure = newP;
+          patch.pressureUnit = targetPUnit;
+          hasChanges = true;
+        }
+      }
+
+      // Temperature
+      if (data.node?.temperatureUpdateStatus !== 'manual' && resultState.temperature !== undefined) {
+        const newT = convertUnit(resultState.temperature, "K", targetTUnit);
+        const currentT = data.node?.temperature;
+        if (currentT === undefined || Math.abs(currentT - newT) > 0.001 || data.node?.temperatureUnit !== targetTUnit) {
+          patch.temperature = newT;
+          patch.temperatureUnit = targetTUnit;
+          hasChanges = true;
+        }
+      }
+    };
+
+    if (drivingPipe.direction === "forward") {
+      updatePT(drivingPipe.resultSummary?.outletState, drivingPipe.boundaryPressureUnit, drivingPipe.boundaryTemperatureUnit);
+    } else if (drivingPipe.direction === "backward") {
+      updatePT(drivingPipe.resultSummary?.inletState, drivingPipe.boundaryPressureUnit, drivingPipe.boundaryTemperatureUnit);
+    }
+
+    if (hasChanges) {
+      // Use a timeout to break render cycle if necessary, though useEffect is already async-ish relative to render
+      // But typically React Flow warns about updating during render. useEffect is safe.
+      updateNode(id, patch);
+    }
+  }, [drivingPipe, data.node, id, updateNode]);
 
   return (
     <div
