@@ -28,7 +28,7 @@ export default function PsvApp() {
     };
 
     return (
-        <Box sx={{ minHeight: '100vh', pb: 4 }}>
+        <Box sx={{ minHeight: '100vh - 72', pb: 4 }}>
             <Container maxWidth="xl" sx={{ pt: 4 }}>
                 <Box sx={{ mb: 3 }}>
                     <Breadcrumbs />

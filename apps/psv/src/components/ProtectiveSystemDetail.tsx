@@ -12,6 +12,7 @@ import {
     ListItem,
     ListItemIcon,
     ListItemText,
+    ListItemButton,
     useTheme,
     Card,
     CardContent,
@@ -24,6 +25,10 @@ import {
     TableContainer,
     TableHead,
     TableRow,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogActions,
 } from "@mui/material";
 import {
     Info,
@@ -45,6 +50,9 @@ import {
 import { usePsvStore } from "@/store/usePsvStore";
 import { ScenarioCause, OverpressureScenario, SizingCase } from "@/data/types";
 import { getAttachmentsByPsv, getNotesByPsv, getEquipmentLinksByPsv, equipment, getUserById } from "@/data/mockData";
+import { SizingWorkspace } from "./SizingWorkspace";
+import { useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -392,10 +400,11 @@ function ScenariosTab() {
 }
 
 // Sizing Tab Content
-function SizingTab() {
+function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCreate?: (id: string) => void }) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
-    const { sizingCaseList, scenarioList, selectedPsv } = usePsvStore();
+    const { sizingCaseList, scenarioList, selectedPsv, addSizingCase } = usePsvStore();
+    const [dialogOpen, setDialogOpen] = useState(false);
 
     const getScenarioName = (scenarioId: string) => {
         const scenario = scenarioList.find(s => s.id === scenarioId);
@@ -418,6 +427,60 @@ function SizingTab() {
         }
     };
 
+    const handleCreateSizingCase = (scenario: OverpressureScenario) => {
+        if (!selectedPsv) return;
+
+        // Map fluid phase to sizing method
+        const methodMap: Record<string, 'gas' | 'liquid' | 'steam' | 'two_phase'> = {
+            'gas': 'gas',
+            'liquid': 'liquid',
+            'steam': 'steam',
+            'two_phase': 'two_phase',
+        };
+
+        const newCase: SizingCase = {
+            id: uuidv4(),
+            protectiveSystemId: selectedPsv.id,
+            scenarioId: scenario.id,
+            standard: 'API-520',
+            method: methodMap[scenario.phase] || 'gas',
+            inputs: {
+                massFlowRate: scenario.relievingRate,
+                molecularWeight: 28, // Default for gases
+                temperature: scenario.relievingTemp,
+                pressure: scenario.relievingPressure,
+                compressibilityZ: 1.0,
+                specificHeatRatio: 1.4,
+                backpressure: 0,
+                backpressureType: 'superimposed',
+            },
+            outputs: {
+                requiredArea: 0,
+                selectedOrifice: 'D',
+                orificeArea: 71,
+                percentUsed: 0,
+                ratedCapacity: 0,
+                dischargeCoefficient: scenario.phase === 'liquid' ? 0.65 : 0.975,
+                backpressureCorrectionFactor: 1.0,
+                isCriticalFlow: false,
+                messages: [],
+            },
+            revisionNo: 1,
+            status: 'draft',
+            createdBy: 'user-1',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+
+        addSizingCase(newCase);
+        setDialogOpen(false);
+
+        // Open the new case for editing
+        if (onCreate) {
+            onCreate(newCase.id);
+        }
+    };
+
     if (!selectedPsv) return null;
 
     return (
@@ -426,10 +489,58 @@ function SizingTab() {
                 <Typography variant="h6" fontWeight={600}>
                     Sizing Cases
                 </Typography>
-                <Button variant="contained" startIcon={<Add />} size="small">
-                    New Sizing
+                <Button
+                    variant="contained"
+                    startIcon={<Add />}
+                    size="small"
+                    onClick={() => setDialogOpen(true)}
+                    disabled={scenarioList.length === 0}
+                >
+                    New Sizing Case
                 </Button>
             </Box>
+
+            {/* Scenario Picker Dialog */}
+            <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Select Overpressure Scenario</DialogTitle>
+                <DialogContent dividers>
+                    {scenarioList.length > 0 ? (
+                        <List disablePadding>
+                            {scenarioList.map((scenario) => (
+                                <ListItemButton
+                                    key={scenario.id}
+                                    onClick={() => handleCreateSizingCase(scenario)}
+                                    sx={{ borderRadius: 1, mb: 1 }}
+                                >
+                                    <ListItemIcon>
+                                        {scenario.isGoverning ? <Star color="warning" /> : <WarningIcon color="action" />}
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary={
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Typography fontWeight={600}>
+                                                    {scenario.cause.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                                                </Typography>
+                                                {scenario.isGoverning && (
+                                                    <Chip label="Governing" size="small" color="warning" />
+                                                )}
+                                            </Box>
+                                        }
+                                        secondary={`${scenario.relievingRate.toLocaleString()} kg/h @ ${scenario.relievingPressure} barg, ${scenario.relievingTemp}°C`}
+                                    />
+                                </ListItemButton>
+                            ))}
+                        </List>
+                    ) : (
+                        <Typography color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
+                            No scenarios available. Create a scenario first.
+                        </Typography>
+                    )}
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+                </DialogActions>
+            </Dialog>
 
             {sizingCaseList.length > 0 ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -438,7 +549,7 @@ function SizingTab() {
                             <CardContent>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                                     <Box>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <Typography variant="h6" fontWeight={600}>
                                                 {getScenarioName(sizing.scenarioId)}
                                             </Typography>
@@ -454,7 +565,7 @@ function SizingTab() {
                                         </Typography>
                                     </Box>
                                     <Tooltip title="Edit">
-                                        <IconButton size="small">
+                                        <IconButton size="small" onClick={() => onEdit?.(sizing.id)}>
                                             <Edit fontSize="small" />
                                         </IconButton>
                                     </Tooltip>
@@ -716,7 +827,25 @@ function AttachmentsTab() {
 export function ProtectiveSystemDetail() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
-    const { selectedPsv, activeTab, setActiveTab, selectPsv } = usePsvStore();
+    const { selectedPsv, activeTab, setActiveTab, selectPsv, updateSizingCase, sizingCaseList } = usePsvStore();
+    const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
+
+    // If editing a case, show the workspace
+    if (editingCaseId) {
+        const caseToEdit = sizingCaseList.find(c => c.id === editingCaseId);
+        if (caseToEdit) {
+            return (
+                <SizingWorkspace
+                    sizingCase={caseToEdit}
+                    onClose={() => setEditingCaseId(null)}
+                    onSave={(updated) => {
+                        updateSizingCase(updated);
+                        setEditingCaseId(null);
+                    }}
+                />
+            );
+        }
+    }
 
     if (!selectedPsv) {
         return null;
@@ -782,7 +911,7 @@ export function ProtectiveSystemDetail() {
                 <ScenariosTab />
             </TabPanel>
             <TabPanel value={activeTab} index={2}>
-                <SizingTab />
+                <SizingTab onEdit={(id) => setEditingCaseId(id)} onCreate={(id) => setEditingCaseId(id)} />
             </TabPanel>
             <TabPanel value={activeTab} index={3}>
                 <AttachmentsTab />

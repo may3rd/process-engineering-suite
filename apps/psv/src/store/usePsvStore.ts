@@ -73,6 +73,8 @@ interface PsvStore {
     toggleSidebar: () => void;
     clearSelection: () => void;
     navigateToLevel: (level: 'customer' | 'plant' | 'unit' | 'area' | 'project' | 'psv') => void;
+    updateSizingCase: (updatedCase: SizingCase) => void;
+    addSizingCase: (newCase: SizingCase) => void;
 }
 
 export const usePsvStore = create<PsvStore>((set, get) => ({
@@ -308,5 +310,19 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
                 }
                 break;
         }
+    },
+
+    updateSizingCase: (updatedCase) => {
+        set((state) => ({
+            sizingCaseList: state.sizingCaseList.map((c) =>
+                c.id === updatedCase.id ? updatedCase : c
+            )
+        }));
+    },
+
+    addSizingCase: (newCase) => {
+        set((state) => ({
+            sizingCaseList: [...state.sizingCaseList, newCase]
+        }));
     },
 }));

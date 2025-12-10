@@ -8,11 +8,10 @@ import { useRouter } from "next/navigation";
 
 interface TopToolbarProps {
     title?: string;
-    showBack?: boolean;
     onBack?: () => void;
 }
 
-export function TopToolbar({ title = "PSV Sizing", showBack = false, onBack }: TopToolbarProps) {
+export function TopToolbar({ title = "PSV Sizing", onBack }: TopToolbarProps) {
     const theme = useTheme();
     const { toggleColorMode } = useColorMode();
     const isDark = theme.palette.mode === 'dark';
@@ -30,20 +29,20 @@ export function TopToolbar({ title = "PSV Sizing", showBack = false, onBack }: T
         <TopFloatingToolbar
             title={title}
             subtitle={title === "PSV Sizing" ? "Pressure Safety Valve Sizing" : undefined}
-            leadingAction={
-                <Tooltip title="Back to Dashboard">
-                    <IconButton
-                        onClick={() => window.location.href = '/'}
-                        size="small"
-                        sx={{
-                            color: 'text.primary',
-                            '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
-                        }}
-                    >
-                        <ArrowBack />
-                    </IconButton>
-                </Tooltip>
-            }
+            // leadingAction={
+            //     <Tooltip title="Back to Dashboard">
+            //         <IconButton
+            //             onClick={() => window.location.href = '/'}
+            //             size="small"
+            //             sx={{
+            //                 color: 'text.primary',
+            //                 '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)' }
+            //             }}
+            //         >
+            //             <ArrowBack />
+            //         </IconButton>
+            //     </Tooltip>
+            // }
             icon={<Tune />}
             actions={
                 <Box

@@ -52,6 +52,10 @@ export interface Project {
     createdAt: string;
 }
 
+// Import types from physics-engine for interoperability
+import { PipeProps, NodeProps } from '@eng-suite/physics';
+export type { PipeProps, NodeProps };
+
 // Protective system types
 export type ProtectiveSystemType = 'psv' | 'rupture_disc' | 'vent_system' | 'prv';
 export type DesignCode = 'API-520' | 'API-521' | 'API-2000' | 'ASME-VIII';
@@ -136,6 +140,11 @@ export interface SizingOutputs {
     messages: string[];
 }
 
+export interface PipelineNetwork {
+    nodes: NodeProps[];
+    pipes: PipeProps[];
+}
+
 export interface SizingCase {
     id: string;
     protectiveSystemId: string;
@@ -143,6 +152,11 @@ export interface SizingCase {
     standard: SizingStandard;
     method: SizingMethod;
     inputs: SizingInputs;
+
+    // Pipeline Networks (compatible with network-editor)
+    inletNetwork?: PipelineNetwork;
+    outletNetwork?: PipelineNetwork;
+
     outputs: SizingOutputs;
     revisionNo: number;
     status: 'draft' | 'calculated' | 'verified' | 'approved';

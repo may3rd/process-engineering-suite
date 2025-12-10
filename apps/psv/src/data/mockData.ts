@@ -558,6 +558,30 @@ export const sizingCases: SizingCase[] = [
             isCriticalFlow: true,
             messages: ['Critical flow confirmed', 'Backpressure within limits (<10% set pressure)'],
         },
+        inletNetwork: {
+            nodes: [
+                { id: 'n1', label: 'Source', position: { x: 0, y: 0 }, pressure: 3.5, temperature: 180, fluid: { id: 'fl1', phase: 'gas' } },
+                { id: 'n2', label: 'PSV Inlet', position: { x: 100, y: 0 }, pressure: 2.8, temperature: 180, fluid: { id: 'fl1', phase: 'gas' } }
+            ],
+            pipes: [
+                {
+                    id: 'p1', name: 'Inlet Pipe', startNodeId: 'n1', endNodeId: 'n2', length: 5, lengthUnit: 'm', diameter: 100, diameterUnit: 'mm', elevation: 0,
+                    fittings: [{ type: 'Elbow 90', count: 2, k_each: 0.3, k_total: 0.6 }]
+                }
+            ]
+        },
+        outletNetwork: {
+            nodes: [
+                { id: 'on1', label: 'PSV Outlet', position: { x: 0, y: 0 }, pressure: 0.5, temperature: 150, fluid: { id: 'fl1', phase: 'gas' } },
+                { id: 'on2', label: 'Discharge', position: { x: 200, y: 0 }, pressure: 0, temperature: 140, fluid: { id: 'fl1', phase: 'gas' } }
+            ],
+            pipes: [
+                {
+                    id: 'op1', name: 'Discharge Pipe', startNodeId: 'on1', endNodeId: 'on2', length: 20, lengthUnit: 'm', diameter: 150, diameterUnit: 'mm', elevation: 5,
+                    fittings: [{ type: 'Elbow 45', count: 1, k_each: 0.2, k_total: 0.2 }]
+                }
+            ]
+        },
         revisionNo: 2,
         status: 'verified',
         createdBy: 'user-1',

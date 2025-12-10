@@ -144,6 +144,7 @@ export interface NodeProps {
     temperature?: number;
     temperatureUnit?: string;
     fluid?: Fluid;
+    position?: { x: number; y: number };
 }
 
 export interface NetworkState {
