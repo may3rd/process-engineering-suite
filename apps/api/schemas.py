@@ -282,4 +282,7 @@ class InletValidationResponse(BaseModel):
     inletPressureDropPercent: float  # %
     message: str
     severity: str  # "success", "warning", "error"
+    totalPressureDrop: Optional[float] = None  # Pa
+    results: List[CalculationResponse] = []
+
 
