@@ -81,10 +81,10 @@ function TabPanel(props: TabPanelProps) {
 }
 
 // Unit options for different fields
-const PRESSURE_UNITS = ['barg', 'bara', 'psig', 'psia', 'kPa'];
-const TEMPERATURE_UNITS = ['°C', '°F', 'K'];
+const PRESSURE_UNITS = ['barg', 'bara', 'kPag', 'kg_cm2g', 'psig', 'psia', 'kPa'];
+const TEMPERATURE_UNITS = ['C', 'F', 'K'];  // No ° symbol for convertUnit compatibility
 const FLOW_UNITS = ['kg/h', 'lb/h', 'kg/s'];
-const VISCOSITY_UNITS = ['cP', 'mPa·s', 'Pa·s'];
+const VISCOSITY_UNITS = ['cP', 'Pa·s'];
 const DENSITY_UNITS = ['kg/m³', 'lb/ft³'];
 
 export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClose, onSave, onSaveNetworks, psvTag, onDelete }: SizingWorkspaceProps) {
@@ -111,7 +111,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
     // Unit Conversion Hook
     const defaultPreferences: UnitPreferences = {
         pressure: 'barg',
-        temperature: '°C',
+        temperature: 'C',  // No ° symbol for convertUnit compatibility
         flow: 'kg/h',
         length: 'm',
         area: 'mm²',
@@ -325,7 +325,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
     const isLiquidOrTwoPhase = currentCase.method === 'liquid' || currentCase.method === 'two_phase';
 
     return (
-        <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
+        <Box sx={{ height: '100vh - 20', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
             {/* Toolbar */}
             <Paper square sx={{ px: 3, py: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: 1, borderColor: 'divider' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -411,20 +411,22 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         type="number"
                                         value={toDisplay(currentCase.inputs.massFlowRate, 'flow')}
                                         onChange={(e) => handleInputChange('massFlowRate', e.target.value, 'flow')}
-                                        InputProps={{
-                                            endAdornment: (
-                                                <InputAdornment position="end">
-                                                    <TextField
-                                                        select
-                                                        variant="standard"
-                                                        value={preferences.flow}
-                                                        onChange={(e) => setUnit('flow', e.target.value)}
-                                                        sx={{ minWidth: 60 }}
-                                                    >
-                                                        {FLOW_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                    </TextField>
-                                                </InputAdornment>
-                                            ),
+                                        slotProps={{
+                                            input: {
+                                                endAdornment: (
+                                                    <InputAdornment position="end">
+                                                        <TextField
+                                                            select
+                                                            variant="standard"
+                                                            value={preferences.flow}
+                                                            onChange={(e) => setUnit('flow', e.target.value)}
+                                                            sx={{ minWidth: 60 }}
+                                                        >
+                                                            {FLOW_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                        </TextField>
+                                                    </InputAdornment>
+                                                ),
+                                            }
                                         }}
                                         fullWidth
                                     />
@@ -456,20 +458,22 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         type="number"
                                         value={toDisplay(currentCase.inputs.pressure, 'pressure')}
                                         onChange={(e) => handleInputChange('pressure', e.target.value, 'pressure')}
-                                        InputProps={{
-                                            endAdornment: (
-                                                <InputAdornment position="end">
-                                                    <TextField
-                                                        select
-                                                        variant="standard"
-                                                        value={preferences.pressure}
-                                                        onChange={(e) => setUnit('pressure', e.target.value)}
-                                                        sx={{ minWidth: 60 }}
-                                                    >
-                                                        {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                    </TextField>
-                                                </InputAdornment>
-                                            ),
+                                        slotProps={{
+                                            input: {
+                                                endAdornment: (
+                                                    <InputAdornment position="end">
+                                                        <TextField
+                                                            select
+                                                            variant="standard"
+                                                            value={preferences.pressure}
+                                                            onChange={(e) => setUnit('pressure', e.target.value)}
+                                                            sx={{ minWidth: 60 }}
+                                                        >
+                                                            {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                        </TextField>
+                                                    </InputAdornment>
+                                                ),
+                                            }
                                         }}
                                         fullWidth
                                     />
@@ -478,20 +482,22 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         type="number"
                                         value={toDisplay(currentCase.inputs.temperature, 'temperature')}
                                         onChange={(e) => handleInputChange('temperature', e.target.value, 'temperature')}
-                                        InputProps={{
-                                            endAdornment: (
-                                                <InputAdornment position="end">
-                                                    <TextField
-                                                        select
-                                                        variant="standard"
-                                                        value={preferences.temperature}
-                                                        onChange={(e) => setUnit('temperature', e.target.value)}
-                                                        sx={{ minWidth: 50 }}
-                                                    >
-                                                        {TEMPERATURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                    </TextField>
-                                                </InputAdornment>
-                                            ),
+                                        slotProps={{
+                                            input: {
+                                                endAdornment: (
+                                                    <InputAdornment position="end">
+                                                        <TextField
+                                                            select
+                                                            variant="standard"
+                                                            value={preferences.temperature}
+                                                            onChange={(e) => setUnit('temperature', e.target.value)}
+                                                            sx={{ minWidth: 60 }}
+                                                        >
+                                                            {TEMPERATURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                        </TextField>
+                                                    </InputAdornment>
+                                                ),
+                                            }
                                         }}
                                         fullWidth
                                     />
@@ -511,7 +517,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         type="number"
                                         value={currentCase.inputs.molecularWeight}
                                         onChange={(e) => handleInputChange('molecularWeight', parseFloat(e.target.value))}
-                                        InputProps={{ endAdornment: <InputAdornment position="end">g/mol</InputAdornment> }}
+                                        slotProps={{ htmlInput: { endAdornment: <InputAdornment position="end">g/mol</InputAdornment> } }}
                                         fullWidth
                                     />
                                     <TextField
@@ -519,7 +525,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         type="number"
                                         value={currentCase.inputs.compressibilityZ}
                                         onChange={(e) => handleInputChange('compressibilityZ', parseFloat(e.target.value))}
-                                        inputProps={{ step: 0.01, min: 0, max: 2 }}
+                                        slotProps={{ htmlInput: { step: 0.01, min: 0, max: 2 } }}
                                         fullWidth
                                     />
                                     <TextField
@@ -527,7 +533,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         type="number"
                                         value={currentCase.inputs.specificHeatRatio}
                                         onChange={(e) => handleInputChange('specificHeatRatio', parseFloat(e.target.value))}
-                                        inputProps={{ step: 0.01, min: 1, max: 2 }}
+                                        slotProps={{ htmlInput: { step: 0.01, min: 1, max: 2 } }}
                                         fullWidth
                                     />
                                 </Box>
@@ -540,20 +546,22 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                             type="number"
                                             value={toDisplay(currentCase.inputs.viscosity, 'viscosity')}
                                             onChange={(e) => handleInputChange('viscosity', e.target.value, 'viscosity')}
-                                            InputProps={{
-                                                endAdornment: (
-                                                    <InputAdornment position="end">
-                                                        <TextField
-                                                            select
-                                                            variant="standard"
-                                                            value={preferences.viscosity}
-                                                            onChange={(e) => setUnit('viscosity', e.target.value)}
-                                                            sx={{ minWidth: 60 }}
-                                                        >
-                                                            {VISCOSITY_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                        </TextField>
-                                                    </InputAdornment>
-                                                ),
+                                            slotProps={{
+                                                input: {
+                                                    endAdornment: (
+                                                        <InputAdornment position="end">
+                                                            <TextField
+                                                                select
+                                                                variant="standard"
+                                                                value={preferences.viscosity}
+                                                                onChange={(e) => setUnit('viscosity', e.target.value)}
+                                                                sx={{ minWidth: 60 }}
+                                                            >
+                                                                {VISCOSITY_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                            </TextField>
+                                                        </InputAdornment>
+                                                    ),
+                                                }
                                             }}
                                             fullWidth
                                         />
@@ -562,20 +570,22 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                             type="number"
                                             value={toDisplay(currentCase.inputs.density, 'density')}
                                             onChange={(e) => handleInputChange('density', e.target.value, 'density')}
-                                            InputProps={{
-                                                endAdornment: (
-                                                    <InputAdornment position="end">
-                                                        <TextField
-                                                            select
-                                                            variant="standard"
-                                                            value={preferences.density}
-                                                            onChange={(e) => setUnit('density', e.target.value)}
-                                                            sx={{ minWidth: 70 }}
-                                                        >
-                                                            {DENSITY_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                        </TextField>
-                                                    </InputAdornment>
-                                                ),
+                                            slotProps={{
+                                                input: {
+                                                    endAdornment: (
+                                                        <InputAdornment position="end">
+                                                            <TextField
+                                                                select
+                                                                variant="standard"
+                                                                value={preferences.density}
+                                                                onChange={(e) => setUnit('density', e.target.value)}
+                                                                sx={{ minWidth: 70 }}
+                                                            >
+                                                                {DENSITY_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                            </TextField>
+                                                        </InputAdornment>
+                                                    ),
+                                                }
                                             }}
                                             fullWidth
                                         />
@@ -596,20 +606,22 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         type="number"
                                         value={toDisplay(currentCase.inputs.backpressure, 'pressure')}
                                         onChange={(e) => handleInputChange('backpressure', e.target.value, 'pressure')}
-                                        InputProps={{
-                                            endAdornment: (
-                                                <InputAdornment position="end">
-                                                    <TextField
-                                                        select
-                                                        variant="standard"
-                                                        value={preferences.pressure}
-                                                        onChange={(e) => setUnit('pressure', e.target.value)}
-                                                        sx={{ minWidth: 60 }}
-                                                    >
-                                                        {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                    </TextField>
-                                                </InputAdornment>
-                                            ),
+                                        slotProps={{
+                                            input: {
+                                                endAdornment: (
+                                                    <InputAdornment position="end">
+                                                        <TextField
+                                                            select
+                                                            variant="standard"
+                                                            value={preferences.pressure}
+                                                            onChange={(e) => setUnit('pressure', e.target.value)}
+                                                            sx={{ minWidth: 60 }}
+                                                        >
+                                                            {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                        </TextField>
+                                                    </InputAdornment>
+                                                ),
+                                            }
                                         }}
                                         fullWidth
                                     />

@@ -9,6 +9,9 @@ const atmInkPa = 101.325;
 const UNIT_ALIASES: Record<string, string> = {
   "tonn/day": "ton/day",
   "kg_cm2": "kg/cm2",
+  "kg_cm2g": "kg/cm2g",
+  "bara": "bar",
+  "psia": "psi"
 };
 
 const extendedPressure = {
