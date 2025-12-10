@@ -178,7 +178,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
 
 
     const handleConfirmDelete = () => {
-        if (deleteConfirmationInput === psvTag) {
+        if (deleteConfirmationInput === "delete sizing case") {
             onDelete?.();
         }
     };
@@ -1915,7 +1915,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                         <strong> {currentCase.scenarioId} </strong> (Rev {currentCase.revisionNo}) from <strong>{psvTag}</strong>.
                     </DialogContentText>
                     <Typography variant="body2" gutterBottom>
-                        Please type <strong>{psvTag}</strong> to confirm.
+                        Please type <strong>delete sizing case</strong> to confirm.
                     </Typography>
                     <TextField
                         autoFocus
@@ -1924,7 +1924,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                         variant="outlined"
                         value={deleteConfirmationInput}
                         onChange={(e) => setDeleteConfirmationInput(e.target.value)}
-                        placeholder={psvTag}
+                        placeholder="delete sizing case"
                     />
                 </DialogContent>
                 <DialogActions>
@@ -1933,7 +1933,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                         variant="contained"
                         color="error"
                         onClick={handleConfirmDelete}
-                        disabled={deleteConfirmationInput !== psvTag}
+                        disabled={deleteConfirmationInput !== "delete sizing case"}
                     >
                         Delete Sizing Case
                     </Button>

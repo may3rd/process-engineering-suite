@@ -55,9 +55,9 @@ import {
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
 import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem } from "@/data/types";
-import { getAttachmentsByPsv, getCommentsByPsv, getTodosByPsv, getEquipmentLinksByPsv, equipment, getUserById, users } from "@/data/mockData";
 import { SizingWorkspace } from "./SizingWorkspace";
 import { ScenarioEditor } from "./ScenarioEditor"; // Import ScenarioEditor
+import { getAttachmentsByPsv, getEquipmentLinksByPsv, equipment, getUserById, users } from "@/data/mockData";
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { BasicInfoCard } from "./BasicInfoCard";
@@ -696,11 +696,11 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
 
 // Attachments Tab Content
 function AttachmentsTab() {
-    const { selectedPsv } = usePsvStore();
+    const { selectedPsv, attachmentList, deleteAttachment } = usePsvStore();
 
     if (!selectedPsv) return null;
 
-    const attachments = getAttachmentsByPsv(selectedPsv.id);
+    const attachments = attachmentList.filter(a => a.protectiveSystemId === selectedPsv.id);
 
     const formatFileSize = (bytes: number) => {
         if (bytes < 1024) return `${bytes} B`;
@@ -716,6 +716,12 @@ function AttachmentsTab() {
             hour: '2-digit',
             minute: '2-digit',
         });
+    };
+
+    const handleDelete = (id: string, name: string) => {
+        if (window.confirm(`Are you sure you want to delete ${name}?`)) {
+            deleteAttachment(id);
+        }
     };
 
     return (
@@ -742,6 +748,11 @@ function AttachmentsTab() {
                                     borderRadius: 2,
                                     mb: 1,
                                 }}
+                                secondaryAction={
+                                    <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(att.id, att.fileName)}>
+                                        <Delete />
+                                    </IconButton>
+                                }
                             >
                                 <ListItemIcon>
                                     <Description color="primary" />
@@ -750,7 +761,7 @@ function AttachmentsTab() {
                                     primary={att.fileName}
                                     secondary={`${formatFileSize(att.size)} • Uploaded ${formatDate(att.createdAt)}`}
                                 />
-                                <Button size="small">Download</Button>
+                                <Button size="small" sx={{ mr: 2 }}>Download</Button>
                             </ListItem>
                         ))}
                     </List>
@@ -767,9 +778,17 @@ function AttachmentsTab() {
 
 // Notes Tab Content (Comments & Todos)
 function NotesTab() {
-    const { selectedPsv } = usePsvStore();
-    const [localTodos, setLocalTodos] = useState<TodoItem[]>([]);
-    const [localComments, setLocalComments] = useState<Comment[]>([]);
+    const {
+        selectedPsv,
+        todoList,
+        commentList,
+        addTodo,
+        deleteTodo,
+        toggleTodo,
+        addComment,
+        deleteComment
+    } = usePsvStore();
+
     const [addTaskOpen, setAddTaskOpen] = useState(false);
     const [addCommentOpen, setAddCommentOpen] = useState(false);
     const [newTaskText, setNewTaskText] = useState('');
@@ -777,15 +796,10 @@ function NotesTab() {
     const [newTaskDueDate, setNewTaskDueDate] = useState('');
     const [newCommentText, setNewCommentText] = useState('');
 
-    // Initialize from mock data
-    useEffect(() => {
-        if (selectedPsv) {
-            setLocalTodos(getTodosByPsv(selectedPsv.id));
-            setLocalComments(getCommentsByPsv(selectedPsv.id));
-        }
-    }, [selectedPsv]);
-
     if (!selectedPsv) return null;
+
+    const filteredTodos = todoList.filter(t => t.protectiveSystemId === selectedPsv.id);
+    const filteredComments = commentList.filter(c => c.protectiveSystemId === selectedPsv.id);
 
     const formatDate = (dateStr: string) => {
         return new Date(dateStr).toLocaleDateString('en-US', {
@@ -793,12 +807,6 @@ function NotesTab() {
             month: 'short',
             day: 'numeric',
         });
-    };
-
-    const handleToggleTodo = (todoId: string) => {
-        setLocalTodos(prev => prev.map(t =>
-            t.id === todoId ? { ...t, completed: !t.completed } : t
-        ));
     };
 
     const handleAddTask = () => {
@@ -818,11 +826,17 @@ function NotesTab() {
             createdBy: 'user-1',
             createdAt: new Date().toISOString(),
         };
-        setLocalTodos(prev => [...prev, newTodo]);
+        addTodo(newTodo);
         setNewTaskText('');
         setNewTaskAssignee('user-1');
         setNewTaskDueDate('');
         setAddTaskOpen(false);
+    };
+
+    const handleDeleteTodo = (id: string) => {
+        if (window.confirm("Are you sure you want to delete this task?")) {
+            deleteTodo(id);
+        }
     };
 
     const handleAddComment = () => {
@@ -834,9 +848,15 @@ function NotesTab() {
             createdBy: 'user-1',
             createdAt: new Date().toISOString(),
         };
-        setLocalComments(prev => [...prev, newComment]);
+        addComment(newComment);
         setNewCommentText('');
         setAddCommentOpen(false);
+    };
+
+    const handleDeleteComment = (id: string) => {
+        if (window.confirm("Are you sure you want to delete this comment?")) {
+            deleteComment(id);
+        }
     };
 
     return (
@@ -852,30 +872,35 @@ function NotesTab() {
                     </Button>
                 </Box>
 
-                {localTodos.length > 0 ? (
+                {filteredTodos.length > 0 ? (
                     <Paper variant="outlined">
                         <List disablePadding>
-                            {localTodos.map((todo, index) => {
+                            {filteredTodos.map((todo, index) => {
                                 const assignee = todo.assignedTo ? getUserById(todo.assignedTo) : null;
                                 return (
                                     <ListItem
                                         key={todo.id}
-                                        divider={index < localTodos.length - 1}
+                                        divider={index < filteredTodos.length - 1}
                                         secondaryAction={
-                                            todo.dueDate && (
-                                                <Chip
-                                                    label={formatDate(todo.dueDate)}
-                                                    size="small"
-                                                    color={new Date(todo.dueDate) < new Date() && !todo.completed ? 'error' : 'default'}
-                                                    variant="outlined"
-                                                />
-                                            )
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                {todo.dueDate && (
+                                                    <Chip
+                                                        label={formatDate(todo.dueDate)}
+                                                        size="small"
+                                                        color={new Date(todo.dueDate) < new Date() && !todo.completed ? 'error' : 'default'}
+                                                        variant="outlined"
+                                                    />
+                                                )}
+                                                <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteTodo(todo.id)}>
+                                                    <Delete />
+                                                </IconButton>
+                                            </Box>
                                         }
                                     >
                                         <ListItemIcon>
                                             <Checkbox
                                                 checked={todo.completed}
-                                                onChange={() => handleToggleTodo(todo.id)}
+                                                onChange={() => toggleTodo(todo.id)}
                                             />
                                         </ListItemIcon>
                                         <ListItemText
@@ -910,20 +935,25 @@ function NotesTab() {
                     </Button>
                 </Box>
 
-                {localComments.length > 0 ? (
+                {filteredComments.length > 0 ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        {localComments.map((comment) => {
+                        {filteredComments.map((comment) => {
                             const author = getUserById(comment.createdBy);
                             return (
                                 <Card key={comment.id} variant="outlined">
-                                    <CardContent>
+                                    <CardContent sx={{ pb: '16px !important' }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                            <Typography variant="subtitle2" fontWeight={600}>
-                                                {author?.name || 'Unknown'}
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {formatDate(comment.createdAt)}
-                                            </Typography>
+                                            <Box>
+                                                <Typography variant="subtitle2" fontWeight={600}>
+                                                    {author?.name || 'Unknown'}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {formatDate(comment.createdAt)}
+                                                </Typography>
+                                            </Box>
+                                            <IconButton size="small" onClick={() => handleDeleteComment(comment.id)}>
+                                                <Delete fontSize="small" />
+                                            </IconButton>
                                         </Box>
                                         <Typography variant="body2">{comment.body}</Typography>
                                     </CardContent>

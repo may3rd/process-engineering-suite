@@ -5,7 +5,6 @@ import {
     Box,
     TextField,
     Button,
-    DialogActions,
     Typography,
     MenuItem,
     InputAdornment,
@@ -19,6 +18,14 @@ import {
     Paper,
     Divider,
     Alert,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
+    Card,
+    CardContent,
+    useTheme,
 } from "@mui/material";
 import {
     Delete,
@@ -125,6 +132,17 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
         }
 
         onSave(finalData);
+    };
+
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
+
+    const handleConfirmDelete = () => {
+        if (onDelete && initialData && deleteConfirmationInput === "delete scenario") {
+            onDelete(initialData.id);
+        }
     };
 
     // List Management Helpers
@@ -360,32 +378,85 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                 </Box>
             </Box>
 
+            {/* Danger Zone - Only show if editing existing scenario */}
+            {onDelete && initialData && (
+                <Box sx={{ mt: 4, mb: 3 }}>
+                    <Card sx={{
+                        border: 1,
+                        borderColor: 'error.main',
+                        bgcolor: isDark ? 'rgba(244, 67, 54, 0.05)' : 'rgba(211, 47, 47, 0.02)'
+                    }}>
+                        <Box sx={{ p: 1.5, bgcolor: 'error.main', color: 'error.contrastText' }}>
+                            <Typography variant="subtitle2" fontWeight={600}>Danger Zone</Typography>
+                        </Box>
+                        <CardContent>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Box>
+                                    <Typography variant="subtitle2" gutterBottom>Delete this scenario</Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Once deleted, this scenario cannot be recovered.
+                                    </Typography>
+                                </Box>
+                                <Button
+                                    variant="outlined"
+                                    color="error"
+                                    onClick={() => setDeleteDialogOpen(true)}
+                                    startIcon={<Delete />}
+                                >
+                                    Delete Scenario
+                                </Button>
+                            </Box>
+                        </CardContent>
+                    </Card>
+                </Box>
+            )}
+
             {/* Footer Actions */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 4 }}>
-                {onDelete && initialData ? (
-                    <Button
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+                <Button onClick={onCancel}>
+                    Cancel
+                </Button>
+                <Button
+                    variant="contained"
+                    onClick={handleSubmit}
+                    startIcon={<Save />}
+                >
+                    Save Scenario
+                </Button>
+            </Box>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+                <DialogTitle>Delete Scenario?</DialogTitle>
+                <DialogContent>
+                    <DialogContentText sx={{ mb: 2 }}>
+                        This action cannot be undone. This will permanently delete this overpressure scenario.
+                    </DialogContentText>
+                    <Typography variant="body2" gutterBottom>
+                        Please type <strong>delete scenario</strong> to confirm.
+                    </Typography>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        fullWidth
                         variant="outlined"
+                        value={deleteConfirmationInput}
+                        onChange={(e) => setDeleteConfirmationInput(e.target.value)}
+                        placeholder="delete scenario"
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+                    <Button
+                        variant="contained"
                         color="error"
-                        startIcon={<Delete />}
-                        onClick={() => onDelete(initialData.id)}
+                        onClick={handleConfirmDelete}
+                        disabled={deleteConfirmationInput !== "delete scenario"}
                     >
                         Delete Scenario
                     </Button>
-                ) : <Box />}
-
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button onClick={onCancel}>
-                        Cancel
-                    </Button>
-                    <Button
-                        variant="contained"
-                        onClick={handleSubmit}
-                        startIcon={<Save />}
-                    >
-                        Save Scenario
-                    </Button>
-                </Box>
-            </Box>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }

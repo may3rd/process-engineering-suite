@@ -9,6 +9,9 @@ import {
     OverpressureScenario,
     SizingCase,
     EquipmentLink,
+    Attachment,
+    TodoItem,
+    Comment,
 } from '@/data/types';
 import {
     customers,
@@ -19,6 +22,9 @@ import {
     protectiveSystems,
     scenarios,
     sizingCases,
+    attachments,
+    todos,
+    comments,
     getPlantsByCustomer,
     getUnitsByPlant,
     getAreasByUnit,
@@ -94,6 +100,20 @@ interface PsvStore {
     linkEquipment: (link: EquipmentLink) => void;
     unlinkEquipment: (linkId: string) => void;
     deletePsv: (id: string) => void;
+    deleteAttachment: (id: string) => void;
+    addAttachment: (attachment: Attachment) => void;
+    attachmentList: Attachment[];
+
+    // Todo Actions
+    addTodo: (todo: TodoItem) => void;
+    deleteTodo: (id: string) => void;
+    toggleTodo: (id: string) => void;
+    todoList: TodoItem[];
+
+    // Comment Actions
+    addComment: (comment: Comment) => void;
+    deleteComment: (id: string) => void;
+    commentList: Comment[];
 }
 
 export const usePsvStore = create<PsvStore>((set, get) => ({
@@ -125,6 +145,9 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     scenarioList: [],
     sizingCaseList: [],
     equipmentLinkList: [],
+    attachmentList: attachments,
+    todoList: todos,
+    commentList: comments,
 
     // UI state
     activeTab: 0,
@@ -248,6 +271,9 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             psvList,
             scenarioList: [],
             sizingCaseList: [],
+            attachmentList: attachments,
+            todoList: todos,
+            commentList: comments,
         }));
     },
 
@@ -441,5 +467,51 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         if (state.selectedPsv?.id === id && state.selection.projectId) {
             state.selectProject(state.selection.projectId);
         }
+    },
+
+    deleteAttachment: (id: string) => {
+        set((state) => ({
+            attachmentList: state.attachmentList.filter((a) => a.id !== id)
+        }));
+    },
+
+    addAttachment: (attachment: Attachment) => {
+        set((state) => ({
+            attachmentList: [...state.attachmentList, attachment]
+        }));
+    },
+
+    // Todo Actions
+    addTodo: (todo) => {
+        set((state) => ({
+            todoList: [...state.todoList, todo]
+        }));
+    },
+
+    deleteTodo: (id) => {
+        set((state) => ({
+            todoList: state.todoList.filter((t) => t.id !== id)
+        }));
+    },
+
+    toggleTodo: (id) => {
+        set((state) => ({
+            todoList: state.todoList.map((t) =>
+                t.id === id ? { ...t, completed: !t.completed } : t
+            )
+        }));
+    },
+
+    // Comment Actions
+    addComment: (comment) => {
+        set((state) => ({
+            commentList: [...state.commentList, comment]
+        }));
+    },
+
+    deleteComment: (id) => {
+        set((state) => ({
+            commentList: state.commentList.filter((c) => c.id !== id)
+        }));
     },
 }));
