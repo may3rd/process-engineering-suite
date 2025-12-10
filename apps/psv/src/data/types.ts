@@ -199,10 +199,23 @@ export interface Attachment {
     createdAt: string;
 }
 
-export interface Note {
+// Comments and Todos for Notes tab
+export interface Comment {
     id: string;
     protectiveSystemId: string;
     body: string;
+    createdBy: string;
+    createdAt: string;
+    updatedAt?: string;
+}
+
+export interface TodoItem {
+    id: string;
+    protectiveSystemId: string;
+    text: string;
+    completed: boolean;
+    assignedTo?: string;
+    dueDate?: string;
     createdBy: string;
     createdAt: string;
 }

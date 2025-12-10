@@ -29,6 +29,7 @@ import {
     DialogTitle,
     DialogContent,
     DialogActions,
+    Checkbox,
 } from "@mui/material";
 import {
     Info,
@@ -45,11 +46,12 @@ import {
     CheckCircle,
     Edit,
     Add,
+    AddCircle,
     Star,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
-import { ScenarioCause, OverpressureScenario, SizingCase } from "@/data/types";
-import { getAttachmentsByPsv, getNotesByPsv, getEquipmentLinksByPsv, equipment, getUserById } from "@/data/mockData";
+import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem } from "@/data/types";
+import { getAttachmentsByPsv, getCommentsByPsv, getTodosByPsv, getEquipmentLinksByPsv, equipment, getUserById } from "@/data/mockData";
 import { SizingWorkspace } from "./SizingWorkspace";
 import { useState } from "react";
 import { v4 as uuidv4 } from "uuid";
@@ -650,13 +652,25 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                                 </Typography>
                                             </Box>
                                             <Box>
-                                                <Typography variant="caption" color="text.secondary">Orifice Area</Typography>
-                                                <Typography variant="body2" fontWeight={500}>{sizing.outputs.orificeArea.toLocaleString()} mm²</Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {(sizing.outputs.numberOfValves || 1) > 1 ? 'Total Orifice Area' : 'Orifice Area'}
+                                                </Typography>
+                                                <Typography variant="body2" fontWeight={500}>
+                                                    {(sizing.outputs.orificeArea * (sizing.outputs.numberOfValves || 1)).toLocaleString()} mm²
+                                                </Typography>
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">% Used</Typography>
-                                                <Typography variant="body2" fontWeight={600} color={sizing.outputs.percentUsed > 90 ? 'warning.main' : 'text.primary'}>
-                                                    {sizing.outputs.percentUsed.toFixed(1)}%
+                                                <Typography variant="body2" fontWeight={600} color={
+                                                    (sizing.outputs.requiredArea / (sizing.outputs.orificeArea * (sizing.outputs.numberOfValves || 1)) * 100) > 90 ? 'warning.main' : 'text.primary'
+                                                }>
+                                                    {(sizing.outputs.requiredArea / (sizing.outputs.orificeArea * (sizing.outputs.numberOfValves || 1)) * 100).toFixed(1)}%
+                                                </Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Number of Valves</Typography>
+                                                <Typography variant="body2" fontWeight={600} color={sizing.outputs.numberOfValves > 1 ? 'info.main' : 'text.primary'}>
+                                                    {sizing.outputs.numberOfValves || 1}
                                                 </Typography>
                                             </Box>
                                             <Box>
@@ -664,7 +678,7 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                                 <Typography variant="body2" fontWeight={500}>{sizing.outputs.ratedCapacity.toLocaleString()} kg/h</Typography>
                                             </Box>
                                             <Box>
-                                                <Typography variant="caption" color="text.secondary">Flow Type</Typography>
+                                                <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>Flow Type</Typography>
                                                 <Chip
                                                     label={sizing.outputs.isCriticalFlow ? 'Critical' : 'Subcritical'}
                                                     size="small"
@@ -719,7 +733,6 @@ function AttachmentsTab() {
     if (!selectedPsv) return null;
 
     const attachments = getAttachmentsByPsv(selectedPsv.id);
-    const notes = getNotesByPsv(selectedPsv.id);
 
     const formatFileSize = (bytes: number) => {
         if (bytes < 1024) return `${bytes} B`;
@@ -780,34 +793,111 @@ function AttachmentsTab() {
                     </Paper>
                 )}
             </Box>
+        </Box>
+    );
+}
 
-            {/* Notes Section */}
+// Notes Tab Content (Comments & Todos)
+function NotesTab() {
+    const { selectedPsv } = usePsvStore();
+
+    if (!selectedPsv) return null;
+
+    const comments = getCommentsByPsv(selectedPsv.id);
+    const todoItems = getTodosByPsv(selectedPsv.id);
+
+    const formatDate = (dateStr: string) => {
+        return new Date(dateStr).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric',
+        });
+    };
+
+    return (
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {/* Todos Section */}
             <Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                     <Typography variant="h6" fontWeight={600}>
-                        Notes
+                        Tasks
                     </Typography>
-                    <Button variant="outlined" startIcon={<Note />} size="small">
-                        Add Note
+                    <Button variant="contained" startIcon={<AddCircle />} size="small">
+                        Add Task
                     </Button>
                 </Box>
 
-                {notes.length > 0 ? (
+                {todoItems.length > 0 ? (
+                    <Paper variant="outlined">
+                        <List disablePadding>
+                            {todoItems.map((todo, index) => {
+                                const assignee = todo.assignedTo ? getUserById(todo.assignedTo) : null;
+                                return (
+                                    <ListItem
+                                        key={todo.id}
+                                        divider={index < todoItems.length - 1}
+                                        secondaryAction={
+                                            todo.dueDate && (
+                                                <Chip
+                                                    label={formatDate(todo.dueDate)}
+                                                    size="small"
+                                                    color={new Date(todo.dueDate) < new Date() && !todo.completed ? 'error' : 'default'}
+                                                    variant="outlined"
+                                                />
+                                            )
+                                        }
+                                    >
+                                        <ListItemIcon>
+                                            <Checkbox checked={todo.completed} />
+                                        </ListItemIcon>
+                                        <ListItemText
+                                            primary={
+                                                <Typography sx={{ textDecoration: todo.completed ? 'line-through' : 'none' }}>
+                                                    {todo.text}
+                                                </Typography>
+                                            }
+                                            secondary={assignee ? `Assigned to ${assignee.name}` : undefined}
+                                        />
+                                    </ListItem>
+                                );
+                            })}
+                        </List>
+                    </Paper>
+                ) : (
+                    <Paper variant="outlined" sx={{ py: 4, textAlign: 'center' }}>
+                        <CheckCircle sx={{ fontSize: 32, color: 'text.secondary', mb: 1 }} />
+                        <Typography color="text.secondary">No tasks</Typography>
+                    </Paper>
+                )}
+            </Box>
+
+            {/* Comments Section */}
+            <Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6" fontWeight={600}>
+                        Comments
+                    </Typography>
+                    <Button variant="outlined" startIcon={<Note />} size="small">
+                        Add Comment
+                    </Button>
+                </Box>
+
+                {comments.length > 0 ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        {notes.map((note) => {
-                            const author = getUserById(note.createdBy);
+                        {comments.map((comment) => {
+                            const author = getUserById(comment.createdBy);
                             return (
-                                <Card key={note.id} variant="outlined">
+                                <Card key={comment.id} variant="outlined">
                                     <CardContent>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
                                             <Typography variant="subtitle2" fontWeight={600}>
                                                 {author?.name || 'Unknown'}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
-                                                {formatDate(note.createdAt)}
+                                                {formatDate(comment.createdAt)}
                                             </Typography>
                                         </Box>
-                                        <Typography variant="body2">{note.body}</Typography>
+                                        <Typography variant="body2">{comment.body}</Typography>
                                     </CardContent>
                                 </Card>
                             );
@@ -816,7 +906,7 @@ function AttachmentsTab() {
                 ) : (
                     <Paper variant="outlined" sx={{ py: 4, textAlign: 'center' }}>
                         <Note sx={{ fontSize: 32, color: 'text.secondary', mb: 1 }} />
-                        <Typography color="text.secondary">No notes</Typography>
+                        <Typography color="text.secondary">No comments</Typography>
                     </Paper>
                 )}
             </Box>
@@ -900,6 +990,7 @@ export function ProtectiveSystemDetail() {
                     <Tab label="Overview" />
                     <Tab label="Scenarios" />
                     <Tab label="Sizing" />
+                    <Tab label="Notes" />
                     <Tab label="Attachments" />
                 </Tabs>
             </Paper>
@@ -915,6 +1006,9 @@ export function ProtectiveSystemDetail() {
                 <SizingTab onEdit={(id) => setEditingCaseId(id)} onCreate={(id) => setEditingCaseId(id)} />
             </TabPanel>
             <TabPanel value={activeTab} index={3}>
+                <NotesTab />
+            </TabPanel>
+            <TabPanel value={activeTab} index={4}>
                 <AttachmentsTab />
             </TabPanel>
         </Box>

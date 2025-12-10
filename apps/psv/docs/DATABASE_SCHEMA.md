@@ -185,12 +185,25 @@ erDiagram
 | uploaded_by | UUID | FK → users.id |
 | created_at | TIMESTAMP | Upload time |
 
-#### `notes`
+#### `comments`
 | Column | Type | Description |
 |--------|------|-------------|
 | id | UUID | Primary key |
 | protective_system_id | UUID | FK → protective_systems.id |
-| body | TEXT | Note content |
+| body | TEXT | Comment content |
+| created_by | UUID | FK → users.id |
+| created_at | TIMESTAMP | Creation time |
+| updated_at | TIMESTAMP | Last update |
+
+#### `todos`
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| protective_system_id | UUID | FK → protective_systems.id |
+| text | VARCHAR(500) | Task description |
+| completed | BOOLEAN | Completion status |
+| assigned_to | UUID | FK → users.id (nullable) |
+| due_date | DATE | Due date (nullable) |
 | created_by | UUID | FK → users.id |
 | created_at | TIMESTAMP | Creation time |
 

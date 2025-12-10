@@ -10,7 +10,8 @@ import {
     Equipment,
     EquipmentLink,
     Attachment,
-    Note,
+    Comment,
+    TodoItem,
     User,
 } from './types';
 
@@ -709,28 +710,72 @@ export const attachments: Attachment[] = [
     },
 ];
 
-// Notes
-export const notes: Note[] = [
+// Comments (replaces notes)
+export const comments: Comment[] = [
     {
-        id: 'note-1',
+        id: 'comment-1',
         protectiveSystemId: 'psv-1',
         body: 'Verified fire case wetted area calculation with operations. Confirmed liquid level at HLL during relief.',
         createdBy: 'user-2',
         createdAt: '2024-09-05T14:30:00Z',
     },
     {
-        id: 'note-2',
+        id: 'comment-2',
         protectiveSystemId: 'psv-1',
         body: 'PSV vendor confirmed 2" x 3" size available for quoted delivery. Lead time 12 weeks.',
         createdBy: 'user-1',
         createdAt: '2024-09-10T09:00:00Z',
     },
     {
-        id: 'note-3',
+        id: 'comment-3',
         protectiveSystemId: 'psv-6',
         body: 'Need to confirm cryogenic material requirements with metallurgy team. SS316L minimum.',
         createdBy: 'user-4',
         createdAt: '2024-09-18T11:00:00Z',
+    },
+];
+
+// Todos
+export const todos: TodoItem[] = [
+    {
+        id: 'todo-1',
+        protectiveSystemId: 'psv-1',
+        text: 'Confirm fire case wetted area with operations team',
+        completed: true,
+        assignedTo: 'user-2',
+        dueDate: '2024-09-05',
+        createdBy: 'user-1',
+        createdAt: '2024-09-01T08:00:00Z',
+    },
+    {
+        id: 'todo-2',
+        protectiveSystemId: 'psv-1',
+        text: 'Submit PSV data sheet to vendor for quotation',
+        completed: true,
+        assignedTo: 'user-1',
+        dueDate: '2024-09-08',
+        createdBy: 'user-1',
+        createdAt: '2024-09-02T10:00:00Z',
+    },
+    {
+        id: 'todo-3',
+        protectiveSystemId: 'psv-1',
+        text: 'Review inlet piping pressure drop calculation',
+        completed: false,
+        assignedTo: 'user-2',
+        dueDate: '2024-10-15',
+        createdBy: 'user-1',
+        createdAt: '2024-09-15T14:00:00Z',
+    },
+    {
+        id: 'todo-4',
+        protectiveSystemId: 'psv-6',
+        text: 'Get metallurgy approval for SS316L material',
+        completed: false,
+        assignedTo: 'user-4',
+        dueDate: '2024-09-25',
+        createdBy: 'user-4',
+        createdAt: '2024-09-18T11:30:00Z',
     },
 ];
 
@@ -779,8 +824,12 @@ export function getAttachmentsByPsv(psvId: string): Attachment[] {
     return attachments.filter(a => a.protectiveSystemId === psvId);
 }
 
-export function getNotesByPsv(psvId: string): Note[] {
-    return notes.filter(n => n.protectiveSystemId === psvId);
+export function getCommentsByPsv(psvId: string): Comment[] {
+    return comments.filter(c => c.protectiveSystemId === psvId);
+}
+
+export function getTodosByPsv(psvId: string): TodoItem[] {
+    return todos.filter(t => t.protectiveSystemId === psvId);
 }
 
 export function getUserById(id: string): User | undefined {
