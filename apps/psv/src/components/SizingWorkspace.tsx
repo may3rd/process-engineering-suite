@@ -59,7 +59,8 @@ import {
 } from "@/lib/apiClient";
 import {
     validateInletPressureDrop,
-    calculateNetworkPressureDrop
+    calculateNetworkPressureDrop,
+    calculateBuiltUpBackpressure
 } from "@/lib/hydraulicValidation";
 
 interface SizingWorkspaceProps {
@@ -312,33 +313,36 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
         await new Promise(resolve => setTimeout(resolve, 100));
 
         try {
+            // Common fluid properties for validation
+            const fluid: FluidProperties = {
+                phase: currentCase.method === 'gas' ? 'gas' :
+                    currentCase.method === 'liquid' ? 'liquid' :
+                        currentCase.method === 'two_phase' ? 'two_phase' : 'gas',
+                temperature: currentCase.inputs.temperature,
+                pressure: currentCase.inputs.pressure,
+                molecularWeight: currentCase.inputs.molecularWeight,
+                compressibilityZ: currentCase.inputs.compressibilityZ,
+                specificHeatRatio: currentCase.inputs.specificHeatRatio,
+                gasViscosity: currentCase.inputs.gasViscosity || currentCase.inputs.viscosity,
+                liquidDensity: currentCase.inputs.liquidDensity || currentCase.inputs.density,
+                liquidViscosity: currentCase.inputs.liquidViscosity || currentCase.inputs.viscosity,
+            };
+
+            // Prepare inputs for sizing (may be updated by hydraulic calcs)
+            let updatedInputs = { ...currentCase.inputs };
+
             // === PHASE 1: Inlet Pressure Drop Validation ===
             let inletValidation;
 
             if (localInletNetwork && localInletNetwork.pipes && localInletNetwork.pipes.length > 0) {
-                // Build fluid properties for API/calculation
-                const fluid: FluidProperties = {
-                    phase: currentCase.method === 'gas' ? 'gas' :
-                        currentCase.method === 'liquid' ? 'liquid' :
-                            currentCase.method === 'two_phase' ? 'two_phase' : 'gas',
-                    temperature: currentCase.inputs.temperature,
-                    pressure: currentCase.inputs.pressure,
-                    molecularWeight: currentCase.inputs.molecularWeight,
-                    compressibilityZ: currentCase.inputs.compressibilityZ,
-                    specificHeatRatio: currentCase.inputs.specificHeatRatio,
-                    gasViscosity: currentCase.inputs.gasViscosity || currentCase.inputs.viscosity,
-                    liquidDensity: currentCase.inputs.liquidDensity || currentCase.inputs.density,
-                    liquidViscosity: currentCase.inputs.liquidViscosity || currentCase.inputs.viscosity,
-                };
-
                 // Try API first (default), fallback to local
                 if (apiHealthy) {
                     console.log('🌐 Using Python API for inlet validation (default)');
                     inletValidation = await validateInletPressureDropAPI({
                         inletNetwork: localInletNetwork,
-                        psvSetPressure: currentCase.inputs.pressure,  // Use relieving pressure as set pressure for validation
+                        psvSetPressure: currentCase.inputs.pressure,
                         massFlowRate: currentCase.inputs.massFlowRate,
-                        fluid: fluid as any  // Type assertion for extended properties
+                        fluid: fluid as any
                     });
 
                     // If API fails, fallback to local
@@ -368,10 +372,54 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                 }
             }
 
-            // === PHASE 2: Run PSV Sizing Calculation ===
-            const outputs = calculateSizing(currentCase.inputs, currentCase.method);
+            // === PHASE 2: Outlet Backpressure Calculation ===
+            // Only calculate if mode is 'calculated' AND we have pipes
+            if (currentCase.inputs.backpressureSource === 'calculated' && localOutletNetwork && localOutletNetwork.pipes && localOutletNetwork.pipes.length > 0) {
+                let calculatedBackpressure = 0; // barg
 
-            // === PHASE 3: Merge validation results with outputs ===
+                try {
+                    // Try API first
+                    if (apiHealthy) {
+                        // TODO: Call CalculateOutletPressureDropAPI when ready
+                        // For now, use local fallback logic or assume API similar to inlet
+                        // We'll use local 'calculateNetworkPressureDrop' derived logic for now as placeholder for API call
+                        // until dedicated API endpoint is confirmed.
+
+                        // Actually, let's just use local calculation for now to ensure reliability
+                        // until Phase 5 backend is ready
+                        const outletDrop = calculateNetworkPressureDrop(
+                            localOutletNetwork,
+                            currentCase.inputs.massFlowRate,
+                            fluid
+                        );
+                        calculatedBackpressure = (currentCase.inputs.destinationPressure || 0) + (outletDrop / 100);
+                    } else {
+                        // Local calculation
+                        const outletDrop = calculateNetworkPressureDrop(
+                            localOutletNetwork,
+                            currentCase.inputs.massFlowRate,
+                            fluid
+                        );
+                        calculatedBackpressure = (currentCase.inputs.destinationPressure || 0) + (outletDrop / 100);
+                    }
+
+                    // Update inputs for the main sizing calculation
+                    updatedInputs = {
+                        ...updatedInputs,
+                        backpressure: calculatedBackpressure,
+                        calculatedBackpressure: calculatedBackpressure,
+                        backpressureType: 'built_up' // Auto-set to built-up since we calculated it
+                    };
+
+                } catch (err) {
+                    console.error("Error calculating backpressure:", err);
+                }
+            }
+
+            // === PHASE 3: Run PSV Sizing Calculation ===
+            const outputs = calculateSizing(updatedInputs, currentCase.method);
+
+            // === PHASE 4: Merge validation results with outputs ===
             const finalOutputs = {
                 ...outputs,
                 inletPressureDropPercent: inletValidation?.inletPressureDropPercent,
@@ -384,6 +432,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
 
             setCurrentCase({
                 ...currentCase,
+                inputs: updatedInputs, // Save updated inputs (backpressure)
                 outputs: finalOutputs,
                 status: 'calculated',
                 updatedAt: new Date().toISOString(),
@@ -853,16 +902,56 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
 
                                 {/* Display Calculated Backpressure (if mode is calculated) */}
                                 {currentCase.inputs.backpressureSource === 'calculated' && (
-                                    <Alert severity="info" sx={{ mb: 2 }}>
-                                        <Typography variant="body2" fontWeight={600}>
-                                            Calculated Built-up Backpressure: {currentCase.inputs.calculatedBackpressure?.toFixed(3) || '—'} barg
-                                        </Typography>
-                                        <Typography variant="caption">
-                                            Based on {localOutletNetwork?.pipes?.length || 0} pipes in outlet network.
-                                            {(!localOutletNetwork || !localOutletNetwork.pipes || localOutletNetwork.pipes.length === 0) &&
-                                                ' Add pipes to Outlet Piping tab to calculate.'}
-                                        </Typography>
-                                    </Alert>
+                                    <Box sx={{ mb: 2 }}>
+                                        {/* Destination Pressure Input */}
+                                        <TextField
+                                            label="Destination Pressure"
+                                            type="number"
+                                            value={toDisplay(currentCase.inputs.destinationPressure || 0, 'pressure')}
+                                            onChange={(e) => handleInputChange('destinationPressure', e.target.value, 'pressure')}
+                                            slotProps={{
+                                                input: {
+                                                    endAdornment: (
+                                                        <InputAdornment position="end">
+                                                            <TextField
+                                                                select
+                                                                variant="standard"
+                                                                value={preferences.pressure}
+                                                                onChange={(e) => setUnit('pressure', e.target.value)}
+                                                                sx={{ minWidth: 60 }}
+                                                            >
+                                                                {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                            </TextField>
+                                                        </InputAdornment>
+                                                    ),
+                                                }
+                                            }}
+                                            helperText="Pressure at outlet discharge point (e.g., flare header, atmospheric)"
+                                            fullWidth
+                                            sx={{ mb: 2 }}
+                                        />
+
+                                        {/* Show calculated result */}
+                                        {currentCase.inputs.calculatedBackpressure !== undefined && (
+                                            <Alert severity="success">
+                                                <Typography variant="body2" fontWeight={600}>
+                                                    Calculated Built-up Backpressure: {currentCase.inputs.calculatedBackpressure.toFixed(3)} barg
+                                                </Typography>
+                                                <Typography variant="caption">
+                                                    Based on {localOutletNetwork?.pipes?.length || 0} pipes in outlet network.
+                                                </Typography>
+                                            </Alert>
+                                        )}
+
+                                        {/* Prompt to add pipes if none */}
+                                        {(!localOutletNetwork || !localOutletNetwork.pipes || localOutletNetwork.pipes.length === 0) && (
+                                            <Alert severity="info">
+                                                <Typography variant="body2">
+                                                    Add pipes to the Outlet Piping tab to calculate backpressure.
+                                                </Typography>
+                                            </Alert>
+                                        )}
+                                    </Box>
                                 )}
 
                                 {/* Inlet Pressure Drop Validation */}

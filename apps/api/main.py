@@ -29,13 +29,28 @@ from .schemas import (
     LengthEstimationRequest,
     LengthEstimationResponse,
 )
-from packages.hydraulics.src.single_edge import (
-    calculate_single_edge,
-    EdgeCalculationInput,
-)
-from packages.hydraulics.src.models.pipe_section import Fitting
+from packages.hydraulics.src.models.pipe_section import Fitting, PipeSection
 from packages.hydraulics.src.models.components import ControlValve, Orifice
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.network import Network
+from packages.hydraulics.src.solver.network_solver import NetworkSolver
 from packages.hydraulics.src.utils.units import convert
+from packages.hydraulics.src.models.results import CalculationOutput, ResultSummary, StatePoint, PressureDropDetails
+from .schemas import (
+    PipeSectionRequest,
+    CalculationResponse,
+    PressureDropResponse,
+    ResultSummaryResponse,
+    StatePointResponse,
+    FittingBreakdownResponse,
+    LengthEstimationRequest,
+    LengthEstimationResponse,
+    NetworkPressureDropRequest,
+    NetworkPressureDropResponse,
+    InletValidationRequest,
+    InletValidationResponse,
+    FluidRequest,
+)
 
 
 app = FastAPI(
@@ -497,4 +512,341 @@ async def solve_length(request: LengthEstimationRequest):
             pipeId=request.id,
             success=False,
             error=str(e),
+        )
+
+
+# --- Network Helper Functions ---
+
+def _create_pipe_section_from_request(request: PipeSectionRequest, network_fluid: Fluid) -> PipeSection:
+    """Convert PipeSectionRequest to PipeSection model."""
+    
+    # 1. Dimensions & Properties
+    diameter_unit = request.pipeDiameterUnit or request.diameterUnit or "mm"
+    diameter_value = request.pipeDiameter or request.diameter or 0.0
+    diameter = convert(diameter_value, diameter_unit, "m")
+    
+    inlet_diameter = None
+    if request.inletDiameter:
+         inlet_diameter = convert(request.inletDiameter, request.inletDiameterUnit or "mm", "m")
+    
+    outlet_diameter = None
+    if request.outletDiameter:
+         outlet_diameter = convert(request.outletDiameter, request.outletDiameterUnit or "mm", "m")
+         
+    roughness = convert(request.roughness or 0.0457, request.roughnessUnit or "mm", "m")
+    length = request.length or 0.0
+    
+    # 2. Fittings
+    fittings = []
+    if request.fittings:
+        for f in request.fittings:
+            try:
+                fittings.append(Fitting(type=f.type, count=f.count))
+            except ValueError:
+                pass
+    
+    # Auto-add swages (reusing similar logic if diameter changes)
+    def needs_swage(upstream: float, downstream: float, tolerance: float = 0.001) -> bool:
+        if upstream is None or downstream is None or upstream <= 0 or downstream <= 0:
+            return False
+        return abs(upstream - downstream) > tolerance
+    
+    def has_fitting(fittings_list: list, fit_type: str) -> bool:
+        return any(f.type == fit_type for f in fittings_list)
+        
+    if needs_swage(inlet_diameter, diameter) and not has_fitting(fittings, "inlet_swage"):
+        fittings.append(Fitting(type="inlet_swage", count=1))
+        
+    if needs_swage(diameter, outlet_diameter) and not has_fitting(fittings, "outlet_swage"):
+        fittings.append(Fitting(type="outlet_swage", count=1))
+
+    # 3. Components (Control Valve / Orifice)
+    control_valve = None
+    if request.controlValve:
+        cv_req = request.controlValve
+        cv_pressure_drop_pa = None
+        if cv_req.pressureDrop:
+            unit = cv_req.pressureDropUnit or "kPa"
+            cv_pressure_drop_pa = convert(cv_req.pressureDrop, unit, "Pa")
+            
+        control_valve = ControlValve(
+            tag=request.name if request.pipeSectionType == "control valve" else None,
+            cv=cv_req.cv,
+            cg=cv_req.cg,
+            pressure_drop=cv_pressure_drop_pa,
+            C1=cv_req.C1,
+            xT=cv_req.xT,
+        )
+
+    orifice = None
+    if request.orifice:
+        orf_req = request.orifice
+        orf_pressure_drop_pa = None
+        if orf_req.pressureDrop:
+            unit = orf_req.pressureDropUnit or "kPa"
+            orf_pressure_drop_pa = convert(orf_req.pressureDrop, unit, "Pa")
+            
+        orifice = Orifice(
+            tag=request.name if request.pipeSectionType == "orifice" else None,
+            d_over_D_ratio=orf_req.betaRatio,
+            pressure_drop=orf_pressure_drop_pa,
+            pipe_diameter=diameter,
+            orifice_diameter=orf_req.diameter,
+        )
+        
+    # 4. User Loss
+    user_specified_fixed_loss = None
+    if request.userSpecifiedPressureLoss:
+        user_loss_unit = request.userSpecifiedPressureLossUnit or "kPa"
+        user_specified_fixed_loss = convert(request.userSpecifiedPressureLoss, user_loss_unit, "Pa")
+
+    # 5. Boundary Conditions (Per section overrides)
+    boundary_pressure = None
+    if request.boundaryPressure:
+         pressure_unit = request.boundaryPressureUnit or "kPa"
+         # Convert to Pa first, then add atmospheric for absolute
+         pressure_pa = convert(request.boundaryPressure, pressure_unit.replace("g", ""), "Pa")
+         boundary_pressure = pressure_pa + 101325  # Absolute
+
+    # 6. Mass Flow & Design props
+    design_margin = request.designMargin
+    
+    # Create Section
+    section = PipeSection(
+        id=request.id,
+        description=request.name,
+        schedule=request.schedule or "40",
+        roughness=roughness,
+        length=length,
+        elevation_change=request.elevation or 0.0,
+        fitting_type=request.fittingType or "LR",
+        fittings=fittings,
+        fitting_K=request.fittingK,
+        pipe_length_K=request.pipeLengthK,
+        user_K=request.userK,
+        piping_and_fitting_safety_factor=(request.pipingFittingSafetyFactor or 0) / 100.0,
+        total_K=request.totalK,
+        user_specified_fixed_loss=user_specified_fixed_loss,
+        pipe_diameter=diameter,
+        inlet_diameter=inlet_diameter,
+        outlet_diameter=outlet_diameter,
+        erosional_constant=request.erosionalConstant or 100.0,
+        boundary_pressure=boundary_pressure,
+        control_valve=control_valve,
+        orifice=orifice,
+        design_margin=design_margin,
+        # Setup topology links
+        from_pipe_id=request.startNodeId,
+        to_pipe_id=request.endNodeId,
+    )
+    
+    # Store direction hint if needed, though solver handles it via Network.direction
+    # section.direction = request.direction 
+    
+    return section
+
+
+def _create_network_from_request(request: NetworkPressureDropRequest) -> Network:
+    """Create Network model from request."""
+    # 1. Fluid
+    fluid_req = request.fluid
+    fluid = Fluid(
+        name=fluid_req.name or "fluid",
+        phase=fluid_req.phase or "liquid",
+        density=fluid_req.density,
+        viscosity=convert(fluid_req.viscosity, fluid_req.viscosityUnit or "cP", "Pa*s") if fluid_req.viscosity else 0.001,
+        molecular_weight=fluid_req.molecularWeight,
+        z_factor=fluid_req.zFactor,
+        specific_heat_ratio=fluid_req.specificHeatRatio,
+    )
+    
+    # 2. Network Boundaries
+    boundary_pressure = None
+    if request.boundaryPressure is not None:
+        p_unit = request.boundaryPressureUnit or "kPa"
+        p_val = convert(request.boundaryPressure, p_unit.replace("g", ""), "Pa")
+        boundary_pressure = p_val + 101325 # Absolute
+        
+    boundary_temperature = 293.15 # 20C default
+    if request.boundaryTemperature is not None:
+        t_val = request.boundaryTemperature
+        t_unit = request.boundaryTemperatureUnit or "C"
+        if t_unit == "K" and t_val < 200: t_unit = "C" # Sanity check for C vs K
+        boundary_temperature = convert(t_val, t_unit, "K")
+        
+    mass_flow_rate = 0.0
+    if request.massFlowRate is not None:
+        mass_flow_rate = convert(request.massFlowRate, request.massFlowRateUnit or "kg/h", "kg/s")
+        
+    # 3. Create Network
+    network = Network(
+        name=request.name,
+        description=None,
+        fluid=fluid,
+        boundary_temperature=boundary_temperature,
+        boundary_pressure=boundary_pressure, # Can be upstream or downstream depending on direction
+        mass_flow_rate=mass_flow_rate,
+        direction=request.direction or "auto",
+        gas_flow_model=request.gasFlowModel or "isothermal",
+    )
+    
+    # 4. Add Sections
+    for sec_req in request.sections:
+        section = _create_pipe_section_from_request(sec_req, fluid)
+        network.add_section(section)
+        
+    return network
+
+
+# --- Network Endpoints ---
+
+@app.post("/hydraulics/network/pressure-drop", response_model=NetworkPressureDropResponse)
+async def calculate_network_pressure_drop(request: NetworkPressureDropRequest):
+    """
+    Calculate pressure drop for an entire network of pipes.
+    """
+    logger.info(f"📥 Received network calculation request: {request.name}")
+    logger.debug(f"   Sections: {len(request.sections)}, Flow: {request.massFlowRate}")
+    
+    try:
+        network = _create_network_from_request(request)
+        
+        # Determine strict direction based on boundary pressure
+        # (Frontend usually sets boundaryPressure for upstream or downstream)
+        # Assuming for PSV inlet/outlet validation, boundaryPressure is the "known" pressure
+        # For inlet validation: boundary is PSV node (downstream of inlet piping) -> Backward calculation?
+        # For PSV inlet, flow is towards PSV. 
+        #   If passed boundaryPressure is PSV Set Pressure (at end), we calculate backward to find source pressure.
+        #   If passed source pressure (at start), we calculate forward to find PSV inlet pressure.
+        # PSV Inlet check compares (Source - PSV_Inlet) / Set_Pressure.
+        # Usually checking 3% rule: (P_source - P_inlet_flange) < 0.03 * P_set
+        # Wait, 3% rule is non-recoverable pressure loss. 
+        # API 520: Total non-recoverable pressure loss between the protected equipment and the pressure relief valve 
+        # should not exceed 3% of the set pressure.
+        
+        solver = NetworkSolver()
+        result = solver.run(network)
+        
+        # Build Response
+        section_responses = []
+        for section in network.sections:
+            output = section.calculation_output   
+            response = _convert_output_to_response(section.id, output)
+            section_responses.append(response)
+            
+        # Summary
+        inlet_pressure_pa = network.result_summary.inlet.pressure
+        outlet_pressure_pa = network.result_summary.outlet.pressure
+        total_drop_pa = None
+        if inlet_pressure_pa is not None and outlet_pressure_pa is not None:
+             total_drop_pa = abs(inlet_pressure_pa - outlet_pressure_pa)
+             
+        return NetworkPressureDropResponse(
+            success=True,
+            totalPressureDrop=total_drop_pa,
+            inletPressure=inlet_pressure_pa,
+            outletPressure=outlet_pressure_pa,
+            results=section_responses
+        )
+
+    except Exception as e:
+        logger.error(f"❌ Network calculation error: {str(e)}")
+        logger.exception(e)
+        return NetworkPressureDropResponse(
+            success=False,
+            error=str(e),
+            results=[]
+        )
+
+
+@app.post("/hydraulics/validate-inlet", response_model=InletValidationResponse)
+async def validate_inlet_pressure_drop(request: InletValidationRequest):
+    """
+    Validate PSV inlet piping hydraulic pressure drop (3% rule).
+    """
+    logger.info(f"📥 Received inlet validation request")
+    
+    try:
+        # For inlet validation, the flow is towards the PSV.
+        # The 'boundaryPressure' in request is likely the PSV Set Pressure (or Relieving Pressure).
+        # We need to calculate the pressure drop. 
+        # We can run the network solver. 
+        # Ideally, we should calculate BACKWARD from PSV (known pressure) to find required source pressure,
+        # OR calculate FORWARD from Source (if known) to PSV.
+        # Usually for 3% check, we just need the dP at the rated flow.
+        # Let's assume the network is set up correctly (pipes, lengths, etc).
+        
+        network = _create_network_from_request(request)
+        
+        # Force direction to conform to inlet flow (Source -> PSV)
+        # If boundaryPressure is provided, let's assume it's the PSV Set Pressure at the END of the line?
+        # Actually validation needs dP. dP = loss.
+        # 3% rule: dP < 0.03 * SetPressure.
+        
+        solver = NetworkSolver()
+        result = solver.run(network)
+        
+        # Get total drop
+        inlet_pressure_pa = network.result_summary.inlet.pressure
+        outlet_pressure_pa = network.result_summary.outlet.pressure
+        
+        if inlet_pressure_pa is None or outlet_pressure_pa is None:
+             raise ValueError("Could not calculate inlet/outlet pressures")
+             
+        total_drop_pa = abs(inlet_pressure_pa - outlet_pressure_pa)
+        
+        # Check against set pressure
+        # psvSetPressure is likely in barg or kPag. Convert to Pa for ratio check?
+        # Actually 3% is a ratio, units just need to match.
+        # Request has psvSetPressure and psvSetPressureUnit.
+        set_pressure_pa = convert(request.psvSetPressure, request.psvSetPressureUnit or "barg", "Pa")
+        # However, set pressure for 3% rule is usually Gauge pressure (Set Pressure). 
+        # API 520 refers to Set Pressure (gauge).
+        # total_drop_pa is absolute difference (dP is same for abs or gauge).
+        # But we should compare dP (Pa) against Set Pressure (Pa).
+        # Wait, if I convert 10 barg to Pa using my util, it adds atmospheric (11.01 bar abs).
+        # I should compare dP against 10 bar (1000 kPa), not 11 bar.
+        # So I need Set Pressure in Pa *Difference* equivalent, i.e., just the magnitude.
+        # convert(10, "bar", "Pa") gives 1,000,000 Pa.
+        # convert(10, "barg", "Pa") gives 1,101,325 Pa (Absolute).
+        # So I should use "bar" or "kPa" (no 'g') to get magnitude for percentage check.
+        
+        unit_no_g = (request.psvSetPressureUnit or "barg").replace("g", "")
+        set_pressure_magnitude_pa = convert(request.psvSetPressure, unit_no_g, "Pa")
+        
+        percent_drop = (total_drop_pa / set_pressure_magnitude_pa) * 100.0
+        
+        is_valid = percent_drop < 3.0
+        
+        message = ""
+        severity = "success"
+        if is_valid:
+            message = f"Inlet pressure drop is {percent_drop:.2f}%, which is within the 3% limit."
+        else:
+            message = f"Inlet pressure drop is {percent_drop:.2f}%, exceeding the 3% limit!"
+            severity = "error" if percent_drop > 5.0 else "warning" # Example logic
+            
+        return InletValidationResponse(
+            success=True,
+            isValid=is_valid,
+            inletPressureDrop=total_drop_pa,
+            inletPressureDropPercent=percent_drop,
+            message=message,
+            severity=severity,
+            totalPressureDrop=total_drop_pa, # reused from parent
+            results=[] 
+        )
+
+    except Exception as e:
+        logger.error(f"❌ Inlet validation error: {str(e)}")
+        logger.exception(e)
+        return InletValidationResponse(
+            success=False,
+            error=str(e),
+            isValid=False,
+            inletPressureDrop=0.0,
+            inletPressureDropPercent=0.0,
+            message=f"Validation failed: {str(e)}",
+            severity="error",
+            results=[]
         )
