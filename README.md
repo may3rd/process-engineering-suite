@@ -92,10 +92,13 @@ docker run -p 3000:3000 -p 3002:3002 -p 8000:8000 process-engineering-suite
 Run the Python API in Docker (to avoid environment setup) while running the Frontend locally (for maximum performance).
 
 1. Start only the API:
+
    ```bash
    docker-compose -f infra/docker-compose.yml up --build api
    ```
+
 2. In a new terminal, start the frontend:
+
    ```bash
    npm run dev
    ```

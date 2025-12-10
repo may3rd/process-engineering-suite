@@ -48,6 +48,9 @@ import {
     HelpOutline,
     CloudDone,
     CloudOff,
+    Speed,
+    Straighten,
+    Timeline,
 } from "@mui/icons-material";
 import { SizingCase, PipelineNetwork, PipeProps, ORIFICE_SIZES, SizingInputs, UnitPreferences } from "@/data/types";
 import { PipelineDataGrid } from "./PipelineDataGrid";
@@ -1007,6 +1010,159 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                             Define the pipe segments from the protected equipment to the PSV inlet.
                         </Typography>
 
+                        {/* ===== INLET HYDRAULIC SUMMARY ===== */}
+                        {(localInletNetwork?.pipes?.length ?? 0) > 0 && (
+                            <Card sx={{
+                                mb: 3,
+                                background: isDark
+                                    ? 'rgba(15, 23, 42, 0.6)'
+                                    : 'rgba(255, 255, 255, 0.8)',
+                                backdropFilter: 'blur(12px)',
+                                border: '1px solid',
+                                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                                borderRadius: 3,
+                            }}>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                                        <Typography variant="subtitle1" fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Timeline sx={{ color: 'primary.main' }} />
+                                            Hydraulic Summary
+                                        </Typography>
+                                        {currentCase.outputs?.inletValidation && (
+                                            <Chip
+                                                icon={currentCase.outputs.inletValidation.isValid ? <CheckCircle /> : currentCase.outputs.inletValidation.severity === 'warning' ? <Warning /> : <ErrorIcon />}
+                                                label={currentCase.outputs.inletValidation.isValid ? 'PASS' : currentCase.outputs.inletValidation.severity === 'warning' ? 'WARNING' : 'FAIL'}
+                                                color={currentCase.outputs.inletValidation.isValid ? 'success' : currentCase.outputs.inletValidation.severity === 'warning' ? 'warning' : 'error'}
+                                                size="small"
+                                            />
+                                        )}
+                                    </Box>
+
+                                    {/* Metrics Grid */}
+                                    <Box sx={{
+                                        display: 'grid',
+                                        gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+                                        gap: 2,
+                                        mb: 2
+                                    }}>
+                                        {/* Total Pressure Drop */}
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <Typography variant="h5" fontWeight={700} color="primary.main">
+                                                {currentCase.outputs?.inletPressureDropPercent !== undefined
+                                                    ? `${currentCase.outputs.inletPressureDropPercent.toFixed(1)}%`
+                                                    : '—'}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                of Set Pressure
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Segment Count */}
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <Typography variant="h5" fontWeight={700}>
+                                                {localInletNetwork?.pipes?.length || 0}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Pipe Segments
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Total Length */}
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <Typography variant="h5" fontWeight={700}>
+                                                {localInletNetwork?.pipes?.reduce((sum, p) => sum + (p.length || 0), 0).toFixed(1) || '0'}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Total Length (m)
+                                            </Typography>
+                                        </Box>
+
+                                        {/* API 520 Limit */}
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <Typography variant="h5" fontWeight={700} color="text.secondary">
+                                                3.0%
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                API 520 Limit
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+
+                                    {/* Progress Bar */}
+                                    {currentCase.outputs?.inletPressureDropPercent !== undefined && (
+                                        <Box sx={{ mt: 1 }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Inlet ΔP vs 3% Limit
+                                                </Typography>
+                                                <Typography variant="caption" fontWeight={600} color={
+                                                    currentCase.outputs.inletPressureDropPercent < 3 ? 'success.main' :
+                                                        currentCase.outputs.inletPressureDropPercent < 5 ? 'warning.main' : 'error.main'
+                                                }>
+                                                    {currentCase.outputs.inletPressureDropPercent.toFixed(2)}% / 3.00%
+                                                </Typography>
+                                            </Box>
+                                            <LinearProgress
+                                                variant="determinate"
+                                                value={Math.min((currentCase.outputs.inletPressureDropPercent / 5) * 100, 100)}
+                                                sx={{
+                                                    height: 8,
+                                                    borderRadius: 4,
+                                                    bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                                                    '& .MuiLinearProgress-bar': {
+                                                        borderRadius: 4,
+                                                        bgcolor: currentCase.outputs.inletPressureDropPercent < 3
+                                                            ? 'success.main'
+                                                            : currentCase.outputs.inletPressureDropPercent < 5
+                                                                ? 'warning.main'
+                                                                : 'error.main',
+                                                    }
+                                                }}
+                                            />
+                                            {/* 3% marker */}
+                                            <Box sx={{ position: 'relative', height: 0 }}>
+                                                <Box sx={{
+                                                    position: 'absolute',
+                                                    left: '60%',
+                                                    top: -12,
+                                                    borderLeft: '2px dashed',
+                                                    borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
+                                                    height: 16,
+                                                }} />
+                                            </Box>
+                                        </Box>
+                                    )}
+
+                                    {/* No calculation yet message */}
+                                    {currentCase.outputs?.inletPressureDropPercent === undefined && (
+                                        <Alert severity="info" sx={{ mt: 1 }}>
+                                            Click <strong>Calculate</strong> to compute inlet hydraulics.
+                                        </Alert>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
+
                         <PipelineDataGrid
                             pipes={localInletNetwork?.pipes || []}
                             onAddPipe={handleAddInletPipe}
@@ -1219,6 +1375,123 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                             Define the pipe segments from the PSV outlet to the discharge point.
                         </Typography>
+
+                        {/* ===== OUTLET HYDRAULIC SUMMARY ===== */}
+                        {(localOutletNetwork?.pipes?.length ?? 0) > 0 && (
+                            <Card sx={{
+                                mb: 3,
+                                background: isDark
+                                    ? 'rgba(15, 23, 42, 0.6)'
+                                    : 'rgba(255, 255, 255, 0.8)',
+                                backdropFilter: 'blur(12px)',
+                                border: '1px solid',
+                                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                                borderRadius: 3,
+                            }}>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                                        <Typography variant="subtitle1" fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Timeline sx={{ color: 'secondary.main' }} />
+                                            Outlet Hydraulic Summary
+                                        </Typography>
+                                        {currentCase.inputs.backpressureSource === 'calculated' && (
+                                            <Chip
+                                                icon={<Calculate />}
+                                                label="Auto-Calculated"
+                                                color="info"
+                                                size="small"
+                                                variant="outlined"
+                                            />
+                                        )}
+                                    </Box>
+
+                                    {/* Metrics Grid */}
+                                    <Box sx={{
+                                        display: 'grid',
+                                        gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+                                        gap: 2,
+                                        mb: 2
+                                    }}>
+                                        {/* Built-up Backpressure */}
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <Typography variant="h5" fontWeight={700} color="secondary.main">
+                                                {currentCase.outputs?.builtUpBackpressure !== undefined
+                                                    ? `${toDisplay(currentCase.outputs.builtUpBackpressure, 'pressure')}`
+                                                    : '—'}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Built-up BP ({preferences.pressure})
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Destination Pressure */}
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <Typography variant="h5" fontWeight={700}>
+                                                {currentCase.inputs.destinationPressure !== undefined
+                                                    ? toDisplay(currentCase.inputs.destinationPressure, 'pressure')
+                                                    : '0'}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Destination ({preferences.pressure})
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Segment Count */}
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <Typography variant="h5" fontWeight={700}>
+                                                {localOutletNetwork?.pipes?.length || 0}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Pipe Segments
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Total Length */}
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <Typography variant="h5" fontWeight={700}>
+                                                {localOutletNetwork?.pipes?.reduce((sum, p) => sum + (p.length || 0), 0).toFixed(1) || '0'}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Total Length (m)
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+
+                                    {/* Calculation mode info */}
+                                    {currentCase.inputs.backpressureSource !== 'calculated' && (
+                                        <Alert severity="info" sx={{ mt: 1 }}>
+                                            Backpressure is set to <strong>Manual Entry</strong>. Switch to &quot;Calculate from Outlet Piping&quot; in the Sizing Setup tab to use these pipe segments.
+                                        </Alert>
+                                    )}
+
+                                    {currentCase.inputs.backpressureSource === 'calculated' && currentCase.outputs?.builtUpBackpressure === undefined && (
+                                        <Alert severity="info" sx={{ mt: 1 }}>
+                                            Click <strong>Calculate</strong> to compute outlet backpressure.
+                                        </Alert>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
 
                         <PipelineDataGrid
                             pipes={localOutletNetwork?.pipes || []}

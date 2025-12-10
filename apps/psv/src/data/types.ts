@@ -171,6 +171,10 @@ export interface SizingOutputs {
         message: string;
         severity: 'success' | 'warning' | 'error';
     };
+
+    // Outlet hydraulic outputs
+    builtUpBackpressure?: number; // kPa - calculated from outlet piping
+    outletPressureDrop?: number;  // kPa - total pressure drop in outlet piping
 }
 // Unit preferences for user display
 export interface UnitPreferences {
