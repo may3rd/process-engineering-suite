@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Box,
     Paper,
@@ -123,6 +123,21 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
+
+    // Auto-fill molecular weight for steam (H₂O = 18.01528 g/mol)
+    useEffect(() => {
+        if (currentCase.method === 'steam' && currentCase.inputs.molecularWeight !== 18.01528) {
+            setCurrentCase({
+                ...currentCase,
+                inputs: {
+                    ...currentCase.inputs,
+                    molecularWeight: 18.01528,
+                },
+            });
+            setIsDirty(true);
+        }
+    }, [currentCase.method]);
+
 
     const handleConfirmDelete = () => {
         if (deleteConfirmationInput === psvTag) {
@@ -443,6 +458,26 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         <MenuItem value="two_phase">Two-Phase</MenuItem>
                                     </TextField>
                                 </Box>
+
+                                {/* Vapor Fraction - only for two-phase */}
+                                {currentCase.method === 'two_phase' && (
+                                    <Box sx={{ mt: 2 }}>
+                                        <TextField
+                                            label="Vapor Mass Fraction"
+                                            type="number"
+                                            value={currentCase.inputs.vaporFraction !== undefined ? currentCase.inputs.vaporFraction * 100 : ''}
+                                            onChange={(e) => handleInputChange('vaporFraction', parseFloat(e.target.value) / 100)}
+                                            slotProps={{
+                                                htmlInput: { step: 0.1, min: 0, max: 100 },
+                                                input: {
+                                                    endAdornment: <InputAdornment position="end">%</InputAdornment>
+                                                }
+                                            }}
+                                            helperText="Percentage of vapor by mass (0-100%)"
+                                            fullWidth
+                                        />
+                                    </Box>
+                                )}
                             </CardContent>
                         </Card>
 
@@ -505,47 +540,50 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                             </CardContent>
                         </Card>
 
-                        {/* Fluid Properties */}
-                        <Card sx={{ mb: 3 }}>
-                            <CardContent>
-                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                    Fluid Properties
-                                </Typography>
-                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
-                                    <TextField
-                                        label="Molecular Weight"
-                                        type="number"
-                                        value={currentCase.inputs.molecularWeight}
-                                        onChange={(e) => handleInputChange('molecularWeight', parseFloat(e.target.value))}
-                                        slotProps={{ htmlInput: { endAdornment: <InputAdornment position="end">g/mol</InputAdornment> } }}
-                                        fullWidth
-                                    />
-                                    <TextField
-                                        label="Compressibility (Z)"
-                                        type="number"
-                                        value={currentCase.inputs.compressibilityZ}
-                                        onChange={(e) => handleInputChange('compressibilityZ', parseFloat(e.target.value))}
-                                        slotProps={{ htmlInput: { step: 0.01, min: 0, max: 2 } }}
-                                        fullWidth
-                                    />
-                                    <TextField
-                                        label="Specific Heat Ratio (k)"
-                                        type="number"
-                                        value={currentCase.inputs.specificHeatRatio}
-                                        onChange={(e) => handleInputChange('specificHeatRatio', parseFloat(e.target.value))}
-                                        slotProps={{ htmlInput: { step: 0.01, min: 1, max: 2 } }}
-                                        fullWidth
-                                    />
-                                </Box>
 
-                                {/* Conditional fields for liquid/two-phase */}
-                                {isLiquidOrTwoPhase && (
+                        {/* Gas Phase Properties */}
+                        {(currentCase.method === 'gas' || currentCase.method === 'steam' || currentCase.method === 'two_phase') && (
+                            <Card sx={{ mb: 3 }}>
+                                <CardContent>
+                                    <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                        Gas/Vapor Phase Properties
+                                    </Typography>
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
+                                        <TextField
+                                            label="Molecular Weight"
+                                            type="number"
+                                            value={currentCase.inputs.molecularWeight}
+                                            onChange={(e) => handleInputChange('molecularWeight', parseFloat(e.target.value))}
+                                            slotProps={{
+                                                input: {
+                                                    endAdornment: <InputAdornment position="end">g/mol</InputAdornment>
+                                                }
+                                            }}
+                                            fullWidth
+                                        />
+                                        <TextField
+                                            label="Compressibility (Z)"
+                                            type="number"
+                                            value={currentCase.inputs.compressibilityZ}
+                                            onChange={(e) => handleInputChange('compressibilityZ', parseFloat(e.target.value))}
+                                            slotProps={{ htmlInput: { step: 0.01, min: 0, max: 2 } }}
+                                            fullWidth
+                                        />
+                                        <TextField
+                                            label="Specific Heat Ratio (k)"
+                                            type="number"
+                                            value={currentCase.inputs.specificHeatRatio}
+                                            onChange={(e) => handleInputChange('specificHeatRatio', parseFloat(e.target.value))}
+                                            slotProps={{ htmlInput: { step: 0.01, min: 1, max: 2 } }}
+                                            fullWidth
+                                        />
+                                    </Box>
                                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mt: 2 }}>
                                         <TextField
-                                            label="Viscosity"
+                                            label="Gas Viscosity"
                                             type="number"
-                                            value={toDisplay(currentCase.inputs.viscosity, 'viscosity')}
-                                            onChange={(e) => handleInputChange('viscosity', e.target.value, 'viscosity')}
+                                            value={toDisplay(currentCase.inputs.gasViscosity || currentCase.inputs.viscosity, 'viscosity')}
+                                            onChange={(e) => handleInputChange('gasViscosity', e.target.value, 'viscosity')}
                                             slotProps={{
                                                 input: {
                                                     endAdornment: (
@@ -565,11 +603,25 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                             }}
                                             fullWidth
                                         />
+                                        <Box /> {/* Empty space */}
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {/* Liquid Phase Properties */}
+                        {(currentCase.method === 'liquid' || currentCase.method === 'two_phase') && (
+                            <Card sx={{ mb: 3 }}>
+                                <CardContent>
+                                    <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                        Liquid Phase Properties
+                                    </Typography>
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
                                         <TextField
-                                            label="Density"
+                                            label="Liquid Density"
                                             type="number"
-                                            value={toDisplay(currentCase.inputs.density, 'density')}
-                                            onChange={(e) => handleInputChange('density', e.target.value, 'density')}
+                                            value={toDisplay(currentCase.inputs.liquidDensity || currentCase.inputs.density, 'density')}
+                                            onChange={(e) => handleInputChange('liquidDensity', e.target.value, 'density')}
                                             slotProps={{
                                                 input: {
                                                     endAdornment: (
@@ -589,10 +641,34 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                             }}
                                             fullWidth
                                         />
+                                        <TextField
+                                            label="Liquid Viscosity"
+                                            type="number"
+                                            value={toDisplay(currentCase.inputs.liquidViscosity || currentCase.inputs.viscosity, 'viscosity')}
+                                            onChange={(e) => handleInputChange('liquidViscosity', e.target.value, 'viscosity')}
+                                            slotProps={{
+                                                input: {
+                                                    endAdornment: (
+                                                        <InputAdornment position="end">
+                                                            <TextField
+                                                                select
+                                                                variant="standard"
+                                                                value={preferences.viscosity}
+                                                                onChange={(e) => setUnit('viscosity', e.target.value)}
+                                                                sx={{ minWidth: 60 }}
+                                                            >
+                                                                {VISCOSITY_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                            </TextField>
+                                                        </InputAdornment>
+                                                    ),
+                                                }
+                                            }}
+                                            fullWidth
+                                        />
                                     </Box>
-                                )}
-                            </CardContent>
-                        </Card>
+                                </CardContent>
+                            </Card>
+                        )}
 
                         {/* Backpressure */}
                         <Card>

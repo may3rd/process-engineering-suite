@@ -120,15 +120,34 @@ export type SizingMethod = 'gas' | 'liquid' | 'steam' | 'two_phase';
 
 export interface SizingInputs {
     massFlowRate: number; // kg/h
+
+    // Gas/Vapor phase properties (for gas, steam, and gas phase of two-phase)
     molecularWeight: number;
-    temperature: number; // °C
-    pressure: number; // barg
     compressibilityZ: number;
     specificHeatRatio: number; // k = Cp/Cv
-    viscosity?: number; // cP (for liquids)
-    density?: number; // kg/m³ (for liquids)
+    gasViscosity?: number; // cP (for gas phase)
+
+    // Liquid phase properties (for liquid and liquid phase of two-phase)
+    liquidDensity?: number; // kg/m³
+    liquidViscosity?: number; // cP
+
+    // Two-phase properties
+    vaporFraction?: number; // Mass vapor fraction (0-1), aka quality (x)
+
+    // Common properties
+    temperature: number; // °C
+    pressure: number; // barg
     backpressure: number; // barg
     backpressureType: 'superimposed' | 'built_up';
+
+    // Backward compatibility - these map to appropriate phase properties
+    viscosity?: number; // Deprecated: use gasViscosity or liquidViscosity
+    density?: number; // Deprecated: use liquidDensity
+
+    // Hydraulic validation inputs
+    backpressureSource?: 'manual' | 'calculated';
+    calculatedBackpressure?: number;
+    inletPressureDrop?: number;
 }
 
 export interface SizingOutputs {
