@@ -8,6 +8,7 @@ import {
     ProtectiveSystem,
     OverpressureScenario,
     SizingCase,
+    EquipmentLink,
 } from '@/data/types';
 import {
     customers,
@@ -25,6 +26,7 @@ import {
     getProtectiveSystemsByProject,
     getScenariosByProtectiveSystem,
     getSizingCasesByProtectiveSystem,
+    getEquipmentLinksByPsv,
 } from '@/data/mockData';
 
 interface HierarchySelection {
@@ -57,6 +59,7 @@ interface PsvStore {
     psvList: ProtectiveSystem[];
     scenarioList: OverpressureScenario[];
     sizingCaseList: SizingCase[];
+    equipmentLinkList: EquipmentLink[];
 
     // UI state
     activeTab: number;
@@ -75,8 +78,21 @@ interface PsvStore {
     navigateToLevel: (level: 'customer' | 'plant' | 'unit' | 'area' | 'project' | 'psv') => void;
     updateSizingCase: (updatedCase: SizingCase) => void;
     addSizingCase: (newCase: SizingCase) => void;
-    updatePsv: (updatedPsv: ProtectiveSystem) => void;
     deleteSizingCase: (id: string) => void;
+    updatePsv: (updatedPsv: ProtectiveSystem) => void;
+
+    // Scenario Actions
+    addScenario: (newScenario: OverpressureScenario) => void;
+    updateScenario: (updatedScenario: OverpressureScenario) => void;
+    deleteScenario: (id: string) => void;
+
+    // Tag Actions
+    addPsvTag: (psvId: string, tag: string) => void;
+    removePsvTag: (psvId: string, tag: string) => void;
+
+    // Equipment Link Actions
+    linkEquipment: (link: EquipmentLink) => void;
+    unlinkEquipment: (linkId: string) => void;
 }
 
 export const usePsvStore = create<PsvStore>((set, get) => ({
@@ -107,6 +123,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     psvList: [],
     scenarioList: [],
     sizingCaseList: [],
+    equipmentLinkList: [],
 
     // UI state
     activeTab: 0,
@@ -139,6 +156,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             psvList: [],
             scenarioList: [],
             sizingCaseList: [],
+            equipmentLinkList: [],
         });
     },
 
@@ -236,6 +254,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         const psv = id ? protectiveSystems.find(p => p.id === id) || null : null;
         const scenarioList = id ? getScenariosByProtectiveSystem(id) : [];
         const sizingCaseList = id ? getSizingCasesByProtectiveSystem(id) : [];
+        const equipmentLinkList = id ? getEquipmentLinksByPsv(id) : [];
 
         set((state) => ({
             selection: {
@@ -245,6 +264,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             selectedPsv: psv,
             scenarioList,
             sizingCaseList,
+            equipmentLinkList,
             activeTab: 0, // Reset to overview tab
         }));
     },
@@ -276,6 +296,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             psvList: [],
             scenarioList: [],
             sizingCaseList: [],
+            equipmentLinkList: [],
         });
     },
 
@@ -328,7 +349,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         }));
     },
 
-    updatePsv: (updatedPsv) => {
+    updatePsv: (updatedPsv: ProtectiveSystem) => {
         set((state) => {
             const newList = state.psvList.map(p => p.id === updatedPsv.id ? updatedPsv : p);
             return {
@@ -341,6 +362,68 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     deleteSizingCase: (id) => {
         set((state) => ({
             sizingCaseList: state.sizingCaseList.filter((c) => c.id !== id),
+        }));
+    },
+
+    addScenario: (newScenario) => {
+        set((state) => ({
+            scenarioList: [...state.scenarioList, newScenario],
+        }));
+    },
+
+    updateScenario: (updatedScenario) => {
+        set((state) => ({
+            scenarioList: state.scenarioList.map((s) =>
+                s.id === updatedScenario.id ? updatedScenario : s
+            ),
+        }));
+    },
+
+    deleteScenario: (id) => {
+        set((state) => ({
+            scenarioList: state.scenarioList.filter((s) => s.id !== id),
+        }));
+    },
+
+    addPsvTag: (psvId, tag) => {
+        set((state) => {
+            const psv = state.psvList.find(p => p.id === psvId);
+            if (!psv) return state;
+
+            const updatedPsv = { ...psv, tags: [...psv.tags, tag] };
+            const newPsvList = state.psvList.map(p => p.id === psvId ? updatedPsv : p);
+
+            return {
+                psvList: newPsvList,
+                selectedPsv: state.selectedPsv?.id === psvId ? updatedPsv : state.selectedPsv,
+            };
+        });
+    },
+
+    removePsvTag: (psvId, tag) => {
+        set((state) => {
+            const psv = state.psvList.find(p => p.id === psvId);
+            if (!psv) return state;
+
+            const updatedPsv = { ...psv, tags: psv.tags.filter(t => t !== tag) };
+            const newPsvList = state.psvList.map(p => p.id === psvId ? updatedPsv : p);
+
+            return {
+                psvList: newPsvList,
+                selectedPsv: state.selectedPsv?.id === psvId ? updatedPsv : state.selectedPsv,
+            };
+        });
+    },
+
+    linkEquipment: (link) => {
+        set((state) => ({
+            equipmentLinkList: [...state.equipmentLinkList, link]
+        }));
+    },
+
+    unlinkEquipment: (linkId) => {
+        set((state) => ({
+            equipmentLinkList: state.equipmentLinkList.filter(l => l.id !== linkId)
         }));
     },
 }));

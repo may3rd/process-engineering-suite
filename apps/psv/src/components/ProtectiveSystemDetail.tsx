@@ -55,8 +55,14 @@ import { usePsvStore } from "@/store/usePsvStore";
 import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem } from "@/data/types";
 import { getAttachmentsByPsv, getCommentsByPsv, getTodosByPsv, getEquipmentLinksByPsv, equipment, getUserById, users } from "@/data/mockData";
 import { SizingWorkspace } from "./SizingWorkspace";
+import { ScenarioEditor } from "./ScenarioEditor"; // Import ScenarioEditor
 import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { BasicInfoCard } from "./BasicInfoCard";
+import { OperatingConditionsCard } from "./OperatingConditionsCard";
+import { EquipmentCard } from "./EquipmentCard";
+import { TagsCard } from "./TagsCard";
+import { glassCardStyles } from "./styles";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -97,137 +103,18 @@ function OverviewTab() {
     const owner = getUserById(selectedPsv.ownerId);
 
     return (
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-            {/* Basic Info Card */}
-            <Card>
-                <CardContent>
-                    <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-                        Basic Information
-                    </Typography>
-                    <Box sx={{ display: 'grid', gap: 2 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">Tag</Typography>
-                            <Typography fontWeight={500}>{selectedPsv.tag}</Typography>
-                        </Box>
-                        <Divider />
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">Name</Typography>
-                            <Typography fontWeight={500}>{selectedPsv.name}</Typography>
-                        </Box>
-                        <Divider />
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">Type</Typography>
-                            <Chip label={selectedPsv.type.replace('_', ' ')} size="small" sx={{ textTransform: 'capitalize' }} />
-                        </Box>
-                        <Divider />
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">Design Code</Typography>
-                            <Chip label={selectedPsv.designCode} size="small" color="primary" variant="outlined" />
-                        </Box>
-                        <Divider />
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">Owner</Typography>
-                            <Typography fontWeight={500}>{owner?.name || 'Unknown'}</Typography>
-                        </Box>
-                    </Box>
-                </CardContent>
-            </Card>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: 3 }}>
+            {/* Left Column */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <BasicInfoCard psv={selectedPsv} />
+                <EquipmentCard psv={selectedPsv} />
+            </Box>
 
-            {/* Operating Conditions Card */}
-            <Card>
-                <CardContent>
-                    <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-                        Operating Conditions
-                    </Typography>
-                    <Box sx={{ display: 'grid', gap: 2 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">Service Fluid</Typography>
-                            <Typography fontWeight={500}>{selectedPsv.serviceFluid}</Typography>
-                        </Box>
-                        <Divider />
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">Fluid Phase</Typography>
-                            <Chip
-                                label={selectedPsv.fluidPhase}
-                                size="small"
-                                color={selectedPsv.fluidPhase === 'gas' ? 'info' : selectedPsv.fluidPhase === 'liquid' ? 'primary' : 'warning'}
-                                sx={{ textTransform: 'capitalize' }}
-                            />
-                        </Box>
-                        <Divider />
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">Set Pressure</Typography>
-                            <Typography fontWeight={600} color="primary.main">{selectedPsv.setPressure} barg</Typography>
-                        </Box>
-                        <Divider />
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">MAWP</Typography>
-                            <Typography fontWeight={600}>{selectedPsv.mawp} barg</Typography>
-                        </Box>
-                        <Divider />
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">Set/MAWP Ratio</Typography>
-                            <Typography fontWeight={500}>{((selectedPsv.setPressure / selectedPsv.mawp) * 100).toFixed(0)}%</Typography>
-                        </Box>
-                    </Box>
-                </CardContent>
-            </Card>
-
-            {/* Protected Equipment */}
-            <Card sx={{ gridColumn: { md: 'span 2' } }}>
-                <CardContent>
-                    <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-                        Protected Equipment
-                    </Typography>
-                    {linkedEquipment.length > 0 ? (
-                        <TableContainer>
-                            <Table size="small">
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>Tag</TableCell>
-                                        <TableCell>Description</TableCell>
-                                        <TableCell>Type</TableCell>
-                                        <TableCell>Design Pressure</TableCell>
-                                        <TableCell>Relationship</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {linkedEquipment.map((link) => (
-                                        <TableRow key={link.id}>
-                                            <TableCell>
-                                                <Typography fontWeight={500}>{link.equipment?.tag}</Typography>
-                                            </TableCell>
-                                            <TableCell>{link.equipment?.description}</TableCell>
-                                            <TableCell sx={{ textTransform: 'capitalize' }}>{link.equipment?.type.replace('_', ' ')}</TableCell>
-                                            <TableCell>{link.equipment?.designPressure} barg</TableCell>
-                                            <TableCell sx={{ textTransform: 'capitalize' }}>{link.relationship.replace('_', ' ')}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    ) : (
-                        <Typography color="text.secondary">No equipment linked</Typography>
-                    )}
-                </CardContent>
-            </Card>
-
-            {/* Tags */}
-            <Card sx={{ gridColumn: { md: 'span 2' } }}>
-                <CardContent>
-                    <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-                        Tags
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {selectedPsv.tags.map((tag) => (
-                            <Chip key={tag} label={tag} variant="outlined" />
-                        ))}
-                        {selectedPsv.tags.length === 0 && (
-                            <Typography color="text.secondary">No tags</Typography>
-                        )}
-                    </Box>
-                </CardContent>
-            </Card>
+            {/* Right Column */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <OperatingConditionsCard psv={selectedPsv} />
+                <TagsCard psv={selectedPsv} />
+            </Box>
         </Box>
     );
 }
@@ -236,7 +123,35 @@ function OverviewTab() {
 function ScenariosTab() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
-    const { scenarioList, selectedPsv } = usePsvStore();
+    const { scenarioList, selectedPsv, addScenario, updateScenario, deleteScenario } = usePsvStore();
+    const [editorOpen, setEditorOpen] = useState(false);
+    const [editingScenario, setEditingScenario] = useState<OverpressureScenario | undefined>(undefined);
+
+    const handleAddScenario = () => {
+        setEditingScenario(undefined);
+        setEditorOpen(true);
+    };
+
+    const handleEditScenario = (scenario: OverpressureScenario) => {
+        setEditingScenario(scenario);
+        setEditorOpen(true);
+    };
+
+    const handleSaveScenario = (scenario: OverpressureScenario) => {
+        if (editingScenario) {
+            updateScenario(scenario);
+        } else {
+            addScenario(scenario);
+        }
+        setEditorOpen(false);
+    };
+
+    const handleDeleteScenario = (id: string) => {
+        if (window.confirm("Are you sure you want to delete this scenario? This action cannot be undone.")) {
+            deleteScenario(id);
+            setEditorOpen(false);
+        }
+    };
 
     const getCauseIcon = (cause: ScenarioCause) => {
         switch (cause) {
@@ -269,10 +184,32 @@ function ScenariosTab() {
                 <Typography variant="h6" fontWeight={600}>
                     Overpressure Scenarios
                 </Typography>
-                <Button variant="contained" startIcon={<Add />} size="small">
+                <Button variant="contained" startIcon={<Add />} size="small" onClick={handleAddScenario}>
                     Add Scenario
                 </Button>
             </Box>
+
+            <Dialog
+                open={editorOpen}
+                onClose={() => setEditorOpen(false)}
+                maxWidth="md"
+                fullWidth
+            >
+                <DialogTitle>
+                    {editingScenario ? "Edit Scenario" : "Add Scenario"}
+                </DialogTitle>
+                <DialogContent dividers>
+                    {selectedPsv && (
+                        <ScenarioEditor
+                            psvId={selectedPsv.id}
+                            initialData={editingScenario}
+                            onSave={handleSaveScenario}
+                            onCancel={() => setEditorOpen(false)}
+                            onDelete={editingScenario ? handleDeleteScenario : undefined}
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
 
             {scenarioList.length > 0 ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -317,7 +254,7 @@ function ScenariosTab() {
                                         </Box>
                                     </Box>
                                     <Tooltip title="Edit">
-                                        <IconButton size="small">
+                                        <IconButton size="small" onClick={() => handleEditScenario(scenario)}>
                                             <Edit fontSize="small" />
                                         </IconButton>
                                     </Tooltip>
@@ -394,7 +331,7 @@ function ScenariosTab() {
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         Add overpressure scenarios to size this device
                     </Typography>
-                    <Button variant="contained" startIcon={<Add />}>
+                    <Button variant="contained" startIcon={<Add />} onClick={handleAddScenario}>
                         Add First Scenario
                     </Button>
                 </Paper>

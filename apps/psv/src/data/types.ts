@@ -57,7 +57,7 @@ import { PipeProps, NodeProps } from '@eng-suite/physics';
 export type { PipeProps, NodeProps };
 
 // Protective system types
-export type ProtectiveSystemType = 'psv' | 'rupture_disc' | 'vent_system' | 'prv';
+export type ProtectiveSystemType = 'psv' | 'rupture_disc' | 'breather_valve' | 'flame_arrestor' | 'tank_vent' | 'control_valve' | 'vent_system' | 'prv';
 export type DesignCode = 'API-520' | 'API-521' | 'API-2000' | 'ASME-VIII';
 export type FluidPhase = 'gas' | 'liquid' | 'steam' | 'two_phase';
 
