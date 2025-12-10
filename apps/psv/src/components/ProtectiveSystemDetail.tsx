@@ -72,6 +72,7 @@ import { BasicInfoCard } from "./BasicInfoCard";
 import { OperatingConditionsCard } from "./OperatingConditionsCard";
 import { EquipmentCard } from "./EquipmentCard";
 import { TagsCard } from "./TagsCard";
+import { SummaryTab } from "./SummaryTab";
 import { glassCardStyles } from "./styles";
 
 interface TabPanelProps {
@@ -1183,7 +1184,7 @@ export function ProtectiveSystemDetail() {
     return (
         <Box>
             {/* Header */}
-            <Paper sx={{ p: 3, mb: 3 }}>
+            <Paper className="print-hide" sx={{ p: 3, mb: 3 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
@@ -1322,7 +1323,7 @@ export function ProtectiveSystemDetail() {
             </Dialog>
 
             {/* Tabs */}
-            <Paper sx={{ mb: 3 }}>
+            <Paper className="print-hide" sx={{ mb: 3 }}>
                 <Tabs
                     value={activeTab}
                     onChange={handleTabChange}
@@ -1341,6 +1342,7 @@ export function ProtectiveSystemDetail() {
                     <Tab label="Sizing" />
                     <Tab label="Notes" />
                     <Tab label="Attachments" />
+                    <Tab label="Summary" />
                 </Tabs>
             </Paper>
 
@@ -1359,6 +1361,9 @@ export function ProtectiveSystemDetail() {
             </TabPanel>
             <TabPanel value={activeTab} index={4}>
                 <AttachmentsTab />
+            </TabPanel>
+            <TabPanel value={activeTab} index={5}>
+                <SummaryTab />
             </TabPanel>
         </Box>
     );

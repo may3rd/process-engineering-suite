@@ -26,6 +26,7 @@ export default function RootLayout({
             <body className={inter.className}>
                 <Providers>
                     <Box
+                        className="print-hide"
                         sx={{
                             position: "fixed",
                             top: 0,
@@ -39,7 +40,7 @@ export default function RootLayout({
                         <TopToolbar />
                     </Box>
                     {/* Spacer to account for fixed toolbar height */}
-                    <Box sx={{ height: 72 }} />
+                    <Box className="print-hide" sx={{ height: 72 }} />
                     {children}
                 </Providers>
             </body>
