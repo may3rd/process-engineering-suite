@@ -1,7 +1,7 @@
 import configureMeasurements from "convert-units";
 import pressure from "convert-units/definitions/pressure";
 import allMeasures from "convert-units/definitions/all";
-import { i } from "framer-motion/client";
+
 
 export type UnitFamily = string;
 
@@ -9,6 +9,11 @@ const atmInkPa = 101.325;
 const UNIT_ALIASES: Record<string, string> = {
   "tonn/day": "ton/day",
   "kg_cm2": "kg/cm2",
+  "psia": "psi",
+  "bara": "bar",
+  "atm": "atm",
+  "°C": "C",
+  "°F": "F",
 };
 
 const extendedPressure = {
@@ -21,7 +26,7 @@ const extendedPressure = {
           numerator: 1,
           denominator: 1e3,
         },
-        anchor_shift: - atmInkPa,
+        anchor_shift: atmInkPa, // +101.325 kPa
       },
       kPag: {
         name: { singular: 'Kilopascal Gauge', plural: 'Kilopascal Gauge' },
@@ -29,12 +34,12 @@ const extendedPressure = {
           numerator: 1,
           denominator: 1,
         },
-        anchor_shift: - atmInkPa,
+        anchor_shift: atmInkPa,
       },
       barg: {
         name: { singular: 'Bar Gauge', plural: 'Bars Gauge' },
         to_anchor: 100,
-        anchor_shift: - atmInkPa,
+        anchor_shift: atmInkPa,
       },
       ksc: {
         name: { singular: 'Kilogram per square centimeter', plural: 'Kilogram per square centimeter' },
@@ -47,12 +52,12 @@ const extendedPressure = {
       kscg: {
         name: { singular: 'Kilogram per cubic centimeter gauge', plural: 'Kilogram per cubic centimeter gauge' },
         to_anchor: 98.0665,
-        anchor_shift: - atmInkPa,
+        anchor_shift: atmInkPa,
       },
       'kg/cm2g': {
         name: { singular: 'Kilogram per cubic centimeter gauge', plural: 'Kilogram per cubic centimeter gauge' },
         to_anchor: 98.0665,
-        anchor_shift: - atmInkPa,
+        anchor_shift: atmInkPa,
       },
       atm: {
         name: { singular: 'Atmospheric', plural: 'Atmospheric' },
@@ -67,11 +72,9 @@ const extendedPressure = {
       ...pressure.systems.imperial,
       psig: {
         name: { singular: 'PSI Gauge', plural: 'PSI Gauge' },
-        to_anchor: {
-          numerator: 1,
-          denominator: 1e3,
-        },
-        anchor_shift: - 0.0146959487755,
+        // Use standard psi conversion to kPa
+        to_anchor: 6.894757293168361,
+        anchor_shift: atmInkPa,
       },
     },
   },

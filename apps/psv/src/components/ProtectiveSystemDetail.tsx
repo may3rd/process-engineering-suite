@@ -49,6 +49,7 @@ import {
     Add,
     AddCircle,
     Star,
+    Verified,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
 import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem } from "@/data/types";
@@ -406,7 +407,7 @@ function ScenariosTab() {
 function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCreate?: (id: string) => void }) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
-    const { sizingCaseList, scenarioList, selectedPsv, addSizingCase } = usePsvStore();
+    const { sizingCaseList, scenarioList, selectedPsv, addSizingCase, updateSizingCase } = usePsvStore();
     const [dialogOpen, setDialogOpen] = useState(false);
 
     const getScenarioName = (scenarioId: string) => {
@@ -468,6 +469,16 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                 isCriticalFlow: false,
                 numberOfValves: 1,
                 messages: [],
+                requiredAreaIn2: 0,
+            },
+            unitPreferences: {
+                pressure: 'barg',
+                temperature: '°C',
+                flow: 'kg/h',
+                length: 'm',
+                area: 'mm²',
+                density: 'kg/m³',
+                viscosity: 'cP',
             },
             revisionNo: 1,
             status: 'draft',
@@ -568,11 +579,28 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                             {sizing.standard} • {sizing.method.toUpperCase()} method • Rev {sizing.revisionNo}
                                         </Typography>
                                     </Box>
-                                    <Tooltip title="Edit">
-                                        <IconButton size="small" onClick={() => onEdit?.(sizing.id)}>
-                                            <Edit fontSize="small" />
-                                        </IconButton>
-                                    </Tooltip>
+                                    <Box sx={{ display: 'flex', gap: 1 }}>
+                                        {sizing.status === 'calculated' && (
+                                            <Tooltip title="Verify">
+                                                <IconButton
+                                                    size="small"
+                                                    color="success"
+                                                    onClick={() => updateSizingCase({
+                                                        ...sizing,
+                                                        status: 'verified',
+                                                        approvedBy: 'user-1'
+                                                    })}
+                                                >
+                                                    <Verified fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
+                                        <Tooltip title="Edit">
+                                            <IconButton size="small" onClick={() => onEdit?.(sizing.id)}>
+                                                <Edit fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </Box>
                                 </Box>
 
                                 <Box
@@ -718,7 +746,7 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         Create a sizing case from an overpressure scenario
                     </Typography>
-                    <Button variant="contained" startIcon={<Add />}>
+                    <Button variant="contained" startIcon={<Add />} onClick={() => setDialogOpen(true)}>
                         New Sizing Case
                     </Button>
                 </Paper>
@@ -1047,7 +1075,7 @@ function NotesTab() {
 export function ProtectiveSystemDetail() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
-    const { selectedPsv, activeTab, setActiveTab, selectPsv, updateSizingCase, sizingCaseList, updatePsv } = usePsvStore();
+    const { selectedPsv, activeTab, setActiveTab, selectPsv, updateSizingCase, sizingCaseList, updatePsv, deleteSizingCase } = usePsvStore();
     const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
 
     // If editing a case, show the workspace
@@ -1072,6 +1100,11 @@ export function ProtectiveSystemDetail() {
                                 outletNetwork: updatedOutlet,
                             });
                         }
+                    }}
+                    psvTag={selectedPsv?.tag}
+                    onDelete={() => {
+                        deleteSizingCase(caseToEdit.id);
+                        setEditingCaseId(null);
                     }}
                 />
             );

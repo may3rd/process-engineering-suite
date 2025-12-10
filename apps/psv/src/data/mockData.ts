@@ -563,28 +563,38 @@ export const sizingCases: SizingCase[] = [
         standard: 'API-520',
         method: 'gas',
         inputs: {
-            massFlowRate: 85000,
-            molecularWeight: 44,
-            temperature: 180,
-            pressure: 2.8,
+            massFlowRate: 85000, // kg/h
+            molecularWeight: 44, // g/mol (Propane typically ~44)
+            temperature: 180, // C
+            pressure: 2.8, // barg
             compressibilityZ: 0.92,
             specificHeatRatio: 1.15,
-            backpressure: 0.5,
+            backpressure: 0.5, // barg
             backpressureType: 'superimposed',
         },
         outputs: {
-            requiredArea: 2150,
-            selectedOrifice: 'M',
-            orificeArea: 2323,
-            percentUsed: 92.5,
-            ratedCapacity: 91800,
+            requiredArea: 1250, // mm2
+            requiredAreaIn2: 1.94,
+            selectedOrifice: 'J',
+            orificeArea: 1290, // mm2
+            percentUsed: 96.9,
+            ratedCapacity: 87650,
             dischargeCoefficient: 0.975,
-            backpressureCorrectionFactor: 0.98,
-            isCriticalFlow: true,
+            backpressureCorrectionFactor: 1.0,
+            isCriticalFlow: false,
             numberOfValves: 1,
-            messages: ['Critical flow confirmed', 'Backpressure within limits (<10% set pressure)'],
+            messages: ['Subcritical flow conditions detected'],
         },
-        revisionNo: 2,
+        unitPreferences: {
+            pressure: 'barg',
+            temperature: '°C',
+            flow: 'kg/h',
+            length: 'm',
+            area: 'mm²',
+            density: 'kg/m³',
+            viscosity: 'cP',
+        },
+        revisionNo: 1,
         status: 'verified',
         createdBy: 'user-1',
         approvedBy: 'user-3',
@@ -598,30 +608,40 @@ export const sizingCases: SizingCase[] = [
         standard: 'API-520',
         method: 'liquid',
         inputs: {
-            massFlowRate: 120000,
-            molecularWeight: 100,
-            temperature: 85,
-            pressure: 4.0,
-            compressibilityZ: 1.0,
-            specificHeatRatio: 1.0,
-            density: 720,
-            viscosity: 0.45,
-            backpressure: 0.2,
+            massFlowRate: 120000, // kg/h
+            molecularWeight: 100, // g/mol
+            temperature: 45, // C
+            pressure: 5.5, // barg
+            density: 850, // kg/m3
+            viscosity: 1.2, // cP
+            compressibilityZ: 1.0, // Liquid
+            specificHeatRatio: 1.0, // Liquid
+            backpressure: 1.5, // barg
             backpressureType: 'built_up',
         },
         outputs: {
-            requiredArea: 780,
-            selectedOrifice: 'J',
-            orificeArea: 830,
-            percentUsed: 94.0,
-            ratedCapacity: 127600,
+            requiredArea: 850,
+            requiredAreaIn2: 1.32,
+            selectedOrifice: 'H',
+            orificeArea: 1025,
+            percentUsed: 82.9,
+            ratedCapacity: 144500,
             dischargeCoefficient: 0.65,
             backpressureCorrectionFactor: 1.0,
             isCriticalFlow: false,
             numberOfValves: 1,
-            messages: ['Viscosity correction applied (Kv = 0.98)', 'Backpressure correction not required'],
+            messages: [],
         },
-        revisionNo: 1,
+        unitPreferences: {
+            pressure: 'barg',
+            temperature: '°C',
+            flow: 'kg/h',
+            length: 'm',
+            area: 'mm²',
+            density: 'kg/m³',
+            viscosity: 'cP',
+        },
+        revisionNo: 0,
         status: 'approved',
         createdBy: 'user-1',
         approvedBy: 'user-2',
@@ -645,8 +665,9 @@ export const sizingCases: SizingCase[] = [
             backpressureType: 'superimposed',
         },
         outputs: {
-            requiredArea: 1580,
-            selectedOrifice: 'L',
+            requiredArea: 120, // mm2
+            requiredAreaIn2: 0.186,
+            selectedOrifice: 'D',
             orificeArea: 1841,
             percentUsed: 85.8,
             ratedCapacity: 175000,
@@ -660,6 +681,15 @@ export const sizingCases: SizingCase[] = [
             ],
         },
         revisionNo: 3,
+        unitPreferences: {
+            pressure: 'barg',
+            temperature: '°C',
+            flow: 'kg/h',
+            length: 'm',
+            area: 'mm²',
+            density: 'kg/m³',
+            viscosity: 'cP',
+        },
         status: 'calculated',
         createdBy: 'user-4',
         createdAt: '2024-08-25T10:00:00Z',

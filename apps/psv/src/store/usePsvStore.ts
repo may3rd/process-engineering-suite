@@ -76,6 +76,7 @@ interface PsvStore {
     updateSizingCase: (updatedCase: SizingCase) => void;
     addSizingCase: (newCase: SizingCase) => void;
     updatePsv: (updatedPsv: ProtectiveSystem) => void;
+    deleteSizingCase: (id: string) => void;
 }
 
 export const usePsvStore = create<PsvStore>((set, get) => ({
@@ -335,5 +336,11 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
                 selectedPsv: state.selectedPsv?.id === updatedPsv.id ? updatedPsv : state.selectedPsv,
             };
         });
+    },
+
+    deleteSizingCase: (id) => {
+        set((state) => ({
+            sizingCaseList: state.sizingCaseList.filter((c) => c.id !== id),
+        }));
     },
 }));

@@ -132,8 +132,9 @@ export interface SizingInputs {
 }
 
 export interface SizingOutputs {
-    requiredArea: number; // mm²
-    selectedOrifice: string; // e.g., "J", "K", "L"
+    requiredArea: number;   // mm2
+    requiredAreaIn2: number; // in2
+    selectedOrifice: string; // Designation (e.g., "J"), "K", "L"
     orificeArea: number; // mm²
     percentUsed: number; // %
     ratedCapacity: number; // kg/h
@@ -142,6 +143,16 @@ export interface SizingOutputs {
     isCriticalFlow: boolean;
     numberOfValves: number; // Number of parallel valves (default: 1)
     messages: string[];
+}
+// Unit preferences for user display
+export interface UnitPreferences {
+    pressure: string;
+    temperature: string;
+    flow: string;
+    length: string;
+    area: string;
+    density: string;
+    viscosity: string;
 }
 
 export interface PipelineNetwork {
@@ -157,6 +168,7 @@ export interface SizingCase {
     method: SizingMethod;
     inputs: SizingInputs;
     outputs: SizingOutputs;
+    unitPreferences: UnitPreferences;
     revisionNo: number;
     status: 'draft' | 'calculated' | 'verified' | 'approved';
     createdBy: string;

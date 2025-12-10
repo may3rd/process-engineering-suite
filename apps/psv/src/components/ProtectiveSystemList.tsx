@@ -109,7 +109,6 @@ export function ProtectiveSystemList() {
                                 height: '100%',
                                 '&:hover': {
                                     borderColor: 'primary.main',
-                                    transform: 'translateY(-2px)',
                                 },
                                 transition: 'all 0.2s ease',
                             }}

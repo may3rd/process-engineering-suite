@@ -24,6 +24,11 @@ import {
     ListItemText,
     Alert,
     useTheme,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions,
 } from "@mui/material";
 import {
     ArrowBack,
@@ -32,11 +37,14 @@ import {
     Warning,
     Download,
     Calculate,
+    Delete,
+    Settings,
 } from "@mui/icons-material";
-import { SizingCase, PipelineNetwork, PipeProps, ORIFICE_SIZES, SizingInputs } from "@/data/types";
+import { SizingCase, PipelineNetwork, PipeProps, ORIFICE_SIZES, SizingInputs, UnitPreferences } from "@/data/types";
 import { PipelineDataGrid } from "./PipelineDataGrid";
 import { v4 as uuidv4 } from "uuid";
 import { calculateSizing } from "@/lib/psvSizing";
+import { useUnitConversion, UnitType } from "@/hooks/useUnitConversion";
 
 interface SizingWorkspaceProps {
     sizingCase: SizingCase;
@@ -45,6 +53,8 @@ interface SizingWorkspaceProps {
     onClose: () => void;
     onSave: (updatedCase: SizingCase) => void;
     onSaveNetworks?: (inlet: PipelineNetwork | undefined, outlet: PipelineNetwork | undefined) => void;
+    psvTag?: string;
+    onDelete?: () => void;
 }
 
 interface TabPanelProps {
@@ -77,7 +87,7 @@ const FLOW_UNITS = ['kg/h', 'lb/h', 'kg/s'];
 const VISCOSITY_UNITS = ['cP', 'mPa·s', 'Pa·s'];
 const DENSITY_UNITS = ['kg/m³', 'lb/ft³'];
 
-export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClose, onSave, onSaveNetworks }: SizingWorkspaceProps) {
+export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClose, onSave, onSaveNetworks, psvTag, onDelete }: SizingWorkspaceProps) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const [activeTab, setActiveTab] = useState(0);
@@ -98,27 +108,60 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
     const [localOutletNetwork, setLocalOutletNetwork] = useState<PipelineNetwork | undefined>(outletNetwork);
 
     // Unit state
-    const [units, setUnits] = useState({
+    // Unit Conversion Hook
+    const defaultPreferences: UnitPreferences = {
         pressure: 'barg',
         temperature: '°C',
         flow: 'kg/h',
-        viscosity: 'cP',
+        length: 'm',
+        area: 'mm²',
         density: 'kg/m³',
-    });
+        viscosity: 'cP',
+    };
+
+    const { preferences, setUnit, toDisplay, toBase } = useUnitConversion(sizingCase.unitPreferences || defaultPreferences);
+
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
+
+    const handleConfirmDelete = () => {
+        if (deleteConfirmationInput === psvTag) {
+            onDelete?.();
+        }
+    };
 
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
         setActiveTab(newValue);
     };
 
-    // Handle input changes for SizingInputs
-    const handleInputChange = (field: keyof SizingInputs, value: number | string) => {
-        // Handle NaN from parseFloat on empty input
-        const safeValue = typeof value === 'number' && isNaN(value) ? 0 : value;
+    // Handle input changes for SizingInputs (converts Display Value -> Base Value)
+    const handleInputChange = (field: keyof SizingInputs, displayValue: number | string, unitType?: UnitType) => {
+        // Handle strings (non-numeric fields)
+        if (typeof displayValue === 'string' && !unitType) {
+            setCurrentCase({
+                ...currentCase,
+                inputs: {
+                    ...currentCase.inputs,
+                    [field]: displayValue,
+                },
+            });
+            setIsDirty(true);
+            setIsCalculated(false);
+            return;
+        }
+
+        // Handle numeric values
+        const numValue = typeof displayValue === 'string' ? parseFloat(displayValue) : displayValue;
+        const safeValue = isNaN(numValue) ? 0 : numValue;
+
+        // Convert to base unit if type is provided
+        const baseValue = unitType ? toBase(safeValue, unitType) : safeValue;
+
         setCurrentCase({
             ...currentCase,
             inputs: {
                 ...currentCase.inputs,
-                [field]: safeValue,
+                [field]: baseValue,
             },
         });
         // Mark as dirty and needs recalculation
@@ -172,6 +215,8 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
         };
 
         setLocalInletNetwork(updatedNetwork);
+        setIsDirty(true);
+        setIsCalculated(false);
     };
 
     const handleAddOutletPipe = () => {
@@ -191,6 +236,8 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
         };
 
         setLocalOutletNetwork(updatedNetwork);
+        setIsDirty(true);
+        setIsCalculated(false);
     };
 
     const handleEditPipe = (id: string, type: 'inlet' | 'outlet') => {
@@ -214,6 +261,8 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
             };
             setLocalOutletNetwork(updatedNetwork);
         }
+        setIsDirty(true);
+        setIsCalculated(false);
     };
 
     // Calculate using API-520/521 equations
@@ -262,7 +311,14 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
             },
         };
         onSaveNetworks?.(localInletNetwork, localOutletNetwork);
-        onSave(caseToSave);
+
+        // Save unit preferences
+        const finalCase = {
+            ...caseToSave,
+            unitPreferences: preferences
+        };
+
+        onSave(finalCase);
         onClose();
     };
 
@@ -329,6 +385,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                     <Tab label="PSV Sizing" />
                     <Tab label="Outlet Piping" />
                     <Tab label="Results" />
+                    <Tab icon={<Settings />} label="Settings" iconPosition="start" />
                 </Tabs>
             </Paper>
 
@@ -352,16 +409,16 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                     <TextField
                                         label="Mass Flow Rate"
                                         type="number"
-                                        value={currentCase.inputs.massFlowRate}
-                                        onChange={(e) => handleInputChange('massFlowRate', parseFloat(e.target.value))}
+                                        value={toDisplay(currentCase.inputs.massFlowRate, 'flow')}
+                                        onChange={(e) => handleInputChange('massFlowRate', e.target.value, 'flow')}
                                         InputProps={{
                                             endAdornment: (
                                                 <InputAdornment position="end">
                                                     <TextField
                                                         select
                                                         variant="standard"
-                                                        value={units.flow}
-                                                        onChange={(e) => setUnits({ ...units, flow: e.target.value })}
+                                                        value={preferences.flow}
+                                                        onChange={(e) => setUnit('flow', e.target.value)}
                                                         sx={{ minWidth: 60 }}
                                                     >
                                                         {FLOW_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
@@ -397,16 +454,16 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                     <TextField
                                         label="Relieving Pressure"
                                         type="number"
-                                        value={currentCase.inputs.pressure}
-                                        onChange={(e) => handleInputChange('pressure', parseFloat(e.target.value))}
+                                        value={toDisplay(currentCase.inputs.pressure, 'pressure')}
+                                        onChange={(e) => handleInputChange('pressure', e.target.value, 'pressure')}
                                         InputProps={{
                                             endAdornment: (
                                                 <InputAdornment position="end">
                                                     <TextField
                                                         select
                                                         variant="standard"
-                                                        value={units.pressure}
-                                                        onChange={(e) => setUnits({ ...units, pressure: e.target.value })}
+                                                        value={preferences.pressure}
+                                                        onChange={(e) => setUnit('pressure', e.target.value)}
                                                         sx={{ minWidth: 60 }}
                                                     >
                                                         {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
@@ -419,16 +476,16 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                     <TextField
                                         label="Relieving Temperature"
                                         type="number"
-                                        value={currentCase.inputs.temperature}
-                                        onChange={(e) => handleInputChange('temperature', parseFloat(e.target.value))}
+                                        value={toDisplay(currentCase.inputs.temperature, 'temperature')}
+                                        onChange={(e) => handleInputChange('temperature', e.target.value, 'temperature')}
                                         InputProps={{
                                             endAdornment: (
                                                 <InputAdornment position="end">
                                                     <TextField
                                                         select
                                                         variant="standard"
-                                                        value={units.temperature}
-                                                        onChange={(e) => setUnits({ ...units, temperature: e.target.value })}
+                                                        value={preferences.temperature}
+                                                        onChange={(e) => setUnit('temperature', e.target.value)}
                                                         sx={{ minWidth: 50 }}
                                                     >
                                                         {TEMPERATURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
@@ -481,16 +538,16 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         <TextField
                                             label="Viscosity"
                                             type="number"
-                                            value={currentCase.inputs.viscosity || ''}
-                                            onChange={(e) => handleInputChange('viscosity', parseFloat(e.target.value))}
+                                            value={toDisplay(currentCase.inputs.viscosity, 'viscosity')}
+                                            onChange={(e) => handleInputChange('viscosity', e.target.value, 'viscosity')}
                                             InputProps={{
                                                 endAdornment: (
                                                     <InputAdornment position="end">
                                                         <TextField
                                                             select
                                                             variant="standard"
-                                                            value={units.viscosity}
-                                                            onChange={(e) => setUnits({ ...units, viscosity: e.target.value })}
+                                                            value={preferences.viscosity}
+                                                            onChange={(e) => setUnit('viscosity', e.target.value)}
                                                             sx={{ minWidth: 60 }}
                                                         >
                                                             {VISCOSITY_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
@@ -503,16 +560,16 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         <TextField
                                             label="Density"
                                             type="number"
-                                            value={currentCase.inputs.density || ''}
-                                            onChange={(e) => handleInputChange('density', parseFloat(e.target.value))}
+                                            value={toDisplay(currentCase.inputs.density, 'density')}
+                                            onChange={(e) => handleInputChange('density', e.target.value, 'density')}
                                             InputProps={{
                                                 endAdornment: (
                                                     <InputAdornment position="end">
                                                         <TextField
                                                             select
                                                             variant="standard"
-                                                            value={units.density}
-                                                            onChange={(e) => setUnits({ ...units, density: e.target.value })}
+                                                            value={preferences.density}
+                                                            onChange={(e) => setUnit('density', e.target.value)}
                                                             sx={{ minWidth: 70 }}
                                                         >
                                                             {DENSITY_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
@@ -537,16 +594,16 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                     <TextField
                                         label="Backpressure"
                                         type="number"
-                                        value={currentCase.inputs.backpressure}
-                                        onChange={(e) => handleInputChange('backpressure', parseFloat(e.target.value))}
+                                        value={toDisplay(currentCase.inputs.backpressure, 'pressure')}
+                                        onChange={(e) => handleInputChange('backpressure', e.target.value, 'pressure')}
                                         InputProps={{
                                             endAdornment: (
                                                 <InputAdornment position="end">
                                                     <TextField
                                                         select
                                                         variant="standard"
-                                                        value={units.pressure}
-                                                        onChange={(e) => setUnits({ ...units, pressure: e.target.value })}
+                                                        value={preferences.pressure}
+                                                        onChange={(e) => setUnit('pressure', e.target.value)}
                                                         sx={{ minWidth: 60 }}
                                                     >
                                                         {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
@@ -927,6 +984,79 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                     </Box>
                 </TabPanel>
             </Box>
+
+            {/* ==================== TAB 5: SETTINGS ==================== */}
+            <TabPanel value={activeTab} index={5}>
+                <Box sx={{ maxWidth: 900, mx: 'auto' }}>
+                    <Typography variant="h6" sx={{ mb: 1 }}>Sizing Case Settings</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                        Manage configuration and lifecycle for this sizing case.
+                    </Typography>
+
+                    {/* Danger Zone */}
+                    <Card sx={{
+                        border: 1,
+                        borderColor: 'error.main',
+                        bgcolor: isDark ? 'rgba(244, 67, 54, 0.05)' : 'rgba(211, 47, 47, 0.02)'
+                    }}>
+                        <Box sx={{ p: 2, bgcolor: 'error.main', color: 'error.contrastText' }}>
+                            <Typography variant="subtitle1" fontWeight={600}>Danger Zone</Typography>
+                        </Box>
+                        <CardContent>
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <Box>
+                                    <Typography variant="subtitle2" gutterBottom>Delete this sizing case</Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        Once you delete a sizing case, there is no going back. Please be certain.
+                                    </Typography>
+                                </Box>
+                                <Button
+                                    variant="outlined"
+                                    color="error"
+                                    onClick={() => setDeleteDialogOpen(true)}
+                                    startIcon={<Delete />}
+                                >
+                                    Delete Case
+                                </Button>
+                            </Box>
+                        </CardContent>
+                    </Card>
+                </Box>
+            </TabPanel>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+                <DialogTitle>Delete Sizing Case?</DialogTitle>
+                <DialogContent>
+                    <DialogContentText sx={{ mb: 2 }}>
+                        This action cannot be undone. This will permanently delete the sizing case
+                        <strong> {currentCase.scenarioId} </strong> (Rev {currentCase.revisionNo}) from <strong>{psvTag}</strong>.
+                    </DialogContentText>
+                    <Typography variant="body2" gutterBottom>
+                        Please type <strong>{psvTag}</strong> to confirm.
+                    </Typography>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        fullWidth
+                        variant="outlined"
+                        value={deleteConfirmationInput}
+                        onChange={(e) => setDeleteConfirmationInput(e.target.value)}
+                        placeholder={psvTag}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={handleConfirmDelete}
+                        disabled={deleteConfirmationInput !== psvTag}
+                    >
+                        Delete Sizing Case
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }
