@@ -70,15 +70,10 @@ export function ProtectiveSystemList() {
 
     const getStatusColor = (status: string): "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" => {
         switch (status) {
-            case 'approved':
-            case 'issued':
-                return 'success';
-            case 'in_review':
-                return 'warning';
-            case 'draft':
-                return 'info';
-            default:
-                return 'default';
+            case 'approved': return 'success';
+            case 'issued': return 'info';
+            case 'in_review': return 'warning';
+            default: return 'default';
         }
     };
 
@@ -216,7 +211,7 @@ export function ProtectiveSystemList() {
                                         </IconButton>
                                     </Tooltip>
                                     <Tooltip title="Edit">
-                                        <IconButton size="small" onClick={(e) => e.stopPropagation()}>
+                                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); selectPsv(psv.id); }}>
                                             <Edit fontSize="small" />
                                         </IconButton>
                                     </Tooltip>

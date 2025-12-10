@@ -32,6 +32,9 @@ import {
     DialogActions,
     Checkbox,
     TextField,
+    Menu,
+    MenuItem,
+    Fade,
 } from "@mui/material";
 import {
     Info,
@@ -52,13 +55,18 @@ import {
     Star,
     Verified,
     Delete,
+    KeyboardArrowDown,
+    Drafts,
+    RateReview,
+    CheckCircleOutline,
+    PublishedWithChanges,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
-import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem } from "@/data/types";
+import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem, ProtectiveSystem } from "@/data/types";
 import { SizingWorkspace } from "./SizingWorkspace";
 import { ScenarioEditor } from "./ScenarioEditor"; // Import ScenarioEditor
 import { getAttachmentsByPsv, getEquipmentLinksByPsv, equipment, getUserById, users } from "@/data/mockData";
-import { useState, useEffect } from "react";
+import { useState, useEffect, MouseEvent } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { BasicInfoCard } from "./BasicInfoCard";
 import { OperatingConditionsCard } from "./OperatingConditionsCard";
@@ -1049,6 +1057,12 @@ export function ProtectiveSystemDetail() {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
 
+    const [statusMenuAnchor, setStatusMenuAnchor] = useState<null | HTMLElement>(null);
+
+    const [editPsvOpen, setEditPsvOpen] = useState(false);
+    const [editTag, setEditTag] = useState('');
+    const [editName, setEditName] = useState('');
+
     // If editing a case, show the workspace
     if (editingCaseId) {
         const caseToEdit = sizingCaseList.find(c => c.id === editingCaseId);
@@ -1088,6 +1102,27 @@ export function ProtectiveSystemDetail() {
 
 
 
+
+
+    const handleEditClick = () => {
+        if (selectedPsv) {
+            setEditTag(selectedPsv.tag);
+            setEditName(selectedPsv.name);
+            setEditPsvOpen(true);
+        }
+    };
+
+    const handleSavePsv = () => {
+        if (selectedPsv && editTag.trim()) {
+            updatePsv({
+                ...selectedPsv,
+                tag: editTag.trim(),
+                name: editName.trim(),
+            });
+            setEditPsvOpen(false);
+        }
+    };
+
     const handleDeletePsv = () => {
         setDeleteDialogOpen(true);
     };
@@ -1102,6 +1137,49 @@ export function ProtectiveSystemDetail() {
         setActiveTab(newValue);
     };
 
+    const handleStatusClick = (event: MouseEvent<HTMLElement>) => {
+        setStatusMenuAnchor(event.currentTarget);
+    };
+
+    const handleStatusClose = () => {
+        setStatusMenuAnchor(null);
+    };
+
+    const handleStatusChange = (status: ProtectiveSystem['status']) => {
+        if (selectedPsv) {
+            updatePsv({ ...selectedPsv, status });
+        }
+        handleStatusClose();
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'approved': return 'success';
+            case 'issued': return 'info';
+            case 'in_review': return 'warning';
+            default: return 'default';
+        }
+    };
+
+    const getStatusIcon = (status: string) => {
+        switch (status) {
+            case 'approved': return <CheckCircleOutline fontSize="small" />;
+            case 'issued': return <PublishedWithChanges fontSize="small" />;
+            case 'in_review': return <RateReview fontSize="small" />;
+            default: return <Drafts fontSize="small" />;
+        }
+    };
+
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case 'in_review': return 'In Review';
+            case 'issued': return 'Issued';
+            case 'approved': return 'Approved';
+            case 'draft': return 'Draft';
+            default: return status;
+        }
+    }
+
     return (
         <Box>
             {/* Header */}
@@ -1113,16 +1191,58 @@ export function ProtectiveSystemDetail() {
                                 {selectedPsv.tag}
                             </Typography>
                             <Chip
-                                label={selectedPsv.status.replace('_', ' ')}
-                                color={selectedPsv.status === 'approved' || selectedPsv.status === 'issued' ? 'success' : selectedPsv.status === 'in_review' ? 'warning' : 'default'}
-                                sx={{ textTransform: 'capitalize' }}
+                                icon={getStatusIcon(selectedPsv.status)}
+                                label={getStatusLabel(selectedPsv.status)}
+                                color={getStatusColor(selectedPsv.status) as any}
+                                onClick={handleStatusClick}
+                                deleteIcon={<KeyboardArrowDown />}
+                                onDelete={handleStatusClick} // Shows the arrow and makes it clickable
+                                sx={{
+                                    textTransform: 'capitalize',
+                                    fontWeight: 600,
+                                    pl: 0.5,
+                                    '& .MuiChip-deleteIcon': {
+                                        color: 'inherit',
+                                        opacity: 0.7
+                                    }
+                                }}
                             />
+                            <Menu
+                                anchorEl={statusMenuAnchor}
+                                open={Boolean(statusMenuAnchor)}
+                                onClose={handleStatusClose}
+                                TransitionComponent={Fade}
+                            >
+                                <MenuItem onClick={() => handleStatusChange('draft')} selected={selectedPsv.status === 'draft'}>
+                                    <ListItemIcon><Drafts fontSize="small" /></ListItemIcon>
+                                    <ListItemText>Draft</ListItemText>
+                                </MenuItem>
+                                <MenuItem onClick={() => handleStatusChange('in_review')} selected={selectedPsv.status === 'in_review'}>
+                                    <ListItemIcon><RateReview fontSize="small" sx={{ color: 'warning.main' }} /></ListItemIcon>
+                                    <ListItemText>In Review</ListItemText>
+                                </MenuItem>
+                                <MenuItem onClick={() => handleStatusChange('approved')} selected={selectedPsv.status === 'approved'}>
+                                    <ListItemIcon><CheckCircleOutline fontSize="small" sx={{ color: 'success.main' }} /></ListItemIcon>
+                                    <ListItemText>Approved</ListItemText>
+                                </MenuItem>
+                                <MenuItem onClick={() => handleStatusChange('issued')} selected={selectedPsv.status === 'issued'}>
+                                    <ListItemIcon><PublishedWithChanges fontSize="small" sx={{ color: 'info.main' }} /></ListItemIcon>
+                                    <ListItemText>Issued</ListItemText>
+                                </MenuItem>
+                            </Menu>
                         </Box>
                         <Typography variant="body1" color="text.secondary">
                             {selectedPsv.name}
                         </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                            variant="outlined"
+                            startIcon={<Edit />}
+                            onClick={handleEditClick}
+                        >
+                            Edit
+                        </Button>
                         <Button
                             variant="outlined"
                             color="error"
@@ -1137,6 +1257,33 @@ export function ProtectiveSystemDetail() {
                     </Box>
                 </Box>
             </Paper>
+
+            {/* Edit PSV Dialog */}
+            <Dialog open={editPsvOpen} onClose={() => setEditPsvOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Edit Protective System</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        fullWidth
+                        label="Tag"
+                        value={editTag}
+                        onChange={(e) => setEditTag(e.target.value)}
+                        sx={{ mt: 2, mb: 2 }}
+                    />
+                    <TextField
+                        fullWidth
+                        label="Description/Name"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setEditPsvOpen(false)}>Cancel</Button>
+                    <Button variant="contained" onClick={handleSavePsv} disabled={!editTag.trim()}>
+                        Save
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {/* Delete Confirmation Dialog */}
             <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
@@ -1157,6 +1304,8 @@ export function ProtectiveSystemDetail() {
                         value={deleteConfirmationInput}
                         onChange={(e) => setDeleteConfirmationInput(e.target.value)}
                         placeholder={selectedPsv.tag}
+                        size="small"
+                        sx={{ mt: 1 }}
                     />
                 </DialogContent>
                 <DialogActions>
@@ -1167,7 +1316,7 @@ export function ProtectiveSystemDetail() {
                         onClick={handleConfirmDelete}
                         disabled={deleteConfirmationInput !== selectedPsv.tag}
                     >
-                        Delete Protective System
+                        Delete
                     </Button>
                 </DialogActions>
             </Dialog>

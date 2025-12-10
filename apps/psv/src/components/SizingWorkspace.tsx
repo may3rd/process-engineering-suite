@@ -650,7 +650,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                     <Tab label="PSV Sizing" />
                     <Tab label="Outlet Piping" />
                     <Tab label="Results" />
-                    <Tab icon={<Settings />} label="Settings" iconPosition="start" />
+                    <Tab label="Settings" />
                 </Tabs>
             </Paper>
 

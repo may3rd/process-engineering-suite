@@ -378,6 +378,22 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                 </Box>
             </Box>
 
+
+
+            {/* Footer Actions */}
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
+                <Button onClick={onCancel}>
+                    Cancel
+                </Button>
+                <Button
+                    variant="contained"
+                    onClick={handleSubmit}
+                    startIcon={<Save />}
+                >
+                    Save Scenario
+                </Button>
+            </Box>
+
             {/* Danger Zone - Only show if editing existing scenario */}
             {onDelete && initialData && (
                 <Box sx={{ mt: 4, mb: 3 }}>
@@ -410,20 +426,6 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                     </Card>
                 </Box>
             )}
-
-            {/* Footer Actions */}
-            <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
-                <Button onClick={onCancel}>
-                    Cancel
-                </Button>
-                <Button
-                    variant="contained"
-                    onClick={handleSubmit}
-                    startIcon={<Save />}
-                >
-                    Save Scenario
-                </Button>
-            </Box>
 
             {/* Delete Confirmation Dialog */}
             <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
