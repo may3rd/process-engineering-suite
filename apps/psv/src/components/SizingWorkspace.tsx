@@ -29,6 +29,11 @@ import {
     DialogContent,
     DialogContentText,
     DialogActions,
+    Tooltip,
+    RadioGroup,
+    Radio,
+    FormControl,
+    FormLabel,
 } from "@mui/material";
 import {
     ArrowBack,
@@ -39,12 +44,18 @@ import {
     Calculate,
     Delete,
     Settings,
+    HelpOutline,
 } from "@mui/icons-material";
 import { SizingCase, PipelineNetwork, PipeProps, ORIFICE_SIZES, SizingInputs, UnitPreferences } from "@/data/types";
 import { PipelineDataGrid } from "./PipelineDataGrid";
 import { v4 as uuidv4 } from "uuid";
 import { calculateSizing } from "@/lib/psvSizing";
 import { useUnitConversion, UnitType } from "@/hooks/useUnitConversion";
+import {
+    calculateNetworkPressureDrop,
+    validateInletPressureDrop,
+    calculateBuiltUpBackpressure
+} from "@/lib/hydraulicValidation";
 
 interface SizingWorkspaceProps {
     sizingCase: SizingCase;
@@ -54,6 +65,7 @@ interface SizingWorkspaceProps {
     onSave: (updatedCase: SizingCase) => void;
     onSaveNetworks?: (inlet: PipelineNetwork | undefined, outlet: PipelineNetwork | undefined) => void;
     psvTag?: string;
+    psvSetPressure: number; // Set pressure in barg
     onDelete?: () => void;
 }
 
@@ -87,7 +99,17 @@ const FLOW_UNITS = ['kg/h', 'lb/h', 'kg/s'];
 const VISCOSITY_UNITS = ['cP', 'mPa·s', 'Pa·s'];
 const DENSITY_UNITS = ['kg/m³', 'lb/ft³'];
 
-export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClose, onSave, onSaveNetworks, psvTag, onDelete }: SizingWorkspaceProps) {
+export function SizingWorkspace({
+    sizingCase,
+    inletNetwork,
+    outletNetwork,
+    onClose,
+    onSave,
+    onSaveNetworks,
+    psvTag,
+    psvSetPressure,
+    onDelete
+}: SizingWorkspaceProps) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const [activeTab, setActiveTab] = useState(0);
@@ -273,12 +295,68 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
         await new Promise(resolve => setTimeout(resolve, 100));
 
         try {
-            // Run API-520/521 calculation
-            const outputs = calculateSizing(currentCase.inputs, currentCase.method);
+            // Step 1: Calculate hydraulic validation
+            const fluidProps = {
+                phase: currentCase.method as 'gas' | 'liquid' | 'steam' | 'two_phase',
+                temperature: currentCase.inputs.temperature,
+                pressure: currentCase.inputs.pressure,
+                density: currentCase.inputs.density,
+                viscosity: currentCase.inputs.viscosity,
+                molecularWeight: currentCase.inputs.molecularWeight,
+                compressibilityZ: currentCase.inputs.compressibilityZ,
+            };
+
+            // Calculate inlet pressure drop
+            const inletResult = calculateNetworkPressureDrop(
+                inletNetwork,
+                currentCase.inputs.massFlowRate,
+                fluidProps
+            );
+
+            // Validate inlet ΔP against API 520 3% guideline
+            const inletValidation = validateInletPressureDrop(
+                inletResult.totalPressureDrop,
+                psvSetPressure
+            );
+
+            // Calculate built-up backpressure if mode is 'calculated'
+            let backpressureToUse = currentCase.inputs.backpressure;
+            let calculatedBackpressure = currentCase.inputs.calculatedBackpressure;
+
+            if (currentCase.inputs.backpressureSource === 'calculated') {
+                calculatedBackpressure = calculateBuiltUpBackpressure(
+                    outletNetwork,
+                    currentCase.inputs.massFlowRate,
+                    fluidProps
+                );
+                backpressureToUse = calculatedBackpressure;
+            }
+
+            // Step 2: Run API-520/521 calculation with updated backpressure
+            const updatedInputs = {
+                ...currentCase.inputs,
+                backpressure: backpressureToUse,
+                inletPressureDrop: inletResult.totalPressureDrop,
+                calculatedBackpressure,
+            };
+
+            const outputs = calculateSizing(updatedInputs, currentCase.method);
+
+            // Step 3: Add hydraulic validation results to outputs
+            const finalOutputs = {
+                ...outputs,
+                inletPressureDropPercent: inletValidation.percentOfSetPressure,
+                inletValidation: {
+                    isValid: inletValidation.isValid,
+                    message: inletValidation.message,
+                    severity: inletValidation.severity,
+                },
+            };
 
             setCurrentCase({
                 ...currentCase,
-                outputs,
+                inputs: updatedInputs,
+                outputs: finalOutputs,
                 status: 'calculated',
                 updatedAt: new Date().toISOString(),
             });
@@ -390,7 +468,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
             </Paper>
 
             {/* Content Area */}
-            <Box sx={{ flex: 1, overflow: 'hidden' }}>
+            <Box sx={{ flex: 1 }}>
                 {/* ==================== TAB 0: CONDITIONS ==================== */}
                 <TabPanel value={activeTab} index={0}>
                     <Box sx={{ maxWidth: 900, mx: 'auto' }}>
@@ -587,15 +665,78 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                         {/* Backpressure */}
                         <Card>
                             <CardContent>
-                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                    Backpressure
-                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                    <Typography variant="subtitle1" fontWeight={600}>
+                                        Backpressure
+                                    </Typography>
+                                    <Tooltip
+                                        title={
+                                            <Box>
+                                                <Typography variant="body2" fontWeight={600} gutterBottom>
+                                                    Backpressure Types:
+                                                </Typography>
+                                                <Typography variant="body2" gutterBottom>
+                                                    • <strong>Superimposed:</strong> Constant backpressure that exists in the discharge system before the valve opens (e.g., from a header or atmospheric pressure).
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    • <strong>Built-up:</strong> Backpressure that develops in the discharge system only after the valve opens, caused by flow resistance.
+                                                </Typography>
+                                            </Box>
+                                        }
+                                        arrow
+                                        placement="right"
+                                    >
+                                        <HelpOutline sx={{ fontSize: 18, color: 'text.secondary', cursor: 'help' }} />
+                                    </Tooltip>
+                                </Box>
+
+                                {/* Backpressure Source Toggle */}
+                                <FormControl component="fieldset" sx={{ mb: 2 }}>
+                                    <FormLabel component="legend">Backpressure Source</FormLabel>
+                                    <RadioGroup
+                                        row
+                                        value={currentCase.inputs.backpressureSource || 'manual'}
+                                        onChange={(e) => {
+                                            setCurrentCase({
+                                                ...currentCase,
+                                                inputs: {
+                                                    ...currentCase.inputs,
+                                                    backpressureSource: e.target.value as 'manual' | 'calculated',
+                                                },
+                                            });
+                                            setIsDirty(true);
+                                        }}
+                                    >
+                                        <FormControlLabel value="manual" control={<Radio />} label="Manual Entry" />
+                                        <FormControlLabel value="calculated" control={<Radio />} label="Calculate from Outlet Piping" />
+                                    </RadioGroup>
+                                </FormControl>
+
+                                {/* Display Calculated Backpressure (if mode is calculated) */}
+                                {currentCase.inputs.backpressureSource === 'calculated' && (
+                                    <Alert severity="info" sx={{ mb: 2 }}>
+                                        <Typography variant="body2" fontWeight={600}>
+                                            Calculated Built-up Backpressure: {currentCase.inputs.calculatedBackpressure?.toFixed(3) || '—'} barg
+                                        </Typography>
+                                        <Typography variant="caption">
+                                            Based on {outletNetwork?.pipes?.length || 0} pipes in outlet network.
+                                            {(!outletNetwork || !outletNetwork.pipes || outletNetwork.pipes.length === 0) &&
+                                                ' Add pipes to Outlet Piping tab to calculate.'}
+                                        </Typography>
+                                    </Alert>
+                                )}
+
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
                                     <TextField
                                         label="Backpressure"
                                         type="number"
-                                        value={toDisplay(currentCase.inputs.backpressure, 'pressure')}
+                                        value={
+                                            currentCase.inputs.backpressureSource === 'calculated'
+                                                ? currentCase.inputs.calculatedBackpressure?.toFixed(3) || 0
+                                                : toDisplay(currentCase.inputs.backpressure, 'pressure')
+                                        }
                                         onChange={(e) => handleInputChange('backpressure', e.target.value, 'pressure')}
+                                        disabled={currentCase.inputs.backpressureSource === 'calculated'}
                                         InputProps={{
                                             endAdornment: (
                                                 <InputAdornment position="end">
@@ -624,6 +765,66 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         <MenuItem value="built_up">Built-up</MenuItem>
                                     </TextField>
                                 </Box>
+                            </CardContent>
+                        </Card>
+
+                        {/* Hydraulic Validation */}
+                        <Card>
+                            <CardContent>
+                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                    Hydraulic Validation
+                                </Typography>
+
+                                {/* Inlet Pressure Drop */}
+                                <Box sx={{ mb: 2 }}>
+                                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                                        Inlet Pressure Drop
+                                    </Typography>
+                                    {currentCase.outputs?.inletValidation ? (
+                                        <Alert
+                                            severity={currentCase.outputs.inletValidation.severity}
+                                            icon={currentCase.outputs.inletValidation.isValid ? <CheckCircle /> : <Warning />}
+                                        >
+                                            <Typography variant="body2">
+                                                {currentCase.inputs.inletPressureDrop?.toFixed(2) || '—'} kPa
+                                                ({currentCase.outputs.inletPressureDropPercent?.toFixed(1) || '—'}% of set pressure)
+                                            </Typography>
+                                            <Typography variant="caption">
+                                                {currentCase.outputs.inletValidation.message}
+                                            </Typography>
+                                        </Alert>
+                                    ) : (
+                                        <Alert severity="info">
+                                            <Typography variant="body2">
+                                                Run calculation to validate inlet pressure drop.
+                                            </Typography>
+                                            <Typography variant="caption">
+                                                API 520 guideline: Inlet ΔP should be &lt; 3% of set pressure to avoid valve chattering.
+                                            </Typography>
+                                        </Alert>
+                                    )}
+                                </Box>
+
+                                {/* Outlet Network Summary */}
+                                {currentCase.inputs.backpressureSource === 'calculated' && (
+                                    <Box>
+                                        <Typography variant="body2" color="text.secondary" gutterBottom>
+                                            Outlet Network Summary
+                                        </Typography>
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: '14px',
+                                            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)'
+                                        }}>
+                                            <Typography variant="body2">
+                                                <strong>Pipes:</strong> {outletNetwork?.pipes?.length || 0}
+                                            </Typography>
+                                            <Typography variant="body2">
+                                                <strong>Built-up Backpressure:</strong> {currentCase.inputs.calculatedBackpressure?.toFixed(3) || '—'} barg
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+                                )}
                             </CardContent>
                         </Card>
                     </Box>

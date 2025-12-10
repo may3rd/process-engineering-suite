@@ -129,6 +129,10 @@ export interface SizingInputs {
     density?: number; // kg/m³ (for liquids)
     backpressure: number; // barg
     backpressureType: 'superimposed' | 'built_up';
+    // Hydraulic validation fields
+    backpressureSource?: 'manual' | 'calculated'; // Toggle mode for built-up backpressure
+    inletPressureDrop?: number; // Calculated inlet ΔP in kPa
+    calculatedBackpressure?: number; // Calculated from outlet network, barg
 }
 
 export interface SizingOutputs {
@@ -143,6 +147,13 @@ export interface SizingOutputs {
     isCriticalFlow: boolean;
     numberOfValves: number; // Number of parallel valves (default: 1)
     messages: string[];
+    // Hydraulic validation results
+    inletPressureDropPercent?: number; // % of set pressure
+    inletValidation?: {
+        isValid: boolean;
+        message: string;
+        severity: 'success' | 'warning' | 'error';
+    };
 }
 // Unit preferences for user display
 export interface UnitPreferences {

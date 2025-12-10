@@ -1087,6 +1087,7 @@ export function ProtectiveSystemDetail() {
                     sizingCase={caseToEdit}
                     inletNetwork={selectedPsv?.inletNetwork}
                     outletNetwork={selectedPsv?.outletNetwork}
+                    psvSetPressure={selectedPsv?.setPressure || 0}
                     onClose={() => setEditingCaseId(null)}
                     onSave={(updated) => {
                         updateSizingCase(updated);
