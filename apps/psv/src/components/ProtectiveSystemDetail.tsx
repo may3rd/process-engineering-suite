@@ -28,9 +28,13 @@ import {
     Dialog,
     DialogTitle,
     DialogContent,
+    DialogContentText,
     DialogActions,
     Checkbox,
     TextField,
+    Menu,
+    MenuItem,
+    Fade,
 } from "@mui/material";
 import {
     Info,
@@ -50,13 +54,26 @@ import {
     AddCircle,
     Star,
     Verified,
+    Delete,
+    KeyboardArrowDown,
+    Drafts,
+    RateReview,
+    CheckCircleOutline,
+    PublishedWithChanges,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
-import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem } from "@/data/types";
-import { getAttachmentsByPsv, getCommentsByPsv, getTodosByPsv, getEquipmentLinksByPsv, equipment, getUserById, users } from "@/data/mockData";
+import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem, ProtectiveSystem } from "@/data/types";
 import { SizingWorkspace } from "./SizingWorkspace";
-import { useState, useEffect } from "react";
+import { ScenarioEditor } from "./ScenarioEditor"; // Import ScenarioEditor
+import { getAttachmentsByPsv, getEquipmentLinksByPsv, equipment, getUserById, users } from "@/data/mockData";
+import { useState, useEffect, MouseEvent } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { BasicInfoCard } from "./BasicInfoCard";
+import { OperatingConditionsCard } from "./OperatingConditionsCard";
+import { EquipmentCard } from "./EquipmentCard";
+import { TagsCard } from "./TagsCard";
+import { SummaryTab } from "./SummaryTab";
+import { glassCardStyles } from "./styles";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -97,137 +114,18 @@ function OverviewTab() {
     const owner = getUserById(selectedPsv.ownerId);
 
     return (
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-            {/* Basic Info Card */}
-            <Card>
-                <CardContent>
-                    <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-                        Basic Information
-                    </Typography>
-                    <Box sx={{ display: 'grid', gap: 2 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">Tag</Typography>
-                            <Typography fontWeight={500}>{selectedPsv.tag}</Typography>
-                        </Box>
-                        <Divider />
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">Name</Typography>
-                            <Typography fontWeight={500}>{selectedPsv.name}</Typography>
-                        </Box>
-                        <Divider />
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">Type</Typography>
-                            <Chip label={selectedPsv.type.replace('_', ' ')} size="small" sx={{ textTransform: 'capitalize' }} />
-                        </Box>
-                        <Divider />
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">Design Code</Typography>
-                            <Chip label={selectedPsv.designCode} size="small" color="primary" variant="outlined" />
-                        </Box>
-                        <Divider />
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">Owner</Typography>
-                            <Typography fontWeight={500}>{owner?.name || 'Unknown'}</Typography>
-                        </Box>
-                    </Box>
-                </CardContent>
-            </Card>
+        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: 3 }}>
+            {/* Left Column */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <BasicInfoCard psv={selectedPsv} />
+                <EquipmentCard psv={selectedPsv} />
+            </Box>
 
-            {/* Operating Conditions Card */}
-            <Card>
-                <CardContent>
-                    <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-                        Operating Conditions
-                    </Typography>
-                    <Box sx={{ display: 'grid', gap: 2 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">Service Fluid</Typography>
-                            <Typography fontWeight={500}>{selectedPsv.serviceFluid}</Typography>
-                        </Box>
-                        <Divider />
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">Fluid Phase</Typography>
-                            <Chip
-                                label={selectedPsv.fluidPhase}
-                                size="small"
-                                color={selectedPsv.fluidPhase === 'gas' ? 'info' : selectedPsv.fluidPhase === 'liquid' ? 'primary' : 'warning'}
-                                sx={{ textTransform: 'capitalize' }}
-                            />
-                        </Box>
-                        <Divider />
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">Set Pressure</Typography>
-                            <Typography fontWeight={600} color="primary.main">{selectedPsv.setPressure} barg</Typography>
-                        </Box>
-                        <Divider />
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">MAWP</Typography>
-                            <Typography fontWeight={600}>{selectedPsv.mawp} barg</Typography>
-                        </Box>
-                        <Divider />
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                            <Typography color="text.secondary">Set/MAWP Ratio</Typography>
-                            <Typography fontWeight={500}>{((selectedPsv.setPressure / selectedPsv.mawp) * 100).toFixed(0)}%</Typography>
-                        </Box>
-                    </Box>
-                </CardContent>
-            </Card>
-
-            {/* Protected Equipment */}
-            <Card sx={{ gridColumn: { md: 'span 2' } }}>
-                <CardContent>
-                    <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-                        Protected Equipment
-                    </Typography>
-                    {linkedEquipment.length > 0 ? (
-                        <TableContainer>
-                            <Table size="small">
-                                <TableHead>
-                                    <TableRow>
-                                        <TableCell>Tag</TableCell>
-                                        <TableCell>Description</TableCell>
-                                        <TableCell>Type</TableCell>
-                                        <TableCell>Design Pressure</TableCell>
-                                        <TableCell>Relationship</TableCell>
-                                    </TableRow>
-                                </TableHead>
-                                <TableBody>
-                                    {linkedEquipment.map((link) => (
-                                        <TableRow key={link.id}>
-                                            <TableCell>
-                                                <Typography fontWeight={500}>{link.equipment?.tag}</Typography>
-                                            </TableCell>
-                                            <TableCell>{link.equipment?.description}</TableCell>
-                                            <TableCell sx={{ textTransform: 'capitalize' }}>{link.equipment?.type.replace('_', ' ')}</TableCell>
-                                            <TableCell>{link.equipment?.designPressure} barg</TableCell>
-                                            <TableCell sx={{ textTransform: 'capitalize' }}>{link.relationship.replace('_', ' ')}</TableCell>
-                                        </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </TableContainer>
-                    ) : (
-                        <Typography color="text.secondary">No equipment linked</Typography>
-                    )}
-                </CardContent>
-            </Card>
-
-            {/* Tags */}
-            <Card sx={{ gridColumn: { md: 'span 2' } }}>
-                <CardContent>
-                    <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
-                        Tags
-                    </Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-                        {selectedPsv.tags.map((tag) => (
-                            <Chip key={tag} label={tag} variant="outlined" />
-                        ))}
-                        {selectedPsv.tags.length === 0 && (
-                            <Typography color="text.secondary">No tags</Typography>
-                        )}
-                    </Box>
-                </CardContent>
-            </Card>
+            {/* Right Column */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <OperatingConditionsCard psv={selectedPsv} />
+                <TagsCard psv={selectedPsv} />
+            </Box>
         </Box>
     );
 }
@@ -236,7 +134,35 @@ function OverviewTab() {
 function ScenariosTab() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
-    const { scenarioList, selectedPsv } = usePsvStore();
+    const { scenarioList, selectedPsv, addScenario, updateScenario, deleteScenario } = usePsvStore();
+    const [editorOpen, setEditorOpen] = useState(false);
+    const [editingScenario, setEditingScenario] = useState<OverpressureScenario | undefined>(undefined);
+
+    const handleAddScenario = () => {
+        setEditingScenario(undefined);
+        setEditorOpen(true);
+    };
+
+    const handleEditScenario = (scenario: OverpressureScenario) => {
+        setEditingScenario(scenario);
+        setEditorOpen(true);
+    };
+
+    const handleSaveScenario = (scenario: OverpressureScenario) => {
+        if (editingScenario) {
+            updateScenario(scenario);
+        } else {
+            addScenario(scenario);
+        }
+        setEditorOpen(false);
+    };
+
+    const handleDeleteScenario = (id: string) => {
+        if (window.confirm("Are you sure you want to delete this scenario? This action cannot be undone.")) {
+            deleteScenario(id);
+            setEditorOpen(false);
+        }
+    };
 
     const getCauseIcon = (cause: ScenarioCause) => {
         switch (cause) {
@@ -269,10 +195,32 @@ function ScenariosTab() {
                 <Typography variant="h6" fontWeight={600}>
                     Overpressure Scenarios
                 </Typography>
-                <Button variant="contained" startIcon={<Add />} size="small">
+                <Button variant="contained" startIcon={<Add />} size="small" onClick={handleAddScenario}>
                     Add Scenario
                 </Button>
             </Box>
+
+            <Dialog
+                open={editorOpen}
+                onClose={() => setEditorOpen(false)}
+                maxWidth="md"
+                fullWidth
+            >
+                <DialogTitle>
+                    {editingScenario ? "Edit Scenario" : "Add Scenario"}
+                </DialogTitle>
+                <DialogContent dividers>
+                    {selectedPsv && (
+                        <ScenarioEditor
+                            psvId={selectedPsv.id}
+                            initialData={editingScenario}
+                            onSave={handleSaveScenario}
+                            onCancel={() => setEditorOpen(false)}
+                            onDelete={editingScenario ? handleDeleteScenario : undefined}
+                        />
+                    )}
+                </DialogContent>
+            </Dialog>
 
             {scenarioList.length > 0 ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -317,7 +265,7 @@ function ScenariosTab() {
                                         </Box>
                                     </Box>
                                     <Tooltip title="Edit">
-                                        <IconButton size="small">
+                                        <IconButton size="small" onClick={() => handleEditScenario(scenario)}>
                                             <Edit fontSize="small" />
                                         </IconButton>
                                     </Tooltip>
@@ -394,7 +342,7 @@ function ScenariosTab() {
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                         Add overpressure scenarios to size this device
                     </Typography>
-                    <Button variant="contained" startIcon={<Add />}>
+                    <Button variant="contained" startIcon={<Add />} onClick={handleAddScenario}>
                         Add First Scenario
                     </Button>
                 </Paper>
@@ -757,11 +705,11 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
 
 // Attachments Tab Content
 function AttachmentsTab() {
-    const { selectedPsv } = usePsvStore();
+    const { selectedPsv, attachmentList, deleteAttachment } = usePsvStore();
 
     if (!selectedPsv) return null;
 
-    const attachments = getAttachmentsByPsv(selectedPsv.id);
+    const attachments = attachmentList.filter(a => a.protectiveSystemId === selectedPsv.id);
 
     const formatFileSize = (bytes: number) => {
         if (bytes < 1024) return `${bytes} B`;
@@ -777,6 +725,12 @@ function AttachmentsTab() {
             hour: '2-digit',
             minute: '2-digit',
         });
+    };
+
+    const handleDelete = (id: string, name: string) => {
+        if (window.confirm(`Are you sure you want to delete ${name}?`)) {
+            deleteAttachment(id);
+        }
     };
 
     return (
@@ -803,6 +757,11 @@ function AttachmentsTab() {
                                     borderRadius: 2,
                                     mb: 1,
                                 }}
+                                secondaryAction={
+                                    <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(att.id, att.fileName)}>
+                                        <Delete />
+                                    </IconButton>
+                                }
                             >
                                 <ListItemIcon>
                                     <Description color="primary" />
@@ -811,7 +770,7 @@ function AttachmentsTab() {
                                     primary={att.fileName}
                                     secondary={`${formatFileSize(att.size)} • Uploaded ${formatDate(att.createdAt)}`}
                                 />
-                                <Button size="small">Download</Button>
+                                <Button size="small" sx={{ mr: 2 }}>Download</Button>
                             </ListItem>
                         ))}
                     </List>
@@ -828,9 +787,17 @@ function AttachmentsTab() {
 
 // Notes Tab Content (Comments & Todos)
 function NotesTab() {
-    const { selectedPsv } = usePsvStore();
-    const [localTodos, setLocalTodos] = useState<TodoItem[]>([]);
-    const [localComments, setLocalComments] = useState<Comment[]>([]);
+    const {
+        selectedPsv,
+        todoList,
+        commentList,
+        addTodo,
+        deleteTodo,
+        toggleTodo,
+        addComment,
+        deleteComment
+    } = usePsvStore();
+
     const [addTaskOpen, setAddTaskOpen] = useState(false);
     const [addCommentOpen, setAddCommentOpen] = useState(false);
     const [newTaskText, setNewTaskText] = useState('');
@@ -838,15 +805,10 @@ function NotesTab() {
     const [newTaskDueDate, setNewTaskDueDate] = useState('');
     const [newCommentText, setNewCommentText] = useState('');
 
-    // Initialize from mock data
-    useEffect(() => {
-        if (selectedPsv) {
-            setLocalTodos(getTodosByPsv(selectedPsv.id));
-            setLocalComments(getCommentsByPsv(selectedPsv.id));
-        }
-    }, [selectedPsv]);
-
     if (!selectedPsv) return null;
+
+    const filteredTodos = todoList.filter(t => t.protectiveSystemId === selectedPsv.id);
+    const filteredComments = commentList.filter(c => c.protectiveSystemId === selectedPsv.id);
 
     const formatDate = (dateStr: string) => {
         return new Date(dateStr).toLocaleDateString('en-US', {
@@ -854,12 +816,6 @@ function NotesTab() {
             month: 'short',
             day: 'numeric',
         });
-    };
-
-    const handleToggleTodo = (todoId: string) => {
-        setLocalTodos(prev => prev.map(t =>
-            t.id === todoId ? { ...t, completed: !t.completed } : t
-        ));
     };
 
     const handleAddTask = () => {
@@ -879,11 +835,17 @@ function NotesTab() {
             createdBy: 'user-1',
             createdAt: new Date().toISOString(),
         };
-        setLocalTodos(prev => [...prev, newTodo]);
+        addTodo(newTodo);
         setNewTaskText('');
         setNewTaskAssignee('user-1');
         setNewTaskDueDate('');
         setAddTaskOpen(false);
+    };
+
+    const handleDeleteTodo = (id: string) => {
+        if (window.confirm("Are you sure you want to delete this task?")) {
+            deleteTodo(id);
+        }
     };
 
     const handleAddComment = () => {
@@ -895,9 +857,15 @@ function NotesTab() {
             createdBy: 'user-1',
             createdAt: new Date().toISOString(),
         };
-        setLocalComments(prev => [...prev, newComment]);
+        addComment(newComment);
         setNewCommentText('');
         setAddCommentOpen(false);
+    };
+
+    const handleDeleteComment = (id: string) => {
+        if (window.confirm("Are you sure you want to delete this comment?")) {
+            deleteComment(id);
+        }
     };
 
     return (
@@ -913,30 +881,35 @@ function NotesTab() {
                     </Button>
                 </Box>
 
-                {localTodos.length > 0 ? (
+                {filteredTodos.length > 0 ? (
                     <Paper variant="outlined">
                         <List disablePadding>
-                            {localTodos.map((todo, index) => {
+                            {filteredTodos.map((todo, index) => {
                                 const assignee = todo.assignedTo ? getUserById(todo.assignedTo) : null;
                                 return (
                                     <ListItem
                                         key={todo.id}
-                                        divider={index < localTodos.length - 1}
+                                        divider={index < filteredTodos.length - 1}
                                         secondaryAction={
-                                            todo.dueDate && (
-                                                <Chip
-                                                    label={formatDate(todo.dueDate)}
-                                                    size="small"
-                                                    color={new Date(todo.dueDate) < new Date() && !todo.completed ? 'error' : 'default'}
-                                                    variant="outlined"
-                                                />
-                                            )
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                {todo.dueDate && (
+                                                    <Chip
+                                                        label={formatDate(todo.dueDate)}
+                                                        size="small"
+                                                        color={new Date(todo.dueDate) < new Date() && !todo.completed ? 'error' : 'default'}
+                                                        variant="outlined"
+                                                    />
+                                                )}
+                                                <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteTodo(todo.id)}>
+                                                    <Delete />
+                                                </IconButton>
+                                            </Box>
                                         }
                                     >
                                         <ListItemIcon>
                                             <Checkbox
                                                 checked={todo.completed}
-                                                onChange={() => handleToggleTodo(todo.id)}
+                                                onChange={() => toggleTodo(todo.id)}
                                             />
                                         </ListItemIcon>
                                         <ListItemText
@@ -971,20 +944,25 @@ function NotesTab() {
                     </Button>
                 </Box>
 
-                {localComments.length > 0 ? (
+                {filteredComments.length > 0 ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        {localComments.map((comment) => {
+                        {filteredComments.map((comment) => {
                             const author = getUserById(comment.createdBy);
                             return (
                                 <Card key={comment.id} variant="outlined">
-                                    <CardContent>
+                                    <CardContent sx={{ pb: '16px !important' }}>
                                         <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
-                                            <Typography variant="subtitle2" fontWeight={600}>
-                                                {author?.name || 'Unknown'}
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {formatDate(comment.createdAt)}
-                                            </Typography>
+                                            <Box>
+                                                <Typography variant="subtitle2" fontWeight={600}>
+                                                    {author?.name || 'Unknown'}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {formatDate(comment.createdAt)}
+                                                </Typography>
+                                            </Box>
+                                            <IconButton size="small" onClick={() => handleDeleteComment(comment.id)}>
+                                                <Delete fontSize="small" />
+                                            </IconButton>
                                         </Box>
                                         <Typography variant="body2">{comment.body}</Typography>
                                     </CardContent>
@@ -1075,8 +1053,16 @@ function NotesTab() {
 export function ProtectiveSystemDetail() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
-    const { selectedPsv, activeTab, setActiveTab, selectPsv, updateSizingCase, sizingCaseList, updatePsv, deleteSizingCase } = usePsvStore();
+    const { selectedPsv, activeTab, setActiveTab, selectPsv, updateSizingCase, sizingCaseList, updatePsv, deleteSizingCase, deletePsv } = usePsvStore();
     const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
+
+    const [statusMenuAnchor, setStatusMenuAnchor] = useState<null | HTMLElement>(null);
+
+    const [editPsvOpen, setEditPsvOpen] = useState(false);
+    const [editTag, setEditTag] = useState('');
+    const [editName, setEditName] = useState('');
 
     // If editing a case, show the workspace
     if (editingCaseId) {
@@ -1116,14 +1102,90 @@ export function ProtectiveSystemDetail() {
         return null;
     }
 
+
+
+
+
+    const handleEditClick = () => {
+        if (selectedPsv) {
+            setEditTag(selectedPsv.tag);
+            setEditName(selectedPsv.name);
+            setEditPsvOpen(true);
+        }
+    };
+
+    const handleSavePsv = () => {
+        if (selectedPsv && editTag.trim()) {
+            updatePsv({
+                ...selectedPsv,
+                tag: editTag.trim(),
+                name: editName.trim(),
+            });
+            setEditPsvOpen(false);
+        }
+    };
+
+    const handleDeletePsv = () => {
+        setDeleteDialogOpen(true);
+    };
+
+    const handleConfirmDelete = () => {
+        if (selectedPsv && deleteConfirmationInput === selectedPsv.tag) {
+            deletePsv(selectedPsv.id);
+        }
+    };
+
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
         setActiveTab(newValue);
     };
 
+    const handleStatusClick = (event: MouseEvent<HTMLElement>) => {
+        setStatusMenuAnchor(event.currentTarget);
+    };
+
+    const handleStatusClose = () => {
+        setStatusMenuAnchor(null);
+    };
+
+    const handleStatusChange = (status: ProtectiveSystem['status']) => {
+        if (selectedPsv) {
+            updatePsv({ ...selectedPsv, status });
+        }
+        handleStatusClose();
+    };
+
+    const getStatusColor = (status: string) => {
+        switch (status) {
+            case 'approved': return 'success';
+            case 'issued': return 'info';
+            case 'in_review': return 'warning';
+            default: return 'default';
+        }
+    };
+
+    const getStatusIcon = (status: string) => {
+        switch (status) {
+            case 'approved': return <CheckCircleOutline fontSize="small" />;
+            case 'issued': return <PublishedWithChanges fontSize="small" />;
+            case 'in_review': return <RateReview fontSize="small" />;
+            default: return <Drafts fontSize="small" />;
+        }
+    };
+
+    const getStatusLabel = (status: string) => {
+        switch (status) {
+            case 'in_review': return 'In Review';
+            case 'issued': return 'Issued';
+            case 'approved': return 'Approved';
+            case 'draft': return 'Draft';
+            default: return status;
+        }
+    }
+
     return (
         <Box>
             {/* Header */}
-            <Paper sx={{ p: 3, mb: 3 }}>
+            <Paper className="print-hide" sx={{ p: 3, mb: 3 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                     <Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
@@ -1131,23 +1193,138 @@ export function ProtectiveSystemDetail() {
                                 {selectedPsv.tag}
                             </Typography>
                             <Chip
-                                label={selectedPsv.status.replace('_', ' ')}
-                                color={selectedPsv.status === 'approved' || selectedPsv.status === 'issued' ? 'success' : selectedPsv.status === 'in_review' ? 'warning' : 'default'}
-                                sx={{ textTransform: 'capitalize' }}
+                                icon={getStatusIcon(selectedPsv.status)}
+                                label={getStatusLabel(selectedPsv.status)}
+                                color={getStatusColor(selectedPsv.status) as any}
+                                onClick={handleStatusClick}
+                                deleteIcon={<KeyboardArrowDown />}
+                                onDelete={handleStatusClick} // Shows the arrow and makes it clickable
+                                sx={{
+                                    textTransform: 'capitalize',
+                                    fontWeight: 600,
+                                    pl: 0.5,
+                                    '& .MuiChip-deleteIcon': {
+                                        color: 'inherit',
+                                        opacity: 0.7
+                                    }
+                                }}
                             />
+                            <Menu
+                                anchorEl={statusMenuAnchor}
+                                open={Boolean(statusMenuAnchor)}
+                                onClose={handleStatusClose}
+                                TransitionComponent={Fade}
+                            >
+                                <MenuItem onClick={() => handleStatusChange('draft')} selected={selectedPsv.status === 'draft'}>
+                                    <ListItemIcon><Drafts fontSize="small" /></ListItemIcon>
+                                    <ListItemText>Draft</ListItemText>
+                                </MenuItem>
+                                <MenuItem onClick={() => handleStatusChange('in_review')} selected={selectedPsv.status === 'in_review'}>
+                                    <ListItemIcon><RateReview fontSize="small" sx={{ color: 'warning.main' }} /></ListItemIcon>
+                                    <ListItemText>In Review</ListItemText>
+                                </MenuItem>
+                                <MenuItem onClick={() => handleStatusChange('approved')} selected={selectedPsv.status === 'approved'}>
+                                    <ListItemIcon><CheckCircleOutline fontSize="small" sx={{ color: 'success.main' }} /></ListItemIcon>
+                                    <ListItemText>Approved</ListItemText>
+                                </MenuItem>
+                                <MenuItem onClick={() => handleStatusChange('issued')} selected={selectedPsv.status === 'issued'}>
+                                    <ListItemIcon><PublishedWithChanges fontSize="small" sx={{ color: 'info.main' }} /></ListItemIcon>
+                                    <ListItemText>Issued</ListItemText>
+                                </MenuItem>
+                            </Menu>
                         </Box>
                         <Typography variant="body1" color="text.secondary">
                             {selectedPsv.name}
                         </Typography>
                     </Box>
-                    <Button variant="outlined" onClick={() => selectPsv(null)}>
-                        Close
-                    </Button>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                            variant="outlined"
+                            startIcon={<Edit />}
+                            onClick={handleEditClick}
+                        >
+                            Edit
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            color="error"
+                            startIcon={<Delete />}
+                            onClick={handleDeletePsv}
+                        >
+                            Delete
+                        </Button>
+                        <Button variant="outlined" onClick={() => selectPsv(null)}>
+                            Close
+                        </Button>
+                    </Box>
                 </Box>
             </Paper>
 
+            {/* Edit PSV Dialog */}
+            <Dialog open={editPsvOpen} onClose={() => setEditPsvOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Edit Protective System</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        fullWidth
+                        label="Tag"
+                        value={editTag}
+                        onChange={(e) => setEditTag(e.target.value)}
+                        sx={{ mt: 2, mb: 2 }}
+                    />
+                    <TextField
+                        fullWidth
+                        label="Description/Name"
+                        value={editName}
+                        onChange={(e) => setEditName(e.target.value)}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setEditPsvOpen(false)}>Cancel</Button>
+                    <Button variant="contained" onClick={handleSavePsv} disabled={!editTag.trim()}>
+                        Save
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+                <DialogTitle>Delete Protective System?</DialogTitle>
+                <DialogContent>
+                    <DialogContentText sx={{ mb: 2 }}>
+                        This action cannot be undone. This will permanently delete the protective system
+                        <strong> {selectedPsv.tag} </strong> and all associated scenarios and sizing cases.
+                    </DialogContentText>
+                    <Typography variant="body2" gutterBottom>
+                        Please type <strong>{selectedPsv.tag}</strong> to confirm.
+                    </Typography>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        fullWidth
+                        variant="outlined"
+                        value={deleteConfirmationInput}
+                        onChange={(e) => setDeleteConfirmationInput(e.target.value)}
+                        placeholder={selectedPsv.tag}
+                        size="small"
+                        sx={{ mt: 1 }}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={handleConfirmDelete}
+                        disabled={deleteConfirmationInput !== selectedPsv.tag}
+                    >
+                        Delete
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
             {/* Tabs */}
-            <Paper sx={{ mb: 3 }}>
+            <Paper className="print-hide" sx={{ mb: 3 }}>
                 <Tabs
                     value={activeTab}
                     onChange={handleTabChange}
@@ -1166,6 +1343,7 @@ export function ProtectiveSystemDetail() {
                     <Tab label="Sizing" />
                     <Tab label="Notes" />
                     <Tab label="Attachments" />
+                    <Tab label="Summary" />
                 </Tabs>
             </Paper>
 
@@ -1184,6 +1362,9 @@ export function ProtectiveSystemDetail() {
             </TabPanel>
             <TabPanel value={activeTab} index={4}>
                 <AttachmentsTab />
+            </TabPanel>
+            <TabPanel value={activeTab} index={5}>
+                <SummaryTab />
             </TabPanel>
         </Box>
     );

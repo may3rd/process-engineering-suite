@@ -258,3 +258,85 @@ CREATE INDEX idx_sizing_scenario ON sizing_cases(scenario_id);
 - **UUIDs**: Use `gen_random_uuid()` for ID generation
 - **Soft Delete**: Consider adding `deleted_at` column for soft deletes
 - **Audit Trail**: Consider `created_by`/`updated_by` for audit logging
+
+---
+
+## JSONB Structure: SizingInputs
+
+The `sizing_cases.inputs` JSONB column contains the following structure (as of Dec 2025):
+
+### Common Fields (All Methods)
+```json
+{
+  "massFlowRate": number,        // kg/h (base unit)
+  "temperature": number,          // °C (base unit)
+  "pressure": number,             // barg (base unit)
+  "backpressure": number,         // barg
+  "backpressureType": "superimposed" | "built_up"
+}
+```
+
+### Gas/Vapor Phase Properties
+**Used by:** `gas`, `steam`, `two_phase`
+```json
+{
+  "molecularWeight": number,      // g/mol (default 18.02 for steam)
+  "compressibilityZ": number,     // dimensionless (0-2)
+  "specificHeatRatio": number,    // k = Cp/Cv (1-2)
+  "gasViscosity": number          // cP (optional)
+}
+```
+
+### Liquid Phase Properties
+**Used by:** `liquid`, `two_phase`
+```json
+{
+  "liquidDensity": number,        // kg/m³
+  "liquidViscosity": number       // cP
+}
+```
+
+### Two-Phase Specific
+**Used by:** `two_phase` only
+```json
+{
+  "vaporFraction": number         // Mass vapor fraction 0-1 (aka quality x)
+}
+```
+
+### Backward Compatibility Fields
+**Deprecated but supported:**
+```json
+{
+  "viscosity": number,            // Mapped to gasViscosity or liquidViscosity
+  "density": number               // Mapped to liquidDensity
+}
+```
+
+### Hydraulic Validation (Optional)
+```json
+{
+  "backpressureSource": "manual" | "calculated",
+  "calculatedBackpressure": number,  // barg (if calculated from outlet network)
+  "inletPressureDrop": number        // kPa
+}
+```
+
+### Complete Example: Two-Phase Case
+```json
+{
+  "massFlowRate": 85000,
+  "temperature": 180,
+  "pressure": 2.8,
+  "molecularWeight": 44,
+  "compressibilityZ": 0.92,
+  "specificHeatRatio": 1.15,
+  "gasViscosity": 0.012,
+  "liquidDensity": 850,
+  "liquidViscosity": 1.2,
+  "vaporFraction": 0.25,
+  "backpressure": 0.5,
+  "backpressureType": "superimposed"
+}
+```
+

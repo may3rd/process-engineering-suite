@@ -57,7 +57,7 @@ import { PipeProps, NodeProps } from '@eng-suite/physics';
 export type { PipeProps, NodeProps };
 
 // Protective system types
-export type ProtectiveSystemType = 'psv' | 'rupture_disc' | 'vent_system' | 'prv';
+export type ProtectiveSystemType = 'psv' | 'rupture_disc' | 'breather_valve' | 'flame_arrestor' | 'tank_vent' | 'control_valve' | 'vent_system' | 'prv';
 export type DesignCode = 'API-520' | 'API-521' | 'API-2000' | 'ASME-VIII';
 export type FluidPhase = 'gas' | 'liquid' | 'steam' | 'two_phase';
 
@@ -120,19 +120,35 @@ export type SizingMethod = 'gas' | 'liquid' | 'steam' | 'two_phase';
 
 export interface SizingInputs {
     massFlowRate: number; // kg/h
+
+    // Gas/Vapor phase properties (for gas, steam, and gas phase of two-phase)
     molecularWeight: number;
-    temperature: number; // °C
-    pressure: number; // barg
     compressibilityZ: number;
     specificHeatRatio: number; // k = Cp/Cv
-    viscosity?: number; // cP (for liquids)
-    density?: number; // kg/m³ (for liquids)
+    gasViscosity?: number; // cP (for gas phase)
+
+    // Liquid phase properties (for liquid and liquid phase of two-phase)
+    liquidDensity?: number; // kg/m³
+    liquidViscosity?: number; // cP
+
+    // Two-phase properties
+    vaporFraction?: number; // Mass vapor fraction (0-1), aka quality (x)
+
+    // Common properties
+    temperature: number; // °C
+    pressure: number; // barg
     backpressure: number; // barg
     backpressureType: 'superimposed' | 'built_up';
-    // Hydraulic validation fields
-    backpressureSource?: 'manual' | 'calculated'; // Toggle mode for built-up backpressure
-    inletPressureDrop?: number; // Calculated inlet ΔP in kPa
-    calculatedBackpressure?: number; // Calculated from outlet network, barg
+
+    // Backward compatibility - these map to appropriate phase properties
+    viscosity?: number; // Deprecated: use gasViscosity or liquidViscosity
+    density?: number; // Deprecated: use liquidDensity
+
+    // Hydraulic validation inputs
+    backpressureSource?: 'manual' | 'calculated';
+    calculatedBackpressure?: number;  // barg - calculated from outlet network
+    destinationPressure?: number;  // barg - destination pressure for backward calculation
+    inletPressureDrop?: number;  // kPa - calculated from inlet network
 }
 
 export interface SizingOutputs {
@@ -147,13 +163,19 @@ export interface SizingOutputs {
     isCriticalFlow: boolean;
     numberOfValves: number; // Number of parallel valves (default: 1)
     messages: string[];
-    // Hydraulic validation results
+
+    // Hydraulic validation outputs
+    inletPressureDrop?: number; // kPa - actual pressure drop value
     inletPressureDropPercent?: number; // % of set pressure
     inletValidation?: {
         isValid: boolean;
         message: string;
         severity: 'success' | 'warning' | 'error';
     };
+
+    // Outlet hydraulic outputs
+    builtUpBackpressure?: number; // kPa - calculated from outlet piping
+    outletPressureDrop?: number;  // kPa - total pressure drop in outlet piping
 }
 // Unit preferences for user display
 export interface UnitPreferences {

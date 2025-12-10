@@ -33,7 +33,13 @@ export function ProtectiveSystemList() {
             case 'rupture_disc':
                 return <Adjust />;
             case 'vent_system':
+            case 'tank_vent':
+            case 'breather_valve':
                 return <Air />;
+            case 'flame_arrestor':
+                return <Security />; // Placeholder
+            case 'control_valve':
+                return <Adjust />; // Placeholder
             default:
                 return <Security />;
         }
@@ -47,24 +53,27 @@ export function ProtectiveSystemList() {
                 return 'Rupture Disc';
             case 'vent_system':
                 return 'Vent System';
+            case 'tank_vent':
+                return 'Tank Vent';
+            case 'breather_valve':
+                return 'Breather Valve';
+            case 'flame_arrestor':
+                return 'Flame Arrestor';
+            case 'control_valve':
+                return 'Control Valve';
             case 'prv':
                 return 'PRV';
             default:
-                return type;
+                return (type as string).replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
         }
     };
 
     const getStatusColor = (status: string): "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" => {
         switch (status) {
-            case 'approved':
-            case 'issued':
-                return 'success';
-            case 'in_review':
-                return 'warning';
-            case 'draft':
-                return 'info';
-            default:
-                return 'default';
+            case 'approved': return 'success';
+            case 'issued': return 'info';
+            case 'in_review': return 'warning';
+            default: return 'default';
         }
     };
 
@@ -202,7 +211,7 @@ export function ProtectiveSystemList() {
                                         </IconButton>
                                     </Tooltip>
                                     <Tooltip title="Edit">
-                                        <IconButton size="small" onClick={(e) => e.stopPropagation()}>
+                                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); selectPsv(psv.id); }}>
                                             <Edit fontSize="small" />
                                         </IconButton>
                                     </Tooltip>

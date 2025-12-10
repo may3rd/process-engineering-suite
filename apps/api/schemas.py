@@ -221,6 +221,7 @@ class LengthEstimationRequest(BaseModel):
     tolerance: Optional[float] = 10.0  # Pa
 
 
+
 class LengthEstimationResponse(BaseModel):
     """Response from length estimation."""
     pipeId: str
@@ -230,3 +231,58 @@ class LengthEstimationResponse(BaseModel):
     converged: bool = False
     finalError: Optional[float] = None  # Pa
     iterations: int = 0
+
+
+# --- Network Schemas ---
+
+class NetworkPressureDropRequest(BaseModel):
+    """Request for network calculation."""
+    name: str = "network"
+    fluid: FluidRequest
+    # List of pipes. Topology is inferred from startNodeId/endNodeId
+    sections: List[PipeSectionRequest]
+    
+    # Boundary Conditions
+    # One of these pressure overrides (or use per-pipe)
+    boundaryPressure: Optional[float] = None
+    boundaryPressureUnit: Optional[str] = "kPa"
+    
+    boundaryTemperature: Optional[float] = None
+    boundaryTemperatureUnit: Optional[str] = "K"
+    
+    massFlowRate: Optional[float] = None
+    massFlowRateUnit: Optional[str] = "kg/h"
+    
+    direction: Optional[str] = "auto"  # "forward", "backward", "auto"
+    gasFlowModel: Optional[str] = "isothermal"
+
+
+class NetworkPressureDropResponse(BaseModel):
+    """Network calculation results."""
+    success: bool
+    error: Optional[str] = None
+    totalPressureDrop: Optional[float] = None  # Pa
+    inletPressure: Optional[float] = None  # Pa
+    outletPressure: Optional[float] = None  # Pa
+    results: List[CalculationResponse] = []
+
+
+class InletValidationRequest(NetworkPressureDropRequest):
+    """Request specifically for PSV inlet validation."""
+    psvSetPressure: float
+    psvSetPressureUnit: Optional[str] = "barg"
+
+
+class InletValidationResponse(BaseModel):
+    """Response for inlet validation."""
+    success: bool
+    error: Optional[str] = None
+    isValid: bool
+    inletPressureDrop: float  # Pa
+    inletPressureDropPercent: float  # %
+    message: str
+    severity: str  # "success", "warning", "error"
+    totalPressureDrop: Optional[float] = None  # Pa
+    results: List[CalculationResponse] = []
+
+

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Box,
     Paper,
@@ -17,6 +17,11 @@ import {
     Chip,
     Switch,
     FormControlLabel,
+    Radio,
+    RadioGroup,
+    FormControl,
+    FormLabel,
+    Tooltip,
     LinearProgress,
     List,
     ListItem,
@@ -29,22 +34,23 @@ import {
     DialogContent,
     DialogContentText,
     DialogActions,
-    Tooltip,
-    RadioGroup,
-    Radio,
-    FormControl,
-    FormLabel,
 } from "@mui/material";
 import {
     ArrowBack,
     Info,
     CheckCircle,
     Warning,
+    Error as ErrorIcon,
     Download,
     Calculate,
     Delete,
     Settings,
     HelpOutline,
+    CloudDone,
+    CloudOff,
+    Speed,
+    Straighten,
+    Timeline,
 } from "@mui/icons-material";
 import { SizingCase, PipelineNetwork, PipeProps, ORIFICE_SIZES, SizingInputs, UnitPreferences } from "@/data/types";
 import { PipelineDataGrid } from "./PipelineDataGrid";
@@ -52,10 +58,22 @@ import { v4 as uuidv4 } from "uuid";
 import { calculateSizing } from "@/lib/psvSizing";
 import { useUnitConversion, UnitType } from "@/hooks/useUnitConversion";
 import {
-    calculateNetworkPressureDrop,
+    checkAPIHealth,
+    validateInletPressureDropAPI,
+    calculateNetworkPressureDropAPI,
+    type FluidProperties
+} from "@/lib/apiClient";
+import {
     validateInletPressureDrop,
-    calculateBuiltUpBackpressure
+    calculateNetworkPressureDrop,
 } from "@/lib/hydraulicValidation";
+import {
+    validateSizingInputs,
+    getFieldLabel,
+    type ValidationResult,
+    type ValidationError
+} from "@/lib/inputValidation";
+import { convertUnit } from "@eng-suite/physics/unitConversion";
 
 interface SizingWorkspaceProps {
     sizingCase: SizingCase;
@@ -65,7 +83,6 @@ interface SizingWorkspaceProps {
     onSave: (updatedCase: SizingCase) => void;
     onSaveNetworks?: (inlet: PipelineNetwork | undefined, outlet: PipelineNetwork | undefined) => void;
     psvTag?: string;
-    psvSetPressure: number; // Set pressure in barg
     onDelete?: () => void;
 }
 
@@ -93,23 +110,13 @@ function TabPanel(props: TabPanelProps) {
 }
 
 // Unit options for different fields
-const PRESSURE_UNITS = ['barg', 'bara', 'psig', 'psia', 'kPa'];
-const TEMPERATURE_UNITS = ['°C', '°F', 'K'];
+const PRESSURE_UNITS = ['barg', 'bara', 'kPag', 'kg_cm2g', 'psig', 'psia', 'kPa'];
+const TEMPERATURE_UNITS = ['C', 'F', 'K'];  // No ° symbol for convertUnit compatibility
 const FLOW_UNITS = ['kg/h', 'lb/h', 'kg/s'];
-const VISCOSITY_UNITS = ['cP', 'mPa·s', 'Pa·s'];
+const VISCOSITY_UNITS = ['cP', 'Pa·s'];
 const DENSITY_UNITS = ['kg/m³', 'lb/ft³'];
 
-export function SizingWorkspace({
-    sizingCase,
-    inletNetwork,
-    outletNetwork,
-    onClose,
-    onSave,
-    onSaveNetworks,
-    psvTag,
-    psvSetPressure,
-    onDelete
-}: SizingWorkspaceProps) {
+export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClose, onSave, onSaveNetworks, psvTag, onDelete }: SizingWorkspaceProps) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const [activeTab, setActiveTab] = useState(0);
@@ -121,6 +128,7 @@ export function SizingWorkspace({
     // Always start fresh - user must calculate in this session
     const [isDirty, setIsDirty] = useState(false);
     const [isCalculated, setIsCalculated] = useState(false);
+    const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
 
     // Multiple valve support
     const [numberOfValves, setNumberOfValves] = useState(sizingCase.outputs.numberOfValves || 1);
@@ -129,11 +137,19 @@ export function SizingWorkspace({
     const [localInletNetwork, setLocalInletNetwork] = useState<PipelineNetwork | undefined>(inletNetwork);
     const [localOutletNetwork, setLocalOutletNetwork] = useState<PipelineNetwork | undefined>(outletNetwork);
 
+    // API health state
+    const [apiHealthy, setApiHealthy] = useState(false);
+
+    // Check API health on mount
+    useEffect(() => {
+        checkAPIHealth().then(setApiHealthy);
+    }, []);
+
     // Unit state
     // Unit Conversion Hook
     const defaultPreferences: UnitPreferences = {
         pressure: 'barg',
-        temperature: '°C',
+        temperature: 'C',  // No ° symbol for convertUnit compatibility
         flow: 'kg/h',
         length: 'm',
         area: 'mm²',
@@ -141,13 +157,28 @@ export function SizingWorkspace({
         viscosity: 'cP',
     };
 
-    const { preferences, setUnit, toDisplay, toBase } = useUnitConversion(sizingCase.unitPreferences || defaultPreferences);
+    const { preferences, setUnit, toDisplay, toDisplayDelta, getDeltaUnit, toBase } = useUnitConversion(sizingCase.unitPreferences || defaultPreferences);
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
 
+    // Auto-fill molecular weight for steam (H₂O = 18.01528 g/mol)
+    useEffect(() => {
+        if (currentCase.method === 'steam' && currentCase.inputs.molecularWeight !== 18.01528) {
+            setCurrentCase({
+                ...currentCase,
+                inputs: {
+                    ...currentCase.inputs,
+                    molecularWeight: 18.01528,
+                },
+            });
+            setIsDirty(true);
+        }
+    }, [currentCase.method]);
+
+
     const handleConfirmDelete = () => {
-        if (deleteConfirmationInput === psvTag) {
+        if (deleteConfirmationInput === "delete sizing case") {
             onDelete?.();
         }
     };
@@ -189,6 +220,7 @@ export function SizingWorkspace({
         // Mark as dirty and needs recalculation
         setIsDirty(true);
         setIsCalculated(false);
+        setValidationResult(null); // Clear any previous validation errors
     };
 
     // Handle orifice selection
@@ -289,73 +321,181 @@ export function SizingWorkspace({
 
     // Calculate using API-520/521 equations
     const handleCalculate = async () => {
+        // Validate inputs first
+        const validation = validateSizingInputs(currentCase.method, currentCase.inputs);
+        setValidationResult(validation);
+
+        if (!validation.isValid) {
+            // Don't proceed with calculation if validation fails
+            return;
+        }
+
         setIsCalculating(true);
 
         // Small delay for UI feedback
         await new Promise(resolve => setTimeout(resolve, 100));
 
         try {
-            // Step 1: Calculate hydraulic validation
-            const fluidProps = {
-                phase: currentCase.method as 'gas' | 'liquid' | 'steam' | 'two_phase',
+            // Common fluid properties for validation
+            const fluid: FluidProperties = {
+                phase: currentCase.method === 'gas' ? 'gas' :
+                    currentCase.method === 'liquid' ? 'liquid' :
+                        currentCase.method === 'two_phase' ? 'two_phase' : 'gas',
                 temperature: currentCase.inputs.temperature,
                 pressure: currentCase.inputs.pressure,
-                density: currentCase.inputs.density,
-                viscosity: currentCase.inputs.viscosity,
                 molecularWeight: currentCase.inputs.molecularWeight,
                 compressibilityZ: currentCase.inputs.compressibilityZ,
+                specificHeatRatio: currentCase.inputs.specificHeatRatio,
+                gasViscosity: currentCase.inputs.gasViscosity || currentCase.inputs.viscosity,
+                liquidDensity: currentCase.inputs.liquidDensity || currentCase.inputs.density,
+                liquidViscosity: currentCase.inputs.liquidViscosity || currentCase.inputs.viscosity,
             };
 
-            // Calculate inlet pressure drop
-            const inletResult = calculateNetworkPressureDrop(
-                inletNetwork,
-                currentCase.inputs.massFlowRate,
-                fluidProps
-            );
+            // Prepare inputs for sizing (may be updated by hydraulic calcs)
+            let updatedInputs = { ...currentCase.inputs };
 
-            // Validate inlet ΔP against API 520 3% guideline
-            const inletValidation = validateInletPressureDrop(
-                inletResult.totalPressureDrop,
-                psvSetPressure
-            );
+            // === PHASE 1: Inlet Pressure Drop Validation ===
+            let inletValidation;
+            let outletDropKPa: number | undefined;
 
-            // Calculate built-up backpressure if mode is 'calculated'
-            let backpressureToUse = currentCase.inputs.backpressure;
-            let calculatedBackpressure = currentCase.inputs.calculatedBackpressure;
+            if (localInletNetwork && localInletNetwork.pipes && localInletNetwork.pipes.length > 0) {
+                // Try API first (default), fallback to local
+                if (apiHealthy) {
+                    console.log('🌐 Using Python API for inlet validation (default)');
+                    inletValidation = await validateInletPressureDropAPI({
+                        inletNetwork: localInletNetwork,
+                        psvSetPressure: currentCase.inputs.pressure,
+                        massFlowRate: currentCase.inputs.massFlowRate,
+                        fluid: fluid as any
+                    });
 
-            if (currentCase.inputs.backpressureSource === 'calculated') {
-                calculatedBackpressure = calculateBuiltUpBackpressure(
-                    outletNetwork,
-                    currentCase.inputs.massFlowRate,
-                    fluidProps
-                );
-                backpressureToUse = calculatedBackpressure;
+                    // If API fails, fallback to local
+                    if (!inletValidation.success) {
+                        console.warn('⚠️ API failed, falling back to local calculation');
+                        const localDrop = calculateNetworkPressureDrop(
+                            localInletNetwork,
+                            currentCase.inputs.massFlowRate,
+                            fluid
+                        );
+                        inletValidation = validateInletPressureDrop(
+                            localDrop,
+                            currentCase.inputs.pressure
+                        );
+                    }
+                } else {
+                    console.log('📊 API unavailable, using local calculation');
+                    const localDrop = calculateNetworkPressureDrop(
+                        localInletNetwork,
+                        currentCase.inputs.massFlowRate,
+                        fluid
+                    );
+                    inletValidation = validateInletPressureDrop(
+                        localDrop,
+                        currentCase.inputs.pressure
+                    );
+                }
             }
 
-            // Step 2: Run API-520/521 calculation with updated backpressure
-            const updatedInputs = {
-                ...currentCase.inputs,
-                backpressure: backpressureToUse,
-                inletPressureDrop: inletResult.totalPressureDrop,
-                calculatedBackpressure,
+            // === PHASE 2: Outlet Backpressure Calculation ===
+            // Only calculate if mode is 'calculated' AND we have pipes
+            if (currentCase.inputs.backpressureSource === 'calculated' && localOutletNetwork && localOutletNetwork.pipes && localOutletNetwork.pipes.length > 0) {
+                let calculatedBackpressure: number | undefined; // barg
+
+                try {
+                    if (apiHealthy) {
+                        console.log('🌐 Using Python API for outlet pressure drop');
+                        const apiResult = await calculateNetworkPressureDropAPI({
+                            network: localOutletNetwork,
+                            massFlowRate: currentCase.inputs.massFlowRate,
+                            fluid: fluid as any,
+                            boundaryPressure: currentCase.inputs.destinationPressure || 0,
+                            boundaryPressureUnit: 'barg',
+                            direction: 'backward',
+                        });
+
+                        if (apiResult.success && typeof apiResult.totalPressureDrop === 'number') {
+                            outletDropKPa = convertUnit(apiResult.totalPressureDrop, 'Pa', 'kPa');
+                        } else {
+                            console.warn('⚠️ Outlet API failed, falling back to local calculation');
+                        }
+                    }
+
+                    if (outletDropKPa === undefined) {
+                        console.log('📊 Using local outlet pressure drop calculation');
+                        outletDropKPa = calculateNetworkPressureDrop(
+                            localOutletNetwork,
+                            currentCase.inputs.massFlowRate,
+                            fluid
+                        );
+                    }
+
+                    if (outletDropKPa !== undefined) {
+                        calculatedBackpressure = (currentCase.inputs.destinationPressure || 0) + (outletDropKPa / 100);
+
+                        // Update inputs for the main sizing calculation
+                        updatedInputs = {
+                            ...updatedInputs,
+                            backpressure: calculatedBackpressure,
+                            calculatedBackpressure,
+                            backpressureType: 'built_up' // Auto-set to built-up since we calculated it
+                        };
+                    }
+                } catch (err) {
+                    console.error("Error calculating backpressure:", err);
+                }
+            }
+
+            // === PHASE 3: Run PSV Sizing Calculation ===
+            const baseOutputs = calculateSizing(updatedInputs, currentCase.method);
+
+            // Adjust outputs for multiple valves
+            const outputs = {
+                ...baseOutputs,
+                percentUsed: (baseOutputs.requiredArea / (numberOfValves * baseOutputs.orificeArea)) * 100,
+                ratedCapacity: baseOutputs.ratedCapacity * numberOfValves,
+                numberOfValves: numberOfValves, // Ensure this is saved
             };
 
-            const outputs = calculateSizing(updatedInputs, currentCase.method);
+            // === PHASE 4: Merge validation results with outputs ===
+            // Calculate actual pressure drops for display
+            // IMPORTANT: All pressure values must be in barg (base unit) for toDisplay() to work correctly
+            let inletPressureDropBarg: number | undefined;
+            let outletPressureDropBarg: number | undefined;
+            let builtUpBackpressureBarg: number | undefined;
 
-            // Step 3: Add hydraulic validation results to outputs
+            // Get inlet pressure drop in barg
+            if (inletValidation?.inletPressureDropPercent !== undefined && currentCase.inputs.pressure) {
+                // percent = (drop / setPressure) * 100
+                // So drop (barg) = percent * setPressure (barg) / 100
+                inletPressureDropBarg = (inletValidation.inletPressureDropPercent * currentCase.inputs.pressure) / 100;
+            }
+
+            // Get outlet pressure drop and backpressure
+            if (currentCase.inputs.backpressureSource === 'calculated' && localOutletNetwork?.pipes?.length && outletDropKPa !== undefined) {
+                // Convert kPa to bar (1 bar = 100 kPa)
+                outletPressureDropBarg = outletDropKPa / 100;
+
+                // Total Backpressure = Destination Pressure + Outlet Pressure Drop
+                // Both values are in barg
+                builtUpBackpressureBarg = (currentCase.inputs.destinationPressure || 0) + outletPressureDropBarg;
+            }
+
             const finalOutputs = {
                 ...outputs,
-                inletPressureDropPercent: inletValidation.percentOfSetPressure,
-                inletValidation: {
+                inletPressureDrop: inletPressureDropBarg,
+                inletPressureDropPercent: inletValidation?.inletPressureDropPercent,
+                inletValidation: inletValidation ? {
                     isValid: inletValidation.isValid,
                     message: inletValidation.message,
                     severity: inletValidation.severity,
-                },
+                } : undefined,
+                outletPressureDrop: outletPressureDropBarg,
+                builtUpBackpressure: builtUpBackpressureBarg,
             };
 
             setCurrentCase({
                 ...currentCase,
-                inputs: updatedInputs,
+                inputs: updatedInputs, // Save updated inputs (backpressure)
                 outputs: finalOutputs,
                 status: 'calculated',
                 updatedAt: new Date().toISOString(),
@@ -403,7 +543,7 @@ export function SizingWorkspace({
     const isLiquidOrTwoPhase = currentCase.method === 'liquid' || currentCase.method === 'two_phase';
 
     return (
-        <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
+        <Box sx={{ height: '100vh - 20', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
             {/* Toolbar */}
             <Paper square sx={{ px: 3, py: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: 1, borderColor: 'divider' }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
@@ -426,6 +566,15 @@ export function SizingWorkspace({
                             variant="outlined"
                         />
                     )}
+                    <Tooltip title={apiHealthy ? 'Python API Connected' : 'Using Local Calculations'}>
+                        <Chip
+                            icon={apiHealthy ? <CloudDone /> : <CloudOff />}
+                            label={apiHealthy ? 'API' : 'Local'}
+                            size="small"
+                            color={apiHealthy ? 'success' : 'default'}
+                            variant="outlined"
+                        />
+                    </Tooltip>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                     <Button variant="outlined" onClick={onClose}>
@@ -453,6 +602,44 @@ export function SizingWorkspace({
                 </Box>
             </Paper>
 
+            {/* Validation Errors/Warnings */}
+            {validationResult && !validationResult.isValid && (
+                <Alert
+                    severity="error"
+                    sx={{ mt: 1, mx: 2 }}
+                    onClose={() => setValidationResult(null)}
+                >
+                    <Typography variant="subtitle2" fontWeight={600}>
+                        Please fix the following errors before calculating:
+                    </Typography>
+                    <Box component="ul" sx={{ m: 0, pl: 2 }}>
+                        {validationResult.errors.map((error, idx) => (
+                            <li key={idx}>
+                                <strong>{getFieldLabel(error.field)}:</strong> {error.message}
+                            </li>
+                        ))}
+                    </Box>
+                </Alert>
+            )}
+            {validationResult?.warnings && validationResult.warnings.length > 0 && validationResult.isValid && (
+                <Alert
+                    severity="warning"
+                    sx={{ mt: 1, mx: 2 }}
+                    onClose={() => setValidationResult(null)}
+                >
+                    <Typography variant="subtitle2" fontWeight={600}>
+                        Warnings (calculation will proceed):
+                    </Typography>
+                    <Box component="ul" sx={{ m: 0, pl: 2 }}>
+                        {validationResult.warnings.map((warning, idx) => (
+                            <li key={idx}>
+                                <strong>{getFieldLabel(warning.field)}:</strong> {warning.message}
+                            </li>
+                        ))}
+                    </Box>
+                </Alert>
+            )}
+
             {isCalculating && <LinearProgress />}
 
             {/* Tabs */}
@@ -463,12 +650,12 @@ export function SizingWorkspace({
                     <Tab label="PSV Sizing" />
                     <Tab label="Outlet Piping" />
                     <Tab label="Results" />
-                    <Tab icon={<Settings />} label="Settings" iconPosition="start" />
+                    <Tab label="Settings" />
                 </Tabs>
             </Paper>
 
             {/* Content Area */}
-            <Box sx={{ flex: 1 }}>
+            <Box sx={{ flex: 1, overflow: 'hidden' }}>
                 {/* ==================== TAB 0: CONDITIONS ==================== */}
                 <TabPanel value={activeTab} index={0}>
                     <Box sx={{ maxWidth: 900, mx: 'auto' }}>
@@ -489,20 +676,22 @@ export function SizingWorkspace({
                                         type="number"
                                         value={toDisplay(currentCase.inputs.massFlowRate, 'flow')}
                                         onChange={(e) => handleInputChange('massFlowRate', e.target.value, 'flow')}
-                                        InputProps={{
-                                            endAdornment: (
-                                                <InputAdornment position="end">
-                                                    <TextField
-                                                        select
-                                                        variant="standard"
-                                                        value={preferences.flow}
-                                                        onChange={(e) => setUnit('flow', e.target.value)}
-                                                        sx={{ minWidth: 60 }}
-                                                    >
-                                                        {FLOW_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                    </TextField>
-                                                </InputAdornment>
-                                            ),
+                                        slotProps={{
+                                            input: {
+                                                endAdornment: (
+                                                    <InputAdornment position="end">
+                                                        <TextField
+                                                            select
+                                                            variant="standard"
+                                                            value={preferences.flow}
+                                                            onChange={(e) => setUnit('flow', e.target.value)}
+                                                            sx={{ minWidth: 60 }}
+                                                        >
+                                                            {FLOW_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                        </TextField>
+                                                    </InputAdornment>
+                                                ),
+                                            }
                                         }}
                                         fullWidth
                                     />
@@ -510,7 +699,11 @@ export function SizingWorkspace({
                                         label="Sizing Method"
                                         select
                                         value={currentCase.method}
-                                        onChange={(e) => setCurrentCase({ ...currentCase, method: e.target.value as SizingCase['method'] })}
+                                        onChange={(e) => {
+                                            setCurrentCase({ ...currentCase, method: e.target.value as SizingCase['method'] });
+                                            setIsDirty(true);
+                                            setIsCalculated(false);
+                                        }}
                                         fullWidth
                                     >
                                         <MenuItem value="gas">Gas / Vapor</MenuItem>
@@ -519,6 +712,26 @@ export function SizingWorkspace({
                                         <MenuItem value="two_phase">Two-Phase</MenuItem>
                                     </TextField>
                                 </Box>
+
+                                {/* Vapor Fraction - only for two-phase */}
+                                {currentCase.method === 'two_phase' && (
+                                    <Box sx={{ mt: 2 }}>
+                                        <TextField
+                                            label="Vapor Mass Fraction"
+                                            type="number"
+                                            value={currentCase.inputs.vaporFraction !== undefined ? currentCase.inputs.vaporFraction * 100 : ''}
+                                            onChange={(e) => handleInputChange('vaporFraction', parseFloat(e.target.value) / 100)}
+                                            slotProps={{
+                                                htmlInput: { step: 0.1, min: 0, max: 100 },
+                                                input: {
+                                                    endAdornment: <InputAdornment position="end">%</InputAdornment>
+                                                }
+                                            }}
+                                            helperText="Percentage of vapor by mass (0-100%)"
+                                            fullWidth
+                                        />
+                                    </Box>
+                                )}
                             </CardContent>
                         </Card>
 
@@ -534,20 +747,22 @@ export function SizingWorkspace({
                                         type="number"
                                         value={toDisplay(currentCase.inputs.pressure, 'pressure')}
                                         onChange={(e) => handleInputChange('pressure', e.target.value, 'pressure')}
-                                        InputProps={{
-                                            endAdornment: (
-                                                <InputAdornment position="end">
-                                                    <TextField
-                                                        select
-                                                        variant="standard"
-                                                        value={preferences.pressure}
-                                                        onChange={(e) => setUnit('pressure', e.target.value)}
-                                                        sx={{ minWidth: 60 }}
-                                                    >
-                                                        {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                    </TextField>
-                                                </InputAdornment>
-                                            ),
+                                        slotProps={{
+                                            input: {
+                                                endAdornment: (
+                                                    <InputAdornment position="end">
+                                                        <TextField
+                                                            select
+                                                            variant="standard"
+                                                            value={preferences.pressure}
+                                                            onChange={(e) => setUnit('pressure', e.target.value)}
+                                                            sx={{ minWidth: 60 }}
+                                                        >
+                                                            {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                        </TextField>
+                                                    </InputAdornment>
+                                                ),
+                                            }
                                         }}
                                         fullWidth
                                     />
@@ -556,20 +771,22 @@ export function SizingWorkspace({
                                         type="number"
                                         value={toDisplay(currentCase.inputs.temperature, 'temperature')}
                                         onChange={(e) => handleInputChange('temperature', e.target.value, 'temperature')}
-                                        InputProps={{
-                                            endAdornment: (
-                                                <InputAdornment position="end">
-                                                    <TextField
-                                                        select
-                                                        variant="standard"
-                                                        value={preferences.temperature}
-                                                        onChange={(e) => setUnit('temperature', e.target.value)}
-                                                        sx={{ minWidth: 50 }}
-                                                    >
-                                                        {TEMPERATURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                    </TextField>
-                                                </InputAdornment>
-                                            ),
+                                        slotProps={{
+                                            input: {
+                                                endAdornment: (
+                                                    <InputAdornment position="end">
+                                                        <TextField
+                                                            select
+                                                            variant="standard"
+                                                            value={preferences.temperature}
+                                                            onChange={(e) => setUnit('temperature', e.target.value)}
+                                                            sx={{ minWidth: 60 }}
+                                                        >
+                                                            {TEMPERATURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                        </TextField>
+                                                    </InputAdornment>
+                                                ),
+                                            }
                                         }}
                                         fullWidth
                                     />
@@ -577,97 +794,142 @@ export function SizingWorkspace({
                             </CardContent>
                         </Card>
 
-                        {/* Fluid Properties */}
-                        <Card sx={{ mb: 3 }}>
-                            <CardContent>
-                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                    Fluid Properties
-                                </Typography>
-                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
-                                    <TextField
-                                        label="Molecular Weight"
-                                        type="number"
-                                        value={currentCase.inputs.molecularWeight}
-                                        onChange={(e) => handleInputChange('molecularWeight', parseFloat(e.target.value))}
-                                        InputProps={{ endAdornment: <InputAdornment position="end">g/mol</InputAdornment> }}
-                                        fullWidth
-                                    />
-                                    <TextField
-                                        label="Compressibility (Z)"
-                                        type="number"
-                                        value={currentCase.inputs.compressibilityZ}
-                                        onChange={(e) => handleInputChange('compressibilityZ', parseFloat(e.target.value))}
-                                        inputProps={{ step: 0.01, min: 0, max: 2 }}
-                                        fullWidth
-                                    />
-                                    <TextField
-                                        label="Specific Heat Ratio (k)"
-                                        type="number"
-                                        value={currentCase.inputs.specificHeatRatio}
-                                        onChange={(e) => handleInputChange('specificHeatRatio', parseFloat(e.target.value))}
-                                        inputProps={{ step: 0.01, min: 1, max: 2 }}
-                                        fullWidth
-                                    />
-                                </Box>
 
-                                {/* Conditional fields for liquid/two-phase */}
-                                {isLiquidOrTwoPhase && (
-                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mt: 2 }}>
+                        {/* Gas Phase Properties */}
+                        {(currentCase.method === 'gas' || currentCase.method === 'steam' || currentCase.method === 'two_phase') && (
+                            <Card sx={{ mb: 3 }}>
+                                <CardContent>
+                                    <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                        Gas/Vapor Phase Properties
+                                    </Typography>
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
                                         <TextField
-                                            label="Viscosity"
+                                            label="Molecular Weight"
                                             type="number"
-                                            value={toDisplay(currentCase.inputs.viscosity, 'viscosity')}
-                                            onChange={(e) => handleInputChange('viscosity', e.target.value, 'viscosity')}
-                                            InputProps={{
-                                                endAdornment: (
-                                                    <InputAdornment position="end">
-                                                        <TextField
-                                                            select
-                                                            variant="standard"
-                                                            value={preferences.viscosity}
-                                                            onChange={(e) => setUnit('viscosity', e.target.value)}
-                                                            sx={{ minWidth: 60 }}
-                                                        >
-                                                            {VISCOSITY_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                        </TextField>
-                                                    </InputAdornment>
-                                                ),
+                                            value={currentCase.inputs.molecularWeight}
+                                            onChange={(e) => handleInputChange('molecularWeight', parseFloat(e.target.value))}
+                                            slotProps={{
+                                                input: {
+                                                    endAdornment: <InputAdornment position="end">g/mol</InputAdornment>
+                                                }
                                             }}
                                             fullWidth
                                         />
                                         <TextField
-                                            label="Density"
+                                            label="Compressibility (Z)"
                                             type="number"
-                                            value={toDisplay(currentCase.inputs.density, 'density')}
-                                            onChange={(e) => handleInputChange('density', e.target.value, 'density')}
-                                            InputProps={{
-                                                endAdornment: (
-                                                    <InputAdornment position="end">
-                                                        <TextField
-                                                            select
-                                                            variant="standard"
-                                                            value={preferences.density}
-                                                            onChange={(e) => setUnit('density', e.target.value)}
-                                                            sx={{ minWidth: 70 }}
-                                                        >
-                                                            {DENSITY_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                        </TextField>
-                                                    </InputAdornment>
-                                                ),
+                                            value={currentCase.inputs.compressibilityZ}
+                                            onChange={(e) => handleInputChange('compressibilityZ', parseFloat(e.target.value))}
+                                            slotProps={{ htmlInput: { step: 0.01, min: 0, max: 2 } }}
+                                            fullWidth
+                                        />
+                                        <TextField
+                                            label="Specific Heat Ratio (k)"
+                                            type="number"
+                                            value={currentCase.inputs.specificHeatRatio}
+                                            onChange={(e) => handleInputChange('specificHeatRatio', parseFloat(e.target.value))}
+                                            slotProps={{ htmlInput: { step: 0.01, min: 1, max: 2 } }}
+                                            fullWidth
+                                        />
+                                    </Box>
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mt: 2 }}>
+                                        <TextField
+                                            label="Gas Viscosity"
+                                            type="number"
+                                            value={toDisplay(currentCase.inputs.gasViscosity || currentCase.inputs.viscosity, 'viscosity')}
+                                            onChange={(e) => handleInputChange('gasViscosity', e.target.value, 'viscosity')}
+                                            slotProps={{
+                                                input: {
+                                                    endAdornment: (
+                                                        <InputAdornment position="end">
+                                                            <TextField
+                                                                select
+                                                                variant="standard"
+                                                                value={preferences.viscosity}
+                                                                onChange={(e) => setUnit('viscosity', e.target.value)}
+                                                                sx={{ minWidth: 60 }}
+                                                            >
+                                                                {VISCOSITY_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                            </TextField>
+                                                        </InputAdornment>
+                                                    ),
+                                                }
+                                            }}
+                                            fullWidth
+                                        />
+                                        <Box /> {/* Empty space */}
+                                    </Box>
+                                </CardContent>
+                            </Card>
+                        )}
+
+                        {/* Liquid Phase Properties */}
+                        {(currentCase.method === 'liquid' || currentCase.method === 'two_phase') && (
+                            <Card sx={{ mb: 3 }}>
+                                <CardContent>
+                                    <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                        Liquid Phase Properties
+                                    </Typography>
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                                        <TextField
+                                            label="Liquid Density"
+                                            type="number"
+                                            value={toDisplay(currentCase.inputs.liquidDensity || currentCase.inputs.density, 'density')}
+                                            onChange={(e) => handleInputChange('liquidDensity', e.target.value, 'density')}
+                                            slotProps={{
+                                                input: {
+                                                    endAdornment: (
+                                                        <InputAdornment position="end">
+                                                            <TextField
+                                                                select
+                                                                variant="standard"
+                                                                value={preferences.density}
+                                                                onChange={(e) => setUnit('density', e.target.value)}
+                                                                sx={{ minWidth: 70 }}
+                                                            >
+                                                                {DENSITY_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                            </TextField>
+                                                        </InputAdornment>
+                                                    ),
+                                                }
+                                            }}
+                                            fullWidth
+                                        />
+                                        <TextField
+                                            label="Liquid Viscosity"
+                                            type="number"
+                                            value={toDisplay(currentCase.inputs.liquidViscosity || currentCase.inputs.viscosity, 'viscosity')}
+                                            onChange={(e) => handleInputChange('liquidViscosity', e.target.value, 'viscosity')}
+                                            slotProps={{
+                                                input: {
+                                                    endAdornment: (
+                                                        <InputAdornment position="end">
+                                                            <TextField
+                                                                select
+                                                                variant="standard"
+                                                                value={preferences.viscosity}
+                                                                onChange={(e) => setUnit('viscosity', e.target.value)}
+                                                                sx={{ minWidth: 60 }}
+                                                            >
+                                                                {VISCOSITY_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                            </TextField>
+                                                        </InputAdornment>
+                                                    ),
+                                                }
                                             }}
                                             fullWidth
                                         />
                                     </Box>
-                                )}
-                            </CardContent>
-                        </Card>
+                                </CardContent>
+                            </Card>
+                        )}
 
-                        {/* Backpressure */}
+                        {/* Backpressure & Hydraulic Validation */}
                         <Card>
                             <CardContent>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                                     <Typography variant="subtitle1" fontWeight={600}>
-                                        Backpressure
+                                        Backpressure & Hydraulic Validation
                                     </Typography>
                                     <Tooltip
                                         title={
@@ -705,6 +967,7 @@ export function SizingWorkspace({
                                                 },
                                             });
                                             setIsDirty(true);
+                                            setIsCalculated(false);
                                         }}
                                     >
                                         <FormControlLabel value="manual" control={<Radio />} label="Manual Entry" />
@@ -712,73 +975,104 @@ export function SizingWorkspace({
                                     </RadioGroup>
                                 </FormControl>
 
-                                {/* Display Calculated Backpressure (if mode is calculated) */}
-                                {currentCase.inputs.backpressureSource === 'calculated' && (
-                                    <Alert severity="info" sx={{ mb: 2 }}>
-                                        <Typography variant="body2" fontWeight={600}>
-                                            Calculated Built-up Backpressure: {currentCase.inputs.calculatedBackpressure?.toFixed(3) || '—'} barg
-                                        </Typography>
-                                        <Typography variant="caption">
-                                            Based on {outletNetwork?.pipes?.length || 0} pipes in outlet network.
-                                            {(!outletNetwork || !outletNetwork.pipes || outletNetwork.pipes.length === 0) &&
-                                                ' Add pipes to Outlet Piping tab to calculate.'}
-                                        </Typography>
-                                    </Alert>
+                                {/* Manual Backpressure Input */}
+                                {currentCase.inputs.backpressureSource !== 'calculated' && (
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 2 }}>
+                                        <TextField
+                                            label="Backpressure"
+                                            type="number"
+                                            value={toDisplay(currentCase.inputs.backpressure, 'pressure')}
+                                            onChange={(e) => handleInputChange('backpressure', e.target.value, 'pressure')}
+                                            slotProps={{
+                                                input: {
+                                                    endAdornment: (
+                                                        <InputAdornment position="end">
+                                                            <TextField
+                                                                select
+                                                                variant="standard"
+                                                                value={preferences.pressure}
+                                                                onChange={(e) => setUnit('pressure', e.target.value)}
+                                                                sx={{ minWidth: 60 }}
+                                                            >
+                                                                {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                            </TextField>
+                                                        </InputAdornment>
+                                                    ),
+                                                }
+                                            }}
+                                            fullWidth
+                                        />
+                                        <TextField
+                                            label="Backpressure Type"
+                                            select
+                                            value={currentCase.inputs.backpressureType}
+                                            onChange={(e) => handleInputChange('backpressureType', e.target.value)}
+                                            fullWidth
+                                        >
+                                            <MenuItem value="superimposed">Superimposed</MenuItem>
+                                            <MenuItem value="built_up">Built-up</MenuItem>
+                                        </TextField>
+                                    </Box>
                                 )}
 
-                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-                                    <TextField
-                                        label="Backpressure"
-                                        type="number"
-                                        value={
-                                            currentCase.inputs.backpressureSource === 'calculated'
-                                                ? currentCase.inputs.calculatedBackpressure?.toFixed(3) || 0
-                                                : toDisplay(currentCase.inputs.backpressure, 'pressure')
-                                        }
-                                        onChange={(e) => handleInputChange('backpressure', e.target.value, 'pressure')}
-                                        disabled={currentCase.inputs.backpressureSource === 'calculated'}
-                                        InputProps={{
-                                            endAdornment: (
-                                                <InputAdornment position="end">
-                                                    <TextField
-                                                        select
-                                                        variant="standard"
-                                                        value={preferences.pressure}
-                                                        onChange={(e) => setUnit('pressure', e.target.value)}
-                                                        sx={{ minWidth: 60 }}
-                                                    >
-                                                        {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                    </TextField>
-                                                </InputAdornment>
-                                            ),
-                                        }}
-                                        fullWidth
-                                    />
-                                    <TextField
-                                        label="Backpressure Type"
-                                        select
-                                        value={currentCase.inputs.backpressureType}
-                                        onChange={(e) => handleInputChange('backpressureType', e.target.value)}
-                                        fullWidth
-                                    >
-                                        <MenuItem value="superimposed">Superimposed</MenuItem>
-                                        <MenuItem value="built_up">Built-up</MenuItem>
-                                    </TextField>
-                                </Box>
-                            </CardContent>
-                        </Card>
+                                {/* Display Calculated Backpressure (if mode is calculated) */}
+                                {currentCase.inputs.backpressureSource === 'calculated' && (
+                                    <Box sx={{ mb: 2 }}>
+                                        {/* Destination Pressure Input */}
+                                        <TextField
+                                            label="Destination Pressure"
+                                            type="number"
+                                            value={toDisplay(currentCase.inputs.destinationPressure || 0, 'pressure')}
+                                            onChange={(e) => handleInputChange('destinationPressure', e.target.value, 'pressure')}
+                                            slotProps={{
+                                                input: {
+                                                    endAdornment: (
+                                                        <InputAdornment position="end">
+                                                            <TextField
+                                                                select
+                                                                variant="standard"
+                                                                value={preferences.pressure}
+                                                                onChange={(e) => setUnit('pressure', e.target.value)}
+                                                                sx={{ minWidth: 60 }}
+                                                            >
+                                                                {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                            </TextField>
+                                                        </InputAdornment>
+                                                    ),
+                                                }
+                                            }}
+                                            helperText="Pressure at outlet discharge point (e.g., flare header, atmospheric)"
+                                            fullWidth
+                                            sx={{ mb: 2 }}
+                                        />
 
-                        {/* Hydraulic Validation */}
-                        <Card>
-                            <CardContent>
-                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                    Hydraulic Validation
-                                </Typography>
+                                        {/* Show calculated result */}
+                                        {currentCase.inputs.calculatedBackpressure !== undefined && (
+                                            <Alert severity="success">
+                                                <Typography variant="body2" fontWeight={600}>
+                                                    Calculated Built-up Backpressure: {currentCase.inputs.calculatedBackpressure.toFixed(3)} barg
+                                                </Typography>
+                                                <Typography variant="caption">
+                                                    Based on {localOutletNetwork?.pipes?.length || 0} pipes in outlet network.
+                                                </Typography>
+                                            </Alert>
+                                        )}
 
-                                {/* Inlet Pressure Drop */}
-                                <Box sx={{ mb: 2 }}>
-                                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                                        Inlet Pressure Drop
+                                        {/* Prompt to add pipes if none */}
+                                        {(!localOutletNetwork || !localOutletNetwork.pipes || localOutletNetwork.pipes.length === 0) && (
+                                            <Alert severity="info">
+                                                <Typography variant="body2">
+                                                    Add pipes to the Outlet Piping tab to calculate backpressure.
+                                                </Typography>
+                                            </Alert>
+                                        )}
+                                    </Box>
+                                )}
+
+                                {/* Inlet Pressure Drop Validation */}
+                                <Box sx={{ mt: 2 }}>
+                                    <Typography variant="body2" fontWeight={600} color="text.secondary" gutterBottom>
+                                        Inlet Pressure Drop Validation
                                     </Typography>
                                     {currentCase.outputs?.inletValidation ? (
                                         <Alert
@@ -786,8 +1080,10 @@ export function SizingWorkspace({
                                             icon={currentCase.outputs.inletValidation.isValid ? <CheckCircle /> : <Warning />}
                                         >
                                             <Typography variant="body2">
-                                                {currentCase.inputs.inletPressureDrop?.toFixed(2) || '—'} kPa
-                                                ({currentCase.outputs.inletPressureDropPercent?.toFixed(1) || '—'}% of set pressure)
+                                                {currentCase.outputs.inletPressureDrop !== undefined
+                                                    ? toDisplayDelta(currentCase.outputs.inletPressureDrop, 'pressure', 3)
+                                                    : '—'} {getDeltaUnit('pressure') + " "}
+                                                ({currentCase.outputs.inletPressureDropPercent?.toFixed(2) || '—'}% of set pressure)
                                             </Typography>
                                             <Typography variant="caption">
                                                 {currentCase.outputs.inletValidation.message}
@@ -804,27 +1100,6 @@ export function SizingWorkspace({
                                         </Alert>
                                     )}
                                 </Box>
-
-                                {/* Outlet Network Summary */}
-                                {currentCase.inputs.backpressureSource === 'calculated' && (
-                                    <Box>
-                                        <Typography variant="body2" color="text.secondary" gutterBottom>
-                                            Outlet Network Summary
-                                        </Typography>
-                                        <Box sx={{
-                                            p: 2,
-                                            borderRadius: '14px',
-                                            backgroundColor: theme.palette.mode === 'dark' ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)'
-                                        }}>
-                                            <Typography variant="body2">
-                                                <strong>Pipes:</strong> {outletNetwork?.pipes?.length || 0}
-                                            </Typography>
-                                            <Typography variant="body2">
-                                                <strong>Built-up Backpressure:</strong> {currentCase.inputs.calculatedBackpressure?.toFixed(3) || '—'} barg
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                )}
                             </CardContent>
                         </Card>
                     </Box>
@@ -837,6 +1112,171 @@ export function SizingWorkspace({
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                             Define the pipe segments from the protected equipment to the PSV inlet.
                         </Typography>
+
+                        {/* ===== INLET HYDRAULIC SUMMARY ===== */}
+                        {(localInletNetwork?.pipes?.length ?? 0) > 0 && (
+                            <Card sx={{
+                                mb: 3,
+                                background: isDark
+                                    ? 'rgba(15, 23, 42, 0.6)'
+                                    : 'rgba(255, 255, 255, 0.8)',
+                                backdropFilter: 'blur(12px)',
+                                border: '1px solid',
+                                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                                borderRadius: 3,
+                            }}>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                                        <Typography variant="subtitle1" fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Timeline sx={{ color: 'primary.main' }} />
+                                            Hydraulic Summary
+                                        </Typography>
+                                        {currentCase.outputs?.inletValidation && (
+                                            <Chip
+                                                icon={currentCase.outputs.inletValidation.isValid ? <CheckCircle /> : currentCase.outputs.inletValidation.severity === 'warning' ? <Warning /> : <ErrorIcon />}
+                                                label={currentCase.outputs.inletValidation.isValid ? 'PASS' : currentCase.outputs.inletValidation.severity === 'warning' ? 'WARNING' : 'FAIL'}
+                                                color={currentCase.outputs.inletValidation.isValid ? 'success' : currentCase.outputs.inletValidation.severity === 'warning' ? 'warning' : 'error'}
+                                                size="small"
+                                            />
+                                        )}
+                                    </Box>
+
+                                    {/* Metrics Grid */}
+                                    <Box sx={{
+                                        display: 'grid',
+                                        gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+                                        gap: 2,
+                                        mb: 2
+                                    }}>
+                                        {/* Total Pressure Drop (kPa) */}
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <Typography variant="h5" fontWeight={700} color={
+                                                currentCase.outputs?.inletPressureDropPercent !== undefined
+                                                    ? currentCase.outputs.inletPressureDropPercent < 3 ? 'success.main'
+                                                        : currentCase.outputs.inletPressureDropPercent < 5 ? 'warning.main' : 'error.main'
+                                                    : 'primary.main'
+                                            }>
+                                                {currentCase.outputs?.inletPressureDrop !== undefined
+                                                    ? `${toDisplayDelta(currentCase.outputs.inletPressureDrop, 'pressure', 3)}`
+                                                    : '—'}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Total ΔP ({getDeltaUnit('pressure')})
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Percentage of Set Pressure */}
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <Typography variant="h5" fontWeight={700} color={
+                                                currentCase.outputs?.inletPressureDropPercent !== undefined
+                                                    ? currentCase.outputs.inletPressureDropPercent < 3 ? 'success.main'
+                                                        : currentCase.outputs.inletPressureDropPercent < 5 ? 'warning.main' : 'error.main'
+                                                    : 'text.primary'
+                                            }>
+                                                {currentCase.outputs?.inletPressureDropPercent !== undefined
+                                                    ? `${currentCase.outputs.inletPressureDropPercent.toFixed(2)}%`
+                                                    : '—'}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                of Set Pressure (3% max)
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Total Length */}
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <Typography variant="h5" fontWeight={700}>
+                                                {localInletNetwork?.pipes?.reduce((sum, p) => sum + (p.length || 0), 0).toFixed(1) || '0'}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Total Length (m)
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Pipe Segments */}
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <Typography variant="h5" fontWeight={700}>
+                                                {localInletNetwork?.pipes?.length || 0}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Pipe Segments
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+
+                                    {/* Progress Bar */}
+                                    {currentCase.outputs?.inletPressureDropPercent !== undefined && (
+                                        <Box sx={{ mt: 1 }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    Inlet ΔP vs 3% Limit
+                                                </Typography>
+                                                <Typography variant="caption" fontWeight={600} color={
+                                                    currentCase.outputs.inletPressureDropPercent < 3 ? 'success.main' :
+                                                        currentCase.outputs.inletPressureDropPercent < 5 ? 'warning.main' : 'error.main'
+                                                }>
+                                                    {currentCase.outputs.inletPressureDropPercent.toFixed(2)}% / 3.00%
+                                                </Typography>
+                                            </Box>
+                                            <LinearProgress
+                                                variant="determinate"
+                                                value={Math.min((currentCase.outputs.inletPressureDropPercent / 5) * 100, 100)}
+                                                sx={{
+                                                    height: 8,
+                                                    borderRadius: 4,
+                                                    bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                                                    '& .MuiLinearProgress-bar': {
+                                                        borderRadius: 4,
+                                                        bgcolor: currentCase.outputs.inletPressureDropPercent < 3
+                                                            ? 'success.main'
+                                                            : currentCase.outputs.inletPressureDropPercent < 5
+                                                                ? 'warning.main'
+                                                                : 'error.main',
+                                                    }
+                                                }}
+                                            />
+                                            {/* 3% marker */}
+                                            <Box sx={{ position: 'relative', height: 0 }}>
+                                                <Box sx={{
+                                                    position: 'absolute',
+                                                    left: '60%',
+                                                    top: -12,
+                                                    borderLeft: '2px dashed',
+                                                    borderColor: isDark ? 'rgba(255,255,255,0.3)' : 'rgba(0,0,0,0.2)',
+                                                    height: 16,
+                                                }} />
+                                            </Box>
+                                        </Box>
+                                    )}
+
+                                    {/* No calculation yet message */}
+                                    {currentCase.outputs?.inletPressureDropPercent === undefined && (
+                                        <Alert severity="info" sx={{ mt: 1 }}>
+                                            Click <strong>Calculate</strong> to compute inlet hydraulics.
+                                        </Alert>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
 
                         <PipelineDataGrid
                             pipes={localInletNetwork?.pipes || []}
@@ -866,7 +1306,11 @@ export function SizingWorkspace({
                                         label="Design Standard"
                                         select
                                         value={currentCase.standard}
-                                        onChange={(e) => setCurrentCase({ ...currentCase, standard: e.target.value as SizingCase['standard'] })}
+                                        onChange={(e) => {
+                                            setCurrentCase({ ...currentCase, standard: e.target.value as SizingCase['standard'] });
+                                            setIsDirty(true);
+                                            setIsCalculated(false);
+                                        }}
                                         fullWidth
                                     >
                                         <MenuItem value="API-520">API-520</MenuItem>
@@ -1051,6 +1495,140 @@ export function SizingWorkspace({
                             Define the pipe segments from the PSV outlet to the discharge point.
                         </Typography>
 
+                        {/* ===== OUTLET HYDRAULIC SUMMARY ===== */}
+                        {(localOutletNetwork?.pipes?.length ?? 0) > 0 && (
+                            <Card sx={{
+                                mb: 3,
+                                background: isDark
+                                    ? 'rgba(15, 23, 42, 0.6)'
+                                    : 'rgba(255, 255, 255, 0.8)',
+                                backdropFilter: 'blur(12px)',
+                                border: '1px solid',
+                                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                                borderRadius: 3,
+                            }}>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                                        <Typography variant="subtitle1" fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            <Timeline sx={{ color: 'secondary.main' }} />
+                                            Outlet Hydraulic Summary
+                                        </Typography>
+                                        {currentCase.inputs.backpressureSource === 'calculated' && (
+                                            <Chip
+                                                icon={<Calculate />}
+                                                label="Auto-Calculated"
+                                                color="info"
+                                                size="small"
+                                                variant="outlined"
+                                            />
+                                        )}
+                                    </Box>
+
+                                    {/* Metrics Grid */}
+                                    <Box sx={{
+                                        display: 'grid',
+                                        gridTemplateColumns: { xs: 'repeat(2, 1fr)', md: 'repeat(4, 1fr)' },
+                                        gap: 2,
+                                        mb: 2
+                                    }}>
+                                        {/* Total Outlet Pressure Drop */}
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <Typography variant="h5" fontWeight={700} color="secondary.main">
+                                                {currentCase.outputs?.outletPressureDrop !== undefined
+                                                    ? `${toDisplayDelta(currentCase.outputs.outletPressureDrop, 'pressure', 3)}`
+                                                    : '—'}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Total ΔP ({getDeltaUnit('pressure')})
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Built-up Backpressure (Total) */}
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <Typography variant="h5" fontWeight={700} color="secondary.main">
+                                                {currentCase.outputs?.builtUpBackpressure !== undefined
+                                                    ? `${toDisplay(currentCase.outputs.builtUpBackpressure, 'pressure', 3)}`
+                                                    : '—'}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Built-up BP ({preferences.pressure})
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Destination Pressure */}
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <Typography variant="h5" fontWeight={700}>
+                                                {currentCase.inputs.destinationPressure !== undefined
+                                                    ? toDisplay(currentCase.inputs.destinationPressure, 'pressure', 3)
+                                                    : '0'}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Destination ({preferences.pressure})
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Segment Count */}
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <Typography variant="h5" fontWeight={700}>
+                                                {localOutletNetwork?.pipes?.length || 0}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Pipe Segments
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Total Length */}
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <Typography variant="h5" fontWeight={700}>
+                                                {localOutletNetwork?.pipes?.reduce((sum, p) => sum + (p.length || 0), 0).toFixed(1) || '0'}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Total Length (m)
+                                            </Typography>
+                                        </Box>
+                                    </Box>
+
+                                    {/* Calculation mode info */}
+                                    {currentCase.inputs.backpressureSource !== 'calculated' && (
+                                        <Alert severity="info" sx={{ mt: 1 }}>
+                                            Backpressure is set to <strong>Manual Entry</strong>. Switch to &quot;Calculate from Outlet Piping&quot; in the Sizing Setup tab to use these pipe segments.
+                                        </Alert>
+                                    )}
+
+                                    {currentCase.inputs.backpressureSource === 'calculated' && currentCase.outputs?.builtUpBackpressure === undefined && (
+                                        <Alert severity="info" sx={{ mt: 1 }}>
+                                            Click <strong>Calculate</strong> to compute outlet backpressure.
+                                        </Alert>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        )}
+
                         <PipelineDataGrid
                             pipes={localOutletNetwork?.pipes || []}
                             onAddPipe={handleAddOutletPipe}
@@ -1068,6 +1646,29 @@ export function SizingWorkspace({
                             Summary of sizing calculations, pressure drops, and recommendations.
                         </Typography>
 
+                        {/* Inlet Pressure Drop Validation Alert */}
+                        {currentCase.outputs?.inletValidation && (
+                            <Alert
+                                severity={currentCase.outputs.inletValidation.severity}
+                                sx={{ mb: 3 }}
+                                icon={
+                                    currentCase.outputs.inletValidation.isValid ?
+                                        <CheckCircle /> :
+                                        currentCase.outputs.inletValidation.severity === 'warning' ?
+                                            <Warning /> :
+                                            <ErrorIcon />
+                                }
+                            >
+                                <strong>Inlet Pressure Drop Validation:</strong> {currentCase.outputs.inletValidation.message}
+                                {currentCase.outputs.inletPressureDropPercent !== undefined && (
+                                    <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                        Inlet ΔP: {currentCase.outputs.inletPressureDropPercent.toFixed(1)}% of set pressure
+                                        {localInletNetwork && localInletNetwork.pipes && ` (${localInletNetwork.pipes.length} pipe${localInletNetwork.pipes.length !== 1 ? 's' : ''})`}
+                                    </Typography>
+                                )}
+                            </Alert>
+                        )}
+
                         {/* Summary Card */}
                         <Card sx={{
                             mb: 3,
@@ -1080,7 +1681,7 @@ export function SizingWorkspace({
                                 <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                                     Sizing Summary
                                 </Typography>
-                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 3 }}>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(5, 1fr)' }, gap: 3 }}>
                                     <Box>
                                         <Typography variant="caption" color="text.secondary">Selected Orifice</Typography>
                                         <Typography variant="h3" fontWeight={700} color="primary.main">
@@ -1095,15 +1696,94 @@ export function SizingWorkspace({
                                     </Box>
                                     <Box>
                                         <Typography variant="caption" color="text.secondary">% Used</Typography>
-                                        <Typography variant="h5" fontWeight={600} color={currentCase.outputs.percentUsed > 90 ? 'warning.main' : 'text.primary'}>
-                                            {currentCase.outputs.percentUsed.toFixed(1)}%
+                                        <Typography variant="h5" fontWeight={600} color={
+                                            ((currentCase.outputs.requiredArea / (numberOfValves * currentCase.outputs.orificeArea)) * 100) > 90
+                                                ? 'warning.main'
+                                                : 'text.primary'
+                                        }>
+                                            {((currentCase.outputs.requiredArea / (numberOfValves * currentCase.outputs.orificeArea)) * 100).toFixed(1)}%
                                         </Typography>
                                     </Box>
                                     <Box>
                                         <Typography variant="caption" color="text.secondary">Rated Capacity</Typography>
                                         <Typography variant="h5" fontWeight={600}>
-                                            {currentCase.outputs.ratedCapacity.toLocaleString()} kg/h
+                                            {((currentCase.outputs.ratedCapacity / (currentCase.outputs.numberOfValves || 1)) * numberOfValves).toLocaleString()} kg/h
                                         </Typography>
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="caption" color="text.secondary">Number of Valves</Typography>
+                                        <Typography variant="h5" fontWeight={600}>
+                                            {numberOfValves}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </CardContent>
+                        </Card>
+
+
+
+                        {/* Hydraulic Calculations */}
+                        <Card sx={{ mb: 3 }}>
+                            <CardContent>
+                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                    Hydraulic Calculations
+                                </Typography>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+                                    {/* Inlet Pressure Drop */}
+                                    <Box>
+                                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                            Inlet Pressure Drop
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                                            <Typography variant="h6" fontWeight={600}>
+                                                {currentCase.outputs.inletPressureDrop !== undefined
+                                                    ? `${toDisplayDelta(currentCase.outputs.inletPressureDrop, 'pressure', 3)}`
+                                                    : '—'}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {getDeltaUnit('pressure')}
+                                            </Typography>
+                                        </Box>
+                                        <Typography
+                                            variant="caption"
+                                            color={
+                                                currentCase.outputs.inletPressureDropPercent !== undefined
+                                                    ? currentCase.outputs.inletPressureDropPercent > 3 ? 'error.main' : 'success.main'
+                                                    : 'text.secondary'
+                                            }
+                                            fontWeight={500}
+                                        >
+                                            {currentCase.outputs.inletPressureDropPercent !== undefined
+                                                ? `${currentCase.outputs.inletPressureDropPercent.toFixed(2)}% of Set Pressure`
+                                                : 'Requires Inlet Piping'}
+                                        </Typography>
+                                    </Box>
+
+                                    {/* Backpressure */}
+                                    <Box>
+                                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                            Total Backpressure
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                                            <Typography variant="h6" fontWeight={600}>
+                                                {toDisplay(currentCase.inputs.backpressure, 'pressure', 3)}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {preferences.pressure}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Superimposed: {currentCase.inputs.destinationPressure
+                                                    ? `${toDisplay(currentCase.inputs.destinationPressure, 'pressure', 2)} ${preferences.pressure}`
+                                                    : `0 ${preferences.pressure}`}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Built-up: {currentCase.outputs.builtUpBackpressure
+                                                    ? `${toDisplayDelta(currentCase.outputs.builtUpBackpressure, 'pressure', 2)} ${getDeltaUnit('pressure')}`
+                                                    : `0 ${getDeltaUnit('pressure')}`}
+                                            </Typography>
+                                        </Box>
                                     </Box>
                                 </Box>
                             </CardContent>
@@ -1183,11 +1863,11 @@ export function SizingWorkspace({
                             </Button>
                         </Box>
                     </Box>
-                </TabPanel>
-            </Box>
+                </TabPanel >
+            </Box >
 
             {/* ==================== TAB 5: SETTINGS ==================== */}
-            <TabPanel value={activeTab} index={5}>
+            < TabPanel value={activeTab} index={5} >
                 <Box sx={{ maxWidth: 900, mx: 'auto' }}>
                     <Typography variant="h6" sx={{ mb: 1 }}>Sizing Case Settings</Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -1223,10 +1903,11 @@ export function SizingWorkspace({
                         </CardContent>
                     </Card>
                 </Box>
-            </TabPanel>
+            </TabPanel >
 
             {/* Delete Confirmation Dialog */}
-            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+            < Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)
+            }>
                 <DialogTitle>Delete Sizing Case?</DialogTitle>
                 <DialogContent>
                     <DialogContentText sx={{ mb: 2 }}>
@@ -1234,7 +1915,7 @@ export function SizingWorkspace({
                         <strong> {currentCase.scenarioId} </strong> (Rev {currentCase.revisionNo}) from <strong>{psvTag}</strong>.
                     </DialogContentText>
                     <Typography variant="body2" gutterBottom>
-                        Please type <strong>{psvTag}</strong> to confirm.
+                        Please type <strong>delete sizing case</strong> to confirm.
                     </Typography>
                     <TextField
                         autoFocus
@@ -1243,7 +1924,7 @@ export function SizingWorkspace({
                         variant="outlined"
                         value={deleteConfirmationInput}
                         onChange={(e) => setDeleteConfirmationInput(e.target.value)}
-                        placeholder={psvTag}
+                        placeholder="delete sizing case"
                     />
                 </DialogContent>
                 <DialogActions>
@@ -1252,12 +1933,12 @@ export function SizingWorkspace({
                         variant="contained"
                         color="error"
                         onClick={handleConfirmDelete}
-                        disabled={deleteConfirmationInput !== psvTag}
+                        disabled={deleteConfirmationInput !== "delete sizing case"}
                     >
                         Delete Sizing Case
                     </Button>
                 </DialogActions>
-            </Dialog>
-        </Box>
+            </Dialog >
+        </Box >
     );
 }

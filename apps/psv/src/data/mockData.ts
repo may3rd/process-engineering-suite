@@ -317,7 +317,7 @@ export const protectiveSystems: ProtectiveSystem[] = [
             ],
             pipes: [
                 {
-                    id: 'p1', name: 'Inlet Pipe', startNodeId: 'n1', endNodeId: 'n2', length: 5, lengthUnit: 'm', diameter: 100, diameterUnit: 'mm', elevation: 0,
+                    id: 'p1', name: 'Inlet Pipe', startNodeId: 'n1', endNodeId: 'n2', length: 5, lengthUnit: 'm', diameter: 150, diameterUnit: 'mm', elevation: 0,
                     fittings: [{ type: 'Elbow 90', count: 2, k_each: 0.3, k_total: 0.6 }]
                 }
             ]
@@ -571,6 +571,7 @@ export const sizingCases: SizingCase[] = [
             specificHeatRatio: 1.15,
             backpressure: 0.5, // barg
             backpressureType: 'superimposed',
+            gasViscosity: 0.01, // cP
         },
         outputs: {
             requiredArea: 1250, // mm2
@@ -587,7 +588,7 @@ export const sizingCases: SizingCase[] = [
         },
         unitPreferences: {
             pressure: 'barg',
-            temperature: '°C',
+            temperature: 'C',
             flow: 'kg/h',
             length: 'm',
             area: 'mm²',
@@ -613,7 +614,7 @@ export const sizingCases: SizingCase[] = [
             temperature: 45, // C
             pressure: 5.5, // barg
             density: 850, // kg/m3
-            viscosity: 1.2, // cP
+            liquidViscosity: 1.2, // cP
             compressibilityZ: 1.0, // Liquid
             specificHeatRatio: 1.0, // Liquid
             backpressure: 1.5, // barg
@@ -634,7 +635,7 @@ export const sizingCases: SizingCase[] = [
         },
         unitPreferences: {
             pressure: 'barg',
-            temperature: '°C',
+            temperature: 'C',
             flow: 'kg/h',
             length: 'm',
             area: 'mm²',
@@ -663,6 +664,7 @@ export const sizingCases: SizingCase[] = [
             specificHeatRatio: 1.31,
             backpressure: 5.0,
             backpressureType: 'superimposed',
+            gasViscosity: 0.011, // cP
         },
         outputs: {
             requiredArea: 120, // mm2
@@ -683,7 +685,7 @@ export const sizingCases: SizingCase[] = [
         revisionNo: 3,
         unitPreferences: {
             pressure: 'barg',
-            temperature: '°C',
+            temperature: 'C',
             flow: 'kg/h',
             length: 'm',
             area: 'mm²',
