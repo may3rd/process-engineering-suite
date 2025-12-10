@@ -556,6 +556,7 @@ export const sizingCases: SizingCase[] = [
             dischargeCoefficient: 0.975,
             backpressureCorrectionFactor: 0.98,
             isCriticalFlow: true,
+            numberOfValves: 1,
             messages: ['Critical flow confirmed', 'Backpressure within limits (<10% set pressure)'],
         },
         inletNetwork: {
@@ -616,6 +617,7 @@ export const sizingCases: SizingCase[] = [
             dischargeCoefficient: 0.65,
             backpressureCorrectionFactor: 1.0,
             isCriticalFlow: false,
+            numberOfValves: 1,
             messages: ['Viscosity correction applied (Kv = 0.98)', 'Backpressure correction not required'],
         },
         revisionNo: 1,
@@ -650,6 +652,7 @@ export const sizingCases: SizingCase[] = [
             dischargeCoefficient: 0.975,
             backpressureCorrectionFactor: 0.95,
             isCriticalFlow: true,
+            numberOfValves: 1,
             messages: [
                 'Critical flow confirmed (P1/P2 > critical ratio)',
                 'Balanced bellows recommended for high backpressure',

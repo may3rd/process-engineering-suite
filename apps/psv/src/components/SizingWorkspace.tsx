@@ -82,6 +82,14 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
     const [manualOrificeMode, setManualOrificeMode] = useState(false);
     const [isCalculating, setIsCalculating] = useState(false);
 
+    // Button state tracking
+    // Always start fresh - user must calculate in this session
+    const [isDirty, setIsDirty] = useState(false);
+    const [isCalculated, setIsCalculated] = useState(false);
+
+    // Multiple valve support
+    const [numberOfValves, setNumberOfValves] = useState(sizingCase.outputs.numberOfValves || 1);
+
     // Unit state
     const [units, setUnits] = useState({
         pressure: 'barg',
@@ -106,6 +114,9 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
                 [field]: safeValue,
             },
         });
+        // Mark as dirty and needs recalculation
+        setIsDirty(true);
+        setIsCalculated(false);
     };
 
     // Handle orifice selection
@@ -125,11 +136,11 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
         }
     };
 
-    // Auto-select smallest suitable orifice
+    // Auto-select smallest suitable orifice (considers multiple valves)
     const getAutoSelectedOrifice = () => {
-        const requiredArea = currentCase.outputs.requiredArea;
+        const areaPerValve = currentCase.outputs.requiredArea / numberOfValves;
         for (const orifice of ORIFICE_SIZES) {
-            if (orifice.area >= requiredArea) {
+            if (orifice.area >= areaPerValve) {
                 return orifice;
             }
         }
@@ -219,6 +230,10 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
                 status: 'calculated',
                 updatedAt: new Date().toISOString(),
             });
+
+            // Mark as calculated and not dirty
+            setIsCalculated(true);
+            setIsDirty(false);
         } catch (error) {
             console.error('Calculation error:', error);
             setCurrentCase({
@@ -231,6 +246,20 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
         }
 
         setIsCalculating(false);
+    };
+
+    // Save and close
+    const handleSaveAndClose = () => {
+        // Include numberOfValves in the saved outputs
+        const caseToSave = {
+            ...currentCase,
+            outputs: {
+                ...currentCase.outputs,
+                numberOfValves,
+            },
+        };
+        onSave(caseToSave);
+        onClose();
     };
 
     const isLiquidOrTwoPhase = currentCase.method === 'liquid' || currentCase.method === 'two_phase';
@@ -251,18 +280,38 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
                             {currentCase.standard} • {currentCase.method}
                         </Typography>
                     </Box>
+                    {isDirty && (
+                        <Chip
+                            label="Edited"
+                            size="small"
+                            color="warning"
+                            variant="outlined"
+                        />
+                    )}
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                     <Button variant="outlined" onClick={onClose}>
                         Cancel
                     </Button>
-                    <Button
-                        variant="contained"
-                        onClick={handleCalculate}
-                        disabled={isCalculating}
-                    >
-                        {isCalculating ? 'Calculating...' : 'Save & Calculate'}
-                    </Button>
+                    {isCalculated && !isDirty ? (
+                        <Button
+                            variant="contained"
+                            color="success"
+                            onClick={handleSaveAndClose}
+                            startIcon={<CheckCircle />}
+                        >
+                            Save & Close
+                        </Button>
+                    ) : (
+                        <Button
+                            variant="contained"
+                            onClick={handleCalculate}
+                            disabled={!isDirty || isCalculating}
+                            startIcon={<Calculate />}
+                        >
+                            {isCalculating ? 'Calculating...' : 'Calculate'}
+                        </Button>
+                    )}
                 </Box>
             </Paper>
 
@@ -620,12 +669,49 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
                                     />
                                 </Box>
 
+                                {/* Valve Count */}
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
+                                    <Typography variant="body2" fontWeight={500}>Number of Valves:</Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => setNumberOfValves(Math.max(1, numberOfValves - 1))}
+                                            disabled={numberOfValves <= 1}
+                                        >
+                                            <Typography fontWeight="bold">−</Typography>
+                                        </IconButton>
+                                        <Typography variant="h6" fontWeight={600} sx={{ minWidth: 30, textAlign: 'center' }}>
+                                            {numberOfValves}
+                                        </Typography>
+                                        <IconButton
+                                            size="small"
+                                            onClick={() => setNumberOfValves(numberOfValves + 1)}
+                                        >
+                                            <Typography fontWeight="bold">+</Typography>
+                                        </IconButton>
+                                    </Box>
+                                    {numberOfValves > 1 && (
+                                        <Chip
+                                            label={`${numberOfValves} × parallel valves`}
+                                            size="small"
+                                            color="info"
+                                        />
+                                    )}
+                                </Box>
+
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2, mb: 3 }}>
                                     <Box>
-                                        <Typography variant="caption" color="text.secondary">Required Area</Typography>
-                                        <Typography variant="h5" fontWeight={600} color="primary.main">
-                                            {currentCase.outputs.requiredArea.toLocaleString()} mm²
+                                        <Typography variant="caption" color="text.secondary">
+                                            {numberOfValves > 1 ? 'Required Area (per valve)' : 'Required Area'}
                                         </Typography>
+                                        <Typography variant="h5" fontWeight={600} color="primary.main">
+                                            {Math.round(currentCase.outputs.requiredArea / numberOfValves).toLocaleString()} mm²
+                                        </Typography>
+                                        {numberOfValves > 1 && (
+                                            <Typography variant="caption" color="text.secondary">
+                                                Total: {currentCase.outputs.requiredArea.toLocaleString()} mm²
+                                            </Typography>
+                                        )}
                                     </Box>
                                     <TextField
                                         label="Selected Orifice"
@@ -639,7 +725,7 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
                                             <MenuItem
                                                 key={o.designation}
                                                 value={o.designation}
-                                                disabled={o.area < currentCase.outputs.requiredArea}
+                                                disabled={o.area < (currentCase.outputs.requiredArea / numberOfValves)}
                                             >
                                                 {o.designation} — {o.area.toLocaleString()} mm²
                                             </MenuItem>
@@ -654,20 +740,27 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
                                 </Box>
 
                                 {/* Utilization Bar */}
-                                <Box sx={{ mb: 2 }}>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
-                                        <Typography variant="body2">Orifice Utilization</Typography>
-                                        <Typography variant="body2" fontWeight={600} color={currentCase.outputs.percentUsed > 90 ? 'warning.main' : 'success.main'}>
-                                            {currentCase.outputs.percentUsed.toFixed(1)}%
-                                        </Typography>
-                                    </Box>
-                                    <LinearProgress
-                                        variant="determinate"
-                                        value={Math.min(currentCase.outputs.percentUsed, 100)}
-                                        color={currentCase.outputs.percentUsed > 90 ? 'warning' : 'success'}
-                                        sx={{ height: 8, borderRadius: 4 }}
-                                    />
-                                </Box>
+                                {(() => {
+                                    const areaPerValve = currentCase.outputs.requiredArea / numberOfValves;
+                                    const selectedOrifice = manualOrificeMode ? currentCase.outputs.orificeArea : getAutoSelectedOrifice().area;
+                                    const utilization = (areaPerValve / selectedOrifice) * 100;
+                                    return (
+                                        <Box sx={{ mb: 2 }}>
+                                            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
+                                                <Typography variant="body2">Orifice Utilization</Typography>
+                                                <Typography variant="body2" fontWeight={600} color={utilization > 90 ? 'warning.main' : 'success.main'}>
+                                                    {utilization.toFixed(1)}%
+                                                </Typography>
+                                            </Box>
+                                            <LinearProgress
+                                                variant="determinate"
+                                                value={Math.min(utilization, 100)}
+                                                color={utilization > 90 ? 'warning' : 'success'}
+                                                sx={{ height: 8, borderRadius: 4 }}
+                                            />
+                                        </Box>
+                                    );
+                                })()}
 
                                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                     <Chip

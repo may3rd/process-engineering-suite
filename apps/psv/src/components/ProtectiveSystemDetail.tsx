@@ -463,6 +463,7 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                 dischargeCoefficient: scenario.phase === 'liquid' ? 0.65 : 0.975,
                 backpressureCorrectionFactor: 1.0,
                 isCriticalFlow: false,
+                numberOfValves: 1,
                 messages: [],
             },
             revisionNo: 1,

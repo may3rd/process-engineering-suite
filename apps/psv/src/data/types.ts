@@ -137,6 +137,7 @@ export interface SizingOutputs {
     dischargeCoefficient: number;
     backpressureCorrectionFactor: number;
     isCriticalFlow: boolean;
+    numberOfValves: number; // Number of parallel valves (default: 1)
     messages: string[];
 }
 

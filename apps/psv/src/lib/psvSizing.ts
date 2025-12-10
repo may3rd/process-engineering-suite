@@ -461,6 +461,7 @@ export function calculateSizing(inputs: SizingInputs, method: SizingMethod): Siz
         dischargeCoefficient: result.Kd,
         backpressureCorrectionFactor: result.Kb,
         isCriticalFlow: result.isCriticalFlow,
+        numberOfValves: 1, // Default, can be adjusted by user in UI
         messages: result.messages,
     };
 }
