@@ -425,14 +425,41 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
             const outputs = calculateSizing(updatedInputs, currentCase.method);
 
             // === PHASE 4: Merge validation results with outputs ===
+            // Calculate actual pressure drops for display
+            let inletPressureDropKPa: number | undefined;
+            let outletPressureDropKPa: number | undefined;
+            let builtUpBackpressureKPa: number | undefined;
+
+            // Get inlet pressure drop in kPa
+            if (inletValidation?.inletPressureDropPercent !== undefined && currentCase.inputs.pressure) {
+                // Convert from percentage back to kPa: percent = (drop / setPressure) * 100
+                // So drop = percent * setPressure / 100
+                // setPressure is in barg, we want kPa (1 bar = 100 kPa)
+                inletPressureDropKPa = (inletValidation.inletPressureDropPercent * currentCase.inputs.pressure * 100) / 100;
+            }
+
+            // Get outlet pressure drop and backpressure
+            if (currentCase.inputs.backpressureSource === 'calculated' && localOutletNetwork?.pipes?.length) {
+                const outletDrop = calculateNetworkPressureDrop(
+                    localOutletNetwork,
+                    currentCase.inputs.massFlowRate,
+                    fluid
+                );
+                outletPressureDropKPa = outletDrop; // kPa
+                builtUpBackpressureKPa = (currentCase.inputs.destinationPressure || 0) * 100 + outletDrop; // Convert barg to kPa and add drop
+            }
+
             const finalOutputs = {
                 ...outputs,
+                inletPressureDrop: inletPressureDropKPa,
                 inletPressureDropPercent: inletValidation?.inletPressureDropPercent,
                 inletValidation: inletValidation ? {
                     isValid: inletValidation.isValid,
                     message: inletValidation.message,
                     severity: inletValidation.severity,
                 } : undefined,
+                outletPressureDrop: outletPressureDropKPa,
+                builtUpBackpressure: builtUpBackpressureKPa,
             };
 
             setCurrentCase({
@@ -979,8 +1006,10 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                             icon={currentCase.outputs.inletValidation.isValid ? <CheckCircle /> : <Warning />}
                                         >
                                             <Typography variant="body2">
-                                                {currentCase.inputs.inletPressureDrop?.toFixed(2) || '—'} kPa
-                                                ({currentCase.outputs.inletPressureDropPercent?.toFixed(1) || '—'}% of set pressure)
+                                                {currentCase.outputs.inletPressureDrop !== undefined
+                                                    ? toDisplay(currentCase.outputs.inletPressureDrop, 'pressure')
+                                                    : '—'} {preferences.pressure}
+                                                ({currentCase.outputs.inletPressureDropPercent?.toFixed(2) || '—'}% of set pressure)
                                             </Typography>
                                             <Typography variant="caption">
                                                 {currentCase.outputs.inletValidation.message}
@@ -1045,35 +1074,47 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         gap: 2,
                                         mb: 2
                                     }}>
-                                        {/* Total Pressure Drop */}
+                                        {/* Total Pressure Drop (kPa) */}
                                         <Box sx={{
                                             p: 2,
                                             borderRadius: 2,
                                             bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
                                             textAlign: 'center'
                                         }}>
-                                            <Typography variant="h5" fontWeight={700} color="primary.main">
-                                                {currentCase.outputs?.inletPressureDropPercent !== undefined
-                                                    ? `${currentCase.outputs.inletPressureDropPercent.toFixed(1)}%`
+                                            <Typography variant="h5" fontWeight={700} color={
+                                                currentCase.outputs?.inletPressureDropPercent !== undefined
+                                                    ? currentCase.outputs.inletPressureDropPercent < 3 ? 'success.main'
+                                                        : currentCase.outputs.inletPressureDropPercent < 5 ? 'warning.main' : 'error.main'
+                                                    : 'primary.main'
+                                            }>
+                                                {currentCase.outputs?.inletPressureDrop !== undefined
+                                                    ? `${toDisplay(currentCase.outputs.inletPressureDrop, 'pressure')}`
                                                     : '—'}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
-                                                of Set Pressure
+                                                Total ΔP ({preferences.pressure})
                                             </Typography>
                                         </Box>
 
-                                        {/* Segment Count */}
+                                        {/* Percentage of Set Pressure */}
                                         <Box sx={{
                                             p: 2,
                                             borderRadius: 2,
                                             bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
                                             textAlign: 'center'
                                         }}>
-                                            <Typography variant="h5" fontWeight={700}>
-                                                {localInletNetwork?.pipes?.length || 0}
+                                            <Typography variant="h5" fontWeight={700} color={
+                                                currentCase.outputs?.inletPressureDropPercent !== undefined
+                                                    ? currentCase.outputs.inletPressureDropPercent < 3 ? 'success.main'
+                                                        : currentCase.outputs.inletPressureDropPercent < 5 ? 'warning.main' : 'error.main'
+                                                    : 'text.primary'
+                                            }>
+                                                {currentCase.outputs?.inletPressureDropPercent !== undefined
+                                                    ? `${currentCase.outputs.inletPressureDropPercent.toFixed(2)}%`
+                                                    : '—'}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
-                                                Pipe Segments
+                                                of Set Pressure (3% max)
                                             </Typography>
                                         </Box>
 
@@ -1092,18 +1133,18 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                             </Typography>
                                         </Box>
 
-                                        {/* API 520 Limit */}
+                                        {/* Pipe Segments */}
                                         <Box sx={{
                                             p: 2,
                                             borderRadius: 2,
                                             bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
                                             textAlign: 'center'
                                         }}>
-                                            <Typography variant="h5" fontWeight={700} color="text.secondary">
-                                                3.0%
+                                            <Typography variant="h5" fontWeight={700}>
+                                                {localInletNetwork?.pipes?.length || 0}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
-                                                API 520 Limit
+                                                Pipe Segments
                                             </Typography>
                                         </Box>
                                     </Box>
@@ -1412,7 +1453,24 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         gap: 2,
                                         mb: 2
                                     }}>
-                                        {/* Built-up Backpressure */}
+                                        {/* Total Outlet Pressure Drop */}
+                                        <Box sx={{
+                                            p: 2,
+                                            borderRadius: 2,
+                                            bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                                            textAlign: 'center'
+                                        }}>
+                                            <Typography variant="h5" fontWeight={700} color="secondary.main">
+                                                {currentCase.outputs?.outletPressureDrop !== undefined
+                                                    ? `${toDisplay(currentCase.outputs.outletPressureDrop, 'pressure')}`
+                                                    : '—'}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Total ΔP ({preferences.pressure})
+                                            </Typography>
+                                        </Box>
+
+                                        {/* Built-up Backpressure (Total) */}
                                         <Box sx={{
                                             p: 2,
                                             borderRadius: 2,

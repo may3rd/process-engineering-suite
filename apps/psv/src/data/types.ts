@@ -165,6 +165,7 @@ export interface SizingOutputs {
     messages: string[];
 
     // Hydraulic validation outputs
+    inletPressureDrop?: number; // kPa - actual pressure drop value
     inletPressureDropPercent?: number; // % of set pressure
     inletValidation?: {
         isValid: boolean;
