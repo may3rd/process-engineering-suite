@@ -5,7 +5,7 @@ import { convertUnit } from '@eng-suite/physics/unitConversion';
 // Define base units for our system
 const BASE_UNITS = {
     pressure: 'barg',
-    temperature: 'C',
+    temperature: 'C',  // Use 'C' not '°C' for convertUnit compatibility
     flow: 'kg/h',
     length: 'm',
     area: 'mm2',
