@@ -21,7 +21,7 @@ export function useUnitConversion(initialPreferences: UnitPreferences) {
     /**
      * Convert a value from Base Unit -> Display Unit
      */
-    const toDisplay = useCallback((value: number | undefined, type: UnitType): number => {
+    const toDisplay = useCallback((value: number | undefined, type: UnitType, decimalPlaces?: number): number => {
         if (value === undefined || value === null) return 0;
 
         let targetUnit = preferences[type];
@@ -31,8 +31,10 @@ export function useUnitConversion(initialPreferences: UnitPreferences) {
 
         // Handle density special case if needed (e.g. specific gravity)
         // For now trusting physics-engine
-
-        return convertUnit(value, BASE_UNITS[type], targetUnit);
+        if (decimalPlaces === undefined) {
+            return convertUnit(value, BASE_UNITS[type], targetUnit);
+        }
+        return Number(convertUnit(value, BASE_UNITS[type], targetUnit).toFixed(decimalPlaces));
     }, [preferences]);
 
     /**

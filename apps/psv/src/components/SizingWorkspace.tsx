@@ -426,40 +426,44 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
 
             // === PHASE 4: Merge validation results with outputs ===
             // Calculate actual pressure drops for display
-            let inletPressureDropKPa: number | undefined;
-            let outletPressureDropKPa: number | undefined;
-            let builtUpBackpressureKPa: number | undefined;
+            // IMPORTANT: All pressure values must be in barg (base unit) for toDisplay() to work correctly
+            let inletPressureDropBarg: number | undefined;
+            let outletPressureDropBarg: number | undefined;
+            let builtUpBackpressureBarg: number | undefined;
 
-            // Get inlet pressure drop in kPa
+            // Get inlet pressure drop in barg
             if (inletValidation?.inletPressureDropPercent !== undefined && currentCase.inputs.pressure) {
-                // Convert from percentage back to kPa: percent = (drop / setPressure) * 100
-                // So drop = percent * setPressure / 100
-                // setPressure is in barg, we want kPa (1 bar = 100 kPa)
-                inletPressureDropKPa = (inletValidation.inletPressureDropPercent * currentCase.inputs.pressure * 100) / 100;
+                // percent = (drop / setPressure) * 100
+                // So drop (barg) = percent * setPressure (barg) / 100
+                inletPressureDropBarg = (inletValidation.inletPressureDropPercent * currentCase.inputs.pressure) / 100;
             }
 
             // Get outlet pressure drop and backpressure
             if (currentCase.inputs.backpressureSource === 'calculated' && localOutletNetwork?.pipes?.length) {
-                const outletDrop = calculateNetworkPressureDrop(
+                const outletDropKPa = calculateNetworkPressureDrop(
                     localOutletNetwork,
                     currentCase.inputs.massFlowRate,
                     fluid
                 );
-                outletPressureDropKPa = outletDrop; // kPa
-                builtUpBackpressureKPa = (currentCase.inputs.destinationPressure || 0) * 100 + outletDrop; // Convert barg to kPa and add drop
+                // Convert kPa to bar (1 bar = 100 kPa)
+                outletPressureDropBarg = outletDropKPa / 100;
+
+                // Total Backpressure = Destination Pressure + Outlet Pressure Drop
+                // Both values are in barg
+                builtUpBackpressureBarg = (currentCase.inputs.destinationPressure || 0) + outletPressureDropBarg;
             }
 
             const finalOutputs = {
                 ...outputs,
-                inletPressureDrop: inletPressureDropKPa,
+                inletPressureDrop: inletPressureDropBarg,
                 inletPressureDropPercent: inletValidation?.inletPressureDropPercent,
                 inletValidation: inletValidation ? {
                     isValid: inletValidation.isValid,
                     message: inletValidation.message,
                     severity: inletValidation.severity,
                 } : undefined,
-                outletPressureDrop: outletPressureDropKPa,
-                builtUpBackpressure: builtUpBackpressureKPa,
+                outletPressureDrop: outletPressureDropBarg,
+                builtUpBackpressure: builtUpBackpressureBarg,
             };
 
             setCurrentCase({
@@ -1007,7 +1011,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         >
                                             <Typography variant="body2">
                                                 {currentCase.outputs.inletPressureDrop !== undefined
-                                                    ? toDisplay(currentCase.outputs.inletPressureDrop, 'pressure')
+                                                    ? toDisplay(currentCase.outputs.inletPressureDrop, 'pressure', 3)
                                                     : '—'} {preferences.pressure}
                                                 ({currentCase.outputs.inletPressureDropPercent?.toFixed(2) || '—'}% of set pressure)
                                             </Typography>
@@ -1088,7 +1092,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                                     : 'primary.main'
                                             }>
                                                 {currentCase.outputs?.inletPressureDrop !== undefined
-                                                    ? `${toDisplay(currentCase.outputs.inletPressureDrop, 'pressure')}`
+                                                    ? `${toDisplay(currentCase.outputs.inletPressureDrop, 'pressure', 3)}`
                                                     : '—'}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
@@ -1462,7 +1466,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         }}>
                                             <Typography variant="h5" fontWeight={700} color="secondary.main">
                                                 {currentCase.outputs?.outletPressureDrop !== undefined
-                                                    ? `${toDisplay(currentCase.outputs.outletPressureDrop, 'pressure')}`
+                                                    ? `${toDisplay(currentCase.outputs.outletPressureDrop, 'pressure', 3)}`
                                                     : '—'}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
@@ -1479,7 +1483,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         }}>
                                             <Typography variant="h5" fontWeight={700} color="secondary.main">
                                                 {currentCase.outputs?.builtUpBackpressure !== undefined
-                                                    ? `${toDisplay(currentCase.outputs.builtUpBackpressure, 'pressure')}`
+                                                    ? `${toDisplay(currentCase.outputs.builtUpBackpressure, 'pressure', 3)}`
                                                     : '—'}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
@@ -1496,7 +1500,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         }}>
                                             <Typography variant="h5" fontWeight={700}>
                                                 {currentCase.inputs.destinationPressure !== undefined
-                                                    ? toDisplay(currentCase.inputs.destinationPressure, 'pressure')
+                                                    ? toDisplay(currentCase.inputs.destinationPressure, 'pressure', 3)
                                                     : '0'}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
