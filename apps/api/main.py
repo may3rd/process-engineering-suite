@@ -36,6 +36,7 @@ from packages.hydraulics.src.models.network import Network
 from packages.hydraulics.src.solver.network_solver import NetworkSolver
 from packages.hydraulics.src.utils.units import convert
 from packages.hydraulics.src.models.results import CalculationOutput, ResultSummary, StatePoint, PressureDropDetails
+from packages.hydraulics.src.single_edge import EdgeCalculationInput, calculate_single_edge
 from .schemas import (
     PipeSectionRequest,
     CalculationResponse,
