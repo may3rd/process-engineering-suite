@@ -67,6 +67,12 @@ import {
     calculateNetworkPressureDrop,
     calculateBuiltUpBackpressure
 } from "@/lib/hydraulicValidation";
+import {
+    validateSizingInputs,
+    getFieldLabel,
+    type ValidationResult,
+    type ValidationError
+} from "@/lib/inputValidation";
 
 interface SizingWorkspaceProps {
     sizingCase: SizingCase;
@@ -121,6 +127,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
     // Always start fresh - user must calculate in this session
     const [isDirty, setIsDirty] = useState(false);
     const [isCalculated, setIsCalculated] = useState(false);
+    const [validationResult, setValidationResult] = useState<ValidationResult | null>(null);
 
     // Multiple valve support
     const [numberOfValves, setNumberOfValves] = useState(sizingCase.outputs.numberOfValves || 1);
@@ -212,6 +219,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
         // Mark as dirty and needs recalculation
         setIsDirty(true);
         setIsCalculated(false);
+        setValidationResult(null); // Clear any previous validation errors
     };
 
     // Handle orifice selection
@@ -312,6 +320,15 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
 
     // Calculate using API-520/521 equations
     const handleCalculate = async () => {
+        // Validate inputs first
+        const validation = validateSizingInputs(currentCase.method, currentCase.inputs);
+        setValidationResult(validation);
+
+        if (!validation.isValid) {
+            // Don't proceed with calculation if validation fails
+            return;
+        }
+
         setIsCalculating(true);
 
         // Small delay for UI feedback
@@ -575,6 +592,44 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                 </Box>
             </Paper>
 
+            {/* Validation Errors/Warnings */}
+            {validationResult && !validationResult.isValid && (
+                <Alert
+                    severity="error"
+                    sx={{ mt: 1, mx: 2 }}
+                    onClose={() => setValidationResult(null)}
+                >
+                    <Typography variant="subtitle2" fontWeight={600}>
+                        Please fix the following errors before calculating:
+                    </Typography>
+                    <Box component="ul" sx={{ m: 0, pl: 2 }}>
+                        {validationResult.errors.map((error, idx) => (
+                            <li key={idx}>
+                                <strong>{getFieldLabel(error.field)}:</strong> {error.message}
+                            </li>
+                        ))}
+                    </Box>
+                </Alert>
+            )}
+            {validationResult?.warnings && validationResult.warnings.length > 0 && validationResult.isValid && (
+                <Alert
+                    severity="warning"
+                    sx={{ mt: 1, mx: 2 }}
+                    onClose={() => setValidationResult(null)}
+                >
+                    <Typography variant="subtitle2" fontWeight={600}>
+                        Warnings (calculation will proceed):
+                    </Typography>
+                    <Box component="ul" sx={{ m: 0, pl: 2 }}>
+                        {validationResult.warnings.map((warning, idx) => (
+                            <li key={idx}>
+                                <strong>{getFieldLabel(warning.field)}:</strong> {warning.message}
+                            </li>
+                        ))}
+                    </Box>
+                </Alert>
+            )}
+
             {isCalculating && <LinearProgress />}
 
             {/* Tabs */}
@@ -634,7 +689,11 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         label="Sizing Method"
                                         select
                                         value={currentCase.method}
-                                        onChange={(e) => setCurrentCase({ ...currentCase, method: e.target.value as SizingCase['method'] })}
+                                        onChange={(e) => {
+                                            setCurrentCase({ ...currentCase, method: e.target.value as SizingCase['method'] });
+                                            setIsDirty(true);
+                                            setIsCalculated(false);
+                                        }}
                                         fullWidth
                                     >
                                         <MenuItem value="gas">Gas / Vapor</MenuItem>
@@ -898,6 +957,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                                 },
                                             });
                                             setIsDirty(true);
+                                            setIsCalculated(false);
                                         }}
                                     >
                                         <FormControlLabel value="manual" control={<Radio />} label="Manual Entry" />
@@ -1012,7 +1072,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                             <Typography variant="body2">
                                                 {currentCase.outputs.inletPressureDrop !== undefined
                                                     ? toDisplayDelta(currentCase.outputs.inletPressureDrop, 'pressure', 3)
-                                                    : '—'} {getDeltaUnit('pressure')}
+                                                    : '—'} {getDeltaUnit('pressure') + " "}
                                                 ({currentCase.outputs.inletPressureDropPercent?.toFixed(2) || '—'}% of set pressure)
                                             </Typography>
                                             <Typography variant="caption">
@@ -1236,7 +1296,11 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         label="Design Standard"
                                         select
                                         value={currentCase.standard}
-                                        onChange={(e) => setCurrentCase({ ...currentCase, standard: e.target.value as SizingCase['standard'] })}
+                                        onChange={(e) => {
+                                            setCurrentCase({ ...currentCase, standard: e.target.value as SizingCase['standard'] });
+                                            setIsDirty(true);
+                                            setIsCalculated(false);
+                                        }}
                                         fullWidth
                                     >
                                         <MenuItem value="API-520">API-520</MenuItem>

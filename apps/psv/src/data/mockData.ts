@@ -587,7 +587,7 @@ export const sizingCases: SizingCase[] = [
         },
         unitPreferences: {
             pressure: 'barg',
-            temperature: '°C',
+            temperature: 'C',
             flow: 'kg/h',
             length: 'm',
             area: 'mm²',
@@ -634,7 +634,7 @@ export const sizingCases: SizingCase[] = [
         },
         unitPreferences: {
             pressure: 'barg',
-            temperature: '°C',
+            temperature: 'C',
             flow: 'kg/h',
             length: 'm',
             area: 'mm²',
@@ -683,7 +683,7 @@ export const sizingCases: SizingCase[] = [
         revisionNo: 3,
         unitPreferences: {
             pressure: 'barg',
-            temperature: '°C',
+            temperature: 'C',
             flow: 'kg/h',
             length: 'm',
             area: 'mm²',
