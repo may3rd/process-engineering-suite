@@ -46,6 +46,8 @@ import {
     Delete,
     Settings,
     HelpOutline,
+    CloudDone,
+    CloudOff,
 } from "@mui/icons-material";
 import { SizingCase, PipelineNetwork, PipeProps, ORIFICE_SIZES, SizingInputs, UnitPreferences } from "@/data/types";
 import { PipelineDataGrid } from "./PipelineDataGrid";
@@ -503,6 +505,15 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                             variant="outlined"
                         />
                     )}
+                    <Tooltip title={apiHealthy ? 'Python API Connected' : 'Using Local Calculations'}>
+                        <Chip
+                            icon={apiHealthy ? <CloudDone /> : <CloudOff />}
+                            label={apiHealthy ? 'API' : 'Local'}
+                            size="small"
+                            color={apiHealthy ? 'success' : 'default'}
+                            variant="outlined"
+                        />
+                    </Tooltip>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                     <Button variant="outlined" onClick={onClose}>

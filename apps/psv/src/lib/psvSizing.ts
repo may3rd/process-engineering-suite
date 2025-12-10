@@ -454,6 +454,7 @@ export function calculateSizing(inputs: SizingInputs, method: SizingMethod): Siz
 
     return {
         requiredArea: Math.round(requiredArea),
+        requiredAreaIn2: result.requiredAreaIn2,
         selectedOrifice: selectedOrifice.designation,
         orificeArea: selectedOrifice.area,
         percentUsed: Math.round(percentUsed * 10) / 10,
