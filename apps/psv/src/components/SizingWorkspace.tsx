@@ -36,6 +36,7 @@ import {
 import { SizingCase, PipelineNetwork, PipeProps, ORIFICE_SIZES, SizingInputs } from "@/data/types";
 import { PipelineDataGrid } from "./PipelineDataGrid";
 import { v4 as uuidv4 } from "uuid";
+import { calculateSizing } from "@/lib/psvSizing";
 
 interface SizingWorkspaceProps {
     sizingCase: SizingCase;
@@ -96,11 +97,13 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
 
     // Handle input changes for SizingInputs
     const handleInputChange = (field: keyof SizingInputs, value: number | string) => {
+        // Handle NaN from parseFloat on empty input
+        const safeValue = typeof value === 'number' && isNaN(value) ? 0 : value;
         setCurrentCase({
             ...currentCase,
             inputs: {
                 ...currentCase.inputs,
-                [field]: value,
+                [field]: safeValue,
             },
         });
     };
@@ -199,42 +202,34 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
         });
     };
 
-    // Simulate calculation (placeholder for Python API call)
+    // Calculate using API-520/521 equations
     const handleCalculate = async () => {
         setIsCalculating(true);
-        // TODO: Replace with actual Python API call
-        await new Promise(resolve => setTimeout(resolve, 1500));
 
-        // Mock API response - update outputs based on inputs
-        // In real implementation, this would come from Python backend
-        const mockOutputs = {
-            ...currentCase.outputs,
-            requiredArea: Math.round(currentCase.inputs.massFlowRate * 0.025), // Mock calculation
-            isCriticalFlow: currentCase.inputs.pressure > currentCase.inputs.backpressure * 1.9,
-            messages: [
-                'Calculation completed successfully',
-                currentCase.outputs.isCriticalFlow ? 'Critical flow confirmed' : 'Subcritical flow detected',
-            ],
-        };
+        // Small delay for UI feedback
+        await new Promise(resolve => setTimeout(resolve, 100));
 
-        // Auto-select smallest suitable orifice
-        let selectedOrifice = ORIFICE_SIZES[ORIFICE_SIZES.length - 1];
-        for (const orifice of ORIFICE_SIZES) {
-            if (orifice.area >= mockOutputs.requiredArea) {
-                selectedOrifice = orifice;
-                break;
-            }
+        try {
+            // Run API-520/521 calculation
+            const outputs = calculateSizing(currentCase.inputs, currentCase.method);
+
+            setCurrentCase({
+                ...currentCase,
+                outputs,
+                status: 'calculated',
+                updatedAt: new Date().toISOString(),
+            });
+        } catch (error) {
+            console.error('Calculation error:', error);
+            setCurrentCase({
+                ...currentCase,
+                outputs: {
+                    ...currentCase.outputs,
+                    messages: ['ERROR: Calculation failed. Check input values.'],
+                },
+            });
         }
 
-        mockOutputs.selectedOrifice = selectedOrifice.designation;
-        mockOutputs.orificeArea = selectedOrifice.area;
-        mockOutputs.percentUsed = (mockOutputs.requiredArea / selectedOrifice.area) * 100;
-        mockOutputs.ratedCapacity = Math.round(currentCase.inputs.massFlowRate / (mockOutputs.percentUsed / 100));
-
-        setCurrentCase({
-            ...currentCase,
-            outputs: mockOutputs,
-        });
         setIsCalculating(false);
     };
 
