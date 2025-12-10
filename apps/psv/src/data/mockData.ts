@@ -317,7 +317,7 @@ export const protectiveSystems: ProtectiveSystem[] = [
             ],
             pipes: [
                 {
-                    id: 'p1', name: 'Inlet Pipe', startNodeId: 'n1', endNodeId: 'n2', length: 5, lengthUnit: 'm', diameter: 100, diameterUnit: 'mm', elevation: 0,
+                    id: 'p1', name: 'Inlet Pipe', startNodeId: 'n1', endNodeId: 'n2', length: 5, lengthUnit: 'm', diameter: 150, diameterUnit: 'mm', elevation: 0,
                     fittings: [{ type: 'Elbow 90', count: 2, k_each: 0.3, k_total: 0.6 }]
                 }
             ]

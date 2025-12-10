@@ -149,7 +149,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
         viscosity: 'cP',
     };
 
-    const { preferences, setUnit, toDisplay, toBase } = useUnitConversion(sizingCase.unitPreferences || defaultPreferences);
+    const { preferences, setUnit, toDisplay, toDisplayDelta, getDeltaUnit, toBase } = useUnitConversion(sizingCase.unitPreferences || defaultPreferences);
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
@@ -1011,8 +1011,8 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         >
                                             <Typography variant="body2">
                                                 {currentCase.outputs.inletPressureDrop !== undefined
-                                                    ? toDisplay(currentCase.outputs.inletPressureDrop, 'pressure', 3)
-                                                    : '—'} {preferences.pressure}
+                                                    ? toDisplayDelta(currentCase.outputs.inletPressureDrop, 'pressure', 3)
+                                                    : '—'} {getDeltaUnit('pressure')}
                                                 ({currentCase.outputs.inletPressureDropPercent?.toFixed(2) || '—'}% of set pressure)
                                             </Typography>
                                             <Typography variant="caption">
@@ -1092,11 +1092,11 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                                     : 'primary.main'
                                             }>
                                                 {currentCase.outputs?.inletPressureDrop !== undefined
-                                                    ? `${toDisplay(currentCase.outputs.inletPressureDrop, 'pressure', 3)}`
+                                                    ? `${toDisplayDelta(currentCase.outputs.inletPressureDrop, 'pressure', 3)}`
                                                     : '—'}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
-                                                Total ΔP ({preferences.pressure})
+                                                Total ΔP ({getDeltaUnit('pressure')})
                                             </Typography>
                                         </Box>
 
@@ -1466,11 +1466,11 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                         }}>
                                             <Typography variant="h5" fontWeight={700} color="secondary.main">
                                                 {currentCase.outputs?.outletPressureDrop !== undefined
-                                                    ? `${toDisplay(currentCase.outputs.outletPressureDrop, 'pressure', 3)}`
+                                                    ? `${toDisplayDelta(currentCase.outputs.outletPressureDrop, 'pressure', 3)}`
                                                     : '—'}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
-                                                Total ΔP ({preferences.pressure})
+                                                Total ΔP ({getDeltaUnit('pressure')})
                                             </Typography>
                                         </Box>
 

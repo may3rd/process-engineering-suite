@@ -13,28 +13,64 @@ const BASE_UNITS = {
     viscosity: 'cP',
 } as const;
 
+// Mapping from gauge units to differential units for pressure drop
+const PRESSURE_GAUGE_TO_DIFF: Record<string, string> = {
+    'barg': 'bar',
+    'psig': 'psi',
+    'kPag': 'kPa',
+    'MPag': 'MPa',
+    // Absolute units stay the same for differential
+    'bar': 'bar',
+    'psi': 'psi',
+    'kPa': 'kPa',
+    'MPa': 'MPa',
+    'Pa': 'Pa',
+};
+
 export type UnitType = keyof UnitPreferences;
 
 export function useUnitConversion(initialPreferences: UnitPreferences) {
     const [preferences, setPreferences] = useState<UnitPreferences>(initialPreferences);
 
     /**
-     * Convert a value from Base Unit -> Display Unit
+     * Convert a value from Base Unit -> Display Unit (for absolute/gauge pressures)
      */
     const toDisplay = useCallback((value: number | undefined, type: UnitType, decimalPlaces?: number): number => {
         if (value === undefined || value === null) return 0;
 
         let targetUnit = preferences[type];
 
-        // Specific fix for "C" vs "°C" mismatch in libraries if needed
-        // Assuming convertUnit handles standard aliases via its normalization
-
-        // Handle density special case if needed (e.g. specific gravity)
-        // For now trusting physics-engine
         if (decimalPlaces === undefined) {
             return convertUnit(value, BASE_UNITS[type], targetUnit);
         }
         return Number(convertUnit(value, BASE_UNITS[type], targetUnit).toFixed(decimalPlaces));
+    }, [preferences]);
+
+    /**
+     * Convert a DIFFERENTIAL value (like ΔP or ΔT) from base unit -> display unit
+     * For pressure: Uses bar/kPa/psi, NEVER barg/psig
+     * Base unit for ΔP is 'bar' (not 'barg')
+     */
+    const toDisplayDelta = useCallback((value: number | undefined, type: UnitType, decimalPlaces: number = 3): number => {
+        if (value === undefined || value === null) return 0;
+
+        // Get the display preference and convert to differential unit
+        const preferredUnit = preferences[type];
+        const diffUnit = PRESSURE_GAUGE_TO_DIFF[preferredUnit] || preferredUnit;
+
+        // For pressure delta, base unit is 'bar' (not 'barg')
+        const baseUnit = type === 'pressure' ? 'bar' : BASE_UNITS[type];
+
+        const converted = convertUnit(value, baseUnit, diffUnit);
+        return Number(converted.toFixed(decimalPlaces));
+    }, [preferences]);
+
+    /**
+     * Get the differential unit label for display (e.g., 'bar' instead of 'barg')
+     */
+    const getDeltaUnit = useCallback((type: UnitType): string => {
+        const preferredUnit = preferences[type];
+        return PRESSURE_GAUGE_TO_DIFF[preferredUnit] || preferredUnit;
     }, [preferences]);
 
     /**
@@ -59,6 +95,8 @@ export function useUnitConversion(initialPreferences: UnitPreferences) {
         preferences,
         setUnit,
         toDisplay,
+        toDisplayDelta,
+        getDeltaUnit,
         toBase,
         BASE_UNITS
     };
