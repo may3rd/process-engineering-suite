@@ -20,9 +20,10 @@ export function useUnitConversion(initialPreferences: UnitPreferences) {
 
     /**
      * Convert a value from Base Unit -> Display Unit
+     * Returns a formatted string with specified decimal places (default: 3)
      */
-    const toDisplay = useCallback((value: number | undefined, type: UnitType): number => {
-        if (value === undefined || value === null) return 0;
+    const toDisplay = useCallback((value: number | undefined, type: UnitType, decimals: number = 3): string => {
+        if (value === undefined || value === null) return '0.000';
 
         let targetUnit = preferences[type];
 
@@ -32,7 +33,8 @@ export function useUnitConversion(initialPreferences: UnitPreferences) {
         // Handle density special case if needed (e.g. specific gravity)
         // For now trusting physics-engine
 
-        return convertUnit(value, BASE_UNITS[type], targetUnit);
+        const converted = convertUnit(value, BASE_UNITS[type], targetUnit);
+        return converted.toFixed(decimals);
     }, [preferences]);
 
     /**
