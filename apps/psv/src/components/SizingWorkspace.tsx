@@ -17,6 +17,11 @@ import {
     Chip,
     Switch,
     FormControlLabel,
+    Radio,
+    RadioGroup,
+    FormControl,
+    FormLabel,
+    Tooltip,
     LinearProgress,
     List,
     ListItem,
@@ -35,16 +40,27 @@ import {
     Info,
     CheckCircle,
     Warning,
+    Error as ErrorIcon,
     Download,
     Calculate,
     Delete,
     Settings,
+    HelpOutline,
 } from "@mui/icons-material";
 import { SizingCase, PipelineNetwork, PipeProps, ORIFICE_SIZES, SizingInputs, UnitPreferences } from "@/data/types";
 import { PipelineDataGrid } from "./PipelineDataGrid";
 import { v4 as uuidv4 } from "uuid";
 import { calculateSizing } from "@/lib/psvSizing";
 import { useUnitConversion, UnitType } from "@/hooks/useUnitConversion";
+import {
+    checkAPIHealth,
+    validateInletPressureDropAPI,
+    type FluidProperties
+} from "@/lib/apiClient";
+import {
+    validateInletPressureDrop,
+    calculateNetworkPressureDrop
+} from "@/lib/hydraulicValidation";
 
 interface SizingWorkspaceProps {
     sizingCase: SizingCase;
@@ -106,6 +122,14 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
     // Local network state (from PSV, not sizing case)
     const [localInletNetwork, setLocalInletNetwork] = useState<PipelineNetwork | undefined>(inletNetwork);
     const [localOutletNetwork, setLocalOutletNetwork] = useState<PipelineNetwork | undefined>(outletNetwork);
+
+    // API health state
+    const [apiHealthy, setApiHealthy] = useState(false);
+
+    // Check API health on mount
+    useEffect(() => {
+        checkAPIHealth().then(setApiHealthy);
+    }, []);
 
     // Unit state
     // Unit Conversion Hook
@@ -288,12 +312,79 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
         await new Promise(resolve => setTimeout(resolve, 100));
 
         try {
-            // Run API-520/521 calculation
+            // === PHASE 1: Inlet Pressure Drop Validation ===
+            let inletValidation;
+
+            if (localInletNetwork && localInletNetwork.pipes && localInletNetwork.pipes.length > 0) {
+                // Build fluid properties for API/calculation
+                const fluid: FluidProperties = {
+                    phase: currentCase.method === 'gas' ? 'gas' :
+                        currentCase.method === 'liquid' ? 'liquid' :
+                            currentCase.method === 'two_phase' ? 'two_phase' : 'gas',
+                    temperature: currentCase.inputs.temperature,
+                    pressure: currentCase.inputs.pressure,
+                    molecularWeight: currentCase.inputs.molecularWeight,
+                    compressibilityZ: currentCase.inputs.compressibilityZ,
+                    specificHeatRatio: currentCase.inputs.specificHeatRatio,
+                    gasViscosity: currentCase.inputs.gasViscosity || currentCase.inputs.viscosity,
+                    liquidDensity: currentCase.inputs.liquidDensity || currentCase.inputs.density,
+                    liquidViscosity: currentCase.inputs.liquidViscosity || currentCase.inputs.viscosity,
+                };
+
+                // Try API first (default), fallback to local
+                if (apiHealthy) {
+                    console.log('🌐 Using Python API for inlet validation (default)');
+                    inletValidation = await validateInletPressureDropAPI({
+                        inletNetwork: localInletNetwork,
+                        psvSetPressure: currentCase.inputs.pressure,  // Use relieving pressure as set pressure for validation
+                        massFlowRate: currentCase.inputs.massFlowRate,
+                        fluid: fluid as any  // Type assertion for extended properties
+                    });
+
+                    // If API fails, fallback to local
+                    if (!inletValidation.success) {
+                        console.warn('⚠️ API failed, falling back to local calculation');
+                        const localDrop = calculateNetworkPressureDrop(
+                            localInletNetwork,
+                            currentCase.inputs.massFlowRate,
+                            fluid
+                        );
+                        inletValidation = validateInletPressureDrop(
+                            localDrop,
+                            currentCase.inputs.pressure
+                        );
+                    }
+                } else {
+                    console.log('📊 API unavailable, using local calculation');
+                    const localDrop = calculateNetworkPressureDrop(
+                        localInletNetwork,
+                        currentCase.inputs.massFlowRate,
+                        fluid
+                    );
+                    inletValidation = validateInletPressureDrop(
+                        localDrop,
+                        currentCase.inputs.pressure
+                    );
+                }
+            }
+
+            // === PHASE 2: Run PSV Sizing Calculation ===
             const outputs = calculateSizing(currentCase.inputs, currentCase.method);
+
+            // === PHASE 3: Merge validation results with outputs ===
+            const finalOutputs = {
+                ...outputs,
+                inletPressureDropPercent: inletValidation?.inletPressureDropPercent,
+                inletValidation: inletValidation ? {
+                    isValid: inletValidation.isValid,
+                    message: inletValidation.message,
+                    severity: inletValidation.severity,
+                } : undefined,
+            };
 
             setCurrentCase({
                 ...currentCase,
-                outputs,
+                outputs: finalOutputs,
                 status: 'calculated',
                 updatedAt: new Date().toISOString(),
             });
@@ -670,47 +761,138 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                             </Card>
                         )}
 
-                        {/* Backpressure */}
+                        {/* Backpressure & Hydraulic Validation */}
                         <Card>
                             <CardContent>
-                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                    Backpressure
-                                </Typography>
-                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-                                    <TextField
-                                        label="Backpressure"
-                                        type="number"
-                                        value={toDisplay(currentCase.inputs.backpressure, 'pressure')}
-                                        onChange={(e) => handleInputChange('backpressure', e.target.value, 'pressure')}
-                                        slotProps={{
-                                            input: {
-                                                endAdornment: (
-                                                    <InputAdornment position="end">
-                                                        <TextField
-                                                            select
-                                                            variant="standard"
-                                                            value={preferences.pressure}
-                                                            onChange={(e) => setUnit('pressure', e.target.value)}
-                                                            sx={{ minWidth: 60 }}
-                                                        >
-                                                            {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                        </TextField>
-                                                    </InputAdornment>
-                                                ),
-                                            }
-                                        }}
-                                        fullWidth
-                                    />
-                                    <TextField
-                                        label="Backpressure Type"
-                                        select
-                                        value={currentCase.inputs.backpressureType}
-                                        onChange={(e) => handleInputChange('backpressureType', e.target.value)}
-                                        fullWidth
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                    <Typography variant="subtitle1" fontWeight={600}>
+                                        Backpressure & Hydraulic Validation
+                                    </Typography>
+                                    <Tooltip
+                                        title={
+                                            <Box>
+                                                <Typography variant="body2" fontWeight={600} gutterBottom>
+                                                    Backpressure Types:
+                                                </Typography>
+                                                <Typography variant="body2" gutterBottom>
+                                                    • <strong>Superimposed:</strong> Constant backpressure that exists in the discharge system before the valve opens (e.g., from a header or atmospheric pressure).
+                                                </Typography>
+                                                <Typography variant="body2">
+                                                    • <strong>Built-up:</strong> Backpressure that develops in the discharge system only after the valve opens, caused by flow resistance.
+                                                </Typography>
+                                            </Box>
+                                        }
+                                        arrow
+                                        placement="right"
                                     >
-                                        <MenuItem value="superimposed">Superimposed</MenuItem>
-                                        <MenuItem value="built_up">Built-up</MenuItem>
-                                    </TextField>
+                                        <HelpOutline sx={{ fontSize: 18, color: 'text.secondary', cursor: 'help' }} />
+                                    </Tooltip>
+                                </Box>
+
+                                {/* Backpressure Source Toggle */}
+                                <FormControl component="fieldset" sx={{ mb: 2 }}>
+                                    <FormLabel component="legend">Backpressure Source</FormLabel>
+                                    <RadioGroup
+                                        row
+                                        value={currentCase.inputs.backpressureSource || 'manual'}
+                                        onChange={(e) => {
+                                            setCurrentCase({
+                                                ...currentCase,
+                                                inputs: {
+                                                    ...currentCase.inputs,
+                                                    backpressureSource: e.target.value as 'manual' | 'calculated',
+                                                },
+                                            });
+                                            setIsDirty(true);
+                                        }}
+                                    >
+                                        <FormControlLabel value="manual" control={<Radio />} label="Manual Entry" />
+                                        <FormControlLabel value="calculated" control={<Radio />} label="Calculate from Outlet Piping" />
+                                    </RadioGroup>
+                                </FormControl>
+
+                                {/* Manual Backpressure Input */}
+                                {currentCase.inputs.backpressureSource !== 'calculated' && (
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 2 }}>
+                                        <TextField
+                                            label="Backpressure"
+                                            type="number"
+                                            value={toDisplay(currentCase.inputs.backpressure, 'pressure')}
+                                            onChange={(e) => handleInputChange('backpressure', e.target.value, 'pressure')}
+                                            slotProps={{
+                                                input: {
+                                                    endAdornment: (
+                                                        <InputAdornment position="end">
+                                                            <TextField
+                                                                select
+                                                                variant="standard"
+                                                                value={preferences.pressure}
+                                                                onChange={(e) => setUnit('pressure', e.target.value)}
+                                                                sx={{ minWidth: 60 }}
+                                                            >
+                                                                {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                            </TextField>
+                                                        </InputAdornment>
+                                                    ),
+                                                }
+                                            }}
+                                            fullWidth
+                                        />
+                                        <TextField
+                                            label="Backpressure Type"
+                                            select
+                                            value={currentCase.inputs.backpressureType}
+                                            onChange={(e) => handleInputChange('backpressureType', e.target.value)}
+                                            fullWidth
+                                        >
+                                            <MenuItem value="superimposed">Superimposed</MenuItem>
+                                            <MenuItem value="built_up">Built-up</MenuItem>
+                                        </TextField>
+                                    </Box>
+                                )}
+
+                                {/* Display Calculated Backpressure (if mode is calculated) */}
+                                {currentCase.inputs.backpressureSource === 'calculated' && (
+                                    <Alert severity="info" sx={{ mb: 2 }}>
+                                        <Typography variant="body2" fontWeight={600}>
+                                            Calculated Built-up Backpressure: {currentCase.inputs.calculatedBackpressure?.toFixed(3) || '—'} barg
+                                        </Typography>
+                                        <Typography variant="caption">
+                                            Based on {localOutletNetwork?.pipes?.length || 0} pipes in outlet network.
+                                            {(!localOutletNetwork || !localOutletNetwork.pipes || localOutletNetwork.pipes.length === 0) &&
+                                                ' Add pipes to Outlet Piping tab to calculate.'}
+                                        </Typography>
+                                    </Alert>
+                                )}
+
+                                {/* Inlet Pressure Drop Validation */}
+                                <Box sx={{ mt: 2 }}>
+                                    <Typography variant="body2" fontWeight={600} color="text.secondary" gutterBottom>
+                                        Inlet Pressure Drop Validation
+                                    </Typography>
+                                    {currentCase.outputs?.inletValidation ? (
+                                        <Alert
+                                            severity={currentCase.outputs.inletValidation.severity}
+                                            icon={currentCase.outputs.inletValidation.isValid ? <CheckCircle /> : <Warning />}
+                                        >
+                                            <Typography variant="body2">
+                                                {currentCase.inputs.inletPressureDrop?.toFixed(2) || '—'} kPa
+                                                ({currentCase.outputs.inletPressureDropPercent?.toFixed(1) || '—'}% of set pressure)
+                                            </Typography>
+                                            <Typography variant="caption">
+                                                {currentCase.outputs.inletValidation.message}
+                                            </Typography>
+                                        </Alert>
+                                    ) : (
+                                        <Alert severity="info">
+                                            <Typography variant="body2">
+                                                Run calculation to validate inlet pressure drop.
+                                            </Typography>
+                                            <Typography variant="caption">
+                                                API 520 guideline: Inlet ΔP should be &lt; 3% of set pressure to avoid valve chattering.
+                                            </Typography>
+                                        </Alert>
+                                    )}
                                 </Box>
                             </CardContent>
                         </Card>
@@ -954,6 +1136,29 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                             Summary of sizing calculations, pressure drops, and recommendations.
                         </Typography>
+
+                        {/* Inlet Pressure Drop Validation Alert */}
+                        {currentCase.outputs?.inletValidation && (
+                            <Alert
+                                severity={currentCase.outputs.inletValidation.severity}
+                                sx={{ mb: 3 }}
+                                icon={
+                                    currentCase.outputs.inletValidation.isValid ?
+                                        <CheckCircle /> :
+                                        currentCase.outputs.inletValidation.severity === 'warning' ?
+                                            <Warning /> :
+                                            <ErrorIcon />
+                                }
+                            >
+                                <strong>Inlet Pressure Drop Validation:</strong> {currentCase.outputs.inletValidation.message}
+                                {currentCase.outputs.inletPressureDropPercent !== undefined && (
+                                    <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                        Inlet ΔP: {currentCase.outputs.inletPressureDropPercent.toFixed(1)}% of set pressure
+                                        {localInletNetwork && localInletNetwork.pipes && ` (${localInletNetwork.pipes.length} pipe${localInletNetwork.pipes.length !== 1 ? 's' : ''})`}
+                                    </Typography>
+                                )}
+                            </Alert>
+                        )}
 
                         {/* Summary Card */}
                         <Card sx={{

@@ -146,8 +146,9 @@ export interface SizingInputs {
 
     // Hydraulic validation inputs
     backpressureSource?: 'manual' | 'calculated';
-    calculatedBackpressure?: number;
-    inletPressureDrop?: number;
+    calculatedBackpressure?: number;  // barg - calculated from outlet network
+    destinationPressure?: number;  // barg - destination pressure for backward calculation
+    inletPressureDrop?: number;  // kPa - calculated from inlet network
 }
 
 export interface SizingOutputs {
@@ -162,6 +163,14 @@ export interface SizingOutputs {
     isCriticalFlow: boolean;
     numberOfValves: number; // Number of parallel valves (default: 1)
     messages: string[];
+
+    // Hydraulic validation outputs
+    inletPressureDropPercent?: number; // % of set pressure
+    inletValidation?: {
+        isValid: boolean;
+        message: string;
+        severity: 'success' | 'warning' | 'error';
+    };
 }
 // Unit preferences for user display
 export interface UnitPreferences {
