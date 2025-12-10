@@ -571,6 +571,7 @@ export const sizingCases: SizingCase[] = [
             specificHeatRatio: 1.15,
             backpressure: 0.5, // barg
             backpressureType: 'superimposed',
+            gasViscosity: 0.01, // cP
         },
         outputs: {
             requiredArea: 1250, // mm2
@@ -613,7 +614,7 @@ export const sizingCases: SizingCase[] = [
             temperature: 45, // C
             pressure: 5.5, // barg
             density: 850, // kg/m3
-            viscosity: 1.2, // cP
+            liquidViscosity: 1.2, // cP
             compressibilityZ: 1.0, // Liquid
             specificHeatRatio: 1.0, // Liquid
             backpressure: 1.5, // barg
@@ -663,6 +664,7 @@ export const sizingCases: SizingCase[] = [
             specificHeatRatio: 1.31,
             backpressure: 5.0,
             backpressureType: 'superimposed',
+            gasViscosity: 0.011, // cP
         },
         outputs: {
             requiredArea: 120, // mm2

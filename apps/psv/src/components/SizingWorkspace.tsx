@@ -60,12 +60,12 @@ import { useUnitConversion, UnitType } from "@/hooks/useUnitConversion";
 import {
     checkAPIHealth,
     validateInletPressureDropAPI,
+    calculateNetworkPressureDropAPI,
     type FluidProperties
 } from "@/lib/apiClient";
 import {
     validateInletPressureDrop,
     calculateNetworkPressureDrop,
-    calculateBuiltUpBackpressure
 } from "@/lib/hydraulicValidation";
 import {
     validateSizingInputs,
@@ -73,6 +73,7 @@ import {
     type ValidationResult,
     type ValidationError
 } from "@/lib/inputValidation";
+import { convertUnit } from "@eng-suite/physics/unitConversion";
 
 interface SizingWorkspaceProps {
     sizingCase: SizingCase;
@@ -355,6 +356,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
 
             // === PHASE 1: Inlet Pressure Drop Validation ===
             let inletValidation;
+            let outletDropKPa: number | undefined;
 
             if (localInletNetwork && localInletNetwork.pipes && localInletNetwork.pipes.length > 0) {
                 // Try API first (default), fallback to local
@@ -397,49 +399,62 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
             // === PHASE 2: Outlet Backpressure Calculation ===
             // Only calculate if mode is 'calculated' AND we have pipes
             if (currentCase.inputs.backpressureSource === 'calculated' && localOutletNetwork && localOutletNetwork.pipes && localOutletNetwork.pipes.length > 0) {
-                let calculatedBackpressure = 0; // barg
+                let calculatedBackpressure: number | undefined; // barg
 
                 try {
-                    // Try API first
                     if (apiHealthy) {
-                        // TODO: Call CalculateOutletPressureDropAPI when ready
-                        // For now, use local fallback logic or assume API similar to inlet
-                        // We'll use local 'calculateNetworkPressureDrop' derived logic for now as placeholder for API call
-                        // until dedicated API endpoint is confirmed.
+                        console.log('🌐 Using Python API for outlet pressure drop');
+                        const apiResult = await calculateNetworkPressureDropAPI({
+                            network: localOutletNetwork,
+                            massFlowRate: currentCase.inputs.massFlowRate,
+                            fluid: fluid as any,
+                            boundaryPressure: currentCase.inputs.destinationPressure || 0,
+                            boundaryPressureUnit: 'barg',
+                            direction: 'backward',
+                        });
 
-                        // Actually, let's just use local calculation for now to ensure reliability
-                        // until Phase 5 backend is ready
-                        const outletDrop = calculateNetworkPressureDrop(
-                            localOutletNetwork,
-                            currentCase.inputs.massFlowRate,
-                            fluid
-                        );
-                        calculatedBackpressure = (currentCase.inputs.destinationPressure || 0) + (outletDrop / 100);
-                    } else {
-                        // Local calculation
-                        const outletDrop = calculateNetworkPressureDrop(
-                            localOutletNetwork,
-                            currentCase.inputs.massFlowRate,
-                            fluid
-                        );
-                        calculatedBackpressure = (currentCase.inputs.destinationPressure || 0) + (outletDrop / 100);
+                        if (apiResult.success && typeof apiResult.totalPressureDrop === 'number') {
+                            outletDropKPa = convertUnit(apiResult.totalPressureDrop, 'Pa', 'kPa');
+                        } else {
+                            console.warn('⚠️ Outlet API failed, falling back to local calculation');
+                        }
                     }
 
-                    // Update inputs for the main sizing calculation
-                    updatedInputs = {
-                        ...updatedInputs,
-                        backpressure: calculatedBackpressure,
-                        calculatedBackpressure: calculatedBackpressure,
-                        backpressureType: 'built_up' // Auto-set to built-up since we calculated it
-                    };
+                    if (outletDropKPa === undefined) {
+                        console.log('📊 Using local outlet pressure drop calculation');
+                        outletDropKPa = calculateNetworkPressureDrop(
+                            localOutletNetwork,
+                            currentCase.inputs.massFlowRate,
+                            fluid
+                        );
+                    }
 
+                    if (outletDropKPa !== undefined) {
+                        calculatedBackpressure = (currentCase.inputs.destinationPressure || 0) + (outletDropKPa / 100);
+
+                        // Update inputs for the main sizing calculation
+                        updatedInputs = {
+                            ...updatedInputs,
+                            backpressure: calculatedBackpressure,
+                            calculatedBackpressure,
+                            backpressureType: 'built_up' // Auto-set to built-up since we calculated it
+                        };
+                    }
                 } catch (err) {
                     console.error("Error calculating backpressure:", err);
                 }
             }
 
             // === PHASE 3: Run PSV Sizing Calculation ===
-            const outputs = calculateSizing(updatedInputs, currentCase.method);
+            const baseOutputs = calculateSizing(updatedInputs, currentCase.method);
+
+            // Adjust outputs for multiple valves
+            const outputs = {
+                ...baseOutputs,
+                percentUsed: (baseOutputs.requiredArea / (numberOfValves * baseOutputs.orificeArea)) * 100,
+                ratedCapacity: baseOutputs.ratedCapacity * numberOfValves,
+                numberOfValves: numberOfValves, // Ensure this is saved
+            };
 
             // === PHASE 4: Merge validation results with outputs ===
             // Calculate actual pressure drops for display
@@ -456,12 +471,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
             }
 
             // Get outlet pressure drop and backpressure
-            if (currentCase.inputs.backpressureSource === 'calculated' && localOutletNetwork?.pipes?.length) {
-                const outletDropKPa = calculateNetworkPressureDrop(
-                    localOutletNetwork,
-                    currentCase.inputs.massFlowRate,
-                    fluid
-                );
+            if (currentCase.inputs.backpressureSource === 'calculated' && localOutletNetwork?.pipes?.length && outletDropKPa !== undefined) {
                 // Convert kPa to bar (1 bar = 100 kPa)
                 outletPressureDropBarg = outletDropKPa / 100;
 
@@ -1671,7 +1681,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                 <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                                     Sizing Summary
                                 </Typography>
-                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 3 }}>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(5, 1fr)' }, gap: 3 }}>
                                     <Box>
                                         <Typography variant="caption" color="text.secondary">Selected Orifice</Typography>
                                         <Typography variant="h3" fontWeight={700} color="primary.main">
@@ -1686,15 +1696,94 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                                     </Box>
                                     <Box>
                                         <Typography variant="caption" color="text.secondary">% Used</Typography>
-                                        <Typography variant="h5" fontWeight={600} color={currentCase.outputs.percentUsed > 90 ? 'warning.main' : 'text.primary'}>
-                                            {currentCase.outputs.percentUsed.toFixed(1)}%
+                                        <Typography variant="h5" fontWeight={600} color={
+                                            ((currentCase.outputs.requiredArea / (numberOfValves * currentCase.outputs.orificeArea)) * 100) > 90
+                                                ? 'warning.main'
+                                                : 'text.primary'
+                                        }>
+                                            {((currentCase.outputs.requiredArea / (numberOfValves * currentCase.outputs.orificeArea)) * 100).toFixed(1)}%
                                         </Typography>
                                     </Box>
                                     <Box>
                                         <Typography variant="caption" color="text.secondary">Rated Capacity</Typography>
                                         <Typography variant="h5" fontWeight={600}>
-                                            {currentCase.outputs.ratedCapacity.toLocaleString()} kg/h
+                                            {((currentCase.outputs.ratedCapacity / (currentCase.outputs.numberOfValves || 1)) * numberOfValves).toLocaleString()} kg/h
                                         </Typography>
+                                    </Box>
+                                    <Box>
+                                        <Typography variant="caption" color="text.secondary">Number of Valves</Typography>
+                                        <Typography variant="h5" fontWeight={600}>
+                                            {numberOfValves}
+                                        </Typography>
+                                    </Box>
+                                </Box>
+                            </CardContent>
+                        </Card>
+
+
+
+                        {/* Hydraulic Calculations */}
+                        <Card sx={{ mb: 3 }}>
+                            <CardContent>
+                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                    Hydraulic Calculations
+                                </Typography>
+                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+                                    {/* Inlet Pressure Drop */}
+                                    <Box>
+                                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                            Inlet Pressure Drop
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                                            <Typography variant="h6" fontWeight={600}>
+                                                {currentCase.outputs.inletPressureDrop !== undefined
+                                                    ? `${toDisplayDelta(currentCase.outputs.inletPressureDrop, 'pressure', 3)}`
+                                                    : '—'}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {getDeltaUnit('pressure')}
+                                            </Typography>
+                                        </Box>
+                                        <Typography
+                                            variant="caption"
+                                            color={
+                                                currentCase.outputs.inletPressureDropPercent !== undefined
+                                                    ? currentCase.outputs.inletPressureDropPercent > 3 ? 'error.main' : 'success.main'
+                                                    : 'text.secondary'
+                                            }
+                                            fontWeight={500}
+                                        >
+                                            {currentCase.outputs.inletPressureDropPercent !== undefined
+                                                ? `${currentCase.outputs.inletPressureDropPercent.toFixed(2)}% of Set Pressure`
+                                                : 'Requires Inlet Piping'}
+                                        </Typography>
+                                    </Box>
+
+                                    {/* Backpressure */}
+                                    <Box>
+                                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                            Total Backpressure
+                                        </Typography>
+                                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                                            <Typography variant="h6" fontWeight={600}>
+                                                {toDisplay(currentCase.inputs.backpressure, 'pressure', 3)}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {preferences.pressure}
+                                            </Typography>
+                                        </Box>
+                                        <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Superimposed: {currentCase.inputs.destinationPressure
+                                                    ? `${toDisplay(currentCase.inputs.destinationPressure, 'pressure', 2)} ${preferences.pressure}`
+                                                    : `0 ${preferences.pressure}`}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                Built-up: {currentCase.outputs.builtUpBackpressure
+                                                    ? `${toDisplayDelta(currentCase.outputs.builtUpBackpressure, 'pressure', 2)} ${getDeltaUnit('pressure')}`
+                                                    : `0 ${getDeltaUnit('pressure')}`}
+                                            </Typography>
+                                        </Box>
                                     </Box>
                                 </Box>
                             </CardContent>
@@ -1774,11 +1863,11 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                             </Button>
                         </Box>
                     </Box>
-                </TabPanel>
-            </Box>
+                </TabPanel >
+            </Box >
 
             {/* ==================== TAB 5: SETTINGS ==================== */}
-            <TabPanel value={activeTab} index={5}>
+            < TabPanel value={activeTab} index={5} >
                 <Box sx={{ maxWidth: 900, mx: 'auto' }}>
                     <Typography variant="h6" sx={{ mb: 1 }}>Sizing Case Settings</Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -1814,10 +1903,11 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                         </CardContent>
                     </Card>
                 </Box>
-            </TabPanel>
+            </TabPanel >
 
             {/* Delete Confirmation Dialog */}
-            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+            < Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)
+            }>
                 <DialogTitle>Delete Sizing Case?</DialogTitle>
                 <DialogContent>
                     <DialogContentText sx={{ mb: 2 }}>
@@ -1848,7 +1938,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                         Delete Sizing Case
                     </Button>
                 </DialogActions>
-            </Dialog>
-        </Box>
+            </Dialog >
+        </Box >
     );
 }

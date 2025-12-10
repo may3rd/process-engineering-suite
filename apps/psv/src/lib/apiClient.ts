@@ -12,7 +12,7 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 // ============================================================================
 
 export interface FluidProperties {
-    phase: 'gas' | 'liquid' | 'two_phase';
+    phase: 'gas' | 'liquid' | 'two_phase' | 'steam';
     temperature: number;  // °C
     pressure: number;  // barg
     molecularWeight?: number;
@@ -44,6 +44,9 @@ export interface NetworkPressureDropRequest {
     network: PipelineNetwork;
     massFlowRate: number;  // kg/h
     fluid: FluidProperties;
+    boundaryPressure?: number; // barg
+    boundaryPressureUnit?: string;
+    direction?: 'forward' | 'backward' | 'auto';
 }
 
 export interface NetworkPressureDropResult {
@@ -127,9 +130,14 @@ interface APIInletValidationRequest extends APINetworkRequest {
  * Transform FluidProperties to API format
  */
 function transformFluid(fluid: FluidProperties): APIFluidRequest {
+    const normalizedPhase =
+        fluid.phase === 'two_phase' ? 'liquid' :
+            fluid.phase === 'steam' ? 'gas' :
+                fluid.phase;
+
     return {
         name: "fluid",
-        phase: fluid.phase === 'two_phase' ? 'liquid' : fluid.phase,  // API may not support two_phase
+        phase: normalizedPhase,  // API may not support two_phase/steam directly
         density: fluid.liquidDensity,
         densityUnit: "kg/m³",
         viscosity: fluid.phase === 'gas' ? fluid.gasViscosity : fluid.liquidViscosity,
@@ -211,13 +219,13 @@ function transformNetworkRequest(request: NetworkPressureDropRequest): APINetwor
         name: "network",
         fluid: transformFluid(request.fluid),
         sections,
-        boundaryPressure: request.fluid.pressure,
-        boundaryPressureUnit: "barg",
+        boundaryPressure: request.boundaryPressure ?? request.fluid.pressure,
+        boundaryPressureUnit: request.boundaryPressureUnit ?? "barg",
         boundaryTemperature: request.fluid.temperature,
         boundaryTemperatureUnit: "C",
         massFlowRate: request.massFlowRate,
         massFlowRateUnit: "kg/h",
-        direction: "forward",
+        direction: request.direction || "forward",
         gasFlowModel: request.fluid.phase === 'gas' ? "isothermal" : "isothermal",
     };
 }
