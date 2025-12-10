@@ -28,6 +28,7 @@ import {
     Dialog,
     DialogTitle,
     DialogContent,
+    DialogContentText,
     DialogActions,
     Checkbox,
     TextField,
@@ -50,6 +51,7 @@ import {
     AddCircle,
     Star,
     Verified,
+    Delete,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
 import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem } from "@/data/types";
@@ -1012,8 +1014,10 @@ function NotesTab() {
 export function ProtectiveSystemDetail() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
-    const { selectedPsv, activeTab, setActiveTab, selectPsv, updateSizingCase, sizingCaseList, updatePsv, deleteSizingCase } = usePsvStore();
+    const { selectedPsv, activeTab, setActiveTab, selectPsv, updateSizingCase, sizingCaseList, updatePsv, deleteSizingCase, deletePsv } = usePsvStore();
     const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
 
     // If editing a case, show the workspace
     if (editingCaseId) {
@@ -1052,6 +1056,18 @@ export function ProtectiveSystemDetail() {
         return null;
     }
 
+
+
+    const handleDeletePsv = () => {
+        setDeleteDialogOpen(true);
+    };
+
+    const handleConfirmDelete = () => {
+        if (selectedPsv && deleteConfirmationInput === selectedPsv.tag) {
+            deletePsv(selectedPsv.id);
+        }
+    };
+
     const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
         setActiveTab(newValue);
     };
@@ -1076,11 +1092,55 @@ export function ProtectiveSystemDetail() {
                             {selectedPsv.name}
                         </Typography>
                     </Box>
-                    <Button variant="outlined" onClick={() => selectPsv(null)}>
-                        Close
-                    </Button>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                            variant="outlined"
+                            color="error"
+                            startIcon={<Delete />}
+                            onClick={handleDeletePsv}
+                        >
+                            Delete
+                        </Button>
+                        <Button variant="outlined" onClick={() => selectPsv(null)}>
+                            Close
+                        </Button>
+                    </Box>
                 </Box>
             </Paper>
+
+            {/* Delete Confirmation Dialog */}
+            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+                <DialogTitle>Delete Protective System?</DialogTitle>
+                <DialogContent>
+                    <DialogContentText sx={{ mb: 2 }}>
+                        This action cannot be undone. This will permanently delete the protective system
+                        <strong> {selectedPsv.tag} </strong> and all associated scenarios and sizing cases.
+                    </DialogContentText>
+                    <Typography variant="body2" gutterBottom>
+                        Please type <strong>{selectedPsv.tag}</strong> to confirm.
+                    </Typography>
+                    <TextField
+                        autoFocus
+                        margin="dense"
+                        fullWidth
+                        variant="outlined"
+                        value={deleteConfirmationInput}
+                        onChange={(e) => setDeleteConfirmationInput(e.target.value)}
+                        placeholder={selectedPsv.tag}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        onClick={handleConfirmDelete}
+                        disabled={deleteConfirmationInput !== selectedPsv.tag}
+                    >
+                        Delete Protective System
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             {/* Tabs */}
             <Paper sx={{ mb: 3 }}>

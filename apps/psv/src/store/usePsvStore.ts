@@ -93,6 +93,7 @@ interface PsvStore {
     // Equipment Link Actions
     linkEquipment: (link: EquipmentLink) => void;
     unlinkEquipment: (linkId: string) => void;
+    deletePsv: (id: string) => void;
 }
 
 export const usePsvStore = create<PsvStore>((set, get) => ({
@@ -425,5 +426,20 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         set((state) => ({
             equipmentLinkList: state.equipmentLinkList.filter(l => l.id !== linkId)
         }));
+    },
+
+    deletePsv: (id) => {
+        const state = get();
+        set((state) => ({
+            psvList: state.psvList.filter((p) => p.id !== id),
+            // If the deleted PSV was selected, clear selection
+            selectedPsv: state.selectedPsv?.id === id ? null : state.selectedPsv,
+            selection: state.selectedPsv?.id === id ? { ...state.selection, psvId: null } : state.selection,
+        }));
+
+        // Navigate back to project level if the deleted PSV was selected
+        if (state.selectedPsv?.id === id && state.selection.projectId) {
+            state.selectProject(state.selection.projectId);
+        }
     },
 }));
