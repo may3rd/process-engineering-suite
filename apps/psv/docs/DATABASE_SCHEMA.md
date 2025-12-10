@@ -108,6 +108,8 @@ erDiagram
 | owner_id | UUID | FK → users.id |
 | status | ENUM('draft', 'in_review', 'approved', 'issued') | Status |
 | tags | TEXT[] | Tags array |
+| inlet_network | JSONB | Shared inlet piping configuration |
+| outlet_network | JSONB | Shared outlet piping configuration |
 | created_at | TIMESTAMP | Creation time |
 | updated_at | TIMESTAMP | Last update |
 

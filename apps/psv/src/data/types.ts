@@ -75,6 +75,9 @@ export interface ProtectiveSystem {
     ownerId: string;
     status: 'draft' | 'in_review' | 'approved' | 'issued';
     tags: string[];
+    // Shared piping networks (one physical install per device)
+    inletNetwork?: PipelineNetwork;
+    outletNetwork?: PipelineNetwork;
     createdAt: string;
     updatedAt: string;
 }
@@ -153,11 +156,6 @@ export interface SizingCase {
     standard: SizingStandard;
     method: SizingMethod;
     inputs: SizingInputs;
-
-    // Pipeline Networks (compatible with network-editor)
-    inletNetwork?: PipelineNetwork;
-    outletNetwork?: PipelineNetwork;
-
     outputs: SizingOutputs;
     revisionNo: number;
     status: 'draft' | 'calculated' | 'verified' | 'approved';

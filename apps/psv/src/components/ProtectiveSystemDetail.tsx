@@ -30,6 +30,7 @@ import {
     DialogContent,
     DialogActions,
     Checkbox,
+    TextField,
 } from "@mui/material";
 import {
     Info,
@@ -51,9 +52,9 @@ import {
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
 import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem } from "@/data/types";
-import { getAttachmentsByPsv, getCommentsByPsv, getTodosByPsv, getEquipmentLinksByPsv, equipment, getUserById } from "@/data/mockData";
+import { getAttachmentsByPsv, getCommentsByPsv, getTodosByPsv, getEquipmentLinksByPsv, equipment, getUserById, users } from "@/data/mockData";
 import { SizingWorkspace } from "./SizingWorkspace";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { v4 as uuidv4 } from "uuid";
 
 interface TabPanelProps {
@@ -800,11 +801,24 @@ function AttachmentsTab() {
 // Notes Tab Content (Comments & Todos)
 function NotesTab() {
     const { selectedPsv } = usePsvStore();
+    const [localTodos, setLocalTodos] = useState<TodoItem[]>([]);
+    const [localComments, setLocalComments] = useState<Comment[]>([]);
+    const [addTaskOpen, setAddTaskOpen] = useState(false);
+    const [addCommentOpen, setAddCommentOpen] = useState(false);
+    const [newTaskText, setNewTaskText] = useState('');
+    const [newTaskAssignee, setNewTaskAssignee] = useState('user-1');
+    const [newTaskDueDate, setNewTaskDueDate] = useState('');
+    const [newCommentText, setNewCommentText] = useState('');
+
+    // Initialize from mock data
+    useEffect(() => {
+        if (selectedPsv) {
+            setLocalTodos(getTodosByPsv(selectedPsv.id));
+            setLocalComments(getCommentsByPsv(selectedPsv.id));
+        }
+    }, [selectedPsv]);
 
     if (!selectedPsv) return null;
-
-    const comments = getCommentsByPsv(selectedPsv.id);
-    const todoItems = getTodosByPsv(selectedPsv.id);
 
     const formatDate = (dateStr: string) => {
         return new Date(dateStr).toLocaleDateString('en-US', {
@@ -812,6 +826,50 @@ function NotesTab() {
             month: 'short',
             day: 'numeric',
         });
+    };
+
+    const handleToggleTodo = (todoId: string) => {
+        setLocalTodos(prev => prev.map(t =>
+            t.id === todoId ? { ...t, completed: !t.completed } : t
+        ));
+    };
+
+    const handleAddTask = () => {
+        if (!newTaskText.trim()) return;
+        // Default due date: 1 week from now
+        const defaultDueDate = new Date();
+        defaultDueDate.setDate(defaultDueDate.getDate() + 7);
+        const dueDate = newTaskDueDate || defaultDueDate.toISOString().split('T')[0];
+
+        const newTodo: TodoItem = {
+            id: `todo-${Date.now()}`,
+            protectiveSystemId: selectedPsv.id,
+            text: newTaskText.trim(),
+            completed: false,
+            assignedTo: newTaskAssignee,
+            dueDate: dueDate,
+            createdBy: 'user-1',
+            createdAt: new Date().toISOString(),
+        };
+        setLocalTodos(prev => [...prev, newTodo]);
+        setNewTaskText('');
+        setNewTaskAssignee('user-1');
+        setNewTaskDueDate('');
+        setAddTaskOpen(false);
+    };
+
+    const handleAddComment = () => {
+        if (!newCommentText.trim()) return;
+        const newComment: Comment = {
+            id: `comment-${Date.now()}`,
+            protectiveSystemId: selectedPsv.id,
+            body: newCommentText.trim(),
+            createdBy: 'user-1',
+            createdAt: new Date().toISOString(),
+        };
+        setLocalComments(prev => [...prev, newComment]);
+        setNewCommentText('');
+        setAddCommentOpen(false);
     };
 
     return (
@@ -822,20 +880,20 @@ function NotesTab() {
                     <Typography variant="h6" fontWeight={600}>
                         Tasks
                     </Typography>
-                    <Button variant="contained" startIcon={<AddCircle />} size="small">
+                    <Button variant="contained" startIcon={<AddCircle />} size="small" onClick={() => setAddTaskOpen(true)}>
                         Add Task
                     </Button>
                 </Box>
 
-                {todoItems.length > 0 ? (
+                {localTodos.length > 0 ? (
                     <Paper variant="outlined">
                         <List disablePadding>
-                            {todoItems.map((todo, index) => {
+                            {localTodos.map((todo, index) => {
                                 const assignee = todo.assignedTo ? getUserById(todo.assignedTo) : null;
                                 return (
                                     <ListItem
                                         key={todo.id}
-                                        divider={index < todoItems.length - 1}
+                                        divider={index < localTodos.length - 1}
                                         secondaryAction={
                                             todo.dueDate && (
                                                 <Chip
@@ -848,7 +906,10 @@ function NotesTab() {
                                         }
                                     >
                                         <ListItemIcon>
-                                            <Checkbox checked={todo.completed} />
+                                            <Checkbox
+                                                checked={todo.completed}
+                                                onChange={() => handleToggleTodo(todo.id)}
+                                            />
                                         </ListItemIcon>
                                         <ListItemText
                                             primary={
@@ -877,14 +938,14 @@ function NotesTab() {
                     <Typography variant="h6" fontWeight={600}>
                         Comments
                     </Typography>
-                    <Button variant="outlined" startIcon={<Note />} size="small">
+                    <Button variant="contained" startIcon={<AddCircle />} size="small" onClick={() => setAddCommentOpen(true)}>
                         Add Comment
                     </Button>
                 </Box>
 
-                {comments.length > 0 ? (
+                {localComments.length > 0 ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                        {comments.map((comment) => {
+                        {localComments.map((comment) => {
                             const author = getUserById(comment.createdBy);
                             return (
                                 <Card key={comment.id} variant="outlined">
@@ -910,6 +971,74 @@ function NotesTab() {
                     </Paper>
                 )}
             </Box>
+
+            {/* Add Task Dialog */}
+            <Dialog open={addTaskOpen} onClose={() => setAddTaskOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Add Task</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        fullWidth
+                        label="Task description"
+                        value={newTaskText}
+                        onChange={(e) => setNewTaskText(e.target.value)}
+                        sx={{ mt: 2, mb: 2 }}
+                    />
+                    <TextField
+                        select
+                        fullWidth
+                        label="Assign to"
+                        value={newTaskAssignee}
+                        onChange={(e) => setNewTaskAssignee(e.target.value)}
+                        sx={{ mb: 2 }}
+                        SelectProps={{ native: true }}
+                    >
+                        {users.map((user) => (
+                            <option key={user.id} value={user.id}>
+                                {user.name}
+                            </option>
+                        ))}
+                    </TextField>
+                    <TextField
+                        fullWidth
+                        type="date"
+                        label="Due date"
+                        value={newTaskDueDate}
+                        onChange={(e) => setNewTaskDueDate(e.target.value)}
+                        slotProps={{ inputLabel: { shrink: true } }}
+                        helperText="Default: 1 week from today"
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setAddTaskOpen(false)}>Cancel</Button>
+                    <Button variant="contained" onClick={handleAddTask} disabled={!newTaskText.trim()}>
+                        Add
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Add Comment Dialog */}
+            <Dialog open={addCommentOpen} onClose={() => setAddCommentOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Add Comment</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        fullWidth
+                        multiline
+                        rows={3}
+                        label="Comment"
+                        value={newCommentText}
+                        onChange={(e) => setNewCommentText(e.target.value)}
+                        sx={{ mt: 1 }}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setAddCommentOpen(false)}>Cancel</Button>
+                    <Button variant="contained" onClick={handleAddComment} disabled={!newCommentText.trim()}>
+                        Add
+                    </Button>
+                </DialogActions>
+            </Dialog>
         </Box>
     );
 }
@@ -918,7 +1047,7 @@ function NotesTab() {
 export function ProtectiveSystemDetail() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
-    const { selectedPsv, activeTab, setActiveTab, selectPsv, updateSizingCase, sizingCaseList } = usePsvStore();
+    const { selectedPsv, activeTab, setActiveTab, selectPsv, updateSizingCase, sizingCaseList, updatePsv } = usePsvStore();
     const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
 
     // If editing a case, show the workspace
@@ -928,10 +1057,21 @@ export function ProtectiveSystemDetail() {
             return (
                 <SizingWorkspace
                     sizingCase={caseToEdit}
+                    inletNetwork={selectedPsv?.inletNetwork}
+                    outletNetwork={selectedPsv?.outletNetwork}
                     onClose={() => setEditingCaseId(null)}
                     onSave={(updated) => {
                         updateSizingCase(updated);
                         setEditingCaseId(null);
+                    }}
+                    onSaveNetworks={(updatedInlet, updatedOutlet) => {
+                        if (selectedPsv) {
+                            updatePsv({
+                                ...selectedPsv,
+                                inletNetwork: updatedInlet,
+                                outletNetwork: updatedOutlet,
+                            });
+                        }
                     }}
                 />
             );

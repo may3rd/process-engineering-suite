@@ -40,8 +40,11 @@ import { calculateSizing } from "@/lib/psvSizing";
 
 interface SizingWorkspaceProps {
     sizingCase: SizingCase;
+    inletNetwork?: PipelineNetwork;
+    outletNetwork?: PipelineNetwork;
     onClose: () => void;
     onSave: (updatedCase: SizingCase) => void;
+    onSaveNetworks?: (inlet: PipelineNetwork | undefined, outlet: PipelineNetwork | undefined) => void;
 }
 
 interface TabPanelProps {
@@ -74,7 +77,7 @@ const FLOW_UNITS = ['kg/h', 'lb/h', 'kg/s'];
 const VISCOSITY_UNITS = ['cP', 'mPa·s', 'Pa·s'];
 const DENSITY_UNITS = ['kg/m³', 'lb/ft³'];
 
-export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspaceProps) {
+export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClose, onSave, onSaveNetworks }: SizingWorkspaceProps) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const [activeTab, setActiveTab] = useState(0);
@@ -89,6 +92,10 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
 
     // Multiple valve support
     const [numberOfValves, setNumberOfValves] = useState(sizingCase.outputs.numberOfValves || 1);
+
+    // Local network state (from PSV, not sizing case)
+    const [localInletNetwork, setLocalInletNetwork] = useState<PipelineNetwork | undefined>(inletNetwork);
+    const [localOutletNetwork, setLocalOutletNetwork] = useState<PipelineNetwork | undefined>(outletNetwork);
 
     // Unit state
     const [units, setUnits] = useState({
@@ -151,7 +158,7 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
     const handleAddInletPipe = () => {
         const newPipe: PipeProps = {
             id: uuidv4(),
-            name: `Pipe-${(currentCase.inletNetwork?.pipes.length || 0) + 1}`,
+            name: `Pipe-${(localInletNetwork?.pipes.length || 0) + 1}`,
             startNodeId: 'start',
             endNodeId: 'end',
             length: 10,
@@ -160,20 +167,17 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
         };
 
         const updatedNetwork: PipelineNetwork = {
-            nodes: currentCase.inletNetwork?.nodes || [],
-            pipes: [...(currentCase.inletNetwork?.pipes || []), newPipe],
+            nodes: localInletNetwork?.nodes || [],
+            pipes: [...(localInletNetwork?.pipes || []), newPipe],
         };
 
-        setCurrentCase({
-            ...currentCase,
-            inletNetwork: updatedNetwork,
-        });
+        setLocalInletNetwork(updatedNetwork);
     };
 
     const handleAddOutletPipe = () => {
         const newPipe: PipeProps = {
             id: uuidv4(),
-            name: `Pipe-${(currentCase.outletNetwork?.pipes.length || 0) + 1}`,
+            name: `Pipe-${(localOutletNetwork?.pipes.length || 0) + 1}`,
             startNodeId: 'start',
             endNodeId: 'end',
             length: 10,
@@ -182,14 +186,11 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
         };
 
         const updatedNetwork: PipelineNetwork = {
-            nodes: currentCase.outletNetwork?.nodes || [],
-            pipes: [...(currentCase.outletNetwork?.pipes || []), newPipe],
+            nodes: localOutletNetwork?.nodes || [],
+            pipes: [...(localOutletNetwork?.pipes || []), newPipe],
         };
 
-        setCurrentCase({
-            ...currentCase,
-            outletNetwork: updatedNetwork,
-        });
+        setLocalOutletNetwork(updatedNetwork);
     };
 
     const handleEditPipe = (id: string, type: 'inlet' | 'outlet') => {
@@ -198,19 +199,21 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
     };
 
     const handleDeletePipe = (id: string, type: 'inlet' | 'outlet') => {
-        const networkKey = type === 'inlet' ? 'inletNetwork' : 'outletNetwork';
-        const currentNetwork = currentCase[networkKey];
-        if (!currentNetwork) return;
-
-        const updatedNetwork = {
-            ...currentNetwork,
-            pipes: currentNetwork.pipes.filter(p => p.id !== id),
-        };
-
-        setCurrentCase({
-            ...currentCase,
-            [networkKey]: updatedNetwork,
-        });
+        if (type === 'inlet') {
+            if (!localInletNetwork) return;
+            const updatedNetwork = {
+                ...localInletNetwork,
+                pipes: localInletNetwork.pipes.filter((p: PipeProps) => p.id !== id),
+            };
+            setLocalInletNetwork(updatedNetwork);
+        } else {
+            if (!localOutletNetwork) return;
+            const updatedNetwork = {
+                ...localOutletNetwork,
+                pipes: localOutletNetwork.pipes.filter((p: PipeProps) => p.id !== id),
+            };
+            setLocalOutletNetwork(updatedNetwork);
+        }
     };
 
     // Calculate using API-520/521 equations
@@ -258,6 +261,7 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
                 numberOfValves,
             },
         };
+        onSaveNetworks?.(localInletNetwork, localOutletNetwork);
         onSave(caseToSave);
         onClose();
     };
@@ -577,7 +581,7 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
                         </Typography>
 
                         <PipelineDataGrid
-                            pipes={currentCase.inletNetwork?.pipes || []}
+                            pipes={localInletNetwork?.pipes || []}
                             onAddPipe={handleAddInletPipe}
                             onEditPipe={(id) => handleEditPipe(id, 'inlet')}
                             onDeletePipe={(id) => handleDeletePipe(id, 'inlet')}
@@ -790,7 +794,7 @@ export function SizingWorkspace({ sizingCase, onClose, onSave }: SizingWorkspace
                         </Typography>
 
                         <PipelineDataGrid
-                            pipes={currentCase.outletNetwork?.pipes || []}
+                            pipes={localOutletNetwork?.pipes || []}
                             onAddPipe={handleAddOutletPipe}
                             onEditPipe={(id) => handleEditPipe(id, 'outlet')}
                             onDeletePipe={(id) => handleDeletePipe(id, 'outlet')}
