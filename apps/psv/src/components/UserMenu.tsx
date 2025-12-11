@@ -30,6 +30,7 @@ import {
     Login,
 } from '@mui/icons-material';
 import { useAuthStore } from '@/store/useAuthStore';
+import { usePsvStore } from '@/store/usePsvStore';
 import { useColorMode } from '@/contexts/ColorModeContext';
 import { LoginPage } from '@/components/LoginPage';
 
@@ -40,6 +41,7 @@ export function UserMenu() {
     const currentUser = useAuthStore((state) => state.currentUser);
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const logout = useAuthStore((state) => state.logout);
+    const setCurrentPage = usePsvStore((state) => state.setCurrentPage);
 
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [showLogin, setShowLogin] = useState(false);
@@ -55,6 +57,7 @@ export function UserMenu() {
 
     const handleLogout = () => {
         logout();
+        setCurrentPage(null); // Clear any special page state
         handleClose();
     };
 
@@ -182,22 +185,28 @@ export function UserMenu() {
 
                 {/* Quick Links */}
                 {isAuthenticated && (
-                    <>
-                        <MenuItem>
-                            <ListItemIcon>
-                                <Dashboard fontSize="small" />
-                            </ListItemIcon>
-                            <ListItemText>Dashboard</ListItemText>
-                        </MenuItem>
-                        <MenuItem>
-                            <ListItemIcon>
-                                <Settings fontSize="small" />
-                            </ListItemIcon>
-                            <ListItemText>Account Settings</ListItemText>
-                        </MenuItem>
-                        <Divider />
-                    </>
+                    <MenuItem onClick={() => {
+                        handleClose();
+                        setCurrentPage('dashboard');
+                    }}>
+                        <ListItemIcon>
+                            <Dashboard fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText>Dashboard</ListItemText>
+                    </MenuItem>
                 )}
+                {isAuthenticated && (
+                    <MenuItem onClick={() => {
+                        handleClose();
+                        setCurrentPage('account');
+                    }}>
+                        <ListItemIcon>
+                            <Settings fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText>Account Settings</ListItemText>
+                    </MenuItem>
+                )}
+                {isAuthenticated && <Divider />}
 
                 {/* Theme Toggle */}
                 <Box sx={{ px: 2, py: 1.5 }}>

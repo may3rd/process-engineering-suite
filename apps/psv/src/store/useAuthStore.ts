@@ -8,6 +8,7 @@ interface AuthState {
     isAuthenticated: boolean;
     login: (username: string, password: string) => boolean;
     logout: () => void;
+    updateUserProfile: (updates: Partial<Pick<User, 'name' | 'email'>>) => void;
     // Permission helpers
     canEdit: () => boolean;            // engineer+ (add/edit/delete items)
     canApprove: () => boolean;         // approver+
@@ -45,6 +46,13 @@ export const useAuthStore = create<AuthState>()(
 
             logout: () => {
                 set({ currentUser: null, isAuthenticated: false });
+            },
+
+            updateUserProfile: (updates) => {
+                const { currentUser } = get();
+                if (currentUser) {
+                    set({ currentUser: { ...currentUser, ...updates } });
+                }
             },
 
             // Permission helpers

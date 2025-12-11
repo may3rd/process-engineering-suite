@@ -70,6 +70,7 @@ interface PsvStore {
     // UI state
     activeTab: number;
     sidebarOpen: boolean;
+    currentPage: 'hierarchy' | 'dashboard' | 'account' | null;
 
     // Actions
     selectCustomer: (id: string | null) => void;
@@ -79,6 +80,7 @@ interface PsvStore {
     selectProject: (id: string | null) => void;
     selectPsv: (id: string | null) => void;
     setActiveTab: (tab: number) => void;
+    setCurrentPage: (page: 'hierarchy' | 'dashboard' | 'account' | null) => void;
     toggleSidebar: () => void;
     clearSelection: () => void;
     navigateToLevel: (level: 'customer' | 'plant' | 'unit' | 'area' | 'project' | 'psv') => void;
@@ -152,6 +154,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     // UI state
     activeTab: 0,
     sidebarOpen: true,
+    currentPage: null,
 
     // Actions
     selectCustomer: (id) => {
@@ -297,6 +300,11 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     },
 
     setActiveTab: (tab) => set({ activeTab: tab }),
+
+    setCurrentPage: (page) => set({
+        currentPage: page,
+        selectedPsv: page ? null : get().selectedPsv // Clear selectedPsv when navigating to special pages
+    }),
 
     toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 

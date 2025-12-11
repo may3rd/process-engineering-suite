@@ -6,13 +6,23 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { HierarchyBrowser } from "@/components/HierarchyBrowser";
 import { ProtectiveSystemList } from "@/components/ProtectiveSystemList";
 import { ProtectiveSystemDetail } from "@/components/ProtectiveSystemDetail";
+import { DashboardPage } from "@/components/DashboardPage";
+import { AccountSettingsPage } from "@/components/AccountSettingsPage";
 import { usePsvStore } from "@/store/usePsvStore";
 
 export default function PsvApp() {
-    const { selection, selectedProject, selectedPsv } = usePsvStore();
+    const { selection, selectedProject, selectedPsv, currentPage } = usePsvStore();
 
     // Determine what to render based on selection state
     const renderContent = () => {
+        // Check for special pages first
+        if (currentPage === 'dashboard') {
+            return <DashboardPage />;
+        }
+        if (currentPage === 'account') {
+            return <AccountSettingsPage />;
+        }
+
         // If a PSV is selected, show the detail view
         if (selectedPsv) {
             return <ProtectiveSystemDetail />;
