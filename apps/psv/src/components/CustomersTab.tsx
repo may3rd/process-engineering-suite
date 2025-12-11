@@ -15,8 +15,9 @@ import {
     Chip,
     Typography,
     Tooltip,
+    TextField,
 } from "@mui/material";
-import { Add, Edit, Delete, Business } from "@mui/icons-material";
+import { Add, Edit, Delete, Business, Search } from "@mui/icons-material";
 import { customers, users } from "@/data/mockData";
 import { Customer } from "@/data/types";
 import { glassCardStyles } from "./styles";
@@ -34,6 +35,7 @@ export function CustomersTab() {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+    const [searchText, setSearchText] = useState('');
 
     const handleAdd = () => {
         setSelectedCustomer(null);
@@ -88,6 +90,18 @@ export function CustomersTab() {
         return customers.filter(c => c.id === customerId).length;
     };
 
+    // Filter customers based on search text
+    const filteredCustomers = customers.filter(customer => {
+        if (!searchText) return true;
+        const search = searchText.toLowerCase();
+        const owner = users.find(u => u.id === customer.ownerId);
+        return (
+            customer.code.toLowerCase().includes(search) ||
+            customer.name.toLowerCase().includes(search) ||
+            owner?.name.toLowerCase().includes(search)
+        );
+    });
+
     return (
         <Box>
             {/* Header */}
@@ -109,6 +123,19 @@ export function CustomersTab() {
                 )}
             </Box>
 
+            {/* Search Bar */}
+            <TextField
+                placeholder="Search by code, name, or owner..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                size="small"
+                fullWidth
+                sx={{ mb: 2 }}
+                InputProps={{
+                    startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
+                }}
+            />
+
             {/* Table */}
             <Paper sx={{ ...glassCardStyles, p: 0 }}>
                 <TableContainer>
@@ -125,7 +152,7 @@ export function CustomersTab() {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {customers.map((customer) => {
+                            {filteredCustomers.map((customer) => {
                                 const owner = users.find(u => u.id === customer.ownerId);
                                 const plantCount = getPlantCount(customer.id);
 
@@ -196,11 +223,11 @@ export function CustomersTab() {
                                     </TableRow>
                                 );
                             })}
-                            {customers.length === 0 && (
+                            {filteredCustomers.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                                         <Typography color="text.secondary">
-                                            No customers found. Click "Add Customer" to create one.
+                                            {searchText ? 'No customers match your search.' : 'No customers found. Click "Add Customer" to create one.'}
                                         </Typography>
                                     </TableCell>
                                 </TableRow>
