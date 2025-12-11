@@ -677,15 +677,19 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
             {isCalculating && <LinearProgress />}
 
             {/* Tabs */}
-            <Paper square sx={{ borderBottom: 1, borderColor: 'divider' }}>
-                <Tabs value={activeTab} onChange={handleTabChange}>
+            <Paper square sx={{ borderBottom: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Tabs value={activeTab} onChange={handleTabChange} sx={{ flex: 1 }}>
                     <Tab label="Conditions" />
-                    <Tab label="Inlet Piping" />
                     <Tab label="PSV Sizing" />
+                    <Tab label="Inlet Piping" />
                     <Tab label="Outlet Piping" />
                     <Tab label="Results" />
-                    <Tab label="Settings" />
                 </Tabs>
+                <Tooltip title="Delete Sizing Case">
+                    <IconButton onClick={() => setDeleteDialogOpen(true)} color="error" sx={{ mr: 2 }}>
+                        <Delete />
+                    </IconButton>
+                </Tooltip>
             </Paper>
 
             {/* Content Area */}
@@ -1139,8 +1143,8 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                     </Box>
                 </TabPanel>
 
-                {/* ==================== TAB 1: INLET PIPING ==================== */}
-                <TabPanel value={activeTab} index={1}>
+                {/* ==================== TAB 2: INLET PIPING ==================== */}
+                <TabPanel value={activeTab} index={2}>
                     <Box sx={{ maxWidth: 1000, mx: 'auto' }}>
                         <Typography variant="h6" sx={{ mb: 1 }}>Inlet Pipeline Configuration</Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -1371,8 +1375,8 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                     </Box>
                 </TabPanel>
 
-                {/* ==================== TAB 2: PSV SIZING ==================== */}
-                <TabPanel value={activeTab} index={2}>
+                {/* ==================== TAB 1: PSV SIZING ==================== */}
+                <TabPanel value={activeTab} index={1}>
                     <Box sx={{ maxWidth: 900, mx: 'auto' }}>
                         <Typography variant="h6" sx={{ mb: 1 }}>Valve Selection & Sizing</Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
@@ -1780,41 +1784,6 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                             Summary of sizing calculations, pressure drops, and recommendations.
                         </Typography>
 
-                        {/* Inlet Pressure Drop Validation Alert */}
-                        {currentCase.outputs?.inletValidation && (
-                            <Alert
-                                severity={currentCase.outputs.inletValidation.severity}
-                                sx={{ mb: 3 }}
-                                icon={
-                                    currentCase.outputs.inletValidation.isValid ?
-                                        <CheckCircle /> :
-                                        currentCase.outputs.inletValidation.severity === 'warning' ?
-                                            <Warning /> :
-                                            <ErrorIcon />
-                                }
-                            >
-                                <strong>Inlet Pressure Drop Validation:</strong> {currentCase.outputs.inletValidation.message}
-                                {currentCase.outputs.inletPressureDropPercent !== undefined && (
-                                    <Typography variant="body2" sx={{ mt: 0.5 }}>
-                                        Inlet ΔP: {currentCase.outputs.inletPressureDropPercent.toFixed(1)}% of set pressure
-                                        {localInletNetwork && localInletNetwork.pipes && ` (${localInletNetwork.pipes.length} pipe${localInletNetwork.pipes.length !== 1 ? 's' : ''})`}
-                                    </Typography>
-                                )}
-                            </Alert>
-                        )}
-
-                        {/* Combined Hydraulic Warnings */}
-                        {hydraulicWarnings.length > 0 && (
-                            <Alert severity="warning" sx={{ mb: 3 }}>
-                                <strong>Hydraulic Calculation Warnings:</strong>
-                                <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
-                                    {hydraulicWarnings.map((warning, idx) => (
-                                        <li key={idx}>{warning}</li>
-                                    ))}
-                                </Box>
-                            </Alert>
-                        )}
-
                         {/* Summary Card */}
                         <Card sx={{
                             mb: 3,
@@ -1828,7 +1797,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                     Sizing Summary
                                 </Typography>
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(5, 1fr)' }, gap: 3 }}>
-                                    <Box>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                         <Typography variant="caption" color="text.secondary">Selected Orifice</Typography>
                                         <Typography variant="h3" fontWeight={700} color="primary.main">
                                             {currentCase.outputs.selectedOrifice}
@@ -1856,7 +1825,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                             {((currentCase.outputs.ratedCapacity / (currentCase.outputs.numberOfValves || 1)) * numberOfValves).toLocaleString()} kg/h
                                         </Typography>
                                     </Box>
-                                    <Box>
+                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                         <Typography variant="caption" color="text.secondary">Number of Valves</Typography>
                                         <Typography variant="h5" fontWeight={600}>
                                             {numberOfValves}
@@ -1865,8 +1834,6 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                 </Box>
                             </CardContent>
                         </Card>
-
-
 
                         {/* Hydraulic Calculations */}
                         <Card sx={{ mb: 3 }}>
@@ -2075,6 +2042,41 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                             </Box>
                         )}
 
+                        {/* Inlet Pressure Drop Validation Alert */}
+                        {currentCase.outputs?.inletValidation && (
+                            <Alert
+                                severity={currentCase.outputs.inletValidation.severity}
+                                sx={{ mb: 3 }}
+                                icon={
+                                    currentCase.outputs.inletValidation.isValid ?
+                                        <CheckCircle /> :
+                                        currentCase.outputs.inletValidation.severity === 'warning' ?
+                                            <Warning /> :
+                                            <ErrorIcon />
+                                }
+                            >
+                                <strong>Inlet Pressure Drop Validation:</strong> {currentCase.outputs.inletValidation.message}
+                                {currentCase.outputs.inletPressureDropPercent !== undefined && (
+                                    <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                        Inlet ΔP: {currentCase.outputs.inletPressureDropPercent.toFixed(1)}% of set pressure
+                                        {localInletNetwork && localInletNetwork.pipes && ` (${localInletNetwork.pipes.length} pipe${localInletNetwork.pipes.length !== 1 ? 's' : ''})`}
+                                    </Typography>
+                                )}
+                            </Alert>
+                        )}
+
+                        {/* Combined Hydraulic Warnings */}
+                        {hydraulicWarnings.length > 0 && (
+                            <Alert severity="warning" sx={{ mb: 3 }}>
+                                <strong>Hydraulic Calculation Warnings:</strong>
+                                <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                                    {hydraulicWarnings.map((warning, idx) => (
+                                        <li key={idx}>{warning}</li>
+                                    ))}
+                                </Box>
+                            </Alert>
+                        )}
+
                         {/* Export Actions */}
                         <Box sx={{ display: 'flex', gap: 2 }}>
                             <Button variant="outlined" startIcon={<Download />}>
@@ -2088,44 +2090,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                 </TabPanel >
             </Box >
 
-            {/* ==================== TAB 5: SETTINGS ==================== */}
-            < TabPanel value={activeTab} index={5} >
-                <Box sx={{ maxWidth: 900, mx: 'auto' }}>
-                    <Typography variant="h6" sx={{ mb: 1 }}>Sizing Case Settings</Typography>
-                    <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-                        Manage configuration and lifecycle for this sizing case.
-                    </Typography>
 
-                    {/* Danger Zone */}
-                    <Card sx={{
-                        border: 1,
-                        borderColor: 'error.main',
-                        bgcolor: isDark ? 'rgba(244, 67, 54, 0.05)' : 'rgba(211, 47, 47, 0.02)'
-                    }}>
-                        <Box sx={{ p: 2, bgcolor: 'error.main', color: 'error.contrastText' }}>
-                            <Typography variant="subtitle1" fontWeight={600}>Danger Zone</Typography>
-                        </Box>
-                        <CardContent>
-                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <Box>
-                                    <Typography variant="subtitle2" gutterBottom>Delete this sizing case</Typography>
-                                    <Typography variant="body2" color="text.secondary">
-                                        Once you delete a sizing case, there is no going back. Please be certain.
-                                    </Typography>
-                                </Box>
-                                <Button
-                                    variant="outlined"
-                                    color="error"
-                                    onClick={() => setDeleteDialogOpen(true)}
-                                    startIcon={<Delete />}
-                                >
-                                    Delete Case
-                                </Button>
-                            </Box>
-                        </CardContent>
-                    </Card>
-                </Box>
-            </TabPanel >
 
             {/* Delete Confirmation Dialog */}
             < Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)
