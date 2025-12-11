@@ -42,6 +42,7 @@ import { glassCardStyles } from "./styles";
 import { CustomersTab } from "./CustomersTab";
 import { PlantsTab } from "./PlantsTab";
 import { UnitsTab } from "./UnitsTab";
+import { AreasTab } from "./AreasTab";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -92,6 +93,7 @@ export function DashboardPage() {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
+                    mb: 2,
                 }}
             >
                 <Box>
@@ -108,7 +110,7 @@ export function DashboardPage() {
             </Paper>
 
             {/* Tabs */}
-            <Paper sx={{ ...glassCardStyles, borderRadius: 0 }}>
+            <Paper sx={{ ...glassCardStyles, borderRadius: "12px" }}>
                 <Tabs
                     value={activeTab}
                     onChange={(_, newValue) => setActiveTab(newValue)}
@@ -175,23 +177,6 @@ function ProjectsTab() {
         </Paper>
     );
 }
-
-function AreasTab() {
-    return (
-        <Paper sx={{ p: 3, ...glassCardStyles }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                <Typography variant="h6">Areas</Typography>
-                <Button variant="contained" startIcon={<Add />}>
-                    New Area
-                </Button>
-            </Box>
-            <Typography color="text.secondary">
-                Area management interface - Coming soon
-            </Typography>
-        </Paper>
-    );
-}
-
 
 
 function UsersTab() {
