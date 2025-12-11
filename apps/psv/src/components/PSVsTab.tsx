@@ -16,6 +16,11 @@ import {
     Typography,
     Tooltip,
     TextField,
+    Card,
+    CardContent,
+    CardActions,
+    useTheme,
+    useMediaQuery,
 } from "@mui/material";
 import { Add, Edit, Delete, Shield, Search } from "@mui/icons-material";
 import { protectiveSystems, areas, units, users } from "@/data/mockData";
@@ -27,6 +32,8 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
 
 export function PSVsTab() {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const { addProtectiveSystem, updateProtectiveSystem, deleteProtectiveSystem } = usePsvStore();
