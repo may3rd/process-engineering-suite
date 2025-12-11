@@ -1,0 +1,223 @@
+"use client";
+
+import { useState } from "react";
+import {
+    Box,
+    Button,
+    Paper,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
+    IconButton,
+    Chip,
+    Typography,
+    Tooltip,
+} from "@mui/material";
+import { Add, Edit, Delete, Business } from "@mui/icons-material";
+import { customers, users } from "@/data/mockData";
+import { Customer } from "@/data/types";
+import { glassCardStyles } from "./styles";
+import { DeleteConfirmDialog } from "./shared";
+import { CustomerDialog } from "./dashboard/CustomerDialog";
+import { useAuthStore } from "@/store/useAuthStore";
+import { usePsvStore } from "@/store/usePsvStore";
+
+export function CustomersTab() {
+    const canEdit = useAuthStore((state) => state.canEdit());
+    const canApprove = useAuthStore((state) => state.canApprove());
+    const { addCustomer, updateCustomer, deleteCustomer } = usePsvStore();
+
+    const [dialogOpen, setDialogOpen] = useState(false);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+    const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
+
+    const handleAdd = () => {
+        setSelectedCustomer(null);
+        setDialogOpen(true);
+    };
+
+    const handleEdit = (customer: Customer) => {
+        setSelectedCustomer(customer);
+        setDialogOpen(true);
+    };
+
+    const handleDelete = (customer: Customer) => {
+        setCustomerToDelete(customer);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleConfirmDelete = () => {
+        if (customerToDelete) {
+            try {
+                deleteCustomer(customerToDelete.id);
+                setDeleteDialogOpen(false);
+                setCustomerToDelete(null);
+                // TODO: Show success message
+            } catch (error) {
+                // Error is shown in dialog via child count
+                console.error(error);
+            }
+        }
+    };
+
+    const handleSave = (data: Omit<Customer, 'id' | 'createdAt'>) => {
+        if (selectedCustomer) {
+            updateCustomer(selectedCustomer.id, data);
+        } else {
+            addCustomer(data);
+        }
+        setDialogOpen(false);
+    };
+
+    // Count plants for each customer
+    const getPlantCount = (customerId: string) => {
+        return customers.filter(c => c.id === customerId).length;
+    };
+
+    return (
+        <Box>
+            {/* Header */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Business color="primary" sx={{ fontSize: 28 }} />
+                    <Typography variant="h5" fontWeight={600}>
+                        Customers
+                    </Typography>
+                </Box>
+                {canEdit && (
+                    <Button
+                        variant="contained"
+                        startIcon={<Add />}
+                        onClick={handleAdd}
+                    >
+                        Add Customer
+                    </Button>
+                )}
+            </Box>
+
+            {/* Table */}
+            <Paper sx={{ ...glassCardStyles, p: 0 }}>
+                <TableContainer>
+                    <Table>
+                        <TableHead>
+                            <TableRow>
+                                <TableCell>Code</TableCell>
+                                <TableCell>Name</TableCell>
+                                <TableCell>Owner</TableCell>
+                                <TableCell>Plants</TableCell>
+                                <TableCell>Status</TableCell>
+                                <TableCell>Created</TableCell>
+                                <TableCell align="right">Actions</TableCell>
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {customers.map((customer) => {
+                                const owner = users.find(u => u.id === customer.ownerId);
+                                const plantCount = getPlantCount(customer.id);
+
+                                return (
+                                    <TableRow key={customer.id} hover>
+                                        <TableCell>
+                                            <Typography variant="body2" fontWeight={600}>
+                                                {customer.code}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell>{customer.name}</TableCell>
+                                        <TableCell>
+                                            <Typography variant="body2">
+                                                {owner?.name || 'N/A'}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Chip
+                                                label={`${plantCount} plant${plantCount !== 1 ? 's' : ''}`}
+                                                size="small"
+                                                color={plantCount > 0 ? 'primary' : 'default'}
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Chip
+                                                label={customer.status}
+                                                size="small"
+                                                color={customer.status === 'active' ? 'success' : 'default'}
+                                                sx={{ textTransform: 'capitalize' }}
+                                            />
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography variant="body2">
+                                                {new Date(customer.createdAt).toLocaleDateString()}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell align="right">
+                                            {canEdit && (
+                                                <>
+                                                    <Tooltip title="Edit">
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => handleEdit(customer)}
+                                                        >
+                                                            <Edit fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Tooltip title="Delete">
+                                                        <IconButton
+                                                            size="small"
+                                                            color="error"
+                                                            onClick={() => handleDelete(customer)}
+                                                        >
+                                                            <Delete fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </>
+                                            )}
+                                        </TableCell>
+                                    </TableRow>
+                                );
+                            })}
+                            {customers.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                                        <Typography color="text.secondary">
+                                            No customers found. Click "Add Customer" to create one.
+                                        </Typography>
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Paper>
+
+            {/* Add/Edit Dialog */}
+            {dialogOpen && (
+                <CustomerDialog
+                    open={dialogOpen}
+                    onClose={() => setDialogOpen(false)}
+                    onSave={handleSave}
+                    customer={selectedCustomer}
+                />
+            )}
+
+            {/* Delete Confirmation Dialog */}
+            {customerToDelete && (
+                <DeleteConfirmDialog
+                    open={deleteDialogOpen}
+                    onClose={() => {
+                        setDeleteDialogOpen(false);
+                        setCustomerToDelete(null);
+                    }}
+                    onConfirm={handleConfirmDelete}
+                    title="Delete Customer"
+                    itemName={customerToDelete.name}
+                    children={[
+                        { label: 'Plant', count: getPlantCount(customerToDelete.id) }
+                    ]}
+                />
+            )}
+        </Box>
+    );
+}

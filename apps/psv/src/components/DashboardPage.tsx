@@ -39,6 +39,7 @@ import {
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
 import { glassCardStyles } from "./styles";
+import { CustomersTab } from "./CustomersTab";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -216,22 +217,6 @@ function PlantsTab() {
             </Box>
             <Typography color="text.secondary">
                 Plant management interface - Coming soon
-            </Typography>
-        </Paper>
-    );
-}
-
-function CustomersTab() {
-    return (
-        <Paper sx={{ p: 3, ...glassCardStyles }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                <Typography variant="h6">Customers</Typography>
-                <Button variant="contained" startIcon={<Add />}>
-                    New Customer
-                </Button>
-            </Box>
-            <Typography color="text.secondary">
-                Customer management interface - Coming soon
             </Typography>
         </Paper>
     );
