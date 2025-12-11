@@ -44,7 +44,7 @@ export function CustomerDialog({
         } else {
             setName('');
             setCode('');
-            setStatus('active');
+            setStatus('inactive');
             setOwnerId(null);
         }
     }, [customer, open]);

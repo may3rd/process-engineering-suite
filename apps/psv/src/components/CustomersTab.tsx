@@ -95,7 +95,8 @@ export function CustomersTab() {
 
     // Count plants for each customer
     const getPlantCount = (customerId: string) => {
-        return customers.filter(c => c.id === customerId).length;
+        const plants = usePsvStore.getState().plants;
+        return plants.filter(p => p.customerId === customerId).length;
     };
 
     // Filter customers based on search text
