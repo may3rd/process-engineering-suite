@@ -76,8 +76,35 @@ export function CustomersTab() {
 
     const handleForceDelete = () => {
         if (customerToDelete) {
-            // TODO: Implement cascade delete in store
-            console.log('Force delete customer and all children:', customerToDelete.id);
+            // Cascade delete: delete all plants (which will cascade to units, areas, etc.)
+            const { plants, units, areas, projects, protectiveSystems, equipment } = usePsvStore.getState();
+
+            // Find all child entities to delete
+            const plantsToDelete = plants.filter(p => p.customerId === customerToDelete.id);
+            const plantIds = plantsToDelete.map(p => p.id);
+
+            const unitsToDelete = units.filter(u => plantIds.includes(u.plantId));
+            const unitIds = unitsToDelete.map(u => u.id);
+
+            const areasToDelete = areas.filter(a => unitIds.includes(a.unitId));
+            const areaIds = areasToDelete.map(a => a.id);
+
+            const projectsToDelete = projects.filter(p => areaIds.includes(p.areaId));
+            const psvsToDelete = protectiveSystems.filter(p => areaIds.includes(p.areaId));
+            const equipmentToDelete = equipment.filter(e => areaIds.includes(e.areaId));
+
+            // Delete all entities from bottom-up
+            usePsvStore.setState((state) => ({
+                equipment: state.equipment.filter(e => !areaIds.includes(e.areaId)),
+                protectiveSystems: state.protectiveSystems.filter(p => !areaIds.includes(p.areaId)),
+                projects: state.projects.filter(p => !areaIds.includes(p.areaId)),
+                areas: state.areas.filter(a => !unitIds.includes(a.unitId)),
+                units: state.units.filter(u => !plantIds.includes(u.plantId)),
+                plants: state.plants.filter(p => p.customerId !== customerToDelete.id),
+                customers: state.customers.filter(c => c.id !== customerToDelete.id),
+                customerList: state.customers.filter(c => c.id !== customerToDelete.id),
+            }));
+
             setDeleteDialogOpen(false);
             setCustomerToDelete(null);
             // TODO: Show success message

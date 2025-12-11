@@ -74,7 +74,25 @@ export function PlantsTab() {
 
     const handleForceDelete = () => {
         if (plantToDelete) {
-            console.log('Force delete plant and all children:', plantToDelete.id);
+            // Cascade delete: delete plant and all units, areas, projects, PSVs, equipment
+            const { units, areas, projects, protectiveSystems, equipment } = usePsvStore.getState();
+
+            const unitsToDelete = units.filter(u => u.plantId === plantToDelete.id);
+            const unitIds = unitsToDelete.map(u => u.id);
+
+            const areasToDelete = areas.filter(a => unitIds.includes(a.unitId));
+            const areaIds = areasToDelete.map(a => a.id);
+
+            // Delete all entities from bottom-up
+            usePsvStore.setState((state) => ({
+                equipment: state.equipment.filter(e => !areaIds.includes(e.areaId)),
+                protectiveSystems: state.protectiveSystems.filter(p => !areaIds.includes(p.areaId)),
+                projects: state.projects.filter(p => !areaIds.includes(p.areaId)),
+                areas: state.areas.filter(a => !unitIds.includes(a.unitId)),
+                units: state.units.filter(u => u.plantId !== plantToDelete.id),
+                plants: state.plants.filter(p => p.id !== plantToDelete.id),
+            }));
+
             setDeleteDialogOpen(false);
             setPlantToDelete(null);
         }

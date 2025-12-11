@@ -80,7 +80,16 @@ export function AreasTab() {
 
     const handleForceDelete = () => {
         if (areaToDelete) {
-            console.log('Force delete area and all children:', areaToDelete.id);
+            // Cascade delete: delete area and all projects, PSVs, equipment
+            const areaId = areaToDelete.id;
+
+            usePsvStore.setState((state) => ({
+                equipment: state.equipment.filter(e => e.areaId !== areaId),
+                protectiveSystems: state.protectiveSystems.filter(p => p.areaId !== areaId),
+                projects: state.projects.filter(p => p.areaId !== areaId),
+                areas: state.areas.filter(a => a.id !== areaId),
+            }));
+
             setDeleteDialogOpen(false);
             setAreaToDelete(null);
         }

@@ -74,7 +74,21 @@ export function UnitsTab() {
 
     const handleForceDelete = () => {
         if (unitToDelete) {
-            console.log('Force delete unit and all children:', unitToDelete.id);
+            // Cascade delete: delete unit and all areas, projects, PSVs, equipment
+            const { areas, projects, protectiveSystems, equipment } = usePsvStore.getState();
+
+            const areasToDelete = areas.filter(a => a.unitId === unitToDelete.id);
+            const areaIds = areasToDelete.map(a => a.id);
+
+            // Delete all entities from bottom-up
+            usePsvStore.setState((state) => ({
+                equipment: state.equipment.filter(e => !areaIds.includes(e.areaId)),
+                protectiveSystems: state.protectiveSystems.filter(p => !areaIds.includes(p.areaId)),
+                projects: state.projects.filter(p => !areaIds.includes(p.areaId)),
+                areas: state.areas.filter(a => a.unitId !== unitToDelete.id),
+                units: state.units.filter(u => u.id !== unitToDelete.id),
+            }));
+
             setDeleteDialogOpen(false);
             setUnitToDelete(null);
         }
