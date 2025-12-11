@@ -114,10 +114,17 @@ export function PSVsTab() {
     return (
         <Box>
             {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: { xs: 'flex-start', sm: 'center' },
+                mb: 3,
+                flexDirection: { xs: 'column', sm: 'row' },
+                gap: 2,
+            }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Shield color="primary" sx={{ fontSize: 28 }} />
-                    <Typography variant="h5" fontWeight={600}>
+                    <Shield color="primary" sx={{ fontSize: { xs: 24, sm: 28 } }} />
+                    <Typography variant="h5" fontWeight={600} sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
                         PSVs & Protective Devices
                     </Typography>
                 </Box>
@@ -126,6 +133,10 @@ export function PSVsTab() {
                         variant="contained"
                         startIcon={<Add />}
                         onClick={handleAdd}
+                        sx={{
+                            minWidth: { sm: 'auto' },
+                            width: { xs: '100%', sm: 'auto' },
+                        }}
                     >
                         Add PSV
                     </Button>
@@ -146,9 +157,19 @@ export function PSVsTab() {
             />
 
             {/* Table */}
-            <Paper sx={{ ...glassCardStyles, p: 0 }}>
-                <TableContainer>
-                    <Table>
+            <Paper sx={{ ...glassCardStyles, p: 0, overflow: 'hidden' }}>
+                <TableContainer sx={{
+                    maxHeight: { xs: 'calc(100vh - 400px)', sm: 'calc(100vh - 350px)' },
+                    overflowX: 'auto',
+                    '&::-webkit-scrollbar': {
+                        height: 8,
+                    },
+                    '&::-webkit-scrollbar-thumb': {
+                        backgroundColor: 'rgba(0,0,0,0.2)',
+                        borderRadius: 4,
+                    },
+                }}>
+                    <Table stickyHeader sx={{ minWidth: { xs: 800, sm: 'auto' } }}>
                         <TableHead>
                             <TableRow>
                                 <TableCell>Tag</TableCell>

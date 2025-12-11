@@ -95,19 +95,20 @@ export function DashboardPage() {
             <Paper
                 sx={{
                     ...glassCardStyles,
-                    p: 3,
-                    borderRadius: '12px', // Added border radius
+                    p: { xs: 2, sm: 3 },
+                    borderRadius: '12px',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     mb: 2,
+                    flexWrap: { xs: 'wrap', sm: 'nowrap' },
                 }}
             >
-                <Box>
-                    <Typography variant="h4" fontWeight={700}>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.5rem', sm: '2rem' } }}>
                         Dashboard
                     </Typography>
-                    <Typography variant="body2" color="text.secondary">
+                    <Typography variant="body2" color="text.secondary" sx={{ display: { xs: 'none', sm: 'block' } }}>
                         Manage hierarchy and users
                     </Typography>
                 </Box>
@@ -120,11 +121,21 @@ export function DashboardPage() {
             <Paper sx={{ ...glassCardStyles, borderRadius: "12px" }}>
                 <Tabs
                     value={activeTab}
-                    onChange={(_, newValue) => setActiveTab(newValue)}
+                    onChange={(_e, newValue) => setActiveTab(newValue)}
                     variant="scrollable"
                     scrollButtons="auto"
+                    allowScrollButtonsMobile
+                    sx={{
+                        borderBottom: 1,
+                        borderColor: 'divider',
+                        px: { xs: 1, sm: 2 },
+                        '& .MuiTab-root': {
+                            minHeight: { xs: 48, sm: 64 },
+                            fontSize: { xs: '0.875rem', sm: '1rem' },
+                        }
+                    }}
                 >
-                    {visibleTabs.map((tab, index) => (
+                    {visibleTabs.map((tab) => (
                         <Tab
                             key={tab.label}
                             label={tab.label}
@@ -136,7 +147,7 @@ export function DashboardPage() {
             </Paper>
 
             {/* Tab Content */}
-            <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
+            <Box sx={{ flex: 1, overflow: 'auto', p: { xs: 2, sm: 3 } }}>
                 <TabPanel value={activeTab} index={visibleTabs.findIndex(t => t.label === "Projects")}>
                     <ProjectsTab />
                 </TabPanel>
