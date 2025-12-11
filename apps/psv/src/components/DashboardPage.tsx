@@ -35,15 +35,19 @@ import {
     Folder,
     People,
     Close,
+    Shield,
+    Settings,
 } from "@mui/icons-material";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
 import { glassCardStyles } from "./styles";
-import { CustomersTab } from "./CustomersTab";
-import { PlantsTab } from "./PlantsTab";
-import { UnitsTab } from "./UnitsTab";
-import { AreasTab } from "./AreasTab";
+import { CustomersTab } from './CustomersTab';
+import { PlantsTab } from './PlantsTab';
+import { UnitsTab } from './UnitsTab';
+import { AreasTab } from './AreasTab';
 import { ProjectsTab } from './ProjectsTab';
+import { PSVsTab } from './PSVsTab';
+import { EquipmentTab } from './EquipmentTab';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -70,6 +74,8 @@ export function DashboardPage() {
     // Determine visible tabs based on role
     const tabs = [
         { label: "Projects", icon: <Folder />, visible: true },
+        { label: "PSVs", icon: <Shield />, visible: true },
+        { label: "Equipment", icon: <Settings />, visible: true },
         { label: "Areas", icon: <Map />, visible: canManageHierarchy() },
         { label: "Units", icon: <Category />, visible: canManageHierarchy() },
         { label: "Plants", icon: <Apartment />, visible: canManageHierarchy() },
@@ -131,8 +137,14 @@ export function DashboardPage() {
 
             {/* Tab Content */}
             <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
-                <TabPanel value={activeTab} index={0}>
+                <TabPanel value={activeTab} index={visibleTabs.findIndex(t => t.label === "Projects")}>
                     <ProjectsTab />
+                </TabPanel>
+                <TabPanel value={activeTab} index={visibleTabs.findIndex(t => t.label === "PSVs")}>
+                    <PSVsTab />
+                </TabPanel>
+                <TabPanel value={activeTab} index={visibleTabs.findIndex(t => t.label === "Equipment")}>
+                    <EquipmentTab />
                 </TabPanel>
                 {canManageHierarchy() && (
                     <>

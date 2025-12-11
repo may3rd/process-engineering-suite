@@ -130,6 +130,10 @@ interface PsvStore {
     updateProject: (id: string, updates: Partial<Omit<Project, 'id' | 'createdAt'>>) => void;
     deleteProject: (id: string) => void;
 
+    addProtectiveSystem: (psv: Omit<ProtectiveSystem, 'id' | 'createdAt' | 'updatedAt'>) => void;
+    updateProtectiveSystem: (id: string, updates: Partial<Omit<ProtectiveSystem, 'id' | 'createdAt' | 'updatedAt'>>) => void;
+    deleteProtectiveSystem: (id: string) => void;
+
     addEquipment: (equipment: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>) => void;
     updateEquipment: (id: string, updates: Partial<Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>>) => void;
     deleteEquipment: (id: string) => void;
@@ -666,6 +670,31 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         // Projects don't have children in the new structure
         // PSVs are linked via projectIds array
         console.log('Delete project:', id);
+    },
+
+    // PSVs / Protective Systems
+    addProtectiveSystem: (psv) => {
+        const newPsv: ProtectiveSystem = {
+            ...psv,
+            id: `psv-${Date.now()}`,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            tags: psv.tags || [],
+        };
+        console.log('Add PSV:', newPsv);
+    },
+
+    updateProtectiveSystem: (id, updates) => {
+        console.log('Update PSV:', id, updates);
+    },
+
+    deleteProtectiveSystem: (id) => {
+        // Check for equipment links
+        const hasLinks = getEquipmentLinksByPsv(id).length > 0;
+        if (hasLinks) {
+            throw new Error('Cannot delete PSV that is linked to equipment');
+        }
+        console.log('Delete PSV:', id);
     },
 
     // Equipment
