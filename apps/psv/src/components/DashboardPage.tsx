@@ -43,6 +43,7 @@ import { CustomersTab } from "./CustomersTab";
 import { PlantsTab } from "./PlantsTab";
 import { UnitsTab } from "./UnitsTab";
 import { AreasTab } from "./AreasTab";
+import { ProjectsTab } from './ProjectsTab';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -153,44 +154,12 @@ export function DashboardPage() {
                 )}
                 {canManageUsers() && (
                     <TabPanel value={activeTab} index={visibleTabs.findIndex(t => t.label === "Users")}>
-                        <UsersTab />
+                        <Box sx={{ p: 3 }}>
+                            <Typography color="text.secondary">Users Tab - Coming Soon</Typography>
+                        </Box>
                     </TabPanel>
                 )}
             </Box>
         </Box>
-    );
-}
-
-// Placeholder tab components
-function ProjectsTab() {
-    return (
-        <Paper sx={{ p: 3, ...glassCardStyles }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                <Typography variant="h6">Projects</Typography>
-                <Button variant="contained" startIcon={<Add />}>
-                    New Project
-                </Button>
-            </Box>
-            <Typography color="text.secondary">
-                Project management interface - Coming soon
-            </Typography>
-        </Paper>
-    );
-}
-
-
-function UsersTab() {
-    return (
-        <Paper sx={{ p: 3, ...glassCardStyles }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                <Typography variant="h6">Users</Typography>
-                <Button variant="contained" startIcon={<Add />}>
-                    New User
-                </Button>
-            </Box>
-            <Typography color="text.secondary">
-                User management interface - Coming soon
-            </Typography>
-        </Paper>
     );
 }
