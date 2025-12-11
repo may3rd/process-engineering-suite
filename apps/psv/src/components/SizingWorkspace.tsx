@@ -46,8 +46,6 @@ import {
     Delete,
     Settings,
     HelpOutline,
-    CloudDone,
-    CloudOff,
     Speed,
     Straighten,
     Timeline,
@@ -57,12 +55,7 @@ import { PipelineDataGrid } from "./PipelineDataGrid";
 import { v4 as uuidv4 } from "uuid";
 import { calculateSizing } from "@/lib/psvSizing";
 import { useUnitConversion, UnitType } from "@/hooks/useUnitConversion";
-import {
-    checkAPIHealth,
-    validateInletPressureDropAPI,
-    calculateNetworkPressureDropAPI,
-    type FluidProperties
-} from "@/lib/apiClient";
+import type { FluidProperties } from "@/lib/apiClient";
 import {
     validateInletPressureDrop,
     calculateNetworkPressureDrop,
@@ -73,12 +66,12 @@ import {
     type ValidationResult,
     type ValidationError
 } from "@/lib/inputValidation";
-import { convertUnit } from "@eng-suite/physics/unitConversion";
 
 interface SizingWorkspaceProps {
     sizingCase: SizingCase;
     inletNetwork?: PipelineNetwork;
     outletNetwork?: PipelineNetwork;
+    psvSetPressure?: number;
     onClose: () => void;
     onSave: (updatedCase: SizingCase) => void;
     onSaveNetworks?: (inlet: PipelineNetwork | undefined, outlet: PipelineNetwork | undefined) => void;
@@ -116,7 +109,7 @@ const FLOW_UNITS = ['kg/h', 'lb/h', 'kg/s'];
 const VISCOSITY_UNITS = ['cP', 'Pa·s'];
 const DENSITY_UNITS = ['kg/m³', 'lb/ft³'];
 
-export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClose, onSave, onSaveNetworks, psvTag, onDelete }: SizingWorkspaceProps) {
+export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSetPressure, onClose, onSave, onSaveNetworks, psvTag, onDelete }: SizingWorkspaceProps) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const [activeTab, setActiveTab] = useState(0);
@@ -136,14 +129,6 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
     // Local network state (from PSV, not sizing case)
     const [localInletNetwork, setLocalInletNetwork] = useState<PipelineNetwork | undefined>(inletNetwork);
     const [localOutletNetwork, setLocalOutletNetwork] = useState<PipelineNetwork | undefined>(outletNetwork);
-
-    // API health state
-    const [apiHealthy, setApiHealthy] = useState(false);
-
-    // Check API health on mount
-    useEffect(() => {
-        checkAPIHealth().then(setApiHealthy);
-    }, []);
 
     // Unit state
     // Unit Conversion Hook
@@ -358,90 +343,56 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
             let inletValidation;
             let outletDropKPa: number | undefined;
 
-            if (localInletNetwork && localInletNetwork.pipes && localInletNetwork.pipes.length > 0) {
-                // Try API first (default), fallback to local
-                if (apiHealthy) {
-                    console.log('🌐 Using Python API for inlet validation (default)');
-                    inletValidation = await validateInletPressureDropAPI({
-                        inletNetwork: localInletNetwork,
-                        psvSetPressure: currentCase.inputs.pressure,
-                        massFlowRate: currentCase.inputs.massFlowRate,
-                        fluid: fluid as any
-                    });
-
-                    // If API fails, fallback to local
-                    if (!inletValidation.success) {
-                        console.warn('⚠️ API failed, falling back to local calculation');
-                        const localDrop = calculateNetworkPressureDrop(
-                            localInletNetwork,
-                            currentCase.inputs.massFlowRate,
-                            fluid
-                        );
-                        inletValidation = validateInletPressureDrop(
-                            localDrop,
-                            currentCase.inputs.pressure
-                        );
+            if (localInletNetwork?.pipes?.length) {
+                const inletDrop = calculateNetworkPressureDrop(
+                    localInletNetwork,
+                    currentCase.inputs.massFlowRate,
+                    fluid,
+                    {
+                        boundaryPressure: currentCase.inputs.pressure,
+                        boundaryPressureUnit: 'barg',
+                        boundaryTemperature: currentCase.inputs.temperature,
+                        boundaryTemperatureUnit: 'C',
+                        direction: 'forward',
                     }
-                } else {
-                    console.log('📊 API unavailable, using local calculation');
-                    const localDrop = calculateNetworkPressureDrop(
-                        localInletNetwork,
-                        currentCase.inputs.massFlowRate,
-                        fluid
-                    );
-                    inletValidation = validateInletPressureDrop(
-                        localDrop,
-                        currentCase.inputs.pressure
-                    );
-                }
+                );
+
+                inletValidation = validateInletPressureDrop(
+                    inletDrop,
+                    currentCase.inputs.pressure
+                );
             }
 
             // === PHASE 2: Outlet Backpressure Calculation ===
             // Only calculate if mode is 'calculated' AND we have pipes
-            if (currentCase.inputs.backpressureSource === 'calculated' && localOutletNetwork && localOutletNetwork.pipes && localOutletNetwork.pipes.length > 0) {
+            if (currentCase.inputs.backpressureSource === 'calculated' && localOutletNetwork?.pipes?.length) {
                 let calculatedBackpressure: number | undefined; // barg
 
-                try {
-                    if (apiHealthy) {
-                        console.log('🌐 Using Python API for outlet pressure drop');
-                        const apiResult = await calculateNetworkPressureDropAPI({
-                            network: localOutletNetwork,
-                            massFlowRate: currentCase.inputs.massFlowRate,
-                            fluid: fluid as any,
-                            boundaryPressure: currentCase.inputs.destinationPressure || 0,
-                            boundaryPressureUnit: 'barg',
-                            direction: 'backward',
-                        });
-
-                        if (apiResult.success && typeof apiResult.totalPressureDrop === 'number') {
-                            outletDropKPa = convertUnit(apiResult.totalPressureDrop, 'Pa', 'kPa');
-                        } else {
-                            console.warn('⚠️ Outlet API failed, falling back to local calculation');
-                        }
+                outletDropKPa = calculateNetworkPressureDrop(
+                    localOutletNetwork,
+                    currentCase.inputs.massFlowRate,
+                    fluid,
+                    {
+                        boundaryPressure: currentCase.inputs.destinationPressure || 0,
+                        boundaryPressureUnit: 'barg',
+                        boundaryTemperature: currentCase.inputs.temperature,
+                        boundaryTemperatureUnit: 'C',
+                        direction: 'backward',
                     }
+                );
 
-                    if (outletDropKPa === undefined) {
-                        console.log('📊 Using local outlet pressure drop calculation');
-                        outletDropKPa = calculateNetworkPressureDrop(
-                            localOutletNetwork,
-                            currentCase.inputs.massFlowRate,
-                            fluid
-                        );
-                    }
+                if (Number.isFinite(outletDropKPa)) {
+                    calculatedBackpressure = (currentCase.inputs.destinationPressure || 0) + (outletDropKPa / 100);
 
-                    if (outletDropKPa !== undefined) {
-                        calculatedBackpressure = (currentCase.inputs.destinationPressure || 0) + (outletDropKPa / 100);
-
-                        // Update inputs for the main sizing calculation
-                        updatedInputs = {
-                            ...updatedInputs,
-                            backpressure: calculatedBackpressure,
-                            calculatedBackpressure,
-                            backpressureType: 'built_up' // Auto-set to built-up since we calculated it
-                        };
-                    }
-                } catch (err) {
-                    console.error("Error calculating backpressure:", err);
+                    // Update inputs for the main sizing calculation
+                    updatedInputs = {
+                        ...updatedInputs,
+                        backpressure: calculatedBackpressure,
+                        calculatedBackpressure,
+                        backpressureType: 'built_up' // Auto-set to built-up since we calculated it
+                    };
+                } else {
+                    outletDropKPa = undefined;
                 }
             }
 
@@ -566,15 +517,6 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, onClo
                             variant="outlined"
                         />
                     )}
-                    <Tooltip title={apiHealthy ? 'Python API Connected' : 'Using Local Calculations'}>
-                        <Chip
-                            icon={apiHealthy ? <CloudDone /> : <CloudOff />}
-                            label={apiHealthy ? 'API' : 'Local'}
-                            size="small"
-                            color={apiHealthy ? 'success' : 'default'}
-                            variant="outlined"
-                        />
-                    </Tooltip>
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                     <Button variant="outlined" onClick={onClose}>
