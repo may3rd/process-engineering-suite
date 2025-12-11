@@ -48,7 +48,7 @@ RUN npm run build
 # RUN npm prune --production # Pruning in monorepos can be tricky, skipping for safety.
 
 # Expose ports
-EXPOSE 3000 3002 8000
+EXPOSE 3000 3001 3002 3003 8000
 
 # Copy supervisord config
 COPY infra/supervisord.conf /etc/supervisor/conf.d/supervisord.conf

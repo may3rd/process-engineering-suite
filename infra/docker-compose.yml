@@ -1,37 +1,24 @@
 version: '3.8'
 
 services:
-  # Dashboard (Port 3000)
-  web:
+  # All Web Apps (Ports 3000, 3002, 3003, etc.)
+  apps:
     image: node:20-alpine
     working_dir: /app
     volumes:
       - ..:/app
       - /app/node_modules
       - /app/apps/web/.next
-    # Install dependencies if missing, then run dev
-    command: sh -c "npm install && npm run dev --filter=web"
-    ports:
-      - "3000:3000"
-    environment:
-      # Browser calls localhost:8000
-      - NEXT_PUBLIC_API_URL=http://localhost:8000
-    depends_on:
-      - api
-
-  # Network Editor (Port 3002)
-  network-editor:
-    image: node:20-alpine
-    working_dir: /app
-    volumes:
-      - ..:/app
-      - /app/node_modules
       - /app/apps/network-editor/.next
-    command: sh -c "npm install && npm run dev --filter=network-editor"
+      - /app/apps/psv/.next
+    # Install dependencies if missing, then run all apps with turbo
+    command: sh -c "npm install && npm run dev"
     ports:
-      - "3002:3002"
+      - "3000:3000" # Dashboard (web)
+      - "3002:3002" # Network Editor
+      - "3003:3003" # PSV
     environment:
-      - NEXT_PUBLIC_API_URL=http://localhost:8000 
+      - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:
       - api
 

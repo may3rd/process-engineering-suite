@@ -56,6 +56,7 @@ npm run dev
 
 - **Dashboard**: [http://localhost:3000](http://localhost:3000)
 - **Network Editor**: [http://localhost:3002](http://localhost:3002)
+- **PSV**: [http://localhost:3003](http://localhost:3003)
 
 ### Build
 
@@ -68,14 +69,20 @@ npm run build
 ### Docker Usage
 
 #### Development Environment (With Hot Reload)
-Run the entire suite (API, Web, Editor) with hot reloading enabled. Volume mounts ensure code changes are reflected immediately.
+Run the entire suite with hot reloading enabled using Turborepo. All web apps (Dashboard, Network Editor, PSV) run in a single container managed by turbo, while the Python API runs in a separate container.
 
 ```bash
 docker-compose -f infra/docker-compose.yml up --build
 ```
-- **Web**: http://localhost:3000
-- **Editor**: http://localhost:3002
-- **API**: http://localhost:8000/docs
+
+**Services:**
+- **All Web Apps** (managed by turborepo in parallel):
+  - Dashboard: http://localhost:3000
+  - Network Editor: http://localhost:3002
+  - PSV: http://localhost:3003
+- **Python API**: http://localhost:8000/docs
+
+Volume mounts ensure code changes are reflected immediately for hot reload.
 
 #### Production / Single Image Deployment
 Build a single image containing all services (managed by supervisord). Suitable for deployment.
@@ -85,7 +92,7 @@ Build a single image containing all services (managed by supervisord). Suitable 
 docker build -t process-engineering-suite .
 
 # Run
-docker run -p 3000:3000 -p 3002:3002 -p 8000:8000 process-engineering-suite
+docker run -p 3000:3000 -p 3002:3002 -p 3003:3003 -p 8000:8000 process-engineering-suite
 ```
 
 #### Hybrid Development (Recommended)
