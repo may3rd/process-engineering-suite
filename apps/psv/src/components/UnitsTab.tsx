@@ -23,7 +23,7 @@ import {
     useMediaQuery,
 } from "@mui/material";
 import { Add, Edit, Delete, Category, Search } from "@mui/icons-material";
-import { units, plants, users, getAreasByUnit } from "@/data/mockData";
+import { plants, users, getAreasByUnit } from "@/data/mockData";
 import { Unit } from "@/data/types";
 import { glassCardStyles } from "./styles";
 import { DeleteConfirmDialog } from "./shared";
@@ -37,6 +37,7 @@ export function UnitsTab() {
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const { addUnit, updateUnit, deleteUnit } = usePsvStore();
+    const units = usePsvStore((state) => state.units);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

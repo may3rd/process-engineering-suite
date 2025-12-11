@@ -25,7 +25,6 @@ import {
 } from "@mui/material";
 import { Add, Edit, Delete, Map, Search } from "@mui/icons-material";
 import {
-    areas,
     units,
     getProjectsByArea,
     getProtectiveSystemsByArea,
@@ -44,6 +43,7 @@ export function AreasTab() {
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const { addArea, updateArea, deleteArea } = usePsvStore();
+    const areas = usePsvStore((state) => state.areas);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

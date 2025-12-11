@@ -23,7 +23,7 @@ import {
     useMediaQuery,
 } from "@mui/material";
 import { Add, Edit, Delete, Folder, Search } from "@mui/icons-material";
-import { projects, areas, units, users } from "@/data/mockData";
+import { areas, units, users } from "@/data/mockData";
 import { Project } from "@/data/types";
 import { glassCardStyles } from "./styles";
 import { DeleteConfirmDialog } from "./shared";
@@ -38,6 +38,7 @@ export function ProjectsTab() {
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const { addProject, updateProject, deleteProject } = usePsvStore();
+    const projects = usePsvStore((state) => state.projects);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

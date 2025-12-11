@@ -23,7 +23,7 @@ import {
     useMediaQuery,
 } from "@mui/material";
 import { Add, Edit, Delete, Settings, Search } from "@mui/icons-material";
-import { equipment, areas, units, users } from "@/data/mockData";
+import { areas, units, users } from "@/data/mockData";
 import { Equipment } from "@/data/types";
 import { glassCardStyles } from "./styles";
 import { DeleteConfirmDialog } from "./shared";
@@ -37,6 +37,7 @@ export function EquipmentTab() {
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const { addEquipment, updateEquipment, deleteEquipment } = usePsvStore();
+    const equipment = usePsvStore((state) => state.equipment);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

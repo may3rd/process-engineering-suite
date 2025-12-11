@@ -23,7 +23,7 @@ import {
     useMediaQuery,
 } from "@mui/material";
 import { Add, Edit, Delete, Shield, Search } from "@mui/icons-material";
-import { protectiveSystems, areas, units, users } from "@/data/mockData";
+import { areas, units, users } from "@/data/mockData";
 import { ProtectiveSystem } from "@/data/types";
 import { glassCardStyles } from "./styles";
 import { DeleteConfirmDialog } from "./shared";
@@ -37,6 +37,7 @@ export function PSVsTab() {
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const { addProtectiveSystem, updateProtectiveSystem, deleteProtectiveSystem } = usePsvStore();
+    const protectiveSystems = usePsvStore((state) => state.protectiveSystems);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
