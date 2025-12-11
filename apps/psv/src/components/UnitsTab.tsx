@@ -140,7 +140,6 @@ export function UnitsTab() {
                         <TableHead>
                             <TableRow>
                                 <TableCell>Code</TableCell>
-                                <TableCell>Name</TableCell>
                                 <TableCell>Plant</TableCell>
                                 <TableCell>Owner</TableCell>
                                 <TableCell>Areas</TableCell>
@@ -169,8 +168,10 @@ export function UnitsTab() {
                                             <Typography variant="body2" fontWeight={600}>
                                                 {unit.code}
                                             </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {unit.name}
+                                            </Typography>
                                         </TableCell>
-                                        <TableCell>{unit.name}</TableCell>
                                         <TableCell>
                                             <Typography variant="body2">
                                                 {plant?.name || 'N/A'}
@@ -229,7 +230,7 @@ export function UnitsTab() {
                             })}
                             {filteredUnits.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                                         <Typography color="text.secondary">
                                             {searchText ? 'No units match your search.' : 'No units found. Click "Add Unit" to create one.'}
                                         </Typography>

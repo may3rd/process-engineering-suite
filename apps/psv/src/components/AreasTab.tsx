@@ -149,7 +149,6 @@ export function AreasTab() {
                         <TableHead>
                             <TableRow>
                                 <TableCell>Code</TableCell>
-                                <TableCell>Name</TableCell>
                                 <TableCell>Unit</TableCell>
                                 <TableCell>PSVs</TableCell>
                                 <TableCell>Equipment</TableCell>
@@ -178,8 +177,10 @@ export function AreasTab() {
                                             <Typography variant="body2" fontWeight={600}>
                                                 {area.code}
                                             </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {area.name}
+                                            </Typography>
                                         </TableCell>
-                                        <TableCell>{area.name}</TableCell>
                                         <TableCell>
                                             <Typography variant="body2">
                                                 {unit?.name || 'N/A'}
@@ -247,7 +248,7 @@ export function AreasTab() {
                             })}
                             {filteredAreas.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                                    <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                                         <Typography color="text.secondary">
                                             {searchText ? 'No areas match your search.' : 'No areas found. Click "Add Area" to create one.'}
                                         </Typography>

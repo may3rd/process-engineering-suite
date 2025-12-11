@@ -73,9 +73,9 @@ export function DashboardPage() {
 
     // Determine visible tabs based on role
     const tabs = [
-        { label: "Projects", icon: <Folder />, visible: true },
         { label: "PSVs", icon: <Shield />, visible: true },
         { label: "Equipment", icon: <Settings />, visible: true },
+        { label: "Projects", icon: <Folder />, visible: true },
         { label: "Areas", icon: <Map />, visible: canManageHierarchy() },
         { label: "Units", icon: <Category />, visible: canManageHierarchy() },
         { label: "Plants", icon: <Apartment />, visible: canManageHierarchy() },

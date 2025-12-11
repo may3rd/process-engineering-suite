@@ -140,7 +140,6 @@ export function PlantsTab() {
                         <TableHead>
                             <TableRow>
                                 <TableCell>Code</TableCell>
-                                <TableCell>Name</TableCell>
                                 <TableCell>Customer</TableCell>
                                 <TableCell>Owner</TableCell>
                                 <TableCell>Units</TableCell>
@@ -169,8 +168,10 @@ export function PlantsTab() {
                                             <Typography variant="body2" fontWeight={600}>
                                                 {plant.code}
                                             </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {plant.name}
+                                            </Typography>
                                         </TableCell>
-                                        <TableCell>{plant.name}</TableCell>
                                         <TableCell>
                                             <Typography variant="body2">
                                                 {customer?.name || 'N/A'}
@@ -229,7 +230,7 @@ export function PlantsTab() {
                             })}
                             {filteredPlants.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
+                                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                                         <Typography color="text.secondary">
                                             {searchText ? 'No plants match your search.' : 'No plants found. Click "Add Plant" to create one.'}
                                         </Typography>

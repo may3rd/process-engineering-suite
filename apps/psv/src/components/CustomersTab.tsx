@@ -143,7 +143,6 @@ export function CustomersTab() {
                         <TableHead>
                             <TableRow>
                                 <TableCell>Code</TableCell>
-                                <TableCell>Name</TableCell>
                                 <TableCell>Owner</TableCell>
                                 <TableCell>Plants</TableCell>
                                 <TableCell>Status</TableCell>
@@ -170,8 +169,10 @@ export function CustomersTab() {
                                             <Typography variant="body2" fontWeight={600}>
                                                 {customer.code}
                                             </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {customer.name}
+                                            </Typography>
                                         </TableCell>
-                                        <TableCell>{customer.name}</TableCell>
                                         <TableCell>
                                             <Typography variant="body2">
                                                 {owner?.name || 'N/A'}
@@ -225,7 +226,7 @@ export function CustomersTab() {
                             })}
                             {filteredCustomers.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
                                         <Typography color="text.secondary">
                                             {searchText ? 'No customers match your search.' : 'No customers found. Click "Add Customer" to create one.'}
                                         </Typography>
