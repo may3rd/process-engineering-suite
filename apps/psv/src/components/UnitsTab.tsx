@@ -16,6 +16,11 @@ import {
     Typography,
     Tooltip,
     TextField,
+    Card,
+    CardContent,
+    CardActions,
+    useTheme,
+    useMediaQuery,
 } from "@mui/material";
 import { Add, Edit, Delete, Category, Search } from "@mui/icons-material";
 import { units, plants, users, getAreasByUnit } from "@/data/mockData";
@@ -27,6 +32,8 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
 
 export function UnitsTab() {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const { addUnit, updateUnit, deleteUnit } = usePsvStore();
@@ -133,114 +140,215 @@ export function UnitsTab() {
                 }}
             />
 
-            {/* Table */}
-            <Paper sx={{ ...glassCardStyles, p: 0 }}>
-                <TableContainer>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Code</TableCell>
-                                <TableCell>Plant</TableCell>
-                                <TableCell>Owner</TableCell>
-                                <TableCell>Areas</TableCell>
-                                <TableCell>Status</TableCell>
-                                <TableCell>Created</TableCell>
-                                <TableCell align="right">Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {filteredUnits.map((unit) => {
-                                const plant = plants.find(p => p.id === unit.plantId);
-                                const owner = users.find(u => u.id === unit.ownerId);
-                                const areaCount = getAreaCount(unit.id);
+            {/* Mobile Card View */}
+            {isMobile ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {filteredUnits.map((unit) => {
+                        const plant = plants.find(p => p.id === unit.plantId);
+                        const owner = users.find(u => u.id === unit.ownerId);
+                        const areaCount = getAreaCount(unit.id);
 
-                                return (
-                                    <TableRow
-                                        key={unit.id}
-                                        hover
-                                        sx={{
-                                            '&:last-child td': {
-                                                borderBottom: 0
-                                            }
-                                        }}
-                                    >
-                                        <TableCell>
-                                            <Typography variant="body2" fontWeight={600}>
+                        return (
+                            <Card key={unit.id} sx={{ ...glassCardStyles }}>
+                                <CardContent sx={{ pb: 1 }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                                        <Box sx={{ flex: 1, minWidth: 0, mr: 1 }}>
+                                            <Typography variant="h6" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
                                                 {unit.code}
                                             </Typography>
-                                            <Typography variant="caption" color="text.secondary">
+                                            <Typography variant="body2" color="text.secondary">
                                                 {unit.name}
                                             </Typography>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="body2">
+                                        </Box>
+                                        <Chip
+                                            label={unit.status}
+                                            size="small"
+                                            color={unit.status === 'active' ? 'success' : 'default'}
+                                            sx={{ textTransform: 'capitalize' }}
+                                        />
+                                    </Box>
+
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 2 }}>
+                                        <Box>
+                                            <Typography variant="caption" color="text.secondary" display="block">
+                                                Plant
+                                            </Typography>
+                                            <Typography variant="body2" fontWeight={500}>
                                                 {plant?.name || 'N/A'}
                                             </Typography>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="body2">
-                                                {owner?.name || 'N/A'}
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="caption" color="text.secondary" display="block">
+                                                Areas
                                             </Typography>
-                                        </TableCell>
-                                        <TableCell>
                                             <Chip
-                                                label={`${areaCount} area${areaCount !== 1 ? 's' : ''}`}
+                                                label={`${areaCount} Area${areaCount !== 1 ? 's' : ''}`}
                                                 size="small"
                                                 color={areaCount > 0 ? 'primary' : 'default'}
+                                                sx={{ mt: 0.5 }}
                                             />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Chip
-                                                label={unit.status}
-                                                size="small"
-                                                color={unit.status === 'active' ? 'success' : 'default'}
-                                                sx={{ textTransform: 'capitalize' }}
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="body2">
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="caption" color="text.secondary" display="block">
+                                                Owner
+                                            </Typography>
+                                            <Typography variant="body2" fontWeight={500}>
+                                                {owner?.name || 'N/A'}
+                                            </Typography>
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="caption" color="text.secondary" display="block">
+                                                Created
+                                            </Typography>
+                                            <Typography variant="body2" fontWeight={500}>
                                                 {new Date(unit.createdAt).toLocaleDateString()}
                                             </Typography>
-                                        </TableCell>
-                                        <TableCell align="right">
-                                            {canEdit && (
-                                                <>
-                                                    <Tooltip title="Edit">
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => handleEdit(unit)}
-                                                        >
-                                                            <Edit fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                    <Tooltip title="Delete">
-                                                        <IconButton
-                                                            size="small"
-                                                            color="error"
-                                                            onClick={() => handleDelete(unit)}
-                                                        >
-                                                            <Delete fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                </>
-                                            )}
+                                        </Box>
+                                    </Box>
+                                </CardContent>
+                                {canEdit && (
+                                    <CardActions sx={{ justifyContent: 'flex-end', pt: 0, px: 2, pb: 1.5 }}>
+                                        <Tooltip title="Edit">
+                                            <IconButton
+                                                size="medium"
+                                                onClick={() => handleEdit(unit)}
+                                                sx={{ color: 'primary.main' }}
+                                            >
+                                                <Edit fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Delete">
+                                            <IconButton
+                                                size="medium"
+                                                color="error"
+                                                onClick={() => handleDelete(unit)}
+                                            >
+                                                <Delete fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </CardActions>
+                                )}
+                            </Card>
+                        );
+                    })}
+                    {filteredUnits.length === 0 && (
+                        <Paper sx={{ ...glassCardStyles, p: 4, textAlign: 'center' }}>
+                            <Typography color="text.secondary">
+                                {searchText ? 'No units match your search.' : 'No units found. Click "Add Unit" to create one.'}
+                            </Typography>
+                        </Paper>
+                    )}
+                </Box>
+            ) : (
+                /* Desktop Table View */
+                <Paper sx={{ ...glassCardStyles, p: 0 }}>
+                    <TableContainer>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Code</TableCell>
+                                    <TableCell>Plant</TableCell>
+                                    <TableCell>Owner</TableCell>
+                                    <TableCell>Areas</TableCell>
+                                    <TableCell>Status</TableCell>
+                                    <TableCell>Created</TableCell>
+                                    <TableCell align="right">Actions</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {filteredUnits.map((unit) => {
+                                    const plant = plants.find(p => p.id === unit.plantId);
+                                    const owner = users.find(u => u.id === unit.ownerId);
+                                    const areaCount = getAreaCount(unit.id);
+
+                                    return (
+                                        <TableRow
+                                            key={unit.id}
+                                            hover
+                                            sx={{
+                                                '&:last-child td': {
+                                                    borderBottom: 0
+                                                }
+                                            }}
+                                        >
+                                            <TableCell>
+                                                <Typography variant="body2" fontWeight={600}>
+                                                    {unit.code}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {unit.name}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2">
+                                                    {plant?.name || 'N/A'}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2">
+                                                    {owner?.name || 'N/A'}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={`${areaCount} area${areaCount !== 1 ? 's' : ''}`}
+                                                    size="small"
+                                                    color={areaCount > 0 ? 'primary' : 'default'}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={unit.status}
+                                                    size="small"
+                                                    color={unit.status === 'active' ? 'success' : 'default'}
+                                                    sx={{ textTransform: 'capitalize' }}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2">
+                                                    {new Date(unit.createdAt).toLocaleDateString()}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell align="right">
+                                                {canEdit && (
+                                                    <>
+                                                        <Tooltip title="Edit">
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => handleEdit(unit)}
+                                                            >
+                                                                <Edit fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <Tooltip title="Delete">
+                                                            <IconButton
+                                                                size="small"
+                                                                color="error"
+                                                                onClick={() => handleDelete(unit)}
+                                                            >
+                                                                <Delete fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                                {filteredUnits.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                                            <Typography color="text.secondary">
+                                                {searchText ? 'No units match your search.' : 'No units found. Click "Add Unit" to create one.'}
+                                            </Typography>
                                         </TableCell>
                                     </TableRow>
-                                );
-                            })}
-                            {filteredUnits.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                                        <Typography color="text.secondary">
-                                            {searchText ? 'No units match your search.' : 'No units found. Click "Add Unit" to create one.'}
-                                        </Typography>
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            </Paper>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Paper>
+            )}
 
             {/* Add/Edit Dialog */}
             {dialogOpen && (
