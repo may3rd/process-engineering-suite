@@ -59,7 +59,16 @@ interface PsvStore {
     selectedProject: Project | null;
     selectedPsv: ProtectiveSystem | null;
 
-    // Lists for current level
+    // State arrays (mutable data)
+    customers: Customer[];
+    plants: Plant[];
+    units: Unit[];
+    areas: Area[];
+    projects: Project[];
+    protectiveSystems: ProtectiveSystem[];
+    equipment: Equipment[];
+
+    // Lists for current level (filtered/computed)
     customerList: Customer[];
     plantList: Plant[];
     unitList: Unit[];
@@ -169,7 +178,16 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     selectedProject: null,
     selectedPsv: null,
 
-    // Initial lists
+    // State arrays (initialized with mock data)
+    customers: [...customers],
+    plants: [...plants],
+    units: [...units],
+    areas: [...areas],
+    projects: [...projects],
+    protectiveSystems: [...protectiveSystems],
+    equipment: [],
+
+    // Initial lists (filtered/computed)
     customerList: customers,
     plantList: [],
     unitList: [],
@@ -562,162 +580,246 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     addCustomer: (customer) => {
         const newCustomer: Customer = {
             ...customer,
-            id: `cust-${Date.now()}`,
+            id: `cust-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             createdAt: new Date().toISOString(),
         };
-        // In a real app, this would be API call. For now, just update local state
-        // Note: customers array is imported const, so we'd need to add to initial state
-        console.log('Add customer:', newCustomer);
+        set((state) => ({
+            customers: [...state.customers, newCustomer],
+            customerList: [...state.customers, newCustomer],
+        }));
     },
 
     updateCustomer: (id, updates) => {
-        // In a real app, this would be API call
-        console.log('Update customer:', id, updates);
+        set((state) => {
+            const customers = state.customers.map(c =>
+                c.id === id ? { ...c, ...updates } : c
+            );
+            return {
+                customers,
+                customerList: customers,
+                selectedCustomer: state.selectedCustomer?.id === id
+                    ? { ...state.selectedCustomer, ...updates }
+                    : state.selectedCustomer,
+            };
+        });
     },
 
     deleteCustomer: (id) => {
-        // Check for children (plants)
-        const hasChildren = getPlantsByCustomer(id).length > 0;
+        const hasChildren = get().plants.filter(p => p.customerId === id).length > 0;
         if (hasChildren) {
             throw new Error('Cannot delete customer with existing plants');
         }
-        console.log('Delete customer:', id);
+        set((state) => {
+            const customers = state.customers.filter(c => c.id !== id);
+            return {
+                customers,
+                customerList: customers,
+                selectedCustomer: state.selectedCustomer?.id === id ? null : state.selectedCustomer,
+            };
+        });
     },
 
     // Plant
     addPlant: (plant) => {
         const newPlant: Plant = {
             ...plant,
-            id: `plant-${Date.now()}`,
+            id: `plant-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             createdAt: new Date().toISOString(),
         };
-        console.log('Add plant:', newPlant);
+        set((state) => ({
+            plants: [...state.plants, newPlant],
+        }));
     },
 
     updatePlant: (id, updates) => {
-        console.log('Update plant:', id, updates);
+        set((state) => ({
+            plants: state.plants.map(p =>
+                p.id === id ? { ...p, ...updates } : p
+            ),
+            selectedPlant: state.selectedPlant?.id === id
+                ? { ...state.selectedPlant, ...updates }
+                : state.selectedPlant,
+        }));
     },
 
     deletePlant: (id) => {
-        const hasChildren = getUnitsByPlant(id).length > 0;
+        const hasChildren = get().units.filter(u => u.plantId === id).length > 0;
         if (hasChildren) {
             throw new Error('Cannot delete plant with existing units');
         }
-        console.log('Delete plant:', id);
+        set((state) => ({
+            plants: state.plants.filter(p => p.id !== id),
+            selectedPlant: state.selectedPlant?.id === id ? null : state.selectedPlant,
+        }));
     },
 
     // Unit
     addUnit: (unit) => {
         const newUnit: Unit = {
             ...unit,
-            id: `unit-${Date.now()}`,
+            id: `unit-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             createdAt: new Date().toISOString(),
         };
-        console.log('Add unit:', newUnit);
+        set((state) => ({
+            units: [...state.units, newUnit],
+        }));
     },
 
     updateUnit: (id, updates) => {
-        console.log('Update unit:', id, updates);
+        set((state) => ({
+            units: state.units.map(u =>
+                u.id === id ? { ...u, ...updates } : u
+            ),
+            selectedUnit: state.selectedUnit?.id === id
+                ? { ...state.selectedUnit, ...updates }
+                : state.selectedUnit,
+        }));
     },
 
     deleteUnit: (id) => {
-        const hasChildren = getAreasByUnit(id).length > 0;
+        const hasChildren = get().areas.filter(a => a.unitId === id).length > 0;
         if (hasChildren) {
             throw new Error('Cannot delete unit with existing areas');
         }
-        console.log('Delete unit:', id);
+        set((state) => ({
+            units: state.units.filter(u => u.id !== id),
+            selectedUnit: state.selectedUnit?.id === id ? null : state.selectedUnit,
+        }));
     },
 
     // Area
     addArea: (area) => {
         const newArea: Area = {
             ...area,
-            id: `area-${Date.now()}`,
+            id: `area-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             createdAt: new Date().toISOString(),
         };
-        console.log('Add area:', newArea);
+        set((state) => ({
+            areas: [...state.areas, newArea],
+        }));
     },
 
     updateArea: (id, updates) => {
-        console.log('Update area:', id, updates);
+        set((state) => ({
+            areas: state.areas.map(a =>
+                a.id === id ? { ...a, ...updates } : a
+            ),
+            selectedArea: state.selectedArea?.id === id
+                ? { ...state.selectedArea, ...updates }
+                : state.selectedArea,
+        }));
     },
 
     deleteArea: (id) => {
-        const hasProjects = getProjectsByArea(id).length > 0;
-        const hasPsvs = getProtectiveSystemsByArea(id).length > 0;
-        const hasEquipment = getEquipmentByArea(id).length > 0;
+        const state = get();
+        const hasProjects = state.projects.filter(p => p.areaId === id).length > 0;
+        const hasPsvs = state.protectiveSystems.filter(p => p.areaId === id).length > 0;
+        const hasEquipment = state.equipment.filter(e => e.areaId === id).length > 0;
+
         if (hasProjects || hasPsvs || hasEquipment) {
             throw new Error('Cannot delete area with existing projects, PSVs, or equipment');
         }
-        console.log('Delete area:', id);
+
+        set((state) => ({
+            areas: state.areas.filter(a => a.id !== id),
+            selectedArea: state.selectedArea?.id === id ? null : state.selectedArea,
+        }));
     },
 
     // Project
     addProject: (project) => {
         const newProject: Project = {
             ...project,
-            id: `proj-${Date.now()}`,
+            id: `proj-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             createdAt: new Date().toISOString(),
         };
-        console.log('Add project:', newProject);
+        set((state) => ({
+            projects: [...state.projects, newProject],
+        }));
     },
 
     updateProject: (id, updates) => {
-        console.log('Update project:', id, updates);
+        set((state) => ({
+            projects: state.projects.map(p =>
+                p.id === id ? { ...p, ...updates } : p
+            ),
+            selectedProject: state.selectedProject?.id === id
+                ? { ...state.selectedProject, ...updates }
+                : state.selectedProject,
+        }));
     },
 
     deleteProject: (id) => {
-        // Projects don't have children in the new structure
-        // PSVs are linked via projectIds array
-        console.log('Delete project:', id);
+        set((state) => ({
+            projects: state.projects.filter(p => p.id !== id),
+            selectedProject: state.selectedProject?.id === id ? null : state.selectedProject,
+        }));
     },
 
     // PSVs / Protective Systems
     addProtectiveSystem: (psv) => {
         const newPsv: ProtectiveSystem = {
             ...psv,
-            id: `psv-${Date.now()}`,
+            id: `psv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
             tags: psv.tags || [],
         };
-        console.log('Add PSV:', newPsv);
+        set((state) => ({
+            protectiveSystems: [...state.protectiveSystems, newPsv],
+        }));
     },
 
     updateProtectiveSystem: (id, updates) => {
-        console.log('Update PSV:', id, updates);
+        set((state) => ({
+            protectiveSystems: state.protectiveSystems.map(p =>
+                p.id === id ? { ...p, ...updates, updatedAt: new Date().toISOString() } : p
+            ),
+            selectedPsv: state.selectedPsv?.id === id
+                ? { ...state.selectedPsv, ...updates, updatedAt: new Date().toISOString() }
+                : state.selectedPsv,
+        }));
     },
 
     deleteProtectiveSystem: (id) => {
-        // Check for equipment links
         const hasLinks = getEquipmentLinksByPsv(id).length > 0;
         if (hasLinks) {
             throw new Error('Cannot delete PSV that is linked to equipment');
         }
-        console.log('Delete PSV:', id);
+        set((state) => ({
+            protectiveSystems: state.protectiveSystems.filter(p => p.id !== id),
+            selectedPsv: state.selectedPsv?.id === id ? null : state.selectedPsv,
+        }));
     },
 
     // Equipment
     addEquipment: (equipment) => {
         const newEquipment: Equipment = {
             ...equipment,
-            id: `equip-${Date.now()}`,
+            id: `equip-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };
-        console.log('Add equipment:', newEquipment);
+        set((state) => ({
+            equipment: [...state.equipment, newEquipment],
+        }));
     },
 
     updateEquipment: (id, updates) => {
-        console.log('Update equipment:', id, updates);
+        set((state) => ({
+            equipment: state.equipment.map(e =>
+                e.id === id ? { ...e, ...updates, updatedAt: new Date().toISOString() } : e
+            ),
+        }));
     },
 
     deleteEquipment: (id) => {
-        // Check for equipment links
         const hasLinks = getEquipmentLinksByPsv(id).length > 0;
         if (hasLinks) {
             throw new Error('Cannot delete equipment that is linked to PSVs');
         }
-        console.log('Delete equipment:', id);
+        set((state) => ({
+            equipment: state.equipment.filter(e => e.id !== id),
+        }));
     },
 }));
