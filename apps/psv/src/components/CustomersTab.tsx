@@ -64,6 +64,16 @@ export function CustomersTab() {
         }
     };
 
+    const handleForceDelete = () => {
+        if (customerToDelete) {
+            // TODO: Implement cascade delete in store
+            console.log('Force delete customer and all children:', customerToDelete.id);
+            setDeleteDialogOpen(false);
+            setCustomerToDelete(null);
+            // TODO: Show success message
+        }
+    };
+
     const handleSave = (data: Omit<Customer, 'id' | 'createdAt'>) => {
         if (selectedCustomer) {
             updateCustomer(selectedCustomer.id, data);
@@ -211,6 +221,8 @@ export function CustomersTab() {
                         setCustomerToDelete(null);
                     }}
                     onConfirm={handleConfirmDelete}
+                    onForceDelete={handleForceDelete}
+                    allowForceDelete={canApprove}  // Only admins can force delete
                     title="Delete Customer"
                     itemName={customerToDelete.name}
                     children={[
