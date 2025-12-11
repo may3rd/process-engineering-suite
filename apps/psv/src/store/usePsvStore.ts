@@ -8,9 +8,10 @@ import {
     ProtectiveSystem,
     OverpressureScenario,
     SizingCase,
-    EquipmentLink,
     Attachment,
     TodoItem,
+    EquipmentLink,
+    Equipment,
     Comment,
 } from '@/data/types';
 import {
@@ -30,9 +31,11 @@ import {
     getAreasByUnit,
     getProjectsByArea,
     getProtectiveSystemsByArea,
+    getProtectiveSystemsByProject,
     getScenariosByProtectiveSystem,
     getSizingCasesByProtectiveSystem,
     getEquipmentLinksByPsv,
+    getEquipmentByArea,
 } from '@/data/mockData';
 
 interface HierarchySelection {
@@ -105,6 +108,31 @@ interface PsvStore {
     deleteAttachment: (id: string) => void;
     addAttachment: (attachment: Attachment) => void;
     attachmentList: Attachment[];
+
+    // Hierarchy CRUD Actions
+    addCustomer: (customer: Omit<Customer, 'id' | 'createdAt'>) => void;
+    updateCustomer: (id: string, updates: Partial<Omit<Customer, 'id' | 'createdAt'>>) => void;
+    deleteCustomer: (id: string) => void;
+
+    addPlant: (plant: Omit<Plant, 'id' | 'createdAt'>) => void;
+    updatePlant: (id: string, updates: Partial<Omit<Plant, 'id' | 'createdAt'>>) => void;
+    deletePlant: (id: string) => void;
+
+    addUnit: (unit: Omit<Unit, 'id' | 'createdAt'>) => void;
+    updateUnit: (id: string, updates: Partial<Omit<Unit, 'id' | 'createdAt'>>) => void;
+    deleteUnit: (id: string) => void;
+
+    addArea: (area: Omit<Area, 'id' | 'createdAt'>) => void;
+    updateArea: (id: string, updates: Partial<Omit<Area, 'id' | 'createdAt'>>) => void;
+    deleteArea: (id: string) => void;
+
+    addProject: (project: Omit<Project, 'id' | 'createdAt'>) => void;
+    updateProject: (id: string, updates: Partial<Omit<Project, 'id' | 'createdAt'>>) => void;
+    deleteProject: (id: string) => void;
+
+    addEquipment: (equipment: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>) => void;
+    updateEquipment: (id: string, updates: Partial<Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>>) => void;
+    deleteEquipment: (id: string) => void;
 
     // Todo Actions
     addTodo: (todo: TodoItem) => void;
@@ -523,5 +551,144 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         set((state) => ({
             commentList: state.commentList.filter((c) => c.id !== id)
         }));
+    },
+
+    // Hierarchy CRUD Actions
+    // Customer
+    addCustomer: (customer) => {
+        const newCustomer: Customer = {
+            ...customer,
+            id: `cust-${Date.now()}`,
+            createdAt: new Date().toISOString(),
+        };
+        // In a real app, this would be API call. For now, just update local state
+        // Note: customers array is imported const, so we'd need to add to initial state
+        console.log('Add customer:', newCustomer);
+    },
+
+    updateCustomer: (id, updates) => {
+        // In a real app, this would be API call
+        console.log('Update customer:', id, updates);
+    },
+
+    deleteCustomer: (id) => {
+        // Check for children (plants)
+        const hasChildren = getPlantsByCustomer(id).length > 0;
+        if (hasChildren) {
+            throw new Error('Cannot delete customer with existing plants');
+        }
+        console.log('Delete customer:', id);
+    },
+
+    // Plant
+    addPlant: (plant) => {
+        const newPlant: Plant = {
+            ...plant,
+            id: `plant-${Date.now()}`,
+            createdAt: new Date().toISOString(),
+        };
+        console.log('Add plant:', newPlant);
+    },
+
+    updatePlant: (id, updates) => {
+        console.log('Update plant:', id, updates);
+    },
+
+    deletePlant: (id) => {
+        const hasChildren = getUnitsByPlant(id).length > 0;
+        if (hasChildren) {
+            throw new Error('Cannot delete plant with existing units');
+        }
+        console.log('Delete plant:', id);
+    },
+
+    // Unit
+    addUnit: (unit) => {
+        const newUnit: Unit = {
+            ...unit,
+            id: `unit-${Date.now()}`,
+            createdAt: new Date().toISOString(),
+        };
+        console.log('Add unit:', newUnit);
+    },
+
+    updateUnit: (id, updates) => {
+        console.log('Update unit:', id, updates);
+    },
+
+    deleteUnit: (id) => {
+        const hasChildren = getAreasByUnit(id).length > 0;
+        if (hasChildren) {
+            throw new Error('Cannot delete unit with existing areas');
+        }
+        console.log('Delete unit:', id);
+    },
+
+    // Area
+    addArea: (area) => {
+        const newArea: Area = {
+            ...area,
+            id: `area-${Date.now()}`,
+            createdAt: new Date().toISOString(),
+        };
+        console.log('Add area:', newArea);
+    },
+
+    updateArea: (id, updates) => {
+        console.log('Update area:', id, updates);
+    },
+
+    deleteArea: (id) => {
+        const hasProjects = getProjectsByArea(id).length > 0;
+        const hasPsvs = getProtectiveSystemsByArea(id).length > 0;
+        const hasEquipment = getEquipmentByArea(id).length > 0;
+        if (hasProjects || hasPsvs || hasEquipment) {
+            throw new Error('Cannot delete area with existing projects, PSVs, or equipment');
+        }
+        console.log('Delete area:', id);
+    },
+
+    // Project
+    addProject: (project) => {
+        const newProject: Project = {
+            ...project,
+            id: `proj-${Date.now()}`,
+            createdAt: new Date().toISOString(),
+        };
+        console.log('Add project:', newProject);
+    },
+
+    updateProject: (id, updates) => {
+        console.log('Update project:', id, updates);
+    },
+
+    deleteProject: (id) => {
+        // Projects don't have children in the new structure
+        // PSVs are linked via projectIds array
+        console.log('Delete project:', id);
+    },
+
+    // Equipment
+    addEquipment: (equipment) => {
+        const newEquipment: Equipment = {
+            ...equipment,
+            id: `equip-${Date.now()}`,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+        };
+        console.log('Add equipment:', newEquipment);
+    },
+
+    updateEquipment: (id, updates) => {
+        console.log('Update equipment:', id, updates);
+    },
+
+    deleteEquipment: (id) => {
+        // Check for equipment links
+        const hasLinks = getEquipmentLinksByPsv(id).length > 0;
+        if (hasLinks) {
+            throw new Error('Cannot delete equipment that is linked to PSVs');
+        }
+        console.log('Delete equipment:', id);
     },
 }));
