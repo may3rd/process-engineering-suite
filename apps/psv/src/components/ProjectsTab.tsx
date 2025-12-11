@@ -162,7 +162,6 @@ export function ProjectsTab() {
                         <TableHead>
                             <TableRow>
                                 <TableCell>Code</TableCell>
-                                <TableCell>Name</TableCell>
                                 <TableCell>Area</TableCell>
                                 <TableCell>Phase</TableCell>
                                 <TableCell>Status</TableCell>
@@ -193,8 +192,10 @@ export function ProjectsTab() {
                                             <Typography variant="body2" fontWeight={600}>
                                                 {project.code}
                                             </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {project.name}
+                                            </Typography>
                                         </TableCell>
-                                        <TableCell>{project.name}</TableCell>
                                         <TableCell>
                                             <Typography variant="body2">
                                                 {area?.name || 'N/A'}
@@ -264,7 +265,7 @@ export function ProjectsTab() {
                             })}
                             {filteredProjects.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                                    <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                                         <Typography color="text.secondary">
                                             {searchText ? 'No projects match your search.' : 'No projects found. Click "Add Project" to create one.'}
                                         </Typography>
