@@ -31,7 +31,7 @@ export const users: User[] = [
 
 // Mock credentials for authentication
 export const credentials: MockCredential[] = [
-    { userId: 'user-maetee', username: 'maetee', password: 'linknipark' },
+    { userId: 'user-maetee', username: 'maetee', password: 'linkinpark' },
     { userId: 'user-lead', username: 'lead', password: 'lead' },
     { userId: 'user-approver', username: 'approver', password: 'approver' },
     { userId: 'user-engineer', username: 'engineer', password: 'engineer' },

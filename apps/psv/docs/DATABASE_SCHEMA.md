@@ -10,18 +10,20 @@ erDiagram
     Plant ||--o{ Unit : contains
     Unit ||--o{ Area : contains
     Area ||--o{ Project : contains
-    Project ||--o{ ProtectiveSystem : contains
-    Project ||--o{ Equipment : contains
+    Area ||--o{ ProtectiveSystem : contains
+    Area ||--o{ Equipment : contains
     
     ProtectiveSystem ||--o{ OverpressureScenario : has
     ProtectiveSystem ||--o{ SizingCase : has
     ProtectiveSystem ||--o{ Attachment : has
     ProtectiveSystem ||--o{ Note : has
     ProtectiveSystem ||--o{ EquipmentLink : links
+    ProtectiveSystem }o--o{ Project : "tagged with"
     
     OverpressureScenario ||--o{ SizingCase : governs
     Equipment ||--o{ EquipmentLink : linked
     User ||--o{ ProtectiveSystem : owns
+    User ||--o{ Equipment : owns
 ```
 
 ---
@@ -96,7 +98,7 @@ erDiagram
 | Column | Type | Description |
 |--------|------|-------------|
 | id | UUID | Primary key |
-| project_id | UUID | FK → projects.id |
+| area_id | UUID | FK → areas.id |
 | name | VARCHAR(255) | PSV name |
 | tag | VARCHAR(100) | Tag number (e.g., "PSV-101") |
 | type | ENUM('psv', 'rupture_disc', 'vent_system', 'prv') | Type |
@@ -106,7 +108,8 @@ erDiagram
 | set_pressure | DECIMAL(10,2) | Set pressure (barg) |
 | mawp | DECIMAL(10,2) | Maximum allowable working pressure (barg) |
 | owner_id | UUID | FK → users.id |
-| status | ENUM('draft', 'in_review', 'approved', 'issued') | Status |
+| status | ENUM('draft', 'in_review', 'checked', 'approved', 'issued') | Status |
+| project_tags | UUID[] | Optional FK array → projects.id |
 | tags | TEXT[] | Tags array |
 | inlet_network | JSONB | Shared inlet piping configuration |
 | outlet_network | JSONB | Shared outlet piping configuration |
@@ -157,14 +160,19 @@ erDiagram
 | Column | Type | Description |
 |--------|------|-------------|
 | id | UUID | Primary key |
-| project_id | UUID | FK → projects.id |
-| type | ENUM('vessel', 'tank', 'heat_exchanger', 'column', 'reactor', 'piping') | Type |
+| area_id | UUID | FK → areas.id |
+| type | ENUM('vessel', 'tank', 'heat_exchanger', 'column', 'reactor', 'pump', 'compressor', 'piping', 'other') | Type |
 | tag | VARCHAR(100) | Equipment tag |
+| name | VARCHAR(255) | Equipment name |
 | description | TEXT | Description |
 | design_pressure | DECIMAL(10,2) | Design pressure (barg) |
+| mawp | DECIMAL(10,2) | MAWP (barg) |
 | design_temp | DECIMAL(10,2) | Design temperature (°C) |
+| owner_id | UUID | FK → users.id |
+| status | ENUM('active', 'inactive') | Status |
 | location_ref | VARCHAR(255) | Location reference |
 | created_at | TIMESTAMP | Creation time |
+| updated_at | TIMESTAMP | Last update |
 
 #### `equipment_links`
 | Column | Type | Description |
@@ -172,8 +180,11 @@ erDiagram
 | id | UUID | Primary key |
 | protective_system_id | UUID | FK → protective_systems.id |
 | equipment_id | UUID | FK → equipment.id |
+| is_primary | BOOLEAN | Is primary protection device |
+| scenario_id | UUID | FK → overpressure_scenarios.id (nullable) |
 | relationship | ENUM('protects', 'inlet_from', 'discharge_to') | Relationship type |
 | notes | TEXT | Notes |
+| created_at | TIMESTAMP | Creation time |
 
 #### `attachments`
 | Column | Type | Description |
@@ -243,11 +254,18 @@ CREATE INDEX idx_areas_unit ON areas(unit_id);
 CREATE INDEX idx_projects_area ON projects(area_id);
 
 -- PSV lookups
-CREATE INDEX idx_psv_project ON protective_systems(project_id);
+CREATE INDEX idx_psv_area ON protective_systems(area_id);
 CREATE INDEX idx_psv_tag ON protective_systems(tag);
+CREATE INDEX idx_psv_project_tags ON protective_systems USING GIN(project_tags);
 CREATE INDEX idx_scenarios_psv ON overpressure_scenarios(protective_system_id);
 CREATE INDEX idx_sizing_psv ON sizing_cases(protective_system_id);
 CREATE INDEX idx_sizing_scenario ON sizing_cases(scenario_id);
+
+-- Equipment lookups
+CREATE INDEX idx_equipment_area ON equipment(area_id);
+CREATE INDEX idx_equipment_tag ON equipment(tag);
+CREATE INDEX idx_equipment_links_psv ON equipment_links(protective_system_id);
+CREATE INDEX idx_equipment_links_equip ON equipment_links(equipment_id);
 ```
 
 ---

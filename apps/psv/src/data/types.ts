@@ -63,7 +63,8 @@ export type FluidPhase = 'gas' | 'liquid' | 'steam' | 'two_phase';
 
 export interface ProtectiveSystem {
     id: string;
-    projectId: string;
+    areaId: string;              // Changed: PSV belongs to Area (physical location)
+    projectIds?: string[];       // Optional: PSV can be tagged with projects
     name: string;
     tag: string;
     type: ProtectiveSystemType;
@@ -211,24 +212,34 @@ export interface SizingCase {
 }
 
 // Equipment and attachments
+// Equipment types
+export type EquipmentType = 'vessel' | 'tank' | 'heat_exchanger' | 'column' | 'reactor' | 'pump' | 'compressor' | 'piping' | 'other';
+
+// Equipment (physical assets in areas)
 export interface Equipment {
     id: string;
-    projectId: string;
-    type: 'vessel' | 'tank' | 'heat_exchanger' | 'column' | 'reactor' | 'piping';
+    areaId: string;           // Equipment belongs to Area (physical location)
+    type: EquipmentType;
     tag: string;
-    description: string;
-    designPressure: number; // barg
-    designTemp: number; // °C
-    locationRef: string;
+    name: string;
+    description?: string;
+    designPressure: number;   // barg
+    mawp: number;             // barg
+    designTemperature: number; // °C
+    ownerId: string;
+    status: 'active' | 'inactive';
     createdAt: string;
+    updatedAt: string;
 }
 
+// Equipment link (PSV to protected equipment)
 export interface EquipmentLink {
     id: string;
-    protectiveSystemId: string;
+    psvId: string;
     equipmentId: string;
-    relationship: 'protects' | 'inlet_from' | 'discharge_to';
-    notes: string;
+    isPrimary: boolean;       // Primary protection device
+    scenarioId?: string;      // Optional link to specific scenario
+    createdAt: string;
 }
 
 export interface Attachment {

@@ -20,6 +20,7 @@ export function Breadcrumbs() {
         selectUnit,
         selectArea,
         selectProject,
+        setCurrentPage,
         clearSelection,
     } = usePsvStore();
 
@@ -44,7 +45,10 @@ export function Breadcrumbs() {
             }}
         >
             <Link
-                onClick={() => clearSelection()}
+                onClick={() => {
+                    clearSelection();
+                    setCurrentPage(null);
+                }}
                 sx={linkStyle}
                 underline="hover"
             >
