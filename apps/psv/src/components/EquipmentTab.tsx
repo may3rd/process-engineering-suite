@@ -141,7 +141,6 @@ export function EquipmentTab() {
                         <TableHead>
                             <TableRow>
                                 <TableCell>Tag</TableCell>
-                                <TableCell>Name</TableCell>
                                 <TableCell>Type</TableCell>
                                 <TableCell>Area</TableCell>
                                 <TableCell>Design Pressure</TableCell>
@@ -172,8 +171,10 @@ export function EquipmentTab() {
                                             <Typography variant="body2" fontWeight={600}>
                                                 {equip.tag}
                                             </Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {equip.name}
+                                            </Typography>
                                         </TableCell>
-                                        <TableCell>{equip.name}</TableCell>
                                         <TableCell>
                                             <Chip
                                                 label={getTypeLabel(equip.type)}
@@ -246,7 +247,7 @@ export function EquipmentTab() {
                             })}
                             {filteredEquipment.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={10} align="center" sx={{ py: 4 }}>
+                                    <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
                                         <Typography color="text.secondary">
                                             {searchText ? 'No equipment matches your search.' : 'No equipment found. Click "Add Equipment" to create one.'}
                                         </Typography>
