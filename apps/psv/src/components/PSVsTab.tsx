@@ -33,7 +33,7 @@ import { usePsvStore } from "@/store/usePsvStore";
 
 export function PSVsTab() {
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const { addProtectiveSystem, updateProtectiveSystem, deleteProtectiveSystem } = usePsvStore();
