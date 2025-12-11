@@ -333,6 +333,7 @@ export const protectiveSystems: ProtectiveSystem[] = [
     {
         id: 'psv-1',
         areaId: 'area-1',
+        projectIds: ['proj-1'],
         name: 'Atmospheric Tower Overhead PSV',
         tag: 'PSV-101A',
         type: 'psv',
@@ -374,6 +375,7 @@ export const protectiveSystems: ProtectiveSystem[] = [
     {
         id: 'psv-2',
         areaId: 'area-1',
+        projectIds: ['proj-1'],
         name: 'Atmospheric Tower Overhead PSV (Spare)',
         tag: 'PSV-101B',
         type: 'psv',
@@ -391,6 +393,7 @@ export const protectiveSystems: ProtectiveSystem[] = [
     {
         id: 'psv-3',
         areaId: 'area-1',
+        projectIds: ['proj-1'],
         name: 'Overhead Accumulator PSV',
         tag: 'PSV-102',
         type: 'psv',
@@ -408,6 +411,7 @@ export const protectiveSystems: ProtectiveSystem[] = [
     {
         id: 'psv-4',
         areaId: 'area-2',
+        projectIds: ['proj-2'],
         name: 'Preheat Exchanger Tube Rupture PSV',
         tag: 'PSV-103',
         type: 'psv',
@@ -425,6 +429,7 @@ export const protectiveSystems: ProtectiveSystem[] = [
     {
         id: 'psv-5',
         areaId: 'area-3',
+        projectIds: ['proj-3'],
         name: 'Vacuum Column Fire Case RD',
         tag: 'RD-201',
         type: 'rupture_disc',
@@ -442,6 +447,7 @@ export const protectiveSystems: ProtectiveSystem[] = [
     {
         id: 'psv-6',
         areaId: 'area-5',
+        projectIds: ['proj-5'],
         name: 'LNG Vaporizer PSV',
         tag: 'PSV-501',
         type: 'psv',
@@ -920,4 +926,9 @@ export function getHierarchyPath(psvId: string) {
     if (!customer) return null;
 
     return { customer, plant, unit, area, psv };
+}
+
+// Get PSVs by Project (via projectIds array)
+export function getProtectiveSystemsByProject(projectId: string): ProtectiveSystem[] {
+    return protectiveSystems.filter(ps => ps.projectIds?.includes(projectId));
 }
