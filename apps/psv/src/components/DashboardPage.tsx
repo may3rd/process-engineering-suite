@@ -40,6 +40,8 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
 import { glassCardStyles } from "./styles";
 import { CustomersTab } from "./CustomersTab";
+import { PlantsTab } from "./PlantsTab";
+import { UnitsTab } from "./UnitsTab";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -190,37 +192,7 @@ function AreasTab() {
     );
 }
 
-function UnitsTab() {
-    return (
-        <Paper sx={{ p: 3, ...glassCardStyles }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                <Typography variant="h6">Units</Typography>
-                <Button variant="contained" startIcon={<Add />}>
-                    New Unit
-                </Button>
-            </Box>
-            <Typography color="text.secondary">
-                Unit management interface - Coming soon
-            </Typography>
-        </Paper>
-    );
-}
 
-function PlantsTab() {
-    return (
-        <Paper sx={{ p: 3, ...glassCardStyles }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-                <Typography variant="h6">Plants</Typography>
-                <Button variant="contained" startIcon={<Add />}>
-                    New Plant
-                </Button>
-            </Box>
-            <Typography color="text.secondary">
-                Plant management interface - Coming soon
-            </Typography>
-        </Paper>
-    );
-}
 
 function UsersTab() {
     return (
