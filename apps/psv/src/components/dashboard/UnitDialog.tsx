@@ -16,7 +16,7 @@ import {
 } from "@mui/material";
 import { Unit } from "@/data/types";
 import { OwnerSelector } from "../shared";
-import { plants } from "@/data/mockData";
+import { plants, customers } from "@/data/mockData";
 
 interface UnitDialogProps {
     open: boolean;
@@ -33,6 +33,7 @@ export function UnitDialog({
 }: UnitDialogProps) {
     const [name, setName] = useState('');
     const [code, setCode] = useState('');
+    const [customerId, setCustomerId] = useState<string>('');
     const [plantId, setPlantId] = useState<string>('');
     const [status, setStatus] = useState<'active' | 'inactive'>('active');
     const [ownerId, setOwnerId] = useState<string | null>(null);
@@ -44,9 +45,16 @@ export function UnitDialog({
             setPlantId(unit.plantId);
             setStatus(unit.status);
             setOwnerId(unit.ownerId);
+
+            // Find and set customer based on plant
+            const plant = plants.find(p => p.id === unit.plantId);
+            if (plant) {
+                setCustomerId(plant.customerId);
+            }
         } else {
             setName('');
             setCode('');
+            setCustomerId('');
             setPlantId('');
             setStatus('active');
             setOwnerId(null);
@@ -66,6 +74,10 @@ export function UnitDialog({
         });
     };
 
+    const filteredPlants = customerId
+        ? plants.filter(p => p.customerId === customerId)
+        : [];
+
     const isValid = name.trim() && code.trim() && plantId && ownerId;
 
     return (
@@ -75,14 +87,34 @@ export function UnitDialog({
             </DialogTitle>
             <DialogContent>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                    {/* Customer Selector */}
                     <FormControl fullWidth size="small" required>
+                        <InputLabel>Customer</InputLabel>
+                        <Select
+                            value={customerId}
+                            onChange={(e) => {
+                                setCustomerId(e.target.value);
+                                setPlantId(''); // Reset plant when customer changes
+                            }}
+                            label="Customer"
+                        >
+                            {customers.map((customer) => (
+                                <MenuItem key={customer.id} value={customer.id}>
+                                    {customer.name} ({customer.code})
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    {/* Plant Selector */}
+                    <FormControl fullWidth size="small" required disabled={!customerId}>
                         <InputLabel>Plant</InputLabel>
                         <Select
                             value={plantId}
                             onChange={(e) => setPlantId(e.target.value)}
                             label="Plant"
                         >
-                            {plants.map((plant) => (
+                            {filteredPlants.map((plant) => (
                                 <MenuItem key={plant.id} value={plant.id}>
                                     {plant.name} ({plant.code})
                                 </MenuItem>

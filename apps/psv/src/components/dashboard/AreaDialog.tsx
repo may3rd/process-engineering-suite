@@ -15,7 +15,7 @@ import {
     Box,
 } from "@mui/material";
 import { Area } from "@/data/types";
-import { units } from "@/data/mockData";
+import { units, plants, customers } from "@/data/mockData";
 
 interface AreaDialogProps {
     open: boolean;
@@ -32,6 +32,8 @@ export function AreaDialog({
 }: AreaDialogProps) {
     const [name, setName] = useState('');
     const [code, setCode] = useState('');
+    const [customerId, setCustomerId] = useState<string>('');
+    const [plantId, setPlantId] = useState<string>('');
     const [unitId, setUnitId] = useState<string>('');
     const [status, setStatus] = useState<'active' | 'inactive'>('active');
 
@@ -41,9 +43,21 @@ export function AreaDialog({
             setCode(area.code);
             setUnitId(area.unitId);
             setStatus(area.status);
+
+            // Find and set plant and customer based on unit
+            const unit = units.find(u => u.id === area.unitId);
+            if (unit) {
+                setPlantId(unit.plantId);
+                const plant = plants.find(p => p.id === unit.plantId);
+                if (plant) {
+                    setCustomerId(plant.customerId);
+                }
+            }
         } else {
             setName('');
             setCode('');
+            setCustomerId('');
+            setPlantId('');
             setUnitId('');
             setStatus('active');
         }
@@ -60,6 +74,14 @@ export function AreaDialog({
         });
     };
 
+    const filteredPlants = customerId
+        ? plants.filter(p => p.customerId === customerId)
+        : [];
+
+    const filteredUnits = plantId
+        ? units.filter(u => u.plantId === plantId)
+        : [];
+
     const isValid = name.trim() && code.trim() && unitId;
 
     return (
@@ -69,14 +91,54 @@ export function AreaDialog({
             </DialogTitle>
             <DialogContent>
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+                    {/* Customer Selector */}
                     <FormControl fullWidth size="small" required>
+                        <InputLabel>Customer</InputLabel>
+                        <Select
+                            value={customerId}
+                            onChange={(e) => {
+                                setCustomerId(e.target.value);
+                                setPlantId(''); // Reset downstream selections
+                                setUnitId('');
+                            }}
+                            label="Customer"
+                        >
+                            {customers.map((customer) => (
+                                <MenuItem key={customer.id} value={customer.id}>
+                                    {customer.name} ({customer.code})
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    {/* Plant Selector */}
+                    <FormControl fullWidth size="small" required disabled={!customerId}>
+                        <InputLabel>Plant</InputLabel>
+                        <Select
+                            value={plantId}
+                            onChange={(e) => {
+                                setPlantId(e.target.value);
+                                setUnitId(''); // Reset unit when plant changes
+                            }}
+                            label="Plant"
+                        >
+                            {filteredPlants.map((plant) => (
+                                <MenuItem key={plant.id} value={plant.id}>
+                                    {plant.name} ({plant.code})
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    {/* Unit Selector */}
+                    <FormControl fullWidth size="small" required disabled={!plantId}>
                         <InputLabel>Unit</InputLabel>
                         <Select
                             value={unitId}
                             onChange={(e) => setUnitId(e.target.value)}
                             label="Unit"
                         >
-                            {units.map((unit) => (
+                            {filteredUnits.map((unit) => (
                                 <MenuItem key={unit.id} value={unit.id}>
                                     {unit.name} ({unit.code})
                                 </MenuItem>
