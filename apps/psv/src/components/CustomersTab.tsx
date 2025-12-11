@@ -16,6 +16,11 @@ import {
     Typography,
     Tooltip,
     TextField,
+    Card,
+    CardContent,
+    CardActions,
+    useTheme,
+    useMediaQuery,
 } from "@mui/material";
 import { Add, Edit, Delete, Business, Search } from "@mui/icons-material";
 import { customers, users } from "@/data/mockData";
@@ -27,6 +32,8 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
 
 export function CustomersTab() {
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const { addCustomer, updateCustomer, deleteCustomer } = usePsvStore();
@@ -136,107 +143,199 @@ export function CustomersTab() {
                 }}
             />
 
-            {/* Table */}
-            <Paper sx={{ ...glassCardStyles, p: 0 }}>
-                <TableContainer>
-                    <Table>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Code</TableCell>
-                                <TableCell>Owner</TableCell>
-                                <TableCell>Plants</TableCell>
-                                <TableCell>Status</TableCell>
-                                <TableCell>Created</TableCell>
-                                <TableCell align="right">Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {filteredCustomers.map((customer) => {
-                                const owner = users.find(u => u.id === customer.ownerId);
-                                const plantCount = getPlantCount(customer.id);
+            {/* Mobile Card View */}
+            {isMobile ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {filteredCustomers.map((customer) => {
+                        const owner = users.find(u => u.id === customer.ownerId);
+                        const plantCount = getPlantCount(customer.id);
 
-                                return (
-                                    <TableRow
-                                        key={customer.id}
-                                        hover
-                                        sx={{
-                                            '&:last-child td': {
-                                                borderBottom: 0
-                                            }
-                                        }}
-                                    >
-                                        <TableCell>
-                                            <Typography variant="body2" fontWeight={600}>
+                        return (
+                            <Card key={customer.id} sx={{ ...glassCardStyles }}>
+                                <CardContent sx={{ pb: 1 }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                                        <Box sx={{ flex: 1, minWidth: 0, mr: 1 }}>
+                                            <Typography variant="h6" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
                                                 {customer.code}
                                             </Typography>
-                                            <Typography variant="caption" color="text.secondary">
+                                            <Typography variant="body2" color="text.secondary">
                                                 {customer.name}
                                             </Typography>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="body2">
+                                        </Box>
+                                        <Chip
+                                            label={customer.status}
+                                            size="small"
+                                            color={customer.status === 'active' ? 'success' : 'default'}
+                                            sx={{ textTransform: 'capitalize' }}
+                                        />
+                                    </Box>
+
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 2 }}>
+                                        <Box>
+                                            <Typography variant="caption" color="text.secondary" display="block">
+                                                Owner
+                                            </Typography>
+                                            <Typography variant="body2" fontWeight={500}>
                                                 {owner?.name || 'N/A'}
                                             </Typography>
-                                        </TableCell>
-                                        <TableCell>
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="caption" color="text.secondary" display="block">
+                                                Plants
+                                            </Typography>
                                             <Chip
-                                                label={`${plantCount} plant${plantCount !== 1 ? 's' : ''}`}
+                                                label={`${plantCount} Plant${plantCount !== 1 ? 's' : ''}`}
                                                 size="small"
                                                 color={plantCount > 0 ? 'primary' : 'default'}
+                                                sx={{ mt: 0.5 }}
                                             />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Chip
-                                                label={customer.status}
-                                                size="small"
-                                                color={customer.status === 'active' ? 'success' : 'default'}
-                                                sx={{ textTransform: 'capitalize' }}
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="body2">
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="caption" color="text.secondary" display="block">
+                                                Created
+                                            </Typography>
+                                            <Typography variant="body2" fontWeight={500}>
                                                 {new Date(customer.createdAt).toLocaleDateString()}
                                             </Typography>
-                                        </TableCell>
-                                        <TableCell align="right">
-                                            {canEdit && (
-                                                <>
-                                                    <Tooltip title="Edit">
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => handleEdit(customer)}
-                                                        >
-                                                            <Edit fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                    <Tooltip title="Delete">
-                                                        <IconButton
-                                                            size="small"
-                                                            color="error"
-                                                            onClick={() => handleDelete(customer)}
-                                                        >
-                                                            <Delete fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                </>
-                                            )}
+                                        </Box>
+                                    </Box>
+                                </CardContent>
+                                {canEdit && (
+                                    <CardActions sx={{ justifyContent: 'flex-end', pt: 0, px: 2, pb: 1.5 }}>
+                                        <Tooltip title="Edit">
+                                            <IconButton
+                                                size="medium"
+                                                onClick={() => handleEdit(customer)}
+                                                sx={{ color: 'primary.main' }}
+                                            >
+                                                <Edit fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Delete">
+                                            <IconButton
+                                                size="medium"
+                                                color="error"
+                                                onClick={() => handleDelete(customer)}
+                                            >
+                                                <Delete fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </CardActions>
+                                )}
+                            </Card>
+                        );
+                    })}
+                    {filteredCustomers.length === 0 && (
+                        <Paper sx={{ ...glassCardStyles, p: 4, textAlign: 'center' }}>
+                            <Typography color="text.secondary">
+                                {searchText ? 'No customers match your search.' : 'No customers found. Click "Add Customer" to create one.'}
+                            </Typography>
+                        </Paper>
+                    )}
+                </Box>
+            ) : (
+                /* Desktop Table View */
+                <Paper sx={{ ...glassCardStyles, p: 0 }}>
+                    <TableContainer>
+                        <Table>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Code</TableCell>
+                                    <TableCell>Owner</TableCell>
+                                    <TableCell>Plants</TableCell>
+                                    <TableCell>Status</TableCell>
+                                    <TableCell>Created</TableCell>
+                                    <TableCell align="right">Actions</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {filteredCustomers.map((customer) => {
+                                    const owner = users.find(u => u.id === customer.ownerId);
+                                    const plantCount = getPlantCount(customer.id);
+
+                                    return (
+                                        <TableRow
+                                            key={customer.id}
+                                            hover
+                                            sx={{
+                                                '&:last-child td': {
+                                                    borderBottom: 0
+                                                }
+                                            }}
+                                        >
+                                            <TableCell>
+                                                <Typography variant="body2" fontWeight={600}>
+                                                    {customer.code}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {customer.name}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2">
+                                                    {owner?.name || 'N/A'}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={`${plantCount} plant${plantCount !== 1 ? 's' : ''}`}
+                                                    size="small"
+                                                    color={plantCount > 0 ? 'primary' : 'default'}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={customer.status}
+                                                    size="small"
+                                                    color={customer.status === 'active' ? 'success' : 'default'}
+                                                    sx={{ textTransform: 'capitalize' }}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2">
+                                                    {new Date(customer.createdAt).toLocaleDateString()}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell align="right">
+                                                {canEdit && (
+                                                    <>
+                                                        <Tooltip title="Edit">
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => handleEdit(customer)}
+                                                            >
+                                                                <Edit fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <Tooltip title="Delete">
+                                                            <IconButton
+                                                                size="small"
+                                                                color="error"
+                                                                onClick={() => handleDelete(customer)}
+                                                            >
+                                                                <Delete fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                                {filteredCustomers.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                                            <Typography color="text.secondary">
+                                                {searchText ? 'No customers match your search.' : 'No customers found. Click "Add Customer" to create one.'}
+                                            </Typography>
                                         </TableCell>
                                     </TableRow>
-                                );
-                            })}
-                            {filteredCustomers.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
-                                        <Typography color="text.secondary">
-                                            {searchText ? 'No customers match your search.' : 'No customers found. Click "Add Customer" to create one.'}
-                                        </Typography>
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            </Paper>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Paper>
+            )}
 
             {/* Add/Edit Dialog */}
             {dialogOpen && (
