@@ -21,6 +21,7 @@ import {
     areas,
     projects,
     protectiveSystems,
+    equipment,
     scenarios,
     sizingCases,
     attachments,
@@ -185,7 +186,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     areas: [...areas],
     projects: [...projects],
     protectiveSystems: [...protectiveSystems],
-    equipment: [],
+    equipment: [...equipment],
 
     // Initial lists (filtered/computed)
     customerList: customers,
