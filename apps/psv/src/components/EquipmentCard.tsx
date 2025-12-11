@@ -54,10 +54,10 @@ export function EquipmentCard({ psv }: EquipmentCardProps) {
         selectedEquipmentIds.forEach(eqId => {
             const link: EquipmentLink = {
                 id: uuidv4(),
-                protectiveSystemId: psv.id,
+                psvId: psv.id,
                 equipmentId: eqId,
-                relationship: 'protects', // Default
-                notes: '',
+                isPrimary: false,  // Default to false, can be updated later
+                createdAt: new Date().toISOString(),
             };
             linkEquipment(link);
         });

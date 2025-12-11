@@ -29,7 +29,7 @@ import {
     getUnitsByPlant,
     getAreasByUnit,
     getProjectsByArea,
-    getProtectiveSystemsByProject,
+    getProtectiveSystemsByArea,
     getScenariosByProtectiveSystem,
     getSizingCasesByProtectiveSystem,
     getEquipmentLinksByPsv,
@@ -260,8 +260,10 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     },
 
     selectProject: (id) => {
-        const project = id ? projects.find(p => p.id === id) || null : null;
-        const psvList = id ? getProtectiveSystemsByProject(id) : [];
+        const { selection } = get();
+        const project = projects.find(p => p.id === id);
+        // PSVs are now children of Area, not Project
+        const psvList = project ? getProtectiveSystemsByArea(project.areaId) : [];
 
         set((state) => ({
             selection: {

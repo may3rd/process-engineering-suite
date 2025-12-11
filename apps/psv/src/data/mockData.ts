@@ -253,58 +253,78 @@ export const projects: Project[] = [
 export const equipment: Equipment[] = [
     {
         id: 'equip-1',
-        projectId: 'proj-1',
+        areaId: 'area-1',
         type: 'column',
         tag: 'T-101',
+        name: 'Atmospheric Crude Tower',
         description: 'Atmospheric Crude Tower',
         designPressure: 3.5,
-        designTemp: 400,
-        locationRef: 'Plot Plan A-12',
+        mawp: 4.0,
+        designTemperature: 400,
+        ownerId: 'user-maetee',
+        status: 'active',
         createdAt: '2024-06-05T10:00:00Z',
+        updatedAt: '2024-06-05T10:00:00Z',
     },
     {
         id: 'equip-2',
-        projectId: 'proj-1',
+        areaId: 'area-1',
         type: 'vessel',
         tag: 'V-102',
+        name: 'Overhead Accumulator',
         description: 'Overhead Accumulator',
         designPressure: 5.0,
-        designTemp: 150,
-        locationRef: 'Plot Plan A-12',
+        mawp: 6.0,
+        designTemperature: 150,
+        ownerId: 'user-maetee',
+        status: 'active',
         createdAt: '2024-06-05T10:00:00Z',
+        updatedAt: '2024-06-05T10:00:00Z',
     },
     {
         id: 'equip-3',
-        projectId: 'proj-2',
+        areaId: 'area-2',
         type: 'heat_exchanger',
         tag: 'E-101A/B',
+        name: 'Crude Preheat Exchanger',
         description: 'Crude Preheat Exchanger',
         designPressure: 25.0,
-        designTemp: 300,
-        locationRef: 'Plot Plan B-08',
+        mawp: 28.0,
+        designTemperature: 300,
+        ownerId: 'user-maetee',
+        status: 'active',
         createdAt: '2024-07-20T10:00:00Z',
+        updatedAt: '2024-07-20T10:00:00Z',
     },
     {
         id: 'equip-4',
-        projectId: 'proj-3',
+        areaId: 'area-3',
         type: 'column',
         tag: 'T-201',
+        name: 'Vacuum Column',
         description: 'Vacuum Column',
         designPressure: 1.0,
-        designTemp: 420,
-        locationRef: 'Plot Plan C-15',
+        mawp: 1.5,
+        designTemperature: 420,
+        ownerId: 'user-maetee',
+        status: 'active',
         createdAt: '2024-05-10T10:00:00Z',
+        updatedAt: '2024-05-10T10:00:00Z',
     },
     {
         id: 'equip-5',
-        projectId: 'proj-5',
+        areaId: 'area-5',
         type: 'heat_exchanger',
         tag: 'E-501',
+        name: 'LNG Vaporizer',
         description: 'LNG Vaporizer',
         designPressure: 85.0,
-        designTemp: -165,
-        locationRef: 'Plot Plan LNG-02',
+        mawp: 90.0,
+        designTemperature: -165,
+        ownerId: 'user-4',
+        status: 'active',
         createdAt: '2024-08-10T10:00:00Z',
+        updatedAt: '2024-08-10T10:00:00Z',
     },
 ];
 
@@ -312,7 +332,7 @@ export const equipment: Equipment[] = [
 export const protectiveSystems: ProtectiveSystem[] = [
     {
         id: 'psv-1',
-        projectId: 'proj-1',
+        areaId: 'area-1',
         name: 'Atmospheric Tower Overhead PSV',
         tag: 'PSV-101A',
         type: 'psv',
@@ -353,7 +373,7 @@ export const protectiveSystems: ProtectiveSystem[] = [
     },
     {
         id: 'psv-2',
-        projectId: 'proj-1',
+        areaId: 'area-1',
         name: 'Atmospheric Tower Overhead PSV (Spare)',
         tag: 'PSV-101B',
         type: 'psv',
@@ -370,7 +390,7 @@ export const protectiveSystems: ProtectiveSystem[] = [
     },
     {
         id: 'psv-3',
-        projectId: 'proj-1',
+        areaId: 'area-1',
         name: 'Overhead Accumulator PSV',
         tag: 'PSV-102',
         type: 'psv',
@@ -387,7 +407,7 @@ export const protectiveSystems: ProtectiveSystem[] = [
     },
     {
         id: 'psv-4',
-        projectId: 'proj-2',
+        areaId: 'area-2',
         name: 'Preheat Exchanger Tube Rupture PSV',
         tag: 'PSV-103',
         type: 'psv',
@@ -404,7 +424,7 @@ export const protectiveSystems: ProtectiveSystem[] = [
     },
     {
         id: 'psv-5',
-        projectId: 'proj-3',
+        areaId: 'area-3',
         name: 'Vacuum Column Fire Case RD',
         tag: 'RD-201',
         type: 'rupture_disc',
@@ -421,7 +441,7 @@ export const protectiveSystems: ProtectiveSystem[] = [
     },
     {
         id: 'psv-6',
-        projectId: 'proj-5',
+        areaId: 'area-5',
         name: 'LNG Vaporizer PSV',
         tag: 'PSV-501',
         type: 'psv',
@@ -715,11 +735,11 @@ export const sizingCases: SizingCase[] = [
 
 // Equipment Links
 export const equipmentLinks: EquipmentLink[] = [
-    { id: 'link-1', protectiveSystemId: 'psv-1', equipmentId: 'equip-1', relationship: 'protects', notes: 'Overhead vapor relief' },
-    { id: 'link-2', protectiveSystemId: 'psv-2', equipmentId: 'equip-1', relationship: 'protects', notes: 'Spare overhead PSV' },
-    { id: 'link-3', protectiveSystemId: 'psv-3', equipmentId: 'equip-2', relationship: 'protects', notes: 'Accumulator liquid relief' },
-    { id: 'link-4', protectiveSystemId: 'psv-4', equipmentId: 'equip-3', relationship: 'protects', notes: 'Shell side protection' },
-    { id: 'link-5', protectiveSystemId: 'psv-6', equipmentId: 'equip-5', relationship: 'protects', notes: 'Vaporizer outlet relief' },
+    { id: 'link-1', psvId: 'psv-1', equipmentId: 'equip-1', isPrimary: true, createdAt: '2024-06-10T08:00:00Z' },
+    { id: 'link-2', psvId: 'psv-2', equipmentId: 'equip-1', isPrimary: false, createdAt: '2024-06-10T08:00:00Z' },
+    { id: 'link-3', psvId: 'psv-3', equipmentId: 'equip-2', isPrimary: true, createdAt: '2024-06-15T08:00:00Z' },
+    { id: 'link-4', psvId: 'psv-4', equipmentId: 'equip-3', isPrimary: true, createdAt: '2024-07-25T08:00:00Z' },
+    { id: 'link-5', psvId: 'psv-5', equipmentId: 'equip-4', isPrimary: true, createdAt: '2024-05-20T08:00:00Z' },
 ];
 
 // Attachments
@@ -846,8 +866,8 @@ export function getProjectsByArea(areaId: string): Project[] {
     return projects.filter(p => p.areaId === areaId);
 }
 
-export function getProtectiveSystemsByProject(projectId: string): ProtectiveSystem[] {
-    return protectiveSystems.filter(ps => ps.projectId === projectId);
+export function getProtectiveSystemsByArea(areaId: string): ProtectiveSystem[] {
+    return protectiveSystems.filter(ps => ps.areaId === areaId);
 }
 
 export function getScenariosByProtectiveSystem(psvId: string): OverpressureScenario[] {
@@ -858,12 +878,12 @@ export function getSizingCasesByProtectiveSystem(psvId: string): SizingCase[] {
     return sizingCases.filter(sc => sc.protectiveSystemId === psvId);
 }
 
-export function getEquipmentByProject(projectId: string): Equipment[] {
-    return equipment.filter(e => e.projectId === projectId);
+export function getEquipmentByArea(areaId: string): Equipment[] {
+    return equipment.filter(e => e.areaId === areaId);
 }
 
 export function getEquipmentLinksByPsv(psvId: string): EquipmentLink[] {
-    return equipmentLinks.filter(el => el.protectiveSystemId === psvId);
+    return equipmentLinks.filter(el => el.psvId === psvId);
 }
 
 export function getAttachmentsByPsv(psvId: string): Attachment[] {
@@ -887,10 +907,7 @@ export function getHierarchyPath(psvId: string) {
     const psv = protectiveSystems.find(p => p.id === psvId);
     if (!psv) return null;
 
-    const project = projects.find(p => p.id === psv.projectId);
-    if (!project) return null;
-
-    const area = areas.find(a => a.id === project.areaId);
+    const area = areas.find(a => a.id === psv.areaId);
     if (!area) return null;
 
     const unit = units.find(u => u.id === area.unitId);
@@ -902,5 +919,5 @@ export function getHierarchyPath(psvId: string) {
     const customer = customers.find(c => c.id === plant.customerId);
     if (!customer) return null;
 
-    return { customer, plant, unit, area, project, psv };
+    return { customer, plant, unit, area, psv };
 }

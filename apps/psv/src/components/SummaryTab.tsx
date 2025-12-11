@@ -235,9 +235,9 @@ export function SummaryTab() {
                                         <TableRow key={link.id}>
                                             <TableCell>{eq.tag}</TableCell>
                                             <TableCell sx={{ textTransform: 'capitalize' }}>{eq.type.replace('_', ' ')}</TableCell>
-                                            <TableCell sx={{ textTransform: 'capitalize' }}>{link.relationship.replace('_', ' ')}</TableCell>
+                                            <TableCell>{link.isPrimary ? 'Primary' : 'Secondary'}</TableCell>
                                             <TableCell>{eq.designPressure} barg</TableCell>
-                                            <TableCell>{eq.designTemp} °C</TableCell>
+                                            <TableCell>{eq.designTemperature} °C</TableCell>
                                         </TableRow>
                                     ) : null;
                                 })}
