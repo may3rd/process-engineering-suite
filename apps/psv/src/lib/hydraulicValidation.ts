@@ -258,7 +258,14 @@ function runNetworkHydraulics(
     });
     console.log('Base Fluid:', baseFluid);
 
-    for (const pipe of network.pipes) {
+    // For backward direction, process pipes in reverse order (from destination to source)
+    // so the boundary pressure at destination cascades correctly back to source
+    const globalDirection = options?.direction ?? "forward";
+    const pipesToProcess = globalDirection === "backward"
+        ? [...network.pipes].reverse()
+        : network.pipes;
+
+    for (const pipe of pipesToProcess) {
         const direction: CalcDirection = options?.direction ?? (pipe.direction as CalcDirection) ?? "forward";
         const mergedFluid = mergeFluidData(pipe, baseFluid);
         const resolvedPipe = preparePipe(
@@ -329,8 +336,23 @@ function runNetworkHydraulics(
             resultSummary: solvedPipe.resultSummary,
         });
 
-        // Track the inlet pressure BEFORE this calculation (current chain position)
-        const segmentInletPressurePa = currentPressurePa;
+        // Determine segment pressures based on direction:
+        // - FORWARD: Use resultSummary values directly (physics engine knows inlet is boundary)
+        // - BACKWARD: Chain manually (we process last→first, outlet = boundary, inlet = outlet + ΔP)
+        let segmentInletPa: number | undefined;
+        let segmentOutletPa: number | undefined;
+
+        if (globalDirection === "forward") {
+            // Forward: physics engine calculated with inlet as boundary, use resultSummary directly
+            segmentInletPa = inletState?.pressure;
+            segmentOutletPa = outletState?.pressure;
+        } else {
+            // Backward: current chain position is this segment's outlet (destination side)
+            segmentOutletPa = currentPressurePa;
+            segmentInletPa = typeof dropPa === "number" && Number.isFinite(dropPa)
+                ? segmentOutletPa + dropPa
+                : (inletState?.pressure ?? segmentOutletPa);
+        }
 
         segments.push({
             pipeId: pipe.id,
@@ -345,9 +367,9 @@ function runNetworkHydraulics(
             totalK: solvedPipe.pressureDropCalculationResults?.totalK,
             velocity: solvedPipe.velocity,
             machNumber: outletState?.machNumber ?? inletState?.machNumber,
-            // State - use tracked chain pressures, not resultSummary which may have direction issues
-            inletPressurePa: segmentInletPressurePa,
-            outletPressurePa: undefined, // will be set after we calculate the outlet
+            // State - use appropriate pressure values
+            inletPressurePa: segmentInletPa,
+            outletPressurePa: segmentOutletPa,
             inletTemperatureK: inletState?.temperature,
             outletTemperatureK: outletState?.temperature,
             inletDensity: inletState?.density,
@@ -358,14 +380,13 @@ function runNetworkHydraulics(
         });
 
         // Update the chain position for the next pipe
-        if (outletState?.pressure !== undefined && Number.isFinite(outletState.pressure)) {
+        // For backward: next pipe's outlet = this pipe's inlet
+        // For forward: use outletState directly (already handled above)
+        if (globalDirection === "backward") {
+            currentPressurePa = segmentInletPa ?? currentPressurePa;
+        } else if (outletState?.pressure !== undefined) {
             currentPressurePa = outletState.pressure;
-        } else if (typeof dropPa === "number" && Number.isFinite(dropPa)) {
-            currentPressurePa = direction === "backward" ? currentPressurePa + dropPa : currentPressurePa - dropPa;
         }
-
-        // Now update the segment's outlet pressure with the calculated chain position
-        segments[segments.length - 1].outletPressurePa = currentPressurePa;
 
         if (outletState?.temperature !== undefined && Number.isFinite(outletState.temperature)) {
             currentTemperatureK = outletState.temperature;
@@ -382,9 +403,15 @@ function runNetworkHydraulics(
         warnings.push(`Choked flow detected in: ${chokedNames}. Pressure drop calculation may be inaccurate.`);
     }
 
+    // For backward direction, reverse segments back to original display order
+    // Pressures are already correct: inlet > outlet (flow direction is always inlet → outlet)
+    const displaySegments = globalDirection === "backward"
+        ? [...segments].reverse()
+        : segments;
+
     const result: NetworkHydraulicsResult = {
         totalPressureDropPa: totalDropPa,
-        segments,
+        segments: displaySegments,
         finalPressurePa: currentPressurePa,
         finalTemperatureK: currentTemperatureK,
         hasChokedFlow,

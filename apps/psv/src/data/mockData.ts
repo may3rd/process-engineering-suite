@@ -352,8 +352,12 @@ export const protectiveSystems: ProtectiveSystem[] = [
             ],
             pipes: [
                 {
-                    id: 'p1', name: 'Inlet Pipe', startNodeId: 'n1', endNodeId: 'n2', length: 5, lengthUnit: 'm', diameter: 150, diameterUnit: 'mm', elevation: 0,
-                    fittings: [{ type: 'Elbow 90', count: 2, k_each: 0.3, k_total: 0.6 }]
+                    id: 'p1', name: 'Inlet Pipe', startNodeId: 'n1', endNodeId: 'n2', length: 5, lengthUnit: 'm', diameter: 400, diameterUnit: 'mm', elevation: 0,
+                    fittings: []
+                },
+                {
+                    id: 'p2', name: 'Inlet Pipe', startNodeId: 'n2', endNodeId: 'n1', length: 5, lengthUnit: 'm', diameter: 400, diameterUnit: 'mm', elevation: 0,
+                    fittings: []
                 }
             ]
         },
@@ -364,8 +368,12 @@ export const protectiveSystems: ProtectiveSystem[] = [
             ],
             pipes: [
                 {
-                    id: 'op1', name: 'Discharge Pipe', startNodeId: 'on1', endNodeId: 'on2', length: 20, lengthUnit: 'm', diameter: 150, diameterUnit: 'mm', elevation: 5,
-                    fittings: [{ type: 'Elbow 45', count: 1, k_each: 0.2, k_total: 0.2 }]
+                    id: 'op1', name: 'Discharge Pipe', startNodeId: 'on1', endNodeId: 'on2', length: 20, lengthUnit: 'm', diameter: 600, diameterUnit: 'mm', elevation: 5,
+                    fittings: []
+                },
+                {
+                    id: 'op2', name: 'Discharge Pipe', startNodeId: 'on2', endNodeId: 'on1', length: 20, lengthUnit: 'm', diameter: 600, diameterUnit: 'mm', elevation: 5,
+                    fittings: []
                 }
             ]
         },

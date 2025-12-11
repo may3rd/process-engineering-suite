@@ -54,6 +54,7 @@ import { SizingCase, PipelineNetwork, PipeProps, ORIFICE_SIZES, SizingInputs, Un
 import { PipelineDataGrid } from "./PipelineDataGrid";
 import { PipeEditorDialog } from "./PipeEditorDialog";
 import { HydraulicReportTable } from "./HydraulicReportTable";
+import { HydraulicReportDialog } from "./HydraulicReportDialog";
 import { v4 as uuidv4 } from "uuid";
 import { calculateSizing } from "@/lib/psvSizing";
 import { useUnitConversion, UnitType } from "@/hooks/useUnitConversion";
@@ -160,6 +161,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
     const [hydraulicWarnings, setHydraulicWarnings] = useState<string[]>([]);
     const [inletHydraulicResult, setInletHydraulicResult] = useState<NetworkPressureDropResult | null>(null);
     const [outletHydraulicResult, setOutletHydraulicResult] = useState<NetworkPressureDropResult | null>(null);
+    const [hydraulicReportDialogOpen, setHydraulicReportDialogOpen] = useState(false);
 
     // Auto-fill molecular weight for steam (H₂O = 18.01528 g/mol)
     useEffect(() => {
@@ -509,13 +511,16 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
             }
 
             // Get outlet pressure drop and backpressure
-            if (currentCase.inputs.backpressureSource === 'calculated' && localOutletNetwork?.pipes?.length && outletDropKPa !== undefined) {
+            // Show outlet ΔP regardless of backpressure source mode if pipes exist
+            if (localOutletNetwork?.pipes?.length && outletDropKPa !== undefined) {
                 // Convert kPa to bar (1 bar = 100 kPa)
                 outletPressureDropBarg = outletDropKPa / 100;
 
                 // Total Backpressure = Destination Pressure + Outlet Pressure Drop
-                // Both values are in barg
-                builtUpBackpressureBarg = (currentCase.inputs.destinationPressure || 0) + outletPressureDropBarg;
+                // Only calculate built-up backpressure if mode is 'calculated'
+                if (currentCase.inputs.backpressureSource === 'calculated') {
+                    builtUpBackpressureBarg = (currentCase.inputs.destinationPressure || 0) + outletPressureDropBarg;
+                }
             }
 
             const finalOutputs = {
@@ -1989,17 +1994,26 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                             sx={{ mb: 3 }}
                         >
                             {currentCase.outputs.percentUsed <= 100
-                                ? `Orifice ${currentCase.outputs.selectedOrifice} is adequately sized with ${(100 - currentCase.outputs.percentUsed).toFixed(1)}% margin.`
-                                : `Orifice ${currentCase.outputs.selectedOrifice} is undersized. Select a larger orifice.`
+                                ? `${currentCase.outputs.numberOfValves > 1 ? `${currentCase.outputs.numberOfValves} x ` : ''}Orifice ${currentCase.outputs.selectedOrifice} is adequately sized with ${(100 - currentCase.outputs.percentUsed).toFixed(1)}% margin.`
+                                : `${currentCase.outputs.numberOfValves > 1 ? `${currentCase.outputs.numberOfValves} x ` : ''}Orifice ${currentCase.outputs.selectedOrifice} is undersized. Select a larger orifice.`
                             }
                         </Alert>
 
                         {/* Hydraulic Calculations Report */}
                         {(inletHydraulicResult?.segments?.length || outletHydraulicResult?.segments?.length) && (
                             <Box sx={{ mb: 3 }}>
-                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                    Hydraulic Calculations Report
-                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                                    <Typography variant="subtitle1" fontWeight={600}>
+                                        Hydraulic Calculations Report
+                                    </Typography>
+                                    <Button
+                                        variant="outlined"
+                                        size="small"
+                                        onClick={() => setHydraulicReportDialogOpen(true)}
+                                    >
+                                        Open Full Report
+                                    </Button>
+                                </Box>
 
                                 {inletHydraulicResult && inletHydraulicResult.segments.length > 0 && (
                                     <>
@@ -2167,6 +2181,19 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                     setPipeEditorOpen(false);
                     setEditingPipe(null);
                 }}
+            />
+
+            {/* Hydraulic Report Dialog */}
+            <HydraulicReportDialog
+                open={hydraulicReportDialogOpen}
+                onClose={() => setHydraulicReportDialogOpen(false)}
+                inletSegments={inletHydraulicResult?.segments ?? []}
+                outletSegments={outletHydraulicResult?.segments ?? []}
+                inletTotalDropKPa={inletHydraulicResult?.pressureDropKPa ?? 0}
+                outletTotalDropKPa={outletHydraulicResult?.pressureDropKPa ?? 0}
+                inletHasChoked={inletHydraulicResult?.hasChokedFlow ?? false}
+                outletHasChoked={outletHydraulicResult?.hasChokedFlow ?? false}
+                caseName={`Sizing Case ${currentCase.scenarioId}`}
             />
         </Box >
     );

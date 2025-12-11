@@ -401,7 +401,7 @@ export default function Home() {
               sx: {
                 height: "100vh",
                 bgcolor: "background.paper",
-                borderRadius: 0,
+                borderRadius: 1,
                 m: 0,
               }
             }

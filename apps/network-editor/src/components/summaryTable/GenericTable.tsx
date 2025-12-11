@@ -132,7 +132,7 @@ export function GenericTable<T>({
     };
 
     return (
-        <Paper id="summary-table-print-area" className={fitToPage ? "fit-to-page" : ""} sx={{ width: "100%", overflow: "hidden", p: 2, display: 'flex', flexDirection: 'column', height: '100%' }}>
+        <Paper id="summary-table-print-area" className={fitToPage ? "fit-to-page" : ""} sx={{ width: "100%", overflow: "hidden", p: 2, display: 'flex', flexDirection: 'column', height: '100%', borderRadius: 0 }}>
             <style type="text/css" media="print">
                 {`
                 @page { size: portrait; margin: 5mm; }
