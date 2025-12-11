@@ -21,6 +21,7 @@ import { Edit } from "@mui/icons-material";
 import { ProtectiveSystem, ProtectiveSystemType, DesignCode } from "@/data/types";
 import { usePsvStore } from "../store/usePsvStore";
 import { glassCardStyles } from "./styles";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface BasicInfoCardProps {
     psv: ProtectiveSystem;
@@ -44,6 +45,7 @@ const DESIGN_CODE_OPTIONS: { value: DesignCode; label: string }[] = [
 
 export function BasicInfoCard({ psv }: BasicInfoCardProps) {
     const { updatePsv } = usePsvStore();
+    const canEdit = useAuthStore((state) => state.canEdit());
     const [open, setOpen] = useState(false);
     const [formData, setFormData] = useState({
         tag: psv.tag,
@@ -93,14 +95,16 @@ export function BasicInfoCard({ psv }: BasicInfoCardProps) {
                 <Typography variant="h6" fontWeight={600} color="primary">
                     Basic Information
                 </Typography>
-                <IconButton
-                    className="edit-button"
-                    size="small"
-                    onClick={handleEdit}
-                    sx={{ opacity: 0.5, transition: 'opacity 0.2s' }}
-                >
-                    <Edit fontSize="small" />
-                </IconButton>
+                {canEdit && (
+                    <IconButton
+                        className="edit-button"
+                        size="small"
+                        onClick={handleEdit}
+                        sx={{ opacity: 0.5, transition: 'opacity 0.2s' }}
+                    >
+                        <Edit fontSize="small" />
+                    </IconButton>
+                )}
             </Box>
 
             <Stack spacing={2}>

@@ -32,6 +32,7 @@ import { usePsvStore } from "../store/usePsvStore";
 import { glassCardStyles } from "./styles";
 import { equipment as allEquipment } from "@/data/mockData";
 import { v4 as uuidv4 } from "uuid";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface EquipmentCardProps {
     psv: ProtectiveSystem;
@@ -39,6 +40,7 @@ interface EquipmentCardProps {
 
 export function EquipmentCard({ psv }: EquipmentCardProps) {
     const { equipmentLinkList, linkEquipment, unlinkEquipment } = usePsvStore();
+    const canEdit = useAuthStore((state) => state.canEdit());
     const [open, setOpen] = useState(false);
     const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]);
 
@@ -87,15 +89,17 @@ export function EquipmentCard({ psv }: EquipmentCardProps) {
                 <Typography variant="h6" fontWeight={600} color="primary">
                     Protected Equipment
                 </Typography>
-                <Button
-                    startIcon={<LinkIcon />}
-                    size="small"
-                    onClick={() => setOpen(true)}
-                    variant="outlined"
-                    sx={{ borderColor: 'rgba(255,255,255,0.2)' }}
-                >
-                    Link Equipment
-                </Button>
+                {canEdit && (
+                    <Button
+                        startIcon={<LinkIcon />}
+                        size="small"
+                        onClick={() => setOpen(true)}
+                        variant="outlined"
+                        sx={{ borderColor: 'rgba(255,255,255,0.2)' }}
+                    >
+                        Link Equipment
+                    </Button>
+                )}
             </Box>
 
             <TableContainer>
@@ -122,15 +126,17 @@ export function EquipmentCard({ psv }: EquipmentCardProps) {
                                     <TableCell>{eq.type}</TableCell>
                                     <TableCell>{eq.designPressure} barg</TableCell>
                                     <TableCell align="right">
-                                        <Tooltip title="Unlink">
-                                            <IconButton
-                                                size="small"
-                                                color="error"
-                                                onClick={() => unlinkEquipment(link.id)}
-                                            >
-                                                <Delete fontSize="small" />
-                                            </IconButton>
-                                        </Tooltip>
+                                        {canEdit && (
+                                            <Tooltip title="Unlink">
+                                                <IconButton
+                                                    size="small"
+                                                    color="error"
+                                                    onClick={() => unlinkEquipment(link.id)}
+                                                >
+                                                    <Delete fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
                                     </TableCell>
                                 </TableRow>
                             );

@@ -13,6 +13,7 @@ import {
     Comment,
     TodoItem,
     User,
+    MockCredential,
 } from './types';
 
 // Users
@@ -21,6 +22,19 @@ export const users: User[] = [
     { id: 'user-2', name: 'Sarah Johnson', email: 'sarah.johnson@acme.com', role: 'lead', status: 'active' },
     { id: 'user-3', name: 'Mike Chen', email: 'mike.chen@acme.com', role: 'approver', status: 'active' },
     { id: 'user-4', name: 'Emily Davis', email: 'emily.davis@gep.com', role: 'engineer', status: 'active' },
+    // Test users for authentication
+    { id: 'user-maetee', name: 'Maetee', email: 'maetee@eng-suite.com', role: 'admin', status: 'active' },
+    { id: 'user-lead', name: 'Test Lead', email: 'lead@eng-suite.com', role: 'lead', status: 'active' },
+    { id: 'user-approver', name: 'Test Approver', email: 'approver@eng-suite.com', role: 'approver', status: 'active' },
+    { id: 'user-engineer', name: 'Test Engineer', email: 'engineer@eng-suite.com', role: 'engineer', status: 'active' },
+];
+
+// Mock credentials for authentication
+export const credentials: MockCredential[] = [
+    { userId: 'user-maetee', username: 'maetee', password: 'linknipark' },
+    { userId: 'user-lead', username: 'lead', password: 'lead' },
+    { userId: 'user-approver', username: 'approver', password: 'approver' },
+    { userId: 'user-engineer', username: 'engineer', password: 'engineer' },
 ];
 
 // Customers

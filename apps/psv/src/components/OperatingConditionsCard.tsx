@@ -22,6 +22,7 @@ import { Edit } from "@mui/icons-material";
 import { ProtectiveSystem, FluidPhase } from "@/data/types";
 import { usePsvStore } from "../store/usePsvStore";
 import { glassCardStyles } from "./styles";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface OperatingConditionsCardProps {
     psv: ProtectiveSystem;
@@ -36,6 +37,7 @@ const PHASE_OPTIONS: { value: FluidPhase; label: string }[] = [
 
 export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
     const { updatePsv } = usePsvStore();
+    const canEdit = useAuthStore((state) => state.canEdit());
     const [open, setOpen] = useState(false);
     const [formData, setFormData] = useState({
         serviceFluid: psv.serviceFluid || '',
@@ -87,14 +89,16 @@ export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
                 <Typography variant="h6" fontWeight={600} color="primary">
                     Operating Conditions
                 </Typography>
-                <IconButton
-                    className="edit-button"
-                    size="small"
-                    onClick={handleEdit}
-                    sx={{ opacity: 0.5, transition: 'opacity 0.2s' }}
-                >
-                    <Edit fontSize="small" />
-                </IconButton>
+                {canEdit && (
+                    <IconButton
+                        className="edit-button"
+                        size="small"
+                        onClick={handleEdit}
+                        sx={{ opacity: 0.5, transition: 'opacity 0.2s' }}
+                    >
+                        <Edit fontSize="small" />
+                    </IconButton>
+                )}
             </Box>
 
             <Stack spacing={2}>

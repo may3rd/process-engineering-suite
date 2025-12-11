@@ -45,7 +45,7 @@ export interface Project {
     name: string;
     code: string;
     phase: 'design' | 'construction' | 'commissioning' | 'operation';
-    status: 'draft' | 'in_review' | 'approved' | 'issued';
+    status: 'draft' | 'in_review' | 'checked' | 'approved' | 'issued';
     startDate: string;
     endDate?: string;
     leadId: string;
@@ -73,7 +73,7 @@ export interface ProtectiveSystem {
     setPressure: number; // barg
     mawp: number; // barg
     ownerId: string;
-    status: 'draft' | 'in_review' | 'approved' | 'issued';
+    status: 'draft' | 'in_review' | 'checked' | 'approved' | 'issued';
     tags: string[];
     // Shared piping networks (one physical install per device)
     inletNetwork?: PipelineNetwork;
@@ -268,8 +268,16 @@ export interface User {
     id: string;
     name: string;
     email: string;
-    role: 'engineer' | 'lead' | 'approver' | 'viewer';
+    role: 'engineer' | 'lead' | 'approver' | 'viewer' | 'admin';
     status: 'active' | 'inactive';
+    avatarUrl?: string; // Optional mock avatar URL
+}
+
+// Mock authentication credentials
+export interface MockCredential {
+    userId: string;
+    username: string;
+    password: string; // Plain text for mock purposes only
 }
 
 // Orifice size reference

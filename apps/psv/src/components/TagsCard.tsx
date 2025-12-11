@@ -14,6 +14,7 @@ import { Add } from "@mui/icons-material";
 import { ProtectiveSystem } from "@/data/types";
 import { usePsvStore } from "../store/usePsvStore";
 import { glassCardStyles } from "./styles";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface TagsCardProps {
     psv: ProtectiveSystem;
@@ -21,6 +22,7 @@ interface TagsCardProps {
 
 export function TagsCard({ psv }: TagsCardProps) {
     const { addPsvTag, removePsvTag } = usePsvStore();
+    const canEdit = useAuthStore((state) => state.canEdit());
     const [isAdding, setIsAdding] = useState(false);
     const [newTag, setNewTag] = useState("");
 
@@ -48,7 +50,7 @@ export function TagsCard({ psv }: TagsCardProps) {
                 <Typography variant="h6" fontWeight={600} color="primary">
                     Tags
                 </Typography>
-                {!isAdding && (
+                {canEdit && !isAdding && (
                     <IconButton size="small" onClick={() => setIsAdding(true)}>
                         <Add fontSize="small" />
                     </IconButton>
@@ -60,7 +62,7 @@ export function TagsCard({ psv }: TagsCardProps) {
                     <Chip
                         key={tag}
                         label={tag}
-                        onDelete={() => removePsvTag(psv.id, tag)}
+                        onDelete={canEdit ? () => removePsvTag(psv.id, tag) : undefined}
                         size="small"
                         color={tag.toLowerCase().includes('critical') ? 'error' : 'default'}
                         variant="outlined"

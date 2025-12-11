@@ -36,6 +36,7 @@ import {
 } from "@mui/icons-material";
 import { OverpressureScenario, ScenarioCause, FluidPhase } from "@/data/types";
 import { v4 as uuidv4 } from "uuid";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface ScenarioEditorProps {
     initialData?: OverpressureScenario;
@@ -67,6 +68,8 @@ const PHASE_OPTIONS: { value: FluidPhase; label: string }[] = [
 ];
 
 export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete }: ScenarioEditorProps) {
+    const canEdit = useAuthStore((state) => state.canEdit());
+
     const [formData, setFormData] = useState<Partial<OverpressureScenario>>({
         protectiveSystemId: psvId,
         cause: 'blocked_outlet',
@@ -190,6 +193,7 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                             value={formData.cause}
                             onChange={(e) => handleInputChange('cause', e.target.value)}
                             fullWidth
+                            disabled={!canEdit}
                         >
                             {CAUSE_OPTIONS.map(opt => (
                                 <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
@@ -203,6 +207,7 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                             value={formData.phase}
                             onChange={(e) => handleInputChange('phase', e.target.value)}
                             fullWidth
+                            disabled={!canEdit}
                         >
                             {PHASE_OPTIONS.map(opt => (
                                 <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
@@ -219,6 +224,7 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                             fullWidth
                             multiline
                             rows={2}
+                            disabled={!canEdit}
                         />
                     </Box>
                     <Box>
@@ -228,6 +234,7 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                                     checked={formData.isGoverning}
                                     onChange={(e) => handleInputChange('isGoverning', e.target.checked)}
                                     color="warning"
+                                    disabled={!canEdit}
                                 />
                             }
                             label="Governing Case"
@@ -253,6 +260,7 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                         }}
                         error={!!errors.relievingRate}
                         fullWidth
+                        disabled={!canEdit}
                     />
                     <TextField
                         label="Relieving Pressure"
@@ -264,6 +272,7 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                         }}
                         error={!!errors.relievingPressure}
                         fullWidth
+                        disabled={!canEdit}
                     />
                     <TextField
                         label="Relieving Temp"
@@ -275,6 +284,7 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                         }}
                         error={!!errors.relievingTemp}
                         fullWidth
+                        disabled={!canEdit}
                     />
                     <TextField
                         label="Accumulation"
@@ -285,6 +295,7 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                             endAdornment: <InputAdornment position="end">%</InputAdornment>,
                         }}
                         fullWidth
+                        disabled={!canEdit}
                     />
                 </Box>
             </Box>
@@ -303,9 +314,11 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                                 <ListItem
                                     key={idx}
                                     secondaryAction={
-                                        <IconButton edge="end" size="small" onClick={() => removeAssumption(idx)}>
-                                            <Close fontSize="small" />
-                                        </IconButton>
+                                        canEdit && (
+                                            <IconButton edge="end" size="small" onClick={() => removeAssumption(idx)}>
+                                                <Close fontSize="small" />
+                                            </IconButton>
+                                        )
                                     }
                                     sx={{ borderRadius: 1, '&:hover': { bgcolor: 'action.hover' } }}
                                 >
@@ -329,8 +342,9 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                                     }
                                 }}
                                 fullWidth
+                                disabled={!canEdit}
                             />
-                            <IconButton onClick={addAssumption} color="primary" disabled={!newAssumption.trim()}>
+                            <IconButton onClick={addAssumption} color="primary" disabled={!canEdit || !newAssumption.trim()}>
                                 <Add />
                             </IconButton>
                         </Box>
@@ -348,7 +362,7 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                                 <Chip
                                     key={idx}
                                     label={item}
-                                    onDelete={() => removeCodeRef(idx)}
+                                    onDelete={canEdit ? () => removeCodeRef(idx) : undefined}
                                     size="small"
                                 />
                             ))}
@@ -369,8 +383,9 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                                     }
                                 }}
                                 fullWidth
+                                disabled={!canEdit}
                             />
-                            <IconButton onClick={addCodeRef} color="primary" disabled={!newCodeRef.trim()}>
+                            <IconButton onClick={addCodeRef} color="primary" disabled={!canEdit || !newCodeRef.trim()}>
                                 <Add />
                             </IconButton>
                         </Box>
@@ -383,19 +398,21 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
             {/* Footer Actions */}
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, mt: 2 }}>
                 <Button onClick={onCancel}>
-                    Cancel
+                    {canEdit ? 'Cancel' : 'Close'}
                 </Button>
-                <Button
-                    variant="contained"
-                    onClick={handleSubmit}
-                    startIcon={<Save />}
-                >
-                    Save Scenario
-                </Button>
+                {canEdit && (
+                    <Button
+                        variant="contained"
+                        onClick={handleSubmit}
+                        startIcon={<Save />}
+                    >
+                        Save Scenario
+                    </Button>
+                )}
             </Box>
 
-            {/* Danger Zone - Only show if editing existing scenario */}
-            {onDelete && initialData && (
+            {/* Danger Zone - Only show if editing existing scenario and user can edit */}
+            {canEdit && onDelete && initialData && (
                 <Box sx={{ mt: 4, mb: 3 }}>
                     <Card sx={{
                         border: 1,

@@ -74,6 +74,7 @@ import { EquipmentCard } from "./EquipmentCard";
 import { TagsCard } from "./TagsCard";
 import { SummaryTab } from "./SummaryTab";
 import { glassCardStyles } from "./styles";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -135,6 +136,7 @@ function ScenariosTab() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const { scenarioList, selectedPsv, addScenario, updateScenario, deleteScenario } = usePsvStore();
+    const canEdit = useAuthStore((state) => state.canEdit());
     const [editorOpen, setEditorOpen] = useState(false);
     const [editingScenario, setEditingScenario] = useState<OverpressureScenario | undefined>(undefined);
 
@@ -195,9 +197,11 @@ function ScenariosTab() {
                 <Typography variant="h6" fontWeight={600}>
                     Overpressure Scenarios
                 </Typography>
-                <Button variant="contained" startIcon={<Add />} size="small" onClick={handleAddScenario}>
-                    Add Scenario
-                </Button>
+                {canEdit && (
+                    <Button variant="contained" startIcon={<Add />} size="small" onClick={handleAddScenario}>
+                        Add Scenario
+                    </Button>
+                )}
             </Box>
 
             <Dialog
@@ -264,11 +268,13 @@ function ScenariosTab() {
                                             </Typography>
                                         </Box>
                                     </Box>
-                                    <Tooltip title="Edit">
-                                        <IconButton size="small" onClick={() => handleEditScenario(scenario)}>
-                                            <Edit fontSize="small" />
-                                        </IconButton>
-                                    </Tooltip>
+                                    {canEdit && (
+                                        <Tooltip title="Edit">
+                                            <IconButton size="small" onClick={() => handleEditScenario(scenario)}>
+                                                <Edit fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    )}
                                 </Box>
 
                                 <Box
@@ -356,6 +362,8 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const { sizingCaseList, scenarioList, selectedPsv, addSizingCase, updateSizingCase } = usePsvStore();
+    const canEdit = useAuthStore((state) => state.canEdit());
+    const canApprove = useAuthStore((state) => state.canApprove());
     const [dialogOpen, setDialogOpen] = useState(false);
 
     const getScenarioName = (scenarioId: string) => {
@@ -452,15 +460,17 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                 <Typography variant="h6" fontWeight={600}>
                     Sizing Cases
                 </Typography>
-                <Button
-                    variant="contained"
-                    startIcon={<Add />}
-                    size="small"
-                    onClick={() => setDialogOpen(true)}
-                    disabled={scenarioList.length === 0}
-                >
-                    New Sizing Case
-                </Button>
+                {canEdit && (
+                    <Button
+                        variant="contained"
+                        startIcon={<Add />}
+                        size="small"
+                        onClick={() => setDialogOpen(true)}
+                        disabled={scenarioList.length === 0}
+                    >
+                        New Sizing Case
+                    </Button>
+                )}
             </Box>
 
             {/* Scenario Picker Dialog */}
@@ -528,7 +538,7 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                         </Typography>
                                     </Box>
                                     <Box sx={{ display: 'flex', gap: 1 }}>
-                                        {sizing.status === 'calculated' && (
+                                        {canApprove && sizing.status === 'calculated' && (
                                             <Tooltip title="Verify">
                                                 <IconButton
                                                     size="small"
@@ -543,11 +553,13 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                                 </IconButton>
                                             </Tooltip>
                                         )}
-                                        <Tooltip title="Edit">
-                                            <IconButton size="small" onClick={() => onEdit?.(sizing.id)}>
-                                                <Edit fontSize="small" />
-                                            </IconButton>
-                                        </Tooltip>
+                                        {canEdit && (
+                                            <Tooltip title="Edit">
+                                                <IconButton size="small" onClick={() => onEdit?.(sizing.id)}>
+                                                    <Edit fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
                                     </Box>
                                 </Box>
 
@@ -706,6 +718,7 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
 // Attachments Tab Content
 function AttachmentsTab() {
     const { selectedPsv, attachmentList, deleteAttachment } = usePsvStore();
+    const canEdit = useAuthStore((state) => state.canEdit());
 
     if (!selectedPsv) return null;
 
@@ -741,9 +754,11 @@ function AttachmentsTab() {
                     <Typography variant="h6" fontWeight={600}>
                         Attachments
                     </Typography>
-                    <Button variant="outlined" startIcon={<AttachFile />} size="small">
-                        Upload File
-                    </Button>
+                    {canEdit && (
+                        <Button variant="outlined" startIcon={<AttachFile />} size="small">
+                            Upload File
+                        </Button>
+                    )}
                 </Box>
 
                 {attachments.length > 0 ? (
@@ -758,9 +773,11 @@ function AttachmentsTab() {
                                     mb: 1,
                                 }}
                                 secondaryAction={
-                                    <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(att.id, att.fileName)}>
-                                        <Delete />
-                                    </IconButton>
+                                    canEdit ? (
+                                        <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(att.id, att.fileName)}>
+                                            <Delete />
+                                        </IconButton>
+                                    ) : null
                                 }
                             >
                                 <ListItemIcon>
@@ -781,7 +798,7 @@ function AttachmentsTab() {
                     </Paper>
                 )}
             </Box>
-        </Box>
+        </Box >
     );
 }
 
@@ -797,6 +814,7 @@ function NotesTab() {
         addComment,
         deleteComment
     } = usePsvStore();
+    const canEdit = useAuthStore((state) => state.canEdit());
 
     const [addTaskOpen, setAddTaskOpen] = useState(false);
     const [addCommentOpen, setAddCommentOpen] = useState(false);
@@ -876,9 +894,11 @@ function NotesTab() {
                     <Typography variant="h6" fontWeight={600}>
                         Tasks
                     </Typography>
-                    <Button variant="contained" startIcon={<AddCircle />} size="small" onClick={() => setAddTaskOpen(true)}>
-                        Add Task
-                    </Button>
+                    {canEdit && (
+                        <Button variant="contained" startIcon={<AddCircle />} size="small" onClick={() => setAddTaskOpen(true)}>
+                            Add Task
+                        </Button>
+                    )}
                 </Box>
 
                 {filteredTodos.length > 0 ? (
@@ -900,9 +920,11 @@ function NotesTab() {
                                                         variant="outlined"
                                                     />
                                                 )}
-                                                <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteTodo(todo.id)}>
-                                                    <Delete />
-                                                </IconButton>
+                                                {canEdit && (
+                                                    <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteTodo(todo.id)}>
+                                                        <Delete />
+                                                    </IconButton>
+                                                )}
                                             </Box>
                                         }
                                     >
@@ -939,9 +961,11 @@ function NotesTab() {
                     <Typography variant="h6" fontWeight={600}>
                         Comments
                     </Typography>
-                    <Button variant="contained" startIcon={<AddCircle />} size="small" onClick={() => setAddCommentOpen(true)}>
-                        Add Comment
-                    </Button>
+                    {canEdit && (
+                        <Button variant="contained" startIcon={<AddCircle />} size="small" onClick={() => setAddCommentOpen(true)}>
+                            Add Comment
+                        </Button>
+                    )}
                 </Box>
 
                 {filteredComments.length > 0 ? (
@@ -960,9 +984,11 @@ function NotesTab() {
                                                     {formatDate(comment.createdAt)}
                                                 </Typography>
                                             </Box>
-                                            <IconButton size="small" onClick={() => handleDeleteComment(comment.id)}>
-                                                <Delete fontSize="small" />
-                                            </IconButton>
+                                            {canEdit && (
+                                                <IconButton size="small" onClick={() => handleDeleteComment(comment.id)}>
+                                                    <Delete fontSize="small" />
+                                                </IconButton>
+                                            )}
                                         </Box>
                                         <Typography variant="body2">{comment.body}</Typography>
                                     </CardContent>
@@ -1053,7 +1079,19 @@ function NotesTab() {
 export function ProtectiveSystemDetail() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
-    const { selectedPsv, activeTab, setActiveTab, selectPsv, updateSizingCase, sizingCaseList, updatePsv, deleteSizingCase, deletePsv } = usePsvStore();
+    const {
+        selectedPsv,
+        selectPsv,
+        deletePsv,
+        updatePsv,
+        updateSizingCase,
+        sizingCaseList,
+        deleteSizingCase,
+    } = usePsvStore();
+    const canEdit = useAuthStore((state) => state.canEdit());
+    const canApprove = useAuthStore((state) => state.canApprove());
+    const canCheck = useAuthStore((state) => ['lead', 'approver', 'admin'].includes(state.currentUser?.role || ''));
+    const [activeTab, setActiveTab] = useState(0);
     const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
@@ -1158,6 +1196,7 @@ export function ProtectiveSystemDetail() {
         switch (status) {
             case 'approved': return 'success';
             case 'issued': return 'info';
+            case 'checked': return 'info';
             case 'in_review': return 'warning';
             default: return 'default';
         }
@@ -1167,6 +1206,7 @@ export function ProtectiveSystemDetail() {
         switch (status) {
             case 'approved': return <CheckCircleOutline fontSize="small" />;
             case 'issued': return <PublishedWithChanges fontSize="small" />;
+            case 'checked': return <Verified fontSize="small" />;
             case 'in_review': return <RateReview fontSize="small" />;
             default: return <Drafts fontSize="small" />;
         }
@@ -1175,6 +1215,7 @@ export function ProtectiveSystemDetail() {
     const getStatusLabel = (status: string) => {
         switch (status) {
             case 'in_review': return 'In Review';
+            case 'checked': return 'Checked';
             case 'issued': return 'Issued';
             case 'approved': return 'Approved';
             case 'draft': return 'Draft';
@@ -1196,9 +1237,21 @@ export function ProtectiveSystemDetail() {
                                 icon={getStatusIcon(selectedPsv.status)}
                                 label={getStatusLabel(selectedPsv.status)}
                                 color={getStatusColor(selectedPsv.status) as any}
-                                onClick={handleStatusClick}
-                                deleteIcon={<KeyboardArrowDown />}
-                                onDelete={handleStatusClick} // Shows the arrow and makes it clickable
+                                onClick={
+                                    canEdit && (selectedPsv.status !== 'issued' || canCheck)
+                                        ? handleStatusClick
+                                        : undefined
+                                }
+                                deleteIcon={
+                                    canEdit && (selectedPsv.status !== 'issued' || canCheck)
+                                        ? <KeyboardArrowDown />
+                                        : undefined
+                                }
+                                onDelete={
+                                    canEdit && (selectedPsv.status !== 'issued' || canCheck)
+                                        ? handleStatusClick
+                                        : undefined
+                                } // Shows the arrow and makes it clickable
                                 sx={{
                                     textTransform: 'capitalize',
                                     fontWeight: 600,
@@ -1206,14 +1259,15 @@ export function ProtectiveSystemDetail() {
                                     '& .MuiChip-deleteIcon': {
                                         color: 'inherit',
                                         opacity: 0.7
-                                    }
+                                    },
+                                    cursor: canEdit && (selectedPsv.status !== 'issued' || canCheck) ? 'pointer' : 'default'
                                 }}
                             />
                             <Menu
                                 anchorEl={statusMenuAnchor}
                                 open={Boolean(statusMenuAnchor)}
                                 onClose={handleStatusClose}
-                                TransitionComponent={Fade}
+                                slots={{ transition: Fade }}
                             >
                                 <MenuItem onClick={() => handleStatusChange('draft')} selected={selectedPsv.status === 'draft'}>
                                     <ListItemIcon><Drafts fontSize="small" /></ListItemIcon>
@@ -1223,14 +1277,27 @@ export function ProtectiveSystemDetail() {
                                     <ListItemIcon><RateReview fontSize="small" sx={{ color: 'warning.main' }} /></ListItemIcon>
                                     <ListItemText>In Review</ListItemText>
                                 </MenuItem>
-                                <MenuItem onClick={() => handleStatusChange('approved')} selected={selectedPsv.status === 'approved'}>
-                                    <ListItemIcon><CheckCircleOutline fontSize="small" sx={{ color: 'success.main' }} /></ListItemIcon>
-                                    <ListItemText>Approved</ListItemText>
-                                </MenuItem>
-                                <MenuItem onClick={() => handleStatusChange('issued')} selected={selectedPsv.status === 'issued'}>
-                                    <ListItemIcon><PublishedWithChanges fontSize="small" sx={{ color: 'info.main' }} /></ListItemIcon>
-                                    <ListItemText>Issued</ListItemText>
-                                </MenuItem>
+                                {canCheck && (
+                                    <MenuItem onClick={() => handleStatusChange('checked')} selected={selectedPsv.status === 'checked'}>
+                                        <ListItemIcon><Verified fontSize="small" sx={{ color: 'info.main' }} /></ListItemIcon>
+                                        <ListItemText>Checked</ListItemText>
+                                    </MenuItem>
+                                )}
+                                {canApprove && (
+                                    <>
+                                        <MenuItem onClick={() => handleStatusChange('approved')} selected={selectedPsv.status === 'approved'}>
+                                            <ListItemIcon><CheckCircleOutline fontSize="small" sx={{ color: 'success.main' }} /></ListItemIcon>
+                                            <ListItemText>Approved</ListItemText>
+                                        </MenuItem>
+                                    </>
+                                )}
+                                {/* Issued can only be set from Approved status, by engineer/lead/approver */}
+                                {selectedPsv.status === 'approved' && (canEdit || canApprove) && (
+                                    <MenuItem onClick={() => handleStatusChange('issued')}>
+                                        <ListItemIcon><PublishedWithChanges fontSize="small" sx={{ color: 'info.main' }} /></ListItemIcon>
+                                        <ListItemText>Issued</ListItemText>
+                                    </MenuItem>
+                                )}
                             </Menu>
                         </Box>
                         <Typography variant="body1" color="text.secondary">
@@ -1238,21 +1305,25 @@ export function ProtectiveSystemDetail() {
                         </Typography>
                     </Box>
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button
-                            variant="outlined"
-                            startIcon={<Edit />}
-                            onClick={handleEditClick}
-                        >
-                            Edit
-                        </Button>
-                        <Button
-                            variant="outlined"
-                            color="error"
-                            startIcon={<Delete />}
-                            onClick={handleDeletePsv}
-                        >
-                            Delete
-                        </Button>
+                        {canEdit && (
+                            <>
+                                <Button
+                                    variant="outlined"
+                                    startIcon={<Edit />}
+                                    onClick={handleEditClick}
+                                >
+                                    Edit
+                                </Button>
+                                <Button
+                                    variant="outlined"
+                                    color="error"
+                                    startIcon={<Delete />}
+                                    onClick={handleDeletePsv}
+                                >
+                                    Delete
+                                </Button>
+                            </>
+                        )}
                         <Button variant="outlined" onClick={() => selectPsv(null)}>
                             Close
                         </Button>
