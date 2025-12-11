@@ -191,9 +191,27 @@ function ScenariosTab() {
 
     if (!selectedPsv) return null;
 
+    // All possible scenario causes with display labels
+    const ALL_SCENARIO_CAUSES: { cause: ScenarioCause; label: string }[] = [
+        { cause: 'blocked_outlet', label: 'Blocked Outlet' },
+        { cause: 'fire_case', label: 'Fire Case' },
+        { cause: 'external_fire', label: 'External Fire' },
+        { cause: 'tube_rupture', label: 'Tube Rupture' },
+        { cause: 'thermal_expansion', label: 'Thermal Expansion' },
+        { cause: 'utility_failure', label: 'Utility Failure' },
+        { cause: 'control_valve_failure', label: 'Control Valve Failure' },
+        { cause: 'power_failure', label: 'Power Failure' },
+        { cause: 'cooling_water_failure', label: 'Cooling Water Failure' },
+        { cause: 'check_valve_failure', label: 'Check Valve Failure' },
+        { cause: 'other', label: 'Other' },
+    ];
+
+    // Get set of added scenario causes
+    const addedCauses = new Set(scenarioList.map(s => s.cause));
+
     return (
         <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                 <Typography variant="h6" fontWeight={600}>
                     Overpressure Scenarios
                 </Typography>
@@ -202,6 +220,49 @@ function ScenariosTab() {
                         Add Scenario
                     </Button>
                 )}
+            </Box>
+
+            {/* Scenario Status Indicator Bar */}
+            <Box
+                sx={{
+                    display: 'flex',
+                    gap: 1,
+                    mb: 3,
+                    pb: 1,
+                    overflowX: 'auto',
+                    scrollbarWidth: 'thin',
+                    '&::-webkit-scrollbar': { height: 4 },
+                    '&::-webkit-scrollbar-thumb': { borderRadius: 2, bgcolor: 'divider' },
+                    flexWrap: { xs: 'nowrap', md: 'wrap' },
+                }}
+            >
+                {ALL_SCENARIO_CAUSES.map(({ cause, label }) => {
+                    const isAdded = addedCauses.has(cause);
+                    return (
+                        <Typography
+                            key={cause}
+                            variant="body2"
+                            sx={{
+                                px: 1.5,
+                                py: 0.5,
+                                borderRadius: 2,
+                                whiteSpace: 'nowrap',
+                                flexShrink: 0,
+                                fontWeight: isAdded ? 600 : 400,
+                                color: isAdded ? 'success.main' : 'text.disabled',
+                                bgcolor: isAdded
+                                    ? (theme) => theme.palette.mode === 'dark' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(34, 197, 94, 0.1)'
+                                    : 'transparent',
+                                border: 1,
+                                borderColor: isAdded ? 'success.main' : 'divider',
+                                opacity: isAdded ? 1 : 0.6,
+                                transition: 'all 0.2s ease',
+                            }}
+                        >
+                            {label}
+                        </Typography>
+                    );
+                })}
             </Box>
 
             <Dialog
@@ -606,7 +667,7 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Backpressure</Typography>
-                                                <Typography variant="body2" fontWeight={500}>{sizing.inputs.backpressure} barg</Typography>
+                                                <Typography variant="body2" fontWeight={500}>{typeof sizing.inputs.backpressure === 'number' ? sizing.inputs.backpressure.toFixed(3) : sizing.inputs.backpressure} barg</Typography>
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">BP Type</Typography>

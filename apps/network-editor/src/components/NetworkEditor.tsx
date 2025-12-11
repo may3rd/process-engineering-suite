@@ -147,6 +147,7 @@ export function NetworkEditor({
 const nodeTypes = {
   pressure: PressureNode,
 } satisfies Record<string, ComponentType<any>>;
+
 /** Custom edge palette shared with React Flow. */
 const edgeTypes = {
   pipe: PipeEdge,
@@ -496,7 +497,6 @@ function EditorCanvas({
         boundaryTemperature: startNode?.temperature,
         boundaryTemperatureUnit: startNode?.temperatureUnit,
         erosionalConstant: 100,
-        pipingFittingSafetyFactor: 1,
         fittingType: "LR",
       };
 

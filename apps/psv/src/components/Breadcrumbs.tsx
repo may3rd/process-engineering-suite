@@ -1,7 +1,7 @@
 "use client";
 
-import { Breadcrumbs as MuiBreadcrumbs, Link, Typography, useTheme } from "@mui/material";
-import { NavigateNext, Home } from "@mui/icons-material";
+import { Box, Link, Typography, useTheme, Tooltip } from "@mui/material";
+import { ChevronRight, Home } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
 
 export function Breadcrumbs() {
@@ -24,123 +24,192 @@ export function Breadcrumbs() {
         clearSelection,
     } = usePsvStore();
 
-    const linkStyle = {
-        cursor: 'pointer',
-        color: 'primary.main',
-        textDecoration: 'none',
-        '&:hover': {
-            textDecoration: 'underline',
-        },
+    // Build breadcrumb items array
+    type BreadcrumbItem = { label: string; onClick?: () => void; isCurrent: boolean };
+    const items: BreadcrumbItem[] = [];
+
+    // Home is always added separately (icon)
+
+    if (selectedCustomer) {
+        items.push({
+            label: selectedCustomer.name,
+            onClick: selectedPlant ? () => selectCustomer(selectedCustomer.id) : undefined,
+            isCurrent: !selectedPlant,
+        });
+    }
+
+    if (selectedPlant) {
+        items.push({
+            label: selectedPlant.name,
+            onClick: selectedUnit ? () => selectPlant(selectedPlant.id) : undefined,
+            isCurrent: !selectedUnit,
+        });
+    }
+
+    if (selectedUnit) {
+        items.push({
+            label: selectedUnit.name,
+            onClick: selectedArea ? () => selectUnit(selectedUnit.id) : undefined,
+            isCurrent: !selectedArea,
+        });
+    }
+
+    if (selectedArea) {
+        items.push({
+            label: selectedArea.name,
+            onClick: selectedProject ? () => selectArea(selectedArea.id) : undefined,
+            isCurrent: !selectedProject,
+        });
+    }
+
+    if (selectedProject) {
+        items.push({
+            label: selectedProject.name,
+            onClick: selectedPsv ? () => selectProject(selectedProject.id) : undefined,
+            isCurrent: !selectedPsv,
+        });
+    }
+
+    if (selectedPsv) {
+        items.push({
+            label: selectedPsv.tag,
+            onClick: undefined,
+            isCurrent: true,
+        });
+    }
+
+    const handleHomeClick = () => {
+        clearSelection();
+        setCurrentPage(null);
+    };
+
+    // Truncation styles for breadcrumb text
+    const truncateStyles = {
+        maxWidth: { xs: 80, sm: 120, md: 160, lg: 200 },
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap',
+        display: 'block',
     };
 
     return (
-        <MuiBreadcrumbs
-            separator={<NavigateNext fontSize="small" sx={{ color: 'text.secondary' }} />}
+        <Box
             sx={{
-                py: 1.5,
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                py: 1,
                 px: 2,
-                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.5)' : 'rgba(255, 255, 255, 0.5)',
-                borderRadius: "14px",
-                backdropFilter: 'blur(8px)',
+                backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.95)',
+                borderRadius: '20px',
+                backdropFilter: 'blur(12px)',
+                border: 1,
+                borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',
+                boxShadow: isDark
+                    ? '0 2px 8px rgba(0, 0, 0, 0.3)'
+                    : '0 2px 8px rgba(0, 0, 0, 0.08)',
+                maxWidth: '100%',
+                overflow: 'hidden',
             }}
         >
-            <Link
-                onClick={() => {
-                    clearSelection();
-                    setCurrentPage(null);
-                }}
-                sx={linkStyle}
-                underline="hover"
-            >
-                <Home sx={{ fontSize: 18, verticalAlign: 'middle', mr: 0.5 }} />
-                Home
-            </Link>
+            {/* Home Icon Button */}
+            <Tooltip title="Home" arrow>
+                <Box
+                    onClick={handleHomeClick}
+                    sx={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        bgcolor: 'primary.main',
+                        color: 'primary.contrastText',
+                        cursor: 'pointer',
+                        flexShrink: 0,
+                        transition: 'transform 0.2s ease, box-shadow 0.2s ease',
+                        '&:hover': {
+                            transform: 'scale(1.05)',
+                            boxShadow: '0 2px 8px rgba(2, 132, 199, 0.4)',
+                        },
+                    }}
+                >
+                    <Home sx={{ fontSize: 18 }} />
+                </Box>
+            </Tooltip>
 
-            {selectedCustomer && (
-                selectedPlant ? (
-                    <Link
-                        onClick={() => selectCustomer(selectedCustomer.id)}
-                        sx={linkStyle}
-                        underline="hover"
+            {/* Breadcrumb Items */}
+            {items.map((item, index) => (
+                <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
+                    {/* Chevron Separator */}
+                    <ChevronRight
+                        sx={{
+                            fontSize: 20,
+                            color: 'text.disabled',
+                            flexShrink: 0,
+                        }}
+                    />
+
+                    {/* Breadcrumb Label with Tooltip */}
+                    <Tooltip title={item.label} arrow enterDelay={300}>
+                        {item.onClick ? (
+                            <Link
+                                onClick={item.onClick}
+                                sx={{
+                                    cursor: 'pointer',
+                                    color: 'text.secondary',
+                                    textDecoration: 'none',
+                                    fontWeight: 500,
+                                    fontSize: '0.9rem',
+                                    transition: 'color 0.2s ease',
+                                    '&:hover': {
+                                        color: 'primary.main',
+                                        textDecoration: 'none',
+                                    },
+                                    ...truncateStyles,
+                                }}
+                                underline="none"
+                            >
+                                {item.label}
+                            </Link>
+                        ) : (
+                            <Typography
+                                sx={{
+                                    fontWeight: 600,
+                                    fontSize: '0.9rem',
+                                    color: 'primary.main',
+                                    ...truncateStyles,
+                                }}
+                            >
+                                {item.label}
+                            </Typography>
+                        )}
+                    </Tooltip>
+                </Box>
+            ))}
+
+            {/* Show Home label if no items */}
+            {items.length === 0 && (
+                <>
+                    <ChevronRight
+                        sx={{
+                            fontSize: 20,
+                            color: 'text.disabled',
+                            flexShrink: 0,
+                        }}
+                    />
+                    <Typography
+                        sx={{
+                            fontWeight: 600,
+                            fontSize: '0.9rem',
+                            color: 'primary.main',
+                            whiteSpace: 'nowrap',
+                        }}
                     >
-                        {selectedCustomer.name}
-                    </Link>
-                ) : (
-                    <Typography color="text.primary" fontWeight={500}>
-                        {selectedCustomer.name}
+                        Home
                     </Typography>
-                )
+                </>
             )}
-
-            {selectedPlant && (
-                selectedUnit ? (
-                    <Link
-                        onClick={() => selectPlant(selectedPlant.id)}
-                        sx={linkStyle}
-                        underline="hover"
-                    >
-                        {selectedPlant.name}
-                    </Link>
-                ) : (
-                    <Typography color="text.primary" fontWeight={500}>
-                        {selectedPlant.name}
-                    </Typography>
-                )
-            )}
-
-            {selectedUnit && (
-                selectedArea ? (
-                    <Link
-                        onClick={() => selectUnit(selectedUnit.id)}
-                        sx={linkStyle}
-                        underline="hover"
-                    >
-                        {selectedUnit.name}
-                    </Link>
-                ) : (
-                    <Typography color="text.primary" fontWeight={500}>
-                        {selectedUnit.name}
-                    </Typography>
-                )
-            )}
-
-            {selectedArea && (
-                selectedProject ? (
-                    <Link
-                        onClick={() => selectArea(selectedArea.id)}
-                        sx={linkStyle}
-                        underline="hover"
-                    >
-                        {selectedArea.name}
-                    </Link>
-                ) : (
-                    <Typography color="text.primary" fontWeight={500}>
-                        {selectedArea.name}
-                    </Typography>
-                )
-            )}
-
-            {selectedProject && (
-                selectedPsv ? (
-                    <Link
-                        onClick={() => selectProject(selectedProject.id)}
-                        sx={linkStyle}
-                        underline="hover"
-                    >
-                        {selectedProject.name}
-                    </Link>
-                ) : (
-                    <Typography color="text.primary" fontWeight={500}>
-                        {selectedProject.name}
-                    </Typography>
-                )
-            )}
-
-            {selectedPsv && (
-                <Typography color="text.primary" fontWeight={500}>
-                    {selectedPsv.tag}
-                </Typography>
-            )}
-        </MuiBreadcrumbs>
+        </Box>
     );
 }

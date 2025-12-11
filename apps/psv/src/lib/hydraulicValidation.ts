@@ -22,16 +22,63 @@ export interface NetworkCalculationOptions {
 interface NetworkSegmentResult {
     pipeId: string;
     name?: string;
-    // Dimensions
+
+    // Pipe properties
     diameter?: number;
+    inletDiameter?: number;
+    outletDiameter?: number;
     length?: number;
+    roughness?: number;
+    elevation?: number;
+    schedule?: string;
+    fittings?: any[];
+
+    // Fluid properties
+    phase?: string;
+    molecularWeight?: number;
+    zFactor?: number;
+    specificHeatRatio?: number;
+    viscosity?: number;
+
+    // Calculation settings
+    direction?: string;
+    gasFlowModel?: string;
+    massFlowRate?: number;
+    boundaryPressure?: number;
+    boundaryTemperature?: number;
+    pipeSectionType?: string;
+    erosionalConstant?: number;
+
+    // K-factors
+    fittingK?: number;
+    pipeLengthK?: number;
+    userK?: number;
+    totalK?: number;
+    pipingFittingSafetyFactor?: number;
+
     // Hydraulics
     pressureDropPa?: number;
     reynoldsNumber?: number;
     frictionFactor?: number;
-    totalK?: number;
+    flowScheme?: string;
     velocity?: number;
     machNumber?: number;
+
+    // Pressure breakdown
+    pipeAndFittingPressureDrop?: number;
+    elevationPressureDrop?: number;
+    controlValvePressureDrop?: number;
+    orificePressureDrop?: number;
+    userSpecifiedPressureDrop?: number;
+    totalSegmentPressureDrop?: number;
+    normalizedPressureDrop?: number;
+    gasFlowCriticalPressure?: number;
+
+    // Control valve / Orifice
+    controlValveCV?: number;
+    controlValveCg?: number;
+    orificeBetaRatio?: number;
+
     // State
     inletPressurePa?: number;
     outletPressurePa?: number;
@@ -39,6 +86,15 @@ interface NetworkSegmentResult {
     outletTemperatureK?: number;
     inletDensity?: number;
     outletDensity?: number;
+    inletVelocity?: number;
+    outletVelocity?: number;
+    inletMachNumber?: number;
+    outletMachNumber?: number;
+    inletErosionalVelocity?: number;
+    outletErosionalVelocity?: number;
+    inletFlowMomentum?: number;
+    outletFlowMomentum?: number;
+
     // Alerts
     isChoked?: boolean;
     isErosional?: boolean;
@@ -47,16 +103,87 @@ interface NetworkSegmentResult {
 export interface HydraulicSegmentResult {
     pipeId: string;
     name: string;
+    description?: string;
+
+    // I. GENERAL DATA
+    fluidPhase?: 'Liquid' | 'Gas';
+    calculationType?: string; // "Pipeline", "Control Valve", "Orifice"
+    flowDirection?: 'Forward' | 'Backward';
+    gasFlowModel?: 'Adiabatic' | 'Isothermal' | 'N/A';
+    boundaryPressureKPag?: number;
+
+    // II. FLUID DATA
+    massFlowRateKgH?: number;
+    volumetricFlowRateM3H?: number;
+    temperatureC?: number;
+    densityKgM3?: number;
+    molecularWeight?: number;
+    compressibilityZ?: number;
+    specificHeatRatio?: number;
+    viscosityCp?: number;
+
+    // III. PIPE, FITTING & ELEVATION
     diameter: number;
+    schedule?: string;
+    pipeID?: number; // Inner diameter from schedule
+    inletPipeDN?: number; // Inlet pipe diameter if different
+    outletPipeDN?: number; // Outlet pipe diameter if different
     length: number;
-    pressureDropKPa: number;
-    reynoldsNumber: number;
-    frictionFactor: number;
+    elevationChangeM?: number; // negative for DOWN
+    roughnessMm?: number;
+    erosionalConstantC?: number;
+    // Fitting counts (individual rows in CSV)
+    fittingCounts?: Record<string, number>; // e.g. {"elbow_90": 2, "tee_through": 1}
+    fittingK?: number;
+    pipeLengthK?: number;
+    userK?: number;
     totalK: number;
+    pipingFittingSafetyFactor?: number;
+    totalKWithSafety?: number;
+
+    // IV. OPTIONAL CALCULATIONS
+    controlValveCv?: number;
+    controlValveCg?: number;
+    recoveryFactorC1?: number;
+    terminalDPRatioXT?: number;
+    orificeBetaRatio?: number;
+
+    // V. CHARACTERISTIC SUMMARY
+    reynoldsNumber: number;
+    flowRegime?: 'Laminar' | 'Transition' | 'Turbulent';
+    frictionFactor: number;
+    flowMomentumPa?: number;
+    criticalPressureKPa?: number;
     velocity: number;
     machNumber?: number;
+
+    // VI. PRESSURE LOSSES SUMMARY
+    pressureDropKPa: number;
+    pipeAndFittingDropKPa?: number;
+    elevationDropKPa?: number;
+    controlValveDropKPa?: number;
+    orificeDropKPa?: number;
+    userSpecifiedDropKPa?: number;
+    segmentTotalDropKPa?: number;
+    unitFrictionLossKPa100m?: number;
+
+    // VII. RESULT SUMMARY (Inlet & Outlet states)
     inletPressureBarg: number;
+    inletTemperatureC?: number;
+    inletDensityKgM3?: number;
+    inletMachNumber?: number;
+    inletVelocityMs?: number;
+    inletErosionalVelocityMs?: number;
+    inletFlowMomentumPa?: number;
     outletPressureBarg: number;
+    outletTemperatureC?: number;
+    outletDensityKgM3?: number;
+    outletMachNumber?: number;
+    outletVelocityMs?: number;
+    outletErosionalVelocityMs?: number;
+    outletFlowMomentumPa?: number;
+
+    // STATUS
     isChoked: boolean;
     isErosional: boolean;
 }
@@ -71,6 +198,21 @@ interface NetworkHydraulicsResult {
 }
 
 const FALLBACK_PRESSURE_DROP_PER_M_KPA = 0.01;
+
+/**
+ * Aggregate fitting counts by type from fittings array
+ */
+function aggregateFittingCounts(fittings?: any[]): Record<string, number> {
+    const counts: Record<string, number> = {};
+    if (!fittings) return counts;
+
+    for (const f of fittings) {
+        if (f.type && typeof f.count === 'number') {
+            counts[f.type] = (counts[f.type] ?? 0) + f.count;
+        }
+    }
+    return counts;
+}
 
 function isPositive(value?: number | null): value is number {
     return typeof value === "number" && Number.isFinite(value) && value > 0;
@@ -302,6 +444,11 @@ function runNetworkHydraulics(
             resultSummary: solvedPipe.resultSummary,
         });
 
+        console.log({
+            resolvePipe: resolvedPipe,
+            solvedPipe: solvedPipe,
+        });
+
         if (typeof dropPa === "number" && Number.isFinite(dropPa)) {
             totalDropPa += dropPa;
         }
@@ -354,19 +501,70 @@ function runNetworkHydraulics(
                 : (inletState?.pressure ?? segmentOutletPa);
         }
 
+        // Update flowMomentum field name to match physics engine
+        const inletStateTyped = inletState as any;
+        const outletStateTyped = outletState as any;
+
         segments.push({
             pipeId: pipe.id,
             name: pipe.name,
-            // Dimensions
-            diameter: resolvedPipe.diameter,
-            length: resolvedPipe.length,
+
+            // Pipe properties - use solvedPipe for final values
+            diameter: solvedPipe.diameter,
+            inletDiameter: (solvedPipe as any).inletDiameter,
+            outletDiameter: (solvedPipe as any).outletDiameter,
+            length: solvedPipe.length,
+            roughness: solvedPipe.roughness,
+            elevation: solvedPipe.elevation,
+            schedule: (solvedPipe as any).schedule,
+            fittings: solvedPipe.fittings,
+
+            // Fluid properties - use solvedPipe.fluid
+            phase: solvedPipe.fluid?.phase,
+            molecularWeight: solvedPipe.fluid?.molecularWeight,
+            zFactor: solvedPipe.fluid?.zFactor,
+            specificHeatRatio: solvedPipe.fluid?.specificHeatRatio,
+            viscosity: solvedPipe.fluid?.viscosity,
+
+            // Calculation settings - use solvedPipe
+            direction: solvedPipe.direction,
+            gasFlowModel: solvedPipe.gasFlowModel,
+            massFlowRate: solvedPipe.massFlowRate,
+            boundaryPressure: solvedPipe.boundaryPressure,
+            boundaryTemperature: solvedPipe.boundaryTemperature,
+            pipeSectionType: (solvedPipe as any).pipeSectionType,
+            erosionalConstant: (solvedPipe as any).erosionalConstant,
+
+            // K-factors
+            fittingK: solvedPipe.fittingK,
+            pipeLengthK: solvedPipe.pipeLengthK,
+            userK: (solvedPipe as any).userK,
+            totalK: solvedPipe.totalK,
+            pipingFittingSafetyFactor: solvedPipe.pipingFittingSafetyFactor,
+
             // Hydraulics
             pressureDropPa: dropPa,
             reynoldsNumber: solvedPipe.pressureDropCalculationResults?.reynoldsNumber,
             frictionFactor: solvedPipe.pressureDropCalculationResults?.frictionalFactor,
-            totalK: solvedPipe.pressureDropCalculationResults?.totalK,
+            flowScheme: solvedPipe.pressureDropCalculationResults?.flowScheme,
             velocity: solvedPipe.velocity,
             machNumber: outletState?.machNumber ?? inletState?.machNumber,
+
+            // Pressure breakdown
+            pipeAndFittingPressureDrop: solvedPipe.pressureDropCalculationResults?.pipeAndFittingPressureDrop,
+            elevationPressureDrop: solvedPipe.pressureDropCalculationResults?.elevationPressureDrop,
+            controlValvePressureDrop: solvedPipe.pressureDropCalculationResults?.controlValvePressureDrop,
+            orificePressureDrop: solvedPipe.pressureDropCalculationResults?.orificePressureDrop,
+            userSpecifiedPressureDrop: solvedPipe.pressureDropCalculationResults?.userSpecifiedPressureDrop,
+            totalSegmentPressureDrop: solvedPipe.pressureDropCalculationResults?.totalSegmentPressureDrop,
+            normalizedPressureDrop: solvedPipe.pressureDropCalculationResults?.normalizedPressureDrop,
+            gasFlowCriticalPressure: solvedPipe.pressureDropCalculationResults?.gasFlowCriticalPressure,
+
+            // Control valve / Orifice
+            controlValveCV: solvedPipe.pressureDropCalculationResults?.controlValveCV,
+            controlValveCg: solvedPipe.pressureDropCalculationResults?.controlValveCg,
+            orificeBetaRatio: solvedPipe.pressureDropCalculationResults?.orificeBetaRatio,
+
             // State - use appropriate pressure values
             inletPressurePa: segmentInletPa,
             outletPressurePa: segmentOutletPa,
@@ -374,6 +572,15 @@ function runNetworkHydraulics(
             outletTemperatureK: outletState?.temperature,
             inletDensity: inletState?.density,
             outletDensity: outletState?.density,
+            inletVelocity: inletState?.velocity,
+            outletVelocity: outletState?.velocity,
+            inletMachNumber: inletState?.machNumber,
+            outletMachNumber: outletState?.machNumber,
+            inletErosionalVelocity: inletState?.erosionalVelocity,
+            outletErosionalVelocity: outletState?.erosionalVelocity,
+            inletFlowMomentum: inletStateTyped?.flowMomentum,
+            outletFlowMomentum: outletStateTyped?.flowMomentum,
+
             // Alerts
             isChoked: pipeIsChoked,
             isErosional: pipeIsErosional === true,
@@ -468,23 +675,132 @@ export function calculateNetworkPressureDropWithWarnings(
 
     const result = runNetworkHydraulics(network, massFlowRate, fluid, options);
     if (result) {
-        // Convert internal segments to exported format
-        const exportedSegments: HydraulicSegmentResult[] = result.segments.map(seg => ({
-            pipeId: seg.pipeId,
-            name: seg.name || seg.pipeId,
-            diameter: seg.diameter || 0,
-            length: seg.length || 0,
-            pressureDropKPa: (seg.pressureDropPa || 0) / 1000,
-            reynoldsNumber: seg.reynoldsNumber || 0,
-            frictionFactor: seg.frictionFactor || 0,
-            totalK: seg.totalK || 0,
-            velocity: seg.velocity || 0,
-            machNumber: seg.machNumber,
-            inletPressureBarg: seg.inletPressurePa ? convertValue(seg.inletPressurePa, 'Pa', 'barg') || 0 : 0,
-            outletPressureBarg: seg.outletPressurePa ? convertValue(seg.outletPressurePa, 'Pa', 'barg') || 0 : 0,
-            isChoked: seg.isChoked || false,
-            isErosional: seg.isErosional || false,
-        }));
+        // Convert internal segments to exported format with all fields
+        const exportedSegments: HydraulicSegmentResult[] = result.segments.map(seg => {
+            // Helper: convert K to °C
+            const kToC = (k?: number) => typeof k === 'number' ? k - 273.15 : undefined;
+
+            // Helper: convert Pa to kPa
+            const paToKPa = (pa?: number) => typeof pa === 'number' ? pa / 1000 : undefined;
+
+            // Calculate volumetric flow rate in m³/h
+            let volumetricFlowM3H: number | undefined;
+            if (seg.massFlowRate && seg.inletDensity) {
+                volumetricFlowM3H = (seg.massFlowRate / seg.inletDensity) * 3600; // kg/h → kg/s → m³/s → m³/h
+            }
+
+            // Calculate unit friction loss in kPa/100m
+            let unitFrictionLoss: number | undefined;
+            if (seg.totalSegmentPressureDrop && seg.length && seg.length > 0) {
+                unitFrictionLoss = (seg.totalSegmentPressureDrop / 1000) / (seg.length / 100);
+            }
+
+            // Determine calculation type
+            let calculationType = 'Pipeline';
+            if (seg.pipeSectionType === 'control valve') calculationType = 'Control Valve';
+            else if (seg.pipeSectionType === 'orifice') calculationType = 'Orifice';
+
+            // Format flow direction
+            const flowDirection = seg.direction === 'backward' ? 'Backward' : 'Forward';
+
+            // Format gas flow model
+            let gasFlowModelFormatted: 'Adiabatic' | 'Isothermal' | 'N/A' = 'N/A';
+            if (seg.phase === 'gas') {
+                gasFlowModelFormatted = seg.gasFlowModel === 'isothermal' ? 'Isothermal' : 'Adiabatic';
+            }
+
+            // Determine flow regime
+            let flowRegime: 'Laminar' | 'Transition' | 'Turbulent' = 'Turbulent';
+            if (seg.flowScheme === 'laminar') flowRegime = 'Laminar';
+            else if (seg.flowScheme === 'transition') flowRegime = 'Transition';
+
+            return {
+                pipeId: seg.pipeId,
+                name: seg.name || seg.pipeId,
+                description: undefined,
+
+                // I. GENERAL DATA
+                fluidPhase: seg.phase === 'gas' ? 'Gas' : 'Liquid',
+                calculationType,
+                flowDirection,
+                gasFlowModel: gasFlowModelFormatted,
+                boundaryPressureKPag: seg.boundaryPressure ? convertValue(seg.boundaryPressure, 'Pa', 'kPag') : undefined,
+
+                // II. FLUID DATA
+                massFlowRateKgH: seg.massFlowRate,
+                volumetricFlowRateM3H: volumetricFlowM3H,
+                temperatureC: kToC(seg.boundaryTemperature),
+                densityKgM3: seg.inletDensity,
+                molecularWeight: seg.molecularWeight,
+                compressibilityZ: seg.zFactor,
+                specificHeatRatio: seg.specificHeatRatio,
+                viscosityCp: seg.viscosity,
+
+                // III. PIPE, FITTING & ELEVATION
+                diameter: seg.diameter || 0,
+                schedule: seg.schedule,
+                pipeID: seg.diameter, // Assuming diameter is already ID
+                inletPipeDN: seg.inletDiameter,
+                outletPipeDN: seg.outletDiameter,
+                length: seg.length || 0,
+                elevationChangeM: seg.elevation,
+                roughnessMm: seg.roughness,
+                erosionalConstantC: seg.erosionalConstant ?? 100,
+                fittingCounts: aggregateFittingCounts(seg.fittings),
+                fittingK: seg.fittingK,
+                pipeLengthK: seg.pipeLengthK,
+                userK: seg.userK,
+                totalK: seg.totalK || 0,
+                pipingFittingSafetyFactor: seg.pipingFittingSafetyFactor,
+                totalKWithSafety: seg.totalK, // TODO: apply safety factor if needed
+
+                // IV. OPTIONAL CALCULATIONS
+                controlValveCv: seg.controlValveCV,
+                controlValveCg: seg.controlValveCg,
+                recoveryFactorC1: undefined, // Not in current data
+                terminalDPRatioXT: undefined, // Not in current data
+                orificeBetaRatio: seg.orificeBetaRatio,
+
+                // V. CHARACTERISTIC SUMMARY
+                reynoldsNumber: seg.reynoldsNumber || 0,
+                flowRegime,
+                frictionFactor: seg.frictionFactor || 0,
+                flowMomentumPa: seg.inletFlowMomentum,
+                criticalPressureKPa: paToKPa(seg.gasFlowCriticalPressure),
+                velocity: seg.velocity || 0,
+                machNumber: seg.machNumber,
+
+                // VI. PRESSURE LOSSES SUMMARY
+                pressureDropKPa: paToKPa(seg.pressureDropPa) || 0,
+                pipeAndFittingDropKPa: paToKPa(seg.pipeAndFittingPressureDrop),
+                elevationDropKPa: paToKPa(seg.elevationPressureDrop),
+                controlValveDropKPa: paToKPa(seg.controlValvePressureDrop),
+                orificeDropKPa: paToKPa(seg.orificePressureDrop),
+                userSpecifiedDropKPa: paToKPa(seg.userSpecifiedPressureDrop),
+                segmentTotalDropKPa: paToKPa(seg.totalSegmentPressureDrop),
+                unitFrictionLossKPa100m: unitFrictionLoss,
+
+                // VII. RESULT SUMMARY
+                inletPressureBarg: seg.inletPressurePa ? convertValue(seg.inletPressurePa, 'Pa', 'barg') || 0 : 0,
+                inletTemperatureC: kToC(seg.inletTemperatureK),
+                inletDensityKgM3: seg.inletDensity,
+                inletMachNumber: seg.inletMachNumber,
+                inletVelocityMs: seg.inletVelocity,
+                inletErosionalVelocityMs: seg.inletErosionalVelocity,
+                inletFlowMomentumPa: seg.inletFlowMomentum,
+                outletPressureBarg: seg.outletPressurePa ? convertValue(seg.outletPressurePa, 'Pa', 'barg') || 0 : 0,
+                outletTemperatureC: kToC(seg.outletTemperatureK),
+                outletDensityKgM3: seg.outletDensity,
+                outletMachNumber: seg.outletMachNumber,
+                outletVelocityMs: seg.outletVelocity,
+                outletErosionalVelocityMs: seg.outletErosionalVelocity,
+                outletFlowMomentumPa: seg.outletFlowMomentum,
+
+                // STATUS
+                isChoked: seg.isChoked || false,
+                isErosional: seg.isErosional || false,
+            };
+        });
 
         return {
             pressureDropKPa: result.totalPressureDropPa / 1000,

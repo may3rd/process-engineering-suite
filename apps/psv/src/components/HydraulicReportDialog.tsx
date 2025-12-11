@@ -61,46 +61,133 @@ const formatNumber = (val: number | string | undefined, decimals = 2): string =>
     return val.toFixed(decimals);
 };
 
+// Fitting type display names mapping
+const FITTING_TYPES = [
+    { key: "elbow_45", label: "Elbow 45°" },
+    { key: "elbow_90", label: "Elbow 90°" },
+    { key: "u_bend", label: "U-Bend" },
+    { key: "stub_in_elbow", label: "Stub-In Elbow" },
+    { key: "tee_elbow", label: "Tee Elbow" },
+    { key: "tee_through", label: "Tee Through" },
+    { key: "block_valve_full", label: "Block Valve Full Line Size" },
+    { key: "block_valve_reduced_09", label: "Block Valve Reduced Trim 0.9D" },
+    { key: "block_valve_reduced_08", label: "Block Valve Reduced Trim 0.8D" },
+    { key: "globe_valve", label: "Globe Valve" },
+    { key: "diaphragm_valve", label: "Diaphragm Valve" },
+    { key: "butterfly_valve", label: "Butterfly Valve" },
+    { key: "check_valve_swing", label: "Check Valve Swing" },
+    { key: "check_valve_lift", label: "Check Valve Lift" },
+    { key: "check_valve_tilting", label: "Check Valve Tilting" },
+    { key: "pipe_entrance_normal", label: "Pipe Entrance Normal" },
+    { key: "pipe_entrance_raise", label: "Pipe Entrance Raise" },
+    { key: "pipe_exit", label: "Pipe Exit" },
+    { key: "input_swage", label: "Input Swage" },
+    { key: "output_swage", label: "Output Swage" },
+];
+
+// Helper to get fitting count safely
+const getFittingCount = (seg: HydraulicSegmentResult, fittingKey: string): string | number => {
+    const count = seg.fittingCounts?.[fittingKey];
+    return (count && count > 0) ? count : "";
+};
+
 const getRowConfigs = (): RowConfig[] => [
+    // Header rows
     { type: "data", label: "Segment ID", getValue: (s) => s.name },
-    { type: "data", label: "Pipe ID", getValue: (s) => s.pipeId },
+    { type: "data", label: "Description", getValue: (s) => s.description ?? "" },
 
-    { type: "section", label: "I. PIPE GEOMETRY" },
-    { type: "data", label: "Diameter", unit: "mm", getValue: (s) => s.diameter, decimals: 1 },
-    { type: "data", label: "Length", unit: "m", getValue: (s) => s.length, decimals: 2 },
+    // I. GENERAL DATA
+    { type: "section", label: "I. GENERAL DATA" },
+    { type: "data", label: "Fluid Phase", getValue: (s) => s.fluidPhase ?? "—" },
+    { type: "data", label: "Calculation Type", getValue: (s) => s.calculationType ?? "Pipeline" },
+    { type: "data", label: "Flow Direction", getValue: (s) => s.flowDirection ?? "Forward" },
+    { type: "data", label: "Flow Type (Adiabatic or Isothermal)", getValue: (s) => s.gasFlowModel ?? "N/A" },
+    { type: "data", label: "Pressure", unit: "kPag", getValue: (s) => s.boundaryPressureKPag, decimals: 2 },
 
-    { type: "section", label: "II. FLOW CONDITIONS" },
-    {
-        type: "data",
-        label: "Velocity",
-        unit: "m/s",
-        getValue: (s) => s.velocity,
-        decimals: 1,
-        color: (s) => s.isErosional ? "error.main" : undefined,
-    },
-    {
-        type: "data",
-        label: "Mach Number",
-        getValue: (s) => s.machNumber,
-        decimals: 3,
-        color: (s) => (s.machNumber ?? 0) > 0.7 ? "error.main" : (s.machNumber ?? 0) > 0.5 ? "warning.main" : undefined,
-    },
-    { type: "data", label: "Reynolds Number", getValue: (s) => s.reynoldsNumber ? s.reynoldsNumber.toExponential(2) : undefined },
-    { type: "data", label: "Friction Factor", getValue: (s) => s.frictionFactor, decimals: 5 },
-    { type: "data", label: "Total K", getValue: (s) => s.totalK, decimals: 3 },
+    // II. FLUID DATA
+    { type: "section", label: "II. FLUID DATA" },
+    { type: "data", label: "Design Flow Rate", unit: "kg/h", getValue: (s) => s.massFlowRateKgH, decimals: 1 },
+    { type: "data", label: "Design Volumetric Flow Rate", unit: "m³/h", getValue: (s) => s.volumetricFlowRateM3H, decimals: 2 },
+    { type: "data", label: "Temperature", unit: "°C", getValue: (s) => s.temperatureC, decimals: 2 },
+    { type: "data", label: "Density", unit: "kg/m³", getValue: (s) => s.densityKgM3, decimals: 2 },
+    { type: "data", label: "Molecular Weight", getValue: (s) => s.molecularWeight, decimals: 1 },
+    { type: "data", label: "Compressibility Factor Z", getValue: (s) => s.compressibilityZ, decimals: 3 },
+    { type: "data", label: "Specific Heat Ratio k (Cp/Cv)", getValue: (s) => s.specificHeatRatio, decimals: 2 },
+    { type: "data", label: "Viscosity", unit: "cP", getValue: (s) => s.viscosityCp, decimals: 4 },
 
-    { type: "section", label: "III. PRESSURE DATA" },
-    { type: "data", label: "Inlet Pressure", unit: "barg", getValue: (s) => s.inletPressureBarg, decimals: 2 },
-    { type: "data", label: "Outlet Pressure", unit: "barg", getValue: (s) => s.outletPressureBarg, decimals: 2 },
-    {
-        type: "data",
-        label: "Pressure Drop",
-        unit: "kPa",
-        getValue: (s, us) => us === "imperial" ? (s.pressureDropKPa ?? 0) * 0.145038 : s.pressureDropKPa,
-        decimals: 2
-    },
+    // III. PIPE, FITTING & ELEVATION
+    { type: "section", label: "III. PIPE, FITTING & ELEVATION" },
+    { type: "data", label: "Main Pipe DN", unit: "mm", getValue: (s) => s.diameter, decimals: 0 },
+    { type: "data", label: "Pipe Schedule", getValue: (s) => s.schedule ?? "—" },
+    { type: "data", label: "Main Pipe ID", unit: "mm", getValue: (s) => s.pipeID ?? s.diameter, decimals: 2 },
+    { type: "data", label: "Inlet Pipe DN", unit: "mm", getValue: (s) => s.inletPipeDN ?? "", decimals: 2 },
+    { type: "data", label: "Outlet Pipe DN", unit: "mm", getValue: (s) => s.outletPipeDN ?? "", decimals: 2 },
+    { type: "data", label: "Pipe Roughness", unit: "mm", getValue: (s) => s.roughnessMm, decimals: 4 },
+    { type: "data", label: "Pipe Length", unit: "m", getValue: (s) => s.length, decimals: 3 },
+    { type: "data", label: "Elevation Change (- for DOWN)", unit: "m", getValue: (s) => s.elevationChangeM ?? "N/A", decimals: 3 },
+    { type: "data", label: "Erosional Constant C (API 14E)", getValue: (s) => s.erosionalConstantC ?? 100 },
 
-    { type: "section", label: "IV. STATUS" },
+    // Fitting Count subsection
+    { type: "section", label: "Fitting Count" },
+    ...FITTING_TYPES.map(ft => ({
+        type: "data" as const,
+        label: ft.label,
+        getValue: (s: HydraulicSegmentResult) => getFittingCount(s, ft.key)
+    })),
+
+    // K-factors
+    { type: "data", label: "Fitting K", getValue: (s) => s.fittingK, decimals: 4 },
+    { type: "data", label: "Pipe Length K", getValue: (s) => s.pipeLengthK, decimals: 4 },
+    { type: "data", label: "User Supply K", getValue: (s) => s.userK ?? 0, decimals: 4 },
+    { type: "data", label: "Total K", getValue: (s) => s.totalK, decimals: 4 },
+    { type: "data", label: "Pipe & Fitting Safety Factor", unit: "%", getValue: (s) => (s.pipingFittingSafetyFactor ?? 0) * 100, decimals: 0 },
+    { type: "data", label: "Total K (with safety factor)", getValue: (s) => s.totalKWithSafety ?? s.totalK, decimals: 4 },
+
+    // IV. OPTIONAL CALCULATIONS
+    { type: "section", label: "IV. OPTIONAL CALCULATIONS" },
+    { type: "data", label: "Control Valve Cv", getValue: (s) => s.controlValveCv ?? "—" },
+    { type: "data", label: "Control Valve Cg", getValue: (s) => s.controlValveCg ?? "—" },
+    { type: "data", label: "Recovery Factor C1", getValue: (s) => s.recoveryFactorC1 ?? "—" },
+    { type: "data", label: "Terminal Pressure Drop Ratio (xT)", getValue: (s) => s.terminalDPRatioXT ?? "—" },
+    { type: "data", label: "Thin Sharp Edged Orifice d/D Ratio (β)", getValue: (s) => s.orificeBetaRatio ?? "—" },
+
+    // V. CHARACTERISTIC SUMMARY
+    { type: "section", label: "V. CHARACTERISTIC SUMMARY" },
+    { type: "data", label: "Reynolds Number", getValue: (s) => s.reynoldsNumber ? s.reynoldsNumber.toExponential(2) : "—" },
+    { type: "data", label: "Flow Regime", getValue: (s) => s.flowRegime ?? "Turbulent" },
+    { type: "data", label: "Moody Friction Factor", getValue: (s) => s.frictionFactor, decimals: 6 },
+    { type: "data", label: "Flow Momentum (ρv²)", unit: "Pa", getValue: (s) => s.flowMomentumPa, decimals: 2 },
+    { type: "data", label: "Critical Pressure", unit: "kPa(a)", getValue: (s) => s.criticalPressureKPa ?? "N/A" },
+
+    // VI. PRESSURE LOSSES SUMMARY
+    { type: "section", label: "VI. PRESSURE LOSSES SUMMARY" },
+    { type: "data", label: "Pipe & Fitting", unit: "kPa", getValue: (s) => s.pipeAndFittingDropKPa, decimals: 4 },
+    { type: "data", label: "Elevation Change", unit: "kPa", getValue: (s) => s.elevationDropKPa ?? "N/A", decimals: 4 },
+    { type: "data", label: "Control Valve Pressure Drop", unit: "kPa", getValue: (s) => s.controlValveDropKPa ?? "N/A" },
+    { type: "data", label: "Orifice Pressure Drop", unit: "kPa", getValue: (s) => s.orificeDropKPa ?? "N/A" },
+    { type: "data", label: "User Supplied Fixed Loss", unit: "kPa", getValue: (s) => s.userSpecifiedDropKPa ?? 0, decimals: 2 },
+    { type: "data", label: "Segment Total Loss", unit: "kPa", getValue: (s) => s.segmentTotalDropKPa ?? s.pressureDropKPa, decimals: 4 },
+    { type: "data", label: "Unit Friction Loss", unit: "kPa/100m", getValue: (s) => s.unitFrictionLossKPa100m, decimals: 4 },
+
+    // VII. RESULT SUMMARY
+    { type: "section", label: "VII. RESULT SUMMARY" },
+    { type: "data", label: "INLET Pressure", unit: "kPag", getValue: (s) => s.inletPressureBarg * 100, decimals: 2 },
+    { type: "data", label: "INLET Temperature", unit: "°C", getValue: (s) => s.inletTemperatureC, decimals: 2 },
+    { type: "data", label: "INLET Density", unit: "kg/m³", getValue: (s) => s.inletDensityKgM3, decimals: 2 },
+    { type: "data", label: "INLET Mach Number", getValue: (s) => s.inletMachNumber ?? "N/A", decimals: 4 },
+    { type: "data", label: "INLET Velocity", unit: "m/s", getValue: (s) => s.inletVelocityMs, decimals: 4 },
+    { type: "data", label: "INLET Erosional Velocity", unit: "m/s", getValue: (s) => s.inletErosionalVelocityMs, decimals: 4 },
+    { type: "data", label: "INLET Flow Momentum", unit: "Pa", getValue: (s) => s.inletFlowMomentumPa, decimals: 2 },
+    { type: "data", label: "OUTLET Pressure", unit: "kPag", getValue: (s) => s.outletPressureBarg * 100, decimals: 2 },
+    { type: "data", label: "OUTLET Temperature", unit: "°C", getValue: (s) => s.outletTemperatureC, decimals: 2 },
+    { type: "data", label: "OUTLET Density", unit: "kg/m³", getValue: (s) => s.outletDensityKgM3, decimals: 2 },
+    { type: "data", label: "OUTLET Mach Number", getValue: (s) => s.outletMachNumber ?? "N/A", decimals: 4 },
+    { type: "data", label: "OUTLET Velocity", unit: "m/s", getValue: (s) => s.outletVelocityMs, decimals: 4 },
+    { type: "data", label: "OUTLET Erosional Velocity", unit: "m/s", getValue: (s) => s.outletErosionalVelocityMs, decimals: 4 },
+    { type: "data", label: "OUTLET Flow Momentum", unit: "Pa", getValue: (s) => s.outletFlowMomentumPa, decimals: 2 },
+
+    // VIII. STATUS
+    { type: "section", label: "VIII. STATUS" },
     {
         type: "data",
         label: "Choked",
