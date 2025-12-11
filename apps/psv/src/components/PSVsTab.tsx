@@ -33,7 +33,7 @@ import { usePsvStore } from "@/store/usePsvStore";
 
 export function PSVsTab() {
     const theme = useTheme();
-    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+    const isMobile = useMediaQuery(theme.breakpoints.down('lg'));
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const { addProtectiveSystem, updateProtectiveSystem, deleteProtectiveSystem } = usePsvStore();
@@ -163,128 +163,237 @@ export function PSVsTab() {
                 }}
             />
 
-            {/* Table */}
-            <Paper sx={{ ...glassCardStyles, p: 0, overflow: 'hidden' }}>
-                <TableContainer sx={{
-                    maxHeight: { xs: 'calc(100vh - 400px)', sm: 'calc(100vh - 350px)' },
-                    overflowX: 'auto',
-                    '&::-webkit-scrollbar': {
-                        height: 8,
-                    },
-                    '&::-webkit-scrollbar-thumb': {
-                        backgroundColor: 'rgba(0,0,0,0.2)',
-                        borderRadius: 4,
-                    },
-                }}>
-                    <Table stickyHeader sx={{ minWidth: { xs: 800, sm: 'auto' } }}>
-                        <TableHead>
-                            <TableRow>
-                                <TableCell>Tag</TableCell>
-                                <TableCell>Area</TableCell>
-                                <TableCell>Service Fluid</TableCell>
-                                <TableCell>Set Pressure</TableCell>
-                                <TableCell>Status</TableCell>
-                                <TableCell>Owner</TableCell>
-                                <TableCell align="right">Actions</TableCell>
-                            </TableRow>
-                        </TableHead>
-                        <TableBody>
-                            {filteredPSVs.map((psv) => {
-                                const area = areas.find(a => a.id === psv.areaId);
-                                const unit = area ? units.find(u => u.id === area.unitId) : null;
-                                const owner = users.find(u => u.id === psv.ownerId);
+            {/* Mobile Card View */}
+            {isMobile ? (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    {filteredPSVs.map((psv) => {
+                        const area = areas.find(a => a.id === psv.areaId);
+                        const unit = area ? units.find(u => u.id === area.unitId) : null;
+                        const owner = users.find(u => u.id === psv.ownerId);
 
-                                return (
-                                    <TableRow
-                                        key={psv.id}
-                                        hover
-                                        sx={{
-                                            '&:last-child td': {
-                                                borderBottom: 0
-                                            }
-                                        }}
-                                    >
-                                        <TableCell>
-                                            <Typography variant="body2" fontWeight={600}>
+                        return (
+                            <Card key={psv.id} sx={{ ...glassCardStyles }}>
+                                <CardContent sx={{ pb: 1 }}>
+                                    {/* Tag and Status */}
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+                                        <Box sx={{ flex: 1, minWidth: 0, mr: 1 }}>
+                                            <Typography variant="h6" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
                                                 {psv.tag}
                                             </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {psv.name} • {getTypeLabel(psv.type)}
+                                            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5 }}>
+                                                {psv.name}
                                             </Typography>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="body2">
+                                            <Typography variant="caption" color="text.secondary">
+                                                {getTypeLabel(psv.type)}
+                                            </Typography>
+                                        </Box>
+                                        <Chip
+                                            label={psv.status.replace('_', ' ')}
+                                            size="small"
+                                            color={getStatusColor(psv.status)}
+                                            sx={{ textTransform: 'capitalize', flexShrink: 0 }}
+                                        />
+                                    </Box>
+
+                                    {/* Details Grid */}
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 2 }}>
+                                        <Box>
+                                            <Typography variant="caption" color="text.secondary" display="block">
+                                                Set Pressure
+                                            </Typography>
+                                            <Typography variant="body2" fontWeight={500}>
+                                                {psv.setPressure.toFixed(1)} barg
+                                            </Typography>
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="caption" color="text.secondary" display="block">
+                                                Owner
+                                            </Typography>
+                                            <Typography variant="body2" fontWeight={500}>
+                                                {owner?.name || 'N/A'}
+                                            </Typography>
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="caption" color="text.secondary" display="block">
+                                                Area
+                                            </Typography>
+                                            <Typography variant="body2" fontWeight={500}>
                                                 {area?.name || 'N/A'}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
                                                 {unit?.code || ''}
                                             </Typography>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="body2">
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="caption" color="text.secondary" display="block">
+                                                Service Fluid
+                                            </Typography>
+                                            <Typography variant="body2" fontWeight={500}>
                                                 {psv.serviceFluid}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
                                                 {psv.fluidPhase.toUpperCase()}
                                             </Typography>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="body2">
-                                                {psv.setPressure.toFixed(1)} barg
+                                        </Box>
+                                    </Box>
+                                </CardContent>
+                                {canEdit && (
+                                    <CardActions sx={{ justifyContent: 'flex-end', pt: 0, px: 2, pb: 1.5 }}>
+                                        <Tooltip title="Edit">
+                                            <IconButton
+                                                size="medium"
+                                                onClick={() => handleEdit(psv)}
+                                                sx={{ color: 'primary.main' }}
+                                            >
+                                                <Edit fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                        <Tooltip title="Delete">
+                                            <IconButton
+                                                size="medium"
+                                                color="error"
+                                                onClick={() => handleDelete(psv)}
+                                            >
+                                                <Delete fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    </CardActions>
+                                )}
+                            </Card>
+                        );
+                    })}
+                    {filteredPSVs.length === 0 && (
+                        <Paper sx={{ ...glassCardStyles, p: 4, textAlign: 'center' }}>
+                            <Typography color="text.secondary">
+                                {searchText ? 'No PSVs match your search.' : 'No PSVs found. Click "Add PSV" to create one.'}
+                            </Typography>
+                        </Paper>
+                    )}
+                </Box>
+            ) : (
+                /* Desktop Table View */
+                <Paper sx={{ ...glassCardStyles, p: 0, overflow: 'hidden' }}>
+                    <TableContainer sx={{
+                        maxHeight: 'calc(100vh - 350px)',
+                        overflowX: 'auto',
+                        '&::-webkit-scrollbar': {
+                            height: 8,
+                        },
+                        '&::-webkit-scrollbar-thumb': {
+                            backgroundColor: 'rgba(0,0,0,0.2)',
+                            borderRadius: 4,
+                        },
+                    }}>
+                        <Table stickyHeader>
+                            <TableHead>
+                                <TableRow>
+                                    <TableCell>Tag</TableCell>
+                                    <TableCell>Area</TableCell>
+                                    <TableCell>Service Fluid</TableCell>
+                                    <TableCell>Set Pressure</TableCell>
+                                    <TableCell>Status</TableCell>
+                                    <TableCell>Owner</TableCell>
+                                    <TableCell align="right">Actions</TableCell>
+                                </TableRow>
+                            </TableHead>
+                            <TableBody>
+                                {filteredPSVs.map((psv) => {
+                                    const area = areas.find(a => a.id === psv.areaId);
+                                    const unit = area ? units.find(u => u.id === area.unitId) : null;
+                                    const owner = users.find(u => u.id === psv.ownerId);
+
+                                    return (
+                                        <TableRow
+                                            key={psv.id}
+                                            hover
+                                            sx={{
+                                                '&:last-child td': {
+                                                    borderBottom: 0
+                                                }
+                                            }}
+                                        >
+                                            <TableCell>
+                                                <Typography variant="body2" fontWeight={600}>
+                                                    {psv.tag}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {psv.name} • {getTypeLabel(psv.type)}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2">
+                                                    {area?.name || 'N/A'}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {unit?.code || ''}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2">
+                                                    {psv.serviceFluid}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {psv.fluidPhase.toUpperCase()}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2">
+                                                    {psv.setPressure.toFixed(1)} barg
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={psv.status.replace('_', ' ')}
+                                                    size="small"
+                                                    color={getStatusColor(psv.status)}
+                                                    sx={{ textTransform: 'capitalize' }}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Typography variant="body2">
+                                                    {owner?.name || 'N/A'}
+                                                </Typography>
+                                            </TableCell>
+                                            <TableCell align="right">
+                                                {canEdit && (
+                                                    <>
+                                                        <Tooltip title="Edit">
+                                                            <IconButton
+                                                                size="small"
+                                                                onClick={() => handleEdit(psv)}
+                                                            >
+                                                                <Edit fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <Tooltip title="Delete">
+                                                            <IconButton
+                                                                size="small"
+                                                                color="error"
+                                                                onClick={() => handleDelete(psv)}
+                                                            >
+                                                                <Delete fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </>
+                                                )}
+                                            </TableCell>
+                                        </TableRow>
+                                    );
+                                })}
+                                {filteredPSVs.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
+                                            <Typography color="text.secondary">
+                                                {searchText ? 'No PSVs match your search.' : 'No PSVs found. Click "Add PSV" to create one.'}
                                             </Typography>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Chip
-                                                label={psv.status.replace('_', ' ')}
-                                                size="small"
-                                                color={getStatusColor(psv.status)}
-                                                sx={{ textTransform: 'capitalize' }}
-                                            />
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography variant="body2">
-                                                {owner?.name || 'N/A'}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell align="right">
-                                            {canEdit && (
-                                                <>
-                                                    <Tooltip title="Edit">
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => handleEdit(psv)}
-                                                        >
-                                                            <Edit fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                    <Tooltip title="Delete">
-                                                        <IconButton
-                                                            size="small"
-                                                            color="error"
-                                                            onClick={() => handleDelete(psv)}
-                                                        >
-                                                            <Delete fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                </>
-                                            )}
                                         </TableCell>
                                     </TableRow>
-                                );
-                            })}
-                            {filteredPSVs.length === 0 && (
-                                <TableRow>
-                                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
-                                        <Typography color="text.secondary">
-                                            {searchText ? 'No PSVs match your search.' : 'No PSVs found. Click "Add PSV" to create one.'}
-                                        </Typography>
-                                    </TableCell>
-                                </TableRow>
-                            )}
-                        </TableBody>
-                    </Table>
-                </TableContainer>
-            </Paper>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+                </Paper>
+            )}
 
             {/* Add/Edit Dialog */}
             {dialogOpen && (
