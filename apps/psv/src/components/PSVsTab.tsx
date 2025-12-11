@@ -152,8 +152,6 @@ export function PSVsTab() {
                         <TableHead>
                             <TableRow>
                                 <TableCell>Tag</TableCell>
-                                <TableCell>Name</TableCell>
-                                <TableCell>Type</TableCell>
                                 <TableCell>Area</TableCell>
                                 <TableCell>Service Fluid</TableCell>
                                 <TableCell>Set Pressure</TableCell>
@@ -182,14 +180,9 @@ export function PSVsTab() {
                                             <Typography variant="body2" fontWeight={600}>
                                                 {psv.tag}
                                             </Typography>
-                                        </TableCell>
-                                        <TableCell>{psv.name}</TableCell>
-                                        <TableCell>
-                                            <Chip
-                                                label={getTypeLabel(psv.type)}
-                                                size="small"
-                                                variant="outlined"
-                                            />
+                                            <Typography variant="caption" color="text.secondary">
+                                                {psv.name} • {getTypeLabel(psv.type)}
+                                            </Typography>
                                         </TableCell>
                                         <TableCell>
                                             <Typography variant="body2">
@@ -253,7 +246,7 @@ export function PSVsTab() {
                             })}
                             {filteredPSVs.length === 0 && (
                                 <TableRow>
-                                    <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
+                                    <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                                         <Typography color="text.secondary">
                                             {searchText ? 'No PSVs match your search.' : 'No PSVs found. Click "Add PSV" to create one.'}
                                         </Typography>
