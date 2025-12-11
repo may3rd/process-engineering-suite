@@ -85,6 +85,7 @@ export function OwnerSelector({
                                     />
                                 </span>
                             }
+                            secondaryTypographyProps={{ component: 'div' }}
                         />
                     </MenuItem>
                 ))}
