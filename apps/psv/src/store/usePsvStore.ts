@@ -750,7 +750,12 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     },
 
     deleteProject: (id) => {
+        // Remove project ID from all PSVs that reference it
         set((state) => ({
+            protectiveSystems: state.protectiveSystems.map(psv => ({
+                ...psv,
+                projectIds: (psv.projectIds || []).filter(pid => pid !== id)
+            })),
             projects: state.projects.filter(p => p.id !== id),
             selectedProject: state.selectedProject?.id === id ? null : state.selectedProject,
         }));

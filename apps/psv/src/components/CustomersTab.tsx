@@ -90,13 +90,20 @@ export function CustomersTab() {
             const areaIds = areasToDelete.map(a => a.id);
 
             const projectsToDelete = projects.filter(p => areaIds.includes(p.areaId));
+            const projectIds = projectsToDelete.map(p => p.id);
             const psvsToDelete = protectiveSystems.filter(p => areaIds.includes(p.areaId));
             const equipmentToDelete = equipment.filter(e => areaIds.includes(e.areaId));
 
             // Delete all entities from bottom-up
             usePsvStore.setState((state) => ({
                 equipment: state.equipment.filter(e => !areaIds.includes(e.areaId)),
-                protectiveSystems: state.protectiveSystems.filter(p => !areaIds.includes(p.areaId)),
+                // Remove project IDs from PSVs before deleting PSVs
+                protectiveSystems: state.protectiveSystems
+                    .map(psv => ({
+                        ...psv,
+                        projectIds: (psv.projectIds || []).filter(pid => !projectIds.includes(pid))
+                    }))
+                    .filter(p => !areaIds.includes(p.areaId)),
                 projects: state.projects.filter(p => !areaIds.includes(p.areaId)),
                 areas: state.areas.filter(a => !unitIds.includes(a.unitId)),
                 units: state.units.filter(u => !plantIds.includes(u.plantId)),
