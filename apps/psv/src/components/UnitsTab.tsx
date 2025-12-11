@@ -15,8 +15,9 @@ import {
     Chip,
     Typography,
     Tooltip,
+    TextField,
 } from "@mui/material";
-import { Add, Edit, Delete, Category } from "@mui/icons-material";
+import { Add, Edit, Delete, Category, Search } from "@mui/icons-material";
 import { units, plants, users, getAreasByUnit } from "@/data/mockData";
 import { Unit } from "@/data/types";
 import { glassCardStyles } from "./styles";
@@ -34,6 +35,7 @@ export function UnitsTab() {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
     const [unitToDelete, setUnitToDelete] = useState<Unit | null>(null);
+    const [searchText, setSearchText] = useState('');
 
     const handleAdd = () => {
         setSelectedUnit(null);
@@ -83,6 +85,20 @@ export function UnitsTab() {
         return getAreasByUnit(unitId).length;
     };
 
+    // Filter units based on search text
+    const filteredUnits = units.filter(unit => {
+        if (!searchText) return true;
+        const search = searchText.toLowerCase();
+        const plant = plants.find(p => p.id === unit.plantId);
+        const owner = users.find(u => u.id === unit.ownerId);
+        return (
+            unit.code.toLowerCase().includes(search) ||
+            unit.name.toLowerCase().includes(search) ||
+            plant?.name.toLowerCase().includes(search) ||
+            owner?.name.toLowerCase().includes(search)
+        );
+    });
+
     return (
         <Box>
             {/* Header */}
@@ -104,6 +120,19 @@ export function UnitsTab() {
                 )}
             </Box>
 
+            {/* Search Bar */}
+            <TextField
+                placeholder="Search by code, name, plant, or owner..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                size="small"
+                fullWidth
+                sx={{ mb: 2 }}
+                InputProps={{
+                    startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
+                }}
+            />
+
             {/* Table */}
             <Paper sx={{ ...glassCardStyles, p: 0 }}>
                 <TableContainer>
@@ -121,7 +150,7 @@ export function UnitsTab() {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {units.map((unit) => {
+                            {filteredUnits.map((unit) => {
                                 const plant = plants.find(p => p.id === unit.plantId);
                                 const owner = users.find(u => u.id === unit.ownerId);
                                 const areaCount = getAreaCount(unit.id);
@@ -198,11 +227,11 @@ export function UnitsTab() {
                                     </TableRow>
                                 );
                             })}
-                            {units.length === 0 && (
+                            {filteredUnits.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                                         <Typography color="text.secondary">
-                                            No units found. Click "Add Unit" to create one.
+                                            {searchText ? 'No units match your search.' : 'No units found. Click "Add Unit" to create one.'}
                                         </Typography>
                                     </TableCell>
                                 </TableRow>

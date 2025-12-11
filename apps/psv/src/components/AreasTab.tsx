@@ -16,8 +16,9 @@ import {
     Typography,
     Tooltip,
     Badge,
+    TextField,
 } from "@mui/material";
-import { Add, Edit, Delete, Map } from "@mui/icons-material";
+import { Add, Edit, Delete, Map, Search } from "@mui/icons-material";
 import {
     areas,
     units,
@@ -41,6 +42,7 @@ export function AreasTab() {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedArea, setSelectedArea] = useState<Area | null>(null);
     const [areaToDelete, setAreaToDelete] = useState<Area | null>(null);
+    const [searchText, setSearchText] = useState('');
 
     const handleAdd = () => {
         setSelectedArea(null);
@@ -94,6 +96,18 @@ export function AreasTab() {
         };
     };
 
+    // Filter areas based on search text
+    const filteredAreas = areas.filter(area => {
+        if (!searchText) return true;
+        const search = searchText.toLowerCase();
+        const unit = units.find(u => u.id === area.unitId);
+        return (
+            area.code.toLowerCase().includes(search) ||
+            area.name.toLowerCase().includes(search) ||
+            unit?.name.toLowerCase().includes(search)
+        );
+    });
+
     return (
         <Box>
             {/* Header */}
@@ -115,6 +129,19 @@ export function AreasTab() {
                 )}
             </Box>
 
+            {/* Search Bar */}
+            <TextField
+                placeholder="Search by code, name, or unit..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                size="small"
+                fullWidth
+                sx={{ mb: 2 }}
+                InputProps={{
+                    startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
+                }}
+            />
+
             {/* Table */}
             <Paper sx={{ ...glassCardStyles, p: 0 }}>
                 <TableContainer>
@@ -133,7 +160,7 @@ export function AreasTab() {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {areas.map((area) => {
+                            {filteredAreas.map((area) => {
                                 const unit = units.find(u => u.id === area.unitId);
                                 const counts = getAssetCounts(area.id);
 
@@ -218,11 +245,11 @@ export function AreasTab() {
                                     </TableRow>
                                 );
                             })}
-                            {areas.length === 0 && (
+                            {filteredAreas.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
                                         <Typography color="text.secondary">
-                                            No areas found. Click "Add Area" to create one.
+                                            {searchText ? 'No areas match your search.' : 'No areas found. Click "Add Area" to create one.'}
                                         </Typography>
                                     </TableCell>
                                 </TableRow>

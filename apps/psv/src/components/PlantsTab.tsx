@@ -15,8 +15,9 @@ import {
     Chip,
     Typography,
     Tooltip,
+    TextField,
 } from "@mui/material";
-import { Add, Edit, Delete, Apartment } from "@mui/icons-material";
+import { Add, Edit, Delete, Apartment, Search } from "@mui/icons-material";
 import { plants, customers, users, getUnitsByPlant } from "@/data/mockData";
 import { Plant } from "@/data/types";
 import { glassCardStyles } from "./styles";
@@ -34,6 +35,7 @@ export function PlantsTab() {
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
     const [plantToDelete, setPlantToDelete] = useState<Plant | null>(null);
+    const [searchText, setSearchText] = useState('');
 
     const handleAdd = () => {
         setSelectedPlant(null);
@@ -83,6 +85,20 @@ export function PlantsTab() {
         return getUnitsByPlant(plantId).length;
     };
 
+    // Filter plants based on search text
+    const filteredPlants = plants.filter(plant => {
+        if (!searchText) return true;
+        const search = searchText.toLowerCase();
+        const customer = customers.find(c => c.id === plant.customerId);
+        const owner = users.find(u => u.id === plant.ownerId);
+        return (
+            plant.code.toLowerCase().includes(search) ||
+            plant.name.toLowerCase().includes(search) ||
+            customer?.name.toLowerCase().includes(search) ||
+            owner?.name.toLowerCase().includes(search)
+        );
+    });
+
     return (
         <Box>
             {/* Header */}
@@ -104,6 +120,19 @@ export function PlantsTab() {
                 )}
             </Box>
 
+            {/* Search Bar */}
+            <TextField
+                placeholder="Search by code, name, customer, or owner..."
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                size="small"
+                fullWidth
+                sx={{ mb: 2 }}
+                InputProps={{
+                    startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
+                }}
+            />
+
             {/* Table */}
             <Paper sx={{ ...glassCardStyles, p: 0 }}>
                 <TableContainer>
@@ -121,7 +150,7 @@ export function PlantsTab() {
                             </TableRow>
                         </TableHead>
                         <TableBody>
-                            {plants.map((plant) => {
+                            {filteredPlants.map((plant) => {
                                 const customer = customers.find(c => c.id === plant.customerId);
                                 const owner = users.find(u => u.id === plant.ownerId);
                                 const unitCount = getUnitCount(plant.id);
@@ -198,11 +227,11 @@ export function PlantsTab() {
                                     </TableRow>
                                 );
                             })}
-                            {plants.length === 0 && (
+                            {filteredPlants.length === 0 && (
                                 <TableRow>
                                     <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                                         <Typography color="text.secondary">
-                                            No plants found. Click "Add Plant" to create one.
+                                            {searchText ? 'No plants match your search.' : 'No plants found. Click "Add Plant" to create one.'}
                                         </Typography>
                                     </TableCell>
                                 </TableRow>
