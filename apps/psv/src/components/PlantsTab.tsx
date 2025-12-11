@@ -127,7 +127,15 @@ export function PlantsTab() {
                                 const unitCount = getUnitCount(plant.id);
 
                                 return (
-                                    <TableRow key={plant.id} hover>
+                                    <TableRow
+                                        key={plant.id}
+                                        hover
+                                        sx={{
+                                            '&:last-child td': {
+                                                borderBottom: 0
+                                            }
+                                        }}
+                                    >
                                         <TableCell>
                                             <Typography variant="body2" fontWeight={600}>
                                                 {plant.code}

@@ -127,7 +127,15 @@ export function UnitsTab() {
                                 const areaCount = getAreaCount(unit.id);
 
                                 return (
-                                    <TableRow key={unit.id} hover>
+                                    <TableRow
+                                        key={unit.id}
+                                        hover
+                                        sx={{
+                                            '&:last-child td': {
+                                                borderBottom: 0
+                                            }
+                                        }}
+                                    >
                                         <TableCell>
                                             <Typography variant="body2" fontWeight={600}>
                                                 {unit.code}

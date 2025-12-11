@@ -88,7 +88,7 @@ export function DashboardPage() {
                 sx={{
                     ...glassCardStyles,
                     p: 3,
-                    borderRadius: 0,
+                    borderRadius: '12px', // Added border radius
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',

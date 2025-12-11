@@ -130,7 +130,15 @@ export function CustomersTab() {
                                 const plantCount = getPlantCount(customer.id);
 
                                 return (
-                                    <TableRow key={customer.id} hover>
+                                    <TableRow
+                                        key={customer.id}
+                                        hover
+                                        sx={{
+                                            '&:last-child td': {
+                                                borderBottom: 0
+                                            }
+                                        }}
+                                    >
                                         <TableCell>
                                             <Typography variant="body2" fontWeight={600}>
                                                 {customer.code}
