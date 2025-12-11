@@ -22,10 +22,43 @@ export interface NetworkCalculationOptions {
 interface NetworkSegmentResult {
     pipeId: string;
     name?: string;
+    // Dimensions
+    diameter?: number;
+    length?: number;
+    // Hydraulics
     pressureDropPa?: number;
     reynoldsNumber?: number;
     frictionFactor?: number;
     totalK?: number;
+    velocity?: number;
+    machNumber?: number;
+    // State
+    inletPressurePa?: number;
+    outletPressurePa?: number;
+    inletTemperatureK?: number;
+    outletTemperatureK?: number;
+    inletDensity?: number;
+    outletDensity?: number;
+    // Alerts
+    isChoked?: boolean;
+    isErosional?: boolean;
+}
+
+export interface HydraulicSegmentResult {
+    pipeId: string;
+    name: string;
+    diameter: number;
+    length: number;
+    pressureDropKPa: number;
+    reynoldsNumber: number;
+    frictionFactor: number;
+    totalK: number;
+    velocity: number;
+    machNumber?: number;
+    inletPressureBarg: number;
+    outletPressureBarg: number;
+    isChoked: boolean;
+    isErosional: boolean;
 }
 
 interface NetworkHydraulicsResult {
@@ -33,6 +66,8 @@ interface NetworkHydraulicsResult {
     segments: NetworkSegmentResult[];
     finalPressurePa?: number;
     finalTemperatureK?: number;
+    hasChokedFlow?: boolean;
+    warnings: string[];
 }
 
 const FALLBACK_PRESSURE_DROP_PER_M_KPA = 0.01;
@@ -168,11 +203,19 @@ function runNetworkHydraulics(
 ): NetworkHydraulicsResult | null {
     const normalizedMassFlow = Math.abs(massFlowRate);
     if (!isPositive(normalizedMassFlow) || !network?.pipes?.length) {
+        console.warn('[Hydraulic] Early exit: invalid massFlow or no pipes', {
+            massFlowRate,
+            normalizedMassFlow,
+            pipeCount: network?.pipes?.length,
+        });
         return null;
     }
 
     const baseFluid = buildFluid(fluid);
     if (!baseFluid) {
+        console.warn('[Hydraulic] Early exit: buildFluid returned null', {
+            inputFluid: fluid,
+        });
         return null;
     }
 
@@ -188,6 +231,14 @@ function runNetworkHydraulics(
     );
 
     if (!isPositive(initialPressurePa) || !isPositive(initialTemperatureK)) {
+        console.warn('[Hydraulic] Early exit: invalid pressure or temperature', {
+            boundaryPressure: options?.boundaryPressure,
+            boundaryPressureUnit: options?.boundaryPressureUnit,
+            initialPressurePa,
+            boundaryTemperature: options?.boundaryTemperature,
+            boundaryTemperatureUnit: options?.boundaryTemperatureUnit,
+            initialTemperatureK,
+        });
         return null;
     }
 
@@ -195,6 +246,17 @@ function runNetworkHydraulics(
     let currentTemperatureK = initialTemperatureK;
     const segments: NetworkSegmentResult[] = [];
     let totalDropPa = 0;
+
+    console.group('[Hydraulic Calculation] Network Hydraulics');
+    console.log('Input:', {
+        massFlowRate: normalizedMassFlow,
+        direction: options?.direction,
+        fluidPhase: baseFluid.phase,
+        initialPressurePa,
+        initialTemperatureK,
+        pipeCount: network.pipes.length,
+    });
+    console.log('Base Fluid:', baseFluid);
 
     for (const pipe of network.pipes) {
         const direction: CalcDirection = options?.direction ?? (pipe.direction as CalcDirection) ?? "forward";
@@ -211,37 +273,135 @@ function runNetworkHydraulics(
         const solvedPipe = recalculatePipeFittingLosses(resolvedPipe);
         const dropPa = solvedPipe.pressureDropCalculationResults?.totalSegmentPressureDrop;
 
+        console.log(`[Pipe: ${pipe.name}]`, {
+            input: {
+                diameter: resolvedPipe.diameter,
+                length: resolvedPipe.length,
+                roughness: resolvedPipe.roughness,
+                elevation: resolvedPipe.elevation,
+                direction,
+                boundaryPressure: resolvedPipe.boundaryPressure,
+                massFlowRate: resolvedPipe.massFlowRate,
+                fittings: resolvedPipe.fittings?.length || 0,
+                fluid: mergedFluid,
+            },
+            output: {
+                pressureDropPa: dropPa,
+                reynolds: solvedPipe.pressureDropCalculationResults?.reynoldsNumber,
+                frictionFactor: solvedPipe.pressureDropCalculationResults?.frictionalFactor,
+                totalK: solvedPipe.pressureDropCalculationResults?.totalK,
+                velocity: solvedPipe.velocity,
+            },
+            resultSummary: solvedPipe.resultSummary,
+        });
+
         if (typeof dropPa === "number" && Number.isFinite(dropPa)) {
             totalDropPa += dropPa;
         }
 
+        // Detect choked flow from gas solver
+        const inletState = solvedPipe.resultSummary?.inletState as {
+            is_choked?: boolean;
+            pressure?: number;
+            temperature?: number;
+            density?: number;
+            velocity?: number;
+            machNumber?: number;
+            erosionalVelocity?: number;
+        } | undefined;
+        const outletState = solvedPipe.resultSummary?.outletState as {
+            is_choked?: boolean;
+            pressure?: number;
+            temperature?: number;
+            density?: number;
+            velocity?: number;
+            machNumber?: number;
+            erosionalVelocity?: number;
+        } | undefined;
+        const pipeIsChoked = inletState?.is_choked === true || outletState?.is_choked === true;
+        const pipeIsErosional = (inletState?.velocity && inletState?.erosionalVelocity && inletState.velocity > inletState.erosionalVelocity) ||
+            (outletState?.velocity && outletState?.erosionalVelocity && outletState.velocity > outletState.erosionalVelocity);
+
+        console.log(`[Choke Detection] Pipe: ${pipe.name}`, {
+            inletState_is_choked: inletState?.is_choked,
+            outletState_is_choked: outletState?.is_choked,
+            pipeIsChoked,
+            resultSummary: solvedPipe.resultSummary,
+        });
+
+        // Track the inlet pressure BEFORE this calculation (current chain position)
+        const segmentInletPressurePa = currentPressurePa;
+
         segments.push({
             pipeId: pipe.id,
             name: pipe.name,
+            // Dimensions
+            diameter: resolvedPipe.diameter,
+            length: resolvedPipe.length,
+            // Hydraulics
             pressureDropPa: dropPa,
             reynoldsNumber: solvedPipe.pressureDropCalculationResults?.reynoldsNumber,
             frictionFactor: solvedPipe.pressureDropCalculationResults?.frictionalFactor,
             totalK: solvedPipe.pressureDropCalculationResults?.totalK,
+            velocity: solvedPipe.velocity,
+            machNumber: outletState?.machNumber ?? inletState?.machNumber,
+            // State - use tracked chain pressures, not resultSummary which may have direction issues
+            inletPressurePa: segmentInletPressurePa,
+            outletPressurePa: undefined, // will be set after we calculate the outlet
+            inletTemperatureK: inletState?.temperature,
+            outletTemperatureK: outletState?.temperature,
+            inletDensity: inletState?.density,
+            outletDensity: outletState?.density,
+            // Alerts
+            isChoked: pipeIsChoked,
+            isErosional: pipeIsErosional === true,
         });
 
-        const outletState = solvedPipe.resultSummary?.outletState;
+        // Update the chain position for the next pipe
         if (outletState?.pressure !== undefined && Number.isFinite(outletState.pressure)) {
             currentPressurePa = outletState.pressure;
         } else if (typeof dropPa === "number" && Number.isFinite(dropPa)) {
             currentPressurePa = direction === "backward" ? currentPressurePa + dropPa : currentPressurePa - dropPa;
         }
 
+        // Now update the segment's outlet pressure with the calculated chain position
+        segments[segments.length - 1].outletPressurePa = currentPressurePa;
+
         if (outletState?.temperature !== undefined && Number.isFinite(outletState.temperature)) {
             currentTemperatureK = outletState.temperature;
         }
     }
 
-    return {
+    // Check for any choked segments
+    const chokedSegments = segments.filter(s => s.isChoked);
+    const hasChokedFlow = chokedSegments.length > 0;
+    const warnings: string[] = [];
+
+    if (hasChokedFlow) {
+        const chokedNames = chokedSegments.map(s => s.name || s.pipeId).join(', ');
+        warnings.push(`Choked flow detected in: ${chokedNames}. Pressure drop calculation may be inaccurate.`);
+    }
+
+    const result: NetworkHydraulicsResult = {
         totalPressureDropPa: totalDropPa,
         segments,
         finalPressurePa: currentPressurePa,
         finalTemperatureK: currentTemperatureK,
+        hasChokedFlow,
+        warnings,
     };
+
+    console.log('Final Result:', {
+        totalPressureDropPa: totalDropPa,
+        totalPressureDropKPa: totalDropPa / 1000,
+        finalPressurePa: currentPressurePa,
+        segmentCount: segments.length,
+        hasChokedFlow,
+        warnings,
+    });
+    console.groupEnd();
+
+    return result;
 }
 
 export function calculateNetworkPressureDrop(
@@ -260,6 +420,59 @@ export function calculateNetworkPressureDrop(
     }
 
     return fallbackNetworkPressureDrop(network);
+}
+
+export interface NetworkPressureDropResult {
+    pressureDropKPa: number;
+    hasChokedFlow: boolean;
+    warnings: string[];
+    segments: HydraulicSegmentResult[];
+}
+
+export function calculateNetworkPressureDropWithWarnings(
+    network: PipelineNetwork | undefined,
+    massFlowRate: number,
+    fluid: FluidProperties,
+    options?: NetworkCalculationOptions
+): NetworkPressureDropResult {
+    if (!network || !network.pipes?.length) {
+        return { pressureDropKPa: 0, hasChokedFlow: false, warnings: [], segments: [] };
+    }
+
+    const result = runNetworkHydraulics(network, massFlowRate, fluid, options);
+    if (result) {
+        // Convert internal segments to exported format
+        const exportedSegments: HydraulicSegmentResult[] = result.segments.map(seg => ({
+            pipeId: seg.pipeId,
+            name: seg.name || seg.pipeId,
+            diameter: seg.diameter || 0,
+            length: seg.length || 0,
+            pressureDropKPa: (seg.pressureDropPa || 0) / 1000,
+            reynoldsNumber: seg.reynoldsNumber || 0,
+            frictionFactor: seg.frictionFactor || 0,
+            totalK: seg.totalK || 0,
+            velocity: seg.velocity || 0,
+            machNumber: seg.machNumber,
+            inletPressureBarg: seg.inletPressurePa ? convertValue(seg.inletPressurePa, 'Pa', 'barg') || 0 : 0,
+            outletPressureBarg: seg.outletPressurePa ? convertValue(seg.outletPressurePa, 'Pa', 'barg') || 0 : 0,
+            isChoked: seg.isChoked || false,
+            isErosional: seg.isErosional || false,
+        }));
+
+        return {
+            pressureDropKPa: result.totalPressureDropPa / 1000,
+            hasChokedFlow: result.hasChokedFlow ?? false,
+            warnings: result.warnings,
+            segments: exportedSegments,
+        };
+    }
+
+    return {
+        pressureDropKPa: fallbackNetworkPressureDrop(network),
+        hasChokedFlow: false,
+        warnings: [],
+        segments: [],
+    };
 }
 
 export function validateInletPressureDrop(

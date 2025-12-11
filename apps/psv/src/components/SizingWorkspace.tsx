@@ -52,6 +52,8 @@ import {
 } from "@mui/icons-material";
 import { SizingCase, PipelineNetwork, PipeProps, ORIFICE_SIZES, SizingInputs, UnitPreferences } from "@/data/types";
 import { PipelineDataGrid } from "./PipelineDataGrid";
+import { PipeEditorDialog } from "./PipeEditorDialog";
+import { HydraulicReportTable } from "./HydraulicReportTable";
 import { v4 as uuidv4 } from "uuid";
 import { calculateSizing } from "@/lib/psvSizing";
 import { useUnitConversion, UnitType } from "@/hooks/useUnitConversion";
@@ -59,6 +61,8 @@ import type { FluidProperties } from "@/lib/apiClient";
 import {
     validateInletPressureDrop,
     calculateNetworkPressureDrop,
+    calculateNetworkPressureDropWithWarnings,
+    type NetworkPressureDropResult,
 } from "@/lib/hydraulicValidation";
 import {
     validateSizingInputs,
@@ -146,6 +150,16 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
+
+    // Pipe editor dialog state
+    const [pipeEditorOpen, setPipeEditorOpen] = useState(false);
+    const [editingPipe, setEditingPipe] = useState<PipeProps | null>(null);
+    const [editingPipeType, setEditingPipeType] = useState<'inlet' | 'outlet'>('inlet');
+
+    // Hydraulic calculation warnings (e.g., choked flow)
+    const [hydraulicWarnings, setHydraulicWarnings] = useState<string[]>([]);
+    const [inletHydraulicResult, setInletHydraulicResult] = useState<NetworkPressureDropResult | null>(null);
+    const [outletHydraulicResult, setOutletHydraulicResult] = useState<NetworkPressureDropResult | null>(null);
 
     // Auto-fill molecular weight for steam (H₂O = 18.01528 g/mol)
     useEffect(() => {
@@ -280,8 +294,35 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
     };
 
     const handleEditPipe = (id: string, type: 'inlet' | 'outlet') => {
-        console.log(`Edit ${type} pipe`, id);
-        // TODO: Open detailed pipe editor dialog
+        const network = type === 'inlet' ? localInletNetwork : localOutletNetwork;
+        const pipe = network?.pipes.find(p => p.id === id);
+        if (pipe) {
+            setEditingPipe(pipe);
+            setEditingPipeType(type);
+            setPipeEditorOpen(true);
+        }
+    };
+
+    const handleSavePipe = (updatedPipe: PipeProps) => {
+        if (editingPipeType === 'inlet') {
+            if (!localInletNetwork) return;
+            const updatedNetwork = {
+                ...localInletNetwork,
+                pipes: localInletNetwork.pipes.map(p => p.id === updatedPipe.id ? updatedPipe : p),
+            };
+            setLocalInletNetwork(updatedNetwork);
+        } else {
+            if (!localOutletNetwork) return;
+            const updatedNetwork = {
+                ...localOutletNetwork,
+                pipes: localOutletNetwork.pipes.map(p => p.id === updatedPipe.id ? updatedPipe : p),
+            };
+            setLocalOutletNetwork(updatedNetwork);
+        }
+        setPipeEditorOpen(false);
+        setEditingPipe(null);
+        setIsDirty(true);
+        setIsCalculated(false);
     };
 
     const handleDeletePipe = (id: string, type: 'inlet' | 'outlet') => {
@@ -343,8 +384,14 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
             let inletValidation;
             let outletDropKPa: number | undefined;
 
+            console.group('[PSV Sizing] Hydraulic Calculations');
+
+            // Collect all warnings from both networks
+            const allWarnings: string[] = [];
+
             if (localInletNetwork?.pipes?.length) {
-                const inletDrop = calculateNetworkPressureDrop(
+                console.log('--- INLET NETWORK ---');
+                const inletResult = calculateNetworkPressureDropWithWarnings(
                     localInletNetwork,
                     currentCase.inputs.massFlowRate,
                     fluid,
@@ -357,18 +404,41 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                     }
                 );
 
+                console.log('Inlet Drop (kPa):', inletResult.pressureDropKPa);
+                setInletHydraulicResult(inletResult);
+
+                // Collect inlet warnings
+                if (inletResult.warnings.length > 0) {
+                    allWarnings.push(...inletResult.warnings.map(w => `Inlet: ${w}`));
+                }
+
                 inletValidation = validateInletPressureDrop(
-                    inletDrop,
+                    inletResult.pressureDropKPa,
                     currentCase.inputs.pressure
                 );
+            } else {
+                console.log('--- INLET NETWORK --- (no pipes)');
+                setInletHydraulicResult(null);
             }
 
             // === PHASE 2: Outlet Backpressure Calculation ===
-            // Only calculate if mode is 'calculated' AND we have pipes
-            if (currentCase.inputs.backpressureSource === 'calculated' && localOutletNetwork?.pipes?.length) {
-                let calculatedBackpressure: number | undefined; // barg
+            // Calculate outlet pressure drop if pipes exist
 
-                outletDropKPa = calculateNetworkPressureDrop(
+            if (localOutletNetwork?.pipes?.length) {
+                console.log('--- OUTLET NETWORK ---');
+                console.log('Backpressure Source:', currentCase.inputs.backpressureSource);
+                console.log('Destination Pressure:', currentCase.inputs.destinationPressure);
+                console.log('Outlet Pipes:', localOutletNetwork.pipes.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    diameter: p.diameter,
+                    length: p.length,
+                    roughness: p.roughness,
+                    elevation: p.elevation,
+                    fittings: p.fittings?.length || 0,
+                })));
+
+                const outletResult = calculateNetworkPressureDropWithWarnings(
                     localOutletNetwork,
                     currentCase.inputs.massFlowRate,
                     fluid,
@@ -381,8 +451,19 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                     }
                 );
 
-                if (Number.isFinite(outletDropKPa)) {
-                    calculatedBackpressure = (currentCase.inputs.destinationPressure || 0) + (outletDropKPa / 100);
+                outletDropKPa = outletResult.pressureDropKPa;
+                console.log('Outlet Drop (kPa):', outletDropKPa);
+                setOutletHydraulicResult(outletResult);
+
+                // Collect choked flow warnings
+                if (outletResult.warnings.length > 0) {
+                    allWarnings.push(...outletResult.warnings.map(w => `Outlet: ${w}`));
+                }
+
+                // Only update backpressure if mode is 'calculated'
+                if (currentCase.inputs.backpressureSource === 'calculated' && Number.isFinite(outletDropKPa)) {
+                    const calculatedBackpressure = (currentCase.inputs.destinationPressure || 0) + (outletDropKPa / 100);
+                    console.log('Calculated Backpressure (barg):', calculatedBackpressure);
 
                     // Update inputs for the main sizing calculation
                     updatedInputs = {
@@ -391,10 +472,16 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                         calculatedBackpressure,
                         backpressureType: 'built_up' // Auto-set to built-up since we calculated it
                     };
-                } else {
-                    outletDropKPa = undefined;
                 }
+            } else {
+                console.log('--- OUTLET NETWORK --- (no pipes)');
+                setOutletHydraulicResult(null);
             }
+
+            // Update hydraulic warnings state
+            setHydraulicWarnings(allWarnings);
+
+            console.groupEnd();
 
             // === PHASE 3: Run PSV Sizing Calculation ===
             const baseOutputs = calculateSizing(updatedInputs, currentCase.method);
@@ -1216,6 +1303,56 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                             Click <strong>Calculate</strong> to compute inlet hydraulics.
                                         </Alert>
                                     )}
+
+                                    {/* Choked Flow Warning */}
+                                    {inletHydraulicResult?.hasChokedFlow && (
+                                        <Alert severity="warning" sx={{ mt: 2 }}>
+                                            <strong>Choked Flow Detected:</strong> The inlet piping has choked flow conditions. Hydraulic calculations may be inaccurate.
+                                            {inletHydraulicResult.warnings.length > 0 && (
+                                                <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                                                    {inletHydraulicResult.warnings.map((w, idx) => (
+                                                        <li key={idx}>{w}</li>
+                                                    ))}
+                                                </Box>
+                                            )}
+                                        </Alert>
+                                    )}
+
+                                    {/* Erosional Velocity Warning */}
+                                    {inletHydraulicResult?.segments?.some(s => s.isErosional) && (
+                                        <Alert severity="error" sx={{ mt: 2 }}>
+                                            <strong>Erosional Velocity Exceeded:</strong> The following pipe segments exceed the erosional velocity limit:
+                                            <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                                                {inletHydraulicResult.segments.filter(s => s.isErosional).map((seg, idx) => (
+                                                    <li key={idx}>{seg.name} ({seg.velocity?.toFixed(1)} m/s)</li>
+                                                ))}
+                                            </Box>
+                                        </Alert>
+                                    )}
+
+                                    {/* High Mach Number Warning (> 0.7) */}
+                                    {inletHydraulicResult?.segments?.some(s => (s.machNumber ?? 0) > 0.7) && (
+                                        <Alert severity="error" sx={{ mt: 2 }}>
+                                            <strong>High Mach Number (&gt;0.7):</strong> The following pipe segments have very high Mach numbers. Flow instability and noise may occur:
+                                            <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                                                {inletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.7).map((seg, idx) => (
+                                                    <li key={idx}>{seg.name} (Mach {seg.machNumber?.toFixed(3)})</li>
+                                                ))}
+                                            </Box>
+                                        </Alert>
+                                    )}
+
+                                    {/* Moderate Mach Number Warning (> 0.5, ≤ 0.7) */}
+                                    {inletHydraulicResult?.segments?.some(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7) && (
+                                        <Alert severity="warning" sx={{ mt: 2 }}>
+                                            <strong>Elevated Mach Number (&gt;0.5):</strong> The following pipe segments have elevated Mach numbers. Consider increasing pipe size:
+                                            <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                                                {inletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7).map((seg, idx) => (
+                                                    <li key={idx}>{seg.name} (Mach {seg.machNumber?.toFixed(3)})</li>
+                                                ))}
+                                            </Box>
+                                        </Alert>
+                                    )}
                                 </CardContent>
                             </Card>
                         )}
@@ -1567,6 +1704,56 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                             Click <strong>Calculate</strong> to compute outlet backpressure.
                                         </Alert>
                                     )}
+
+                                    {/* Choked flow warning */}
+                                    {outletHydraulicResult?.hasChokedFlow && (
+                                        <Alert severity="warning" sx={{ mt: 1 }}>
+                                            <strong>Choked Flow Detected:</strong> The outlet piping has choked flow conditions. Backpressure calculations may be inaccurate.
+                                            {outletHydraulicResult.warnings.length > 0 && (
+                                                <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                                                    {outletHydraulicResult.warnings.map((w, idx) => (
+                                                        <li key={idx}>{w}</li>
+                                                    ))}
+                                                </Box>
+                                            )}
+                                        </Alert>
+                                    )}
+
+                                    {/* Erosional Velocity Warning */}
+                                    {outletHydraulicResult?.segments?.some(s => s.isErosional) && (
+                                        <Alert severity="error" sx={{ mt: 1 }}>
+                                            <strong>Erosional Velocity Exceeded:</strong> The following pipe segments exceed the erosional velocity limit:
+                                            <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                                                {outletHydraulicResult.segments.filter(s => s.isErosional).map((seg, idx) => (
+                                                    <li key={idx}>{seg.name} ({seg.velocity?.toFixed(1)} m/s)</li>
+                                                ))}
+                                            </Box>
+                                        </Alert>
+                                    )}
+
+                                    {/* High Mach Number Warning (> 0.7) */}
+                                    {outletHydraulicResult?.segments?.some(s => (s.machNumber ?? 0) > 0.7) && (
+                                        <Alert severity="error" sx={{ mt: 1 }}>
+                                            <strong>High Mach Number (&gt;0.7):</strong> The following pipe segments have very high Mach numbers. Flow instability and noise may occur:
+                                            <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                                                {outletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.7).map((seg, idx) => (
+                                                    <li key={idx}>{seg.name} (Mach {seg.machNumber?.toFixed(3)})</li>
+                                                ))}
+                                            </Box>
+                                        </Alert>
+                                    )}
+
+                                    {/* Moderate Mach Number Warning (> 0.5, ≤ 0.7) */}
+                                    {outletHydraulicResult?.segments?.some(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7) && (
+                                        <Alert severity="warning" sx={{ mt: 1 }}>
+                                            <strong>Elevated Mach Number (&gt;0.5):</strong> The following pipe segments have elevated Mach numbers. Consider increasing pipe size:
+                                            <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                                                {outletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7).map((seg, idx) => (
+                                                    <li key={idx}>{seg.name} (Mach {seg.machNumber?.toFixed(3)})</li>
+                                                ))}
+                                            </Box>
+                                        </Alert>
+                                    )}
                                 </CardContent>
                             </Card>
                         )}
@@ -1608,6 +1795,18 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                         {localInletNetwork && localInletNetwork.pipes && ` (${localInletNetwork.pipes.length} pipe${localInletNetwork.pipes.length !== 1 ? 's' : ''})`}
                                     </Typography>
                                 )}
+                            </Alert>
+                        )}
+
+                        {/* Combined Hydraulic Warnings */}
+                        {hydraulicWarnings.length > 0 && (
+                            <Alert severity="warning" sx={{ mb: 3 }}>
+                                <strong>Hydraulic Calculation Warnings:</strong>
+                                <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                                    {hydraulicWarnings.map((warning, idx) => (
+                                        <li key={idx}>{warning}</li>
+                                    ))}
+                                </Box>
                             </Alert>
                         )}
 
@@ -1795,6 +1994,73 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                             }
                         </Alert>
 
+                        {/* Hydraulic Calculations Report */}
+                        {(inletHydraulicResult?.segments?.length || outletHydraulicResult?.segments?.length) && (
+                            <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                    Hydraulic Calculations Report
+                                </Typography>
+
+                                {inletHydraulicResult && inletHydraulicResult.segments.length > 0 && (
+                                    <>
+                                        {/* Inlet Warnings */}
+                                        {inletHydraulicResult.segments.some(s => s.isErosional) && (
+                                            <Alert severity="error" sx={{ mb: 1 }}>
+                                                <strong>Inlet - Erosional Velocity:</strong> {inletHydraulicResult.segments.filter(s => s.isErosional).map(s => `${s.name} (${s.velocity?.toFixed(1)} m/s)`).join(', ')}
+                                            </Alert>
+                                        )}
+                                        {inletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.7) && (
+                                            <Alert severity="error" sx={{ mb: 1 }}>
+                                                <strong>Inlet - High Mach (&gt;0.7):</strong> {inletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
+                                            </Alert>
+                                        )}
+                                        {inletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7) && (
+                                            <Alert severity="warning" sx={{ mb: 1 }}>
+                                                <strong>Inlet - Elevated Mach (&gt;0.5):</strong> {inletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
+                                            </Alert>
+                                        )}
+                                        <HydraulicReportTable
+                                            title="Inlet Piping Network"
+                                            segments={inletHydraulicResult.segments}
+                                            totalPressureDropKPa={inletHydraulicResult.pressureDropKPa}
+                                            hasChokedFlow={inletHydraulicResult.hasChokedFlow}
+                                            warnings={inletHydraulicResult.warnings}
+                                            defaultExpanded={inletHydraulicResult.hasChokedFlow}
+                                        />
+                                    </>
+                                )}
+
+                                {outletHydraulicResult && outletHydraulicResult.segments.length > 0 && (
+                                    <>
+                                        {/* Outlet Warnings */}
+                                        {outletHydraulicResult.segments.some(s => s.isErosional) && (
+                                            <Alert severity="error" sx={{ mb: 1 }}>
+                                                <strong>Outlet - Erosional Velocity:</strong> {outletHydraulicResult.segments.filter(s => s.isErosional).map(s => `${s.name} (${s.velocity?.toFixed(1)} m/s)`).join(', ')}
+                                            </Alert>
+                                        )}
+                                        {outletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.7) && (
+                                            <Alert severity="error" sx={{ mb: 1 }}>
+                                                <strong>Outlet - High Mach (&gt;0.7):</strong> {outletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
+                                            </Alert>
+                                        )}
+                                        {outletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7) && (
+                                            <Alert severity="warning" sx={{ mb: 1 }}>
+                                                <strong>Outlet - Elevated Mach (&gt;0.5):</strong> {outletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
+                                            </Alert>
+                                        )}
+                                        <HydraulicReportTable
+                                            title="Outlet Piping Network"
+                                            segments={outletHydraulicResult.segments}
+                                            totalPressureDropKPa={outletHydraulicResult.pressureDropKPa}
+                                            hasChokedFlow={outletHydraulicResult.hasChokedFlow}
+                                            warnings={outletHydraulicResult.warnings}
+                                            defaultExpanded={outletHydraulicResult.hasChokedFlow}
+                                        />
+                                    </>
+                                )}
+                            </Box>
+                        )}
+
                         {/* Export Actions */}
                         <Box sx={{ display: 'flex', gap: 2 }}>
                             <Button variant="outlined" startIcon={<Download />}>
@@ -1881,6 +2147,27 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                     </Button>
                 </DialogActions>
             </Dialog >
+
+            {/* Pipe Editor Dialog */}
+            <PipeEditorDialog
+                open={pipeEditorOpen}
+                pipe={editingPipe}
+                pipeType={editingPipeType}
+                defaultPressure={editingPipeType === 'inlet'
+                    ? psvSetPressure
+                    : currentCase.inputs.destinationPressure ?? 0}
+                accumulationPct={10}
+                fluidPhase={currentCase.method === 'gas' || currentCase.method === 'steam'
+                    ? currentCase.method
+                    : currentCase.method === 'two_phase'
+                        ? 'two_phase'
+                        : 'liquid'}
+                onSave={handleSavePipe}
+                onCancel={() => {
+                    setPipeEditorOpen(false);
+                    setEditingPipe(null);
+                }}
+            />
         </Box >
     );
 }

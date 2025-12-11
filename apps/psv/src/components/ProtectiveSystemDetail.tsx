@@ -1284,12 +1284,10 @@ export function ProtectiveSystemDetail() {
                                     </MenuItem>
                                 )}
                                 {canApprove && (
-                                    <>
-                                        <MenuItem onClick={() => handleStatusChange('approved')} selected={selectedPsv.status === 'approved'}>
-                                            <ListItemIcon><CheckCircleOutline fontSize="small" sx={{ color: 'success.main' }} /></ListItemIcon>
-                                            <ListItemText>Approved</ListItemText>
-                                        </MenuItem>
-                                    </>
+                                    <MenuItem onClick={() => handleStatusChange('approved')} selected={selectedPsv.status === 'approved'}>
+                                        <ListItemIcon><CheckCircleOutline fontSize="small" sx={{ color: 'success.main' }} /></ListItemIcon>
+                                        <ListItemText>Approved</ListItemText>
+                                    </MenuItem>
                                 )}
                                 {/* Issued can only be set from Approved status, by engineer/lead/approver */}
                                 {selectedPsv.status === 'approved' && (canEdit || canApprove) && (
