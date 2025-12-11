@@ -10,6 +10,7 @@ import {
     useTheme,
     IconButton,
     Tooltip,
+    Button,
 } from "@mui/material";
 import {
     Security,
@@ -17,14 +18,42 @@ import {
     Air,
     Edit,
     Visibility,
+    Add,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
-import { ProtectiveSystemType } from "@/data/types";
+import { useAuthStore } from "@/store/useAuthStore";
+import { ProtectiveSystemType, ProtectiveSystem } from "@/data/types";
+import { v4 as uuidv4 } from 'uuid';
 
 export function ProtectiveSystemList() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
-    const { psvList, selectPsv, selectedProject } = usePsvStore();
+    const { psvList, selectPsv, selectedProject, selectedArea, addProtectiveSystem } = usePsvStore();
+    const canEdit = useAuthStore((state) => state.canEdit());
+
+    const handleAddPsv = () => {
+        if (!selectedArea || !selectedProject) return;
+
+        const newPsvData = {
+            areaId: selectedArea.id,
+            projectIds: [selectedProject.id],
+            name: 'New Protective System',
+            tag: `PSV-${psvList.length + 1}`,
+            type: 'psv' as const,
+            designCode: 'API-520' as const,
+            serviceFluid: '',
+            fluidPhase: 'gas' as const,
+            setPressure: 0,
+            mawp: 0,
+            ownerId: 'user-1',
+            status: 'draft' as const,
+            tags: [],
+        };
+
+        addProtectiveSystem(newPsvData);
+        // Note: selectPsv would need the new ID, but addProtectiveSystem generates it internally
+        // The PSV list will update and show the new item
+    };
 
     const getTypeIcon = (type: ProtectiveSystemType) => {
         switch (type) {
@@ -107,6 +136,16 @@ export function ProtectiveSystemList() {
                         {psvList.length} device{psvList.length !== 1 ? 's' : ''} in {selectedProject.name}
                     </Typography>
                 </Box>
+                {canEdit && (
+                    <Button
+                        variant="contained"
+                        startIcon={<Add />}
+                        size="small"
+                        onClick={handleAddPsv}
+                    >
+                        Add New Device
+                    </Button>
+                )}
             </Box>
 
             <Grid container spacing={2}>

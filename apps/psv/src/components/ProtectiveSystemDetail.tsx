@@ -816,7 +816,7 @@ function AttachmentsTab() {
                         Attachments
                     </Typography>
                     {canEdit && (
-                        <Button variant="outlined" startIcon={<AttachFile />} size="small">
+                        <Button variant="contained" startIcon={<AttachFile />} size="small">
                             Upload File
                         </Button>
                     )}

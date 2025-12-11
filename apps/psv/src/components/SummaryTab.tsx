@@ -88,8 +88,9 @@ export function SummaryTab() {
             {/* Print Button */}
             <Box className="no-print" sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
                 <Button
-                    variant="outlined"
+                    variant="contained"
                     startIcon={<Print />}
+                    size="small"
                     onClick={handlePrint}
                 >
                     Print Summary
