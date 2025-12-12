@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Box,
     Button,
@@ -26,10 +26,11 @@ import { Add, Edit, Delete, Shield, Search } from "@mui/icons-material";
 import { areas, units, users } from "@/data/mockData";
 import { ProtectiveSystem } from "@/data/types";
 import { glassCardStyles } from "./styles";
-import { DeleteConfirmDialog } from "./shared";
+import { DeleteConfirmDialog, TableSortButton } from "./shared";
 import { PSVDialog } from "./dashboard/PSVDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
+import { SortConfig, sortByGetter, toggleSortConfig } from "@/lib/sortUtils";
 
 export function PSVsTab() {
     const theme = useTheme();
@@ -44,6 +45,8 @@ export function PSVsTab() {
     const [selectedPSV, setSelectedPSV] = useState<ProtectiveSystem | null>(null);
     const [psvToDelete, setPsvToDelete] = useState<ProtectiveSystem | null>(null);
     const [searchText, setSearchText] = useState('');
+    type SortKey = 'tag' | 'area' | 'serviceFluid' | 'setPressure' | 'status' | 'owner';
+    const [sortConfig, setSortConfig] = useState<SortConfig<SortKey> | null>(null);
 
     const handleAdd = () => {
         setSelectedPSV(null);
@@ -103,6 +106,50 @@ export function PSVsTab() {
             owner?.name.toLowerCase().includes(search)
         );
     });
+
+    const handleSort = (key: SortKey) => {
+        setSortConfig((prev) => toggleSortConfig(prev, key));
+    };
+
+    const getSortValue = (psv: ProtectiveSystem, key: SortKey): string | number => {
+        switch (key) {
+            case 'tag':
+                return psv.tag.toLowerCase();
+            case 'area': {
+                const area = areas.find(a => a.id === psv.areaId);
+                return (area?.name || '').toLowerCase();
+            }
+            case 'serviceFluid':
+                return `${psv.serviceFluid} ${psv.fluidPhase}`.toLowerCase();
+            case 'setPressure':
+                return psv.setPressure;
+            case 'status':
+                return psv.status;
+            case 'owner': {
+                const owner = users.find(u => u.id === psv.ownerId);
+                return (owner?.name || '').toLowerCase();
+            }
+            default:
+                return '';
+        }
+    };
+
+    const sortedPSVs = useMemo(
+        () => sortByGetter(filteredPSVs, sortConfig, getSortValue),
+        [filteredPSVs, sortConfig]
+    );
+
+    const renderHeader = (label: string, key: SortKey) => (
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {label}
+            <TableSortButton
+                label={label}
+                active={sortConfig?.key === key}
+                direction={sortConfig?.direction ?? 'asc'}
+                onClick={() => handleSort(key)}
+            />
+        </Box>
+    );
 
     const getStatusColor = (status: ProtectiveSystem['status']) => {
         switch (status) {
@@ -288,17 +335,17 @@ export function PSVsTab() {
                         <Table stickyHeader>
                             <TableHead>
                                 <TableRow>
-                                    <TableCell>Tag</TableCell>
-                                    <TableCell>Area</TableCell>
-                                    <TableCell>Service Fluid</TableCell>
-                                    <TableCell>Set Pressure</TableCell>
-                                    <TableCell>Status</TableCell>
-                                    <TableCell>Owner</TableCell>
+                                    <TableCell>{renderHeader('Tag', 'tag')}</TableCell>
+                                    <TableCell>{renderHeader('Area', 'area')}</TableCell>
+                                    <TableCell>{renderHeader('Service Fluid', 'serviceFluid')}</TableCell>
+                                    <TableCell>{renderHeader('Set Pressure', 'setPressure')}</TableCell>
+                                    <TableCell>{renderHeader('Status', 'status')}</TableCell>
+                                    <TableCell>{renderHeader('Owner', 'owner')}</TableCell>
                                     <TableCell align="right">Actions</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {filteredPSVs.map((psv) => {
+                                {sortedPSVs.map((psv) => {
                                     const area = areas.find(a => a.id === psv.areaId);
                                     const unit = area ? units.find(u => u.id === area.unitId) : null;
                                     const owner = users.find(u => u.id === psv.ownerId);
@@ -381,7 +428,7 @@ export function PSVsTab() {
                                         </TableRow>
                                     );
                                 })}
-                                {filteredPSVs.length === 0 && (
+                                {sortedPSVs.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                                             <Typography color="text.secondary">

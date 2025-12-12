@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Box,
     Button,
@@ -26,10 +26,11 @@ import { Add, Edit, Delete, Settings, Search } from "@mui/icons-material";
 import { areas, units, users } from "@/data/mockData";
 import { Equipment } from "@/data/types";
 import { glassCardStyles } from "./styles";
-import { DeleteConfirmDialog } from "./shared";
+import { DeleteConfirmDialog, TableSortButton } from "./shared";
 import { EquipmentDialog } from "./dashboard/EquipmentDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
+import { SortConfig, sortByGetter, toggleSortConfig } from "@/lib/sortUtils";
 
 export function EquipmentTab() {
     const theme = useTheme();
@@ -44,6 +45,16 @@ export function EquipmentTab() {
     const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
     const [equipmentToDelete, setEquipmentToDelete] = useState<Equipment | null>(null);
     const [searchText, setSearchText] = useState('');
+    type SortKey =
+        | 'tag'
+        | 'type'
+        | 'area'
+        | 'designPressure'
+        | 'mawp'
+        | 'designTemp'
+        | 'status'
+        | 'owner';
+    const [sortConfig, setSortConfig] = useState<SortConfig<SortKey> | null>(null);
 
     const handleAdd = () => {
         setSelectedEquipment(null);
@@ -103,6 +114,54 @@ export function EquipmentTab() {
             owner?.name.toLowerCase().includes(search)
         );
     });
+
+    const handleSort = (key: SortKey) => {
+        setSortConfig((prev) => toggleSortConfig(prev, key));
+    };
+
+    const getSortValue = (equip: Equipment, key: SortKey): string | number => {
+        switch (key) {
+            case 'tag':
+                return equip.tag.toLowerCase();
+            case 'type':
+                return getTypeLabel(equip.type).toLowerCase();
+            case 'area': {
+                const area = areas.find(a => a.id === equip.areaId);
+                return (area?.name || '').toLowerCase();
+            }
+            case 'designPressure':
+                return equip.designPressure;
+            case 'mawp':
+                return equip.mawp;
+            case 'designTemp':
+                return equip.designTemperature;
+            case 'status':
+                return equip.status;
+            case 'owner': {
+                const owner = users.find(u => u.id === equip.ownerId);
+                return (owner?.name || '').toLowerCase();
+            }
+            default:
+                return '';
+        }
+    };
+
+    const sortedEquipment = useMemo(
+        () => sortByGetter(filteredEquipment, sortConfig, getSortValue),
+        [filteredEquipment, sortConfig]
+    );
+
+    const renderHeader = (label: string, key: SortKey) => (
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {label}
+            <TableSortButton
+                label={label}
+                active={sortConfig?.key === key}
+                direction={sortConfig?.direction ?? 'asc'}
+                onClick={() => handleSort(key)}
+            />
+        </Box>
+    );
 
     const getTypeLabel = (type: Equipment['type']) => {
         return type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
@@ -270,19 +329,19 @@ export function EquipmentTab() {
                         <Table>
                             <TableHead>
                                 <TableRow>
-                                    <TableCell>Tag</TableCell>
-                                    <TableCell>Type</TableCell>
-                                    <TableCell>Area</TableCell>
-                                    <TableCell>Design Pressure</TableCell>
-                                    <TableCell>MAWP</TableCell>
-                                    <TableCell>Design Temp</TableCell>
-                                    <TableCell>Status</TableCell>
-                                    <TableCell>Owner</TableCell>
+                                    <TableCell>{renderHeader('Tag', 'tag')}</TableCell>
+                                    <TableCell>{renderHeader('Type', 'type')}</TableCell>
+                                    <TableCell>{renderHeader('Area', 'area')}</TableCell>
+                                    <TableCell>{renderHeader('Design Pressure', 'designPressure')}</TableCell>
+                                    <TableCell>{renderHeader('MAWP', 'mawp')}</TableCell>
+                                    <TableCell>{renderHeader('Design Temp', 'designTemp')}</TableCell>
+                                    <TableCell>{renderHeader('Status', 'status')}</TableCell>
+                                    <TableCell>{renderHeader('Owner', 'owner')}</TableCell>
                                     <TableCell align="right">Actions</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {filteredEquipment.map((equip) => {
+                                {sortedEquipment.map((equip) => {
                                     const area = areas.find(a => a.id === equip.areaId);
                                     const unit = area ? units.find(u => u.id === area.unitId) : null;
                                     const owner = users.find(u => u.id === equip.ownerId);
@@ -375,7 +434,7 @@ export function EquipmentTab() {
                                         </TableRow>
                                     );
                                 })}
-                                {filteredEquipment.length === 0 && (
+                                {sortedEquipment.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
                                             <Typography color="text.secondary">

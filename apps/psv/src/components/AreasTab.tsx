@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Box,
     Button,
@@ -29,10 +29,11 @@ import {
 } from "@/data/mockData";
 import { Area } from "@/data/types";
 import { glassCardStyles } from "./styles";
-import { DeleteConfirmDialog } from "./shared";
+import { DeleteConfirmDialog, TableSortButton } from "./shared";
 import { AreaDialog } from "./dashboard/AreaDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
+import { SortConfig, sortByGetter, toggleSortConfig } from "@/lib/sortUtils";
 
 export function AreasTab() {
     const theme = useTheme();
@@ -50,6 +51,8 @@ export function AreasTab() {
     const [selectedArea, setSelectedArea] = useState<Area | null>(null);
     const [areaToDelete, setAreaToDelete] = useState<Area | null>(null);
     const [searchText, setSearchText] = useState('');
+    type SortKey = 'code' | 'unit' | 'psvs' | 'equipment' | 'projects' | 'status' | 'created';
+    const [sortConfig, setSortConfig] = useState<SortConfig<SortKey> | null>(null);
 
     const handleAdd = () => {
         setSelectedArea(null);
@@ -123,6 +126,51 @@ export function AreasTab() {
             unit?.name.toLowerCase().includes(search)
         );
     });
+
+    const handleSort = (key: SortKey) => {
+        setSortConfig((prev) => toggleSortConfig(prev, key));
+    };
+
+    const getSortValue = (area: Area, key: SortKey): string | number => {
+        const counts = getAssetCounts(area.id);
+        switch (key) {
+            case 'code':
+                return area.code.toLowerCase();
+            case 'unit': {
+                const unit = units.find(u => u.id === area.unitId);
+                return (unit?.name || '').toLowerCase();
+            }
+            case 'psvs':
+                return counts.psvs;
+            case 'equipment':
+                return counts.equipment;
+            case 'projects':
+                return counts.projects;
+            case 'status':
+                return area.status;
+            case 'created':
+                return new Date(area.createdAt).getTime();
+            default:
+                return '';
+        }
+    };
+
+    const sortedAreas = useMemo(
+        () => sortByGetter(filteredAreas, sortConfig, getSortValue),
+        [filteredAreas, sortConfig]
+    );
+
+    const renderHeader = (label: string, key: SortKey) => (
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {label}
+            <TableSortButton
+                label={label}
+                active={sortConfig?.key === key}
+                direction={sortConfig?.direction ?? 'asc'}
+                onClick={() => handleSort(key)}
+            />
+        </Box>
+    );
 
     return (
         <Box>
@@ -277,18 +325,18 @@ export function AreasTab() {
                         <Table>
                             <TableHead>
                                 <TableRow>
-                                    <TableCell>Code</TableCell>
-                                    <TableCell>Unit</TableCell>
-                                    <TableCell>PSVs</TableCell>
-                                    <TableCell>Equipment</TableCell>
-                                    <TableCell>Projects</TableCell>
-                                    <TableCell>Status</TableCell>
-                                    <TableCell>Created</TableCell>
+                                    <TableCell>{renderHeader('Code', 'code')}</TableCell>
+                                    <TableCell>{renderHeader('Unit', 'unit')}</TableCell>
+                                    <TableCell>{renderHeader('PSVs', 'psvs')}</TableCell>
+                                    <TableCell>{renderHeader('Equipment', 'equipment')}</TableCell>
+                                    <TableCell>{renderHeader('Projects', 'projects')}</TableCell>
+                                    <TableCell>{renderHeader('Status', 'status')}</TableCell>
+                                    <TableCell>{renderHeader('Created', 'created')}</TableCell>
                                     <TableCell align="right">Actions</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {filteredAreas.map((area) => {
+                                {sortedAreas.map((area) => {
                                     const unit = units.find(u => u.id === area.unitId);
                                     const counts = getAssetCounts(area.id);
 
@@ -375,7 +423,7 @@ export function AreasTab() {
                                         </TableRow>
                                     );
                                 })}
-                                {filteredAreas.length === 0 && (
+                                {sortedAreas.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                                             <Typography color="text.secondary">

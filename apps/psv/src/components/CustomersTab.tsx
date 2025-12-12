@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Box,
     Button,
@@ -26,10 +26,11 @@ import { Add, Edit, Delete, Business, Search } from "@mui/icons-material";
 import { users } from "@/data/mockData";
 import { Customer } from "@/data/types";
 import { glassCardStyles } from "./styles";
-import { DeleteConfirmDialog } from "./shared";
+import { DeleteConfirmDialog, TableSortButton } from "./shared";
 import { CustomerDialog } from "./dashboard/CustomerDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
+import { SortConfig, sortByGetter, toggleSortConfig } from "@/lib/sortUtils";
 
 export function CustomersTab() {
     const theme = useTheme();
@@ -44,6 +45,8 @@ export function CustomersTab() {
     const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
     const [customerToDelete, setCustomerToDelete] = useState<Customer | null>(null);
     const [searchText, setSearchText] = useState('');
+    type SortKey = 'code' | 'owner' | 'plants' | 'status' | 'created';
+    const [sortConfig, setSortConfig] = useState<SortConfig<SortKey> | null>(null);
 
     const handleAdd = () => {
         setSelectedCustomer(null);
@@ -144,6 +147,46 @@ export function CustomersTab() {
             owner?.name.toLowerCase().includes(search)
         );
     });
+
+    const handleSort = (key: SortKey) => {
+        setSortConfig((prev) => toggleSortConfig(prev, key));
+    };
+
+    const getSortValue = (customer: Customer, key: SortKey): string | number => {
+        switch (key) {
+            case 'code':
+                return customer.code.toLowerCase();
+            case 'owner': {
+                const owner = users.find(u => u.id === customer.ownerId);
+                return (owner?.name || '').toLowerCase();
+            }
+            case 'plants':
+                return getPlantCount(customer.id);
+            case 'status':
+                return customer.status;
+            case 'created':
+                return new Date(customer.createdAt).getTime();
+            default:
+                return '';
+        }
+    };
+
+    const sortedCustomers = useMemo(
+        () => sortByGetter(filteredCustomers, sortConfig, getSortValue),
+        [filteredCustomers, sortConfig]
+    );
+
+    const renderHeader = (label: string, key: SortKey) => (
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {label}
+            <TableSortButton
+                label={label}
+                active={sortConfig?.key === key}
+                direction={sortConfig?.direction ?? 'asc'}
+                onClick={() => handleSort(key)}
+            />
+        </Box>
+    );
 
     return (
         <Box>
@@ -276,16 +319,16 @@ export function CustomersTab() {
                         <Table>
                             <TableHead>
                                 <TableRow>
-                                    <TableCell>Code</TableCell>
-                                    <TableCell>Owner</TableCell>
-                                    <TableCell>Plants</TableCell>
-                                    <TableCell>Status</TableCell>
-                                    <TableCell>Created</TableCell>
+                                    <TableCell>{renderHeader('Code', 'code')}</TableCell>
+                                    <TableCell>{renderHeader('Owner', 'owner')}</TableCell>
+                                    <TableCell>{renderHeader('Plants', 'plants')}</TableCell>
+                                    <TableCell>{renderHeader('Status', 'status')}</TableCell>
+                                    <TableCell>{renderHeader('Created', 'created')}</TableCell>
                                     <TableCell align="right">Actions</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {filteredCustomers.map((customer) => {
+                                {sortedCustomers.map((customer) => {
                                     const owner = users.find(u => u.id === customer.ownerId);
                                     const plantCount = getPlantCount(customer.id);
 
@@ -358,7 +401,7 @@ export function CustomersTab() {
                                         </TableRow>
                                     );
                                 })}
-                                {filteredCustomers.length === 0 && (
+                                {sortedCustomers.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
                                             <Typography color="text.secondary">

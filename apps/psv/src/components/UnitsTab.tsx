@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Box,
     Button,
@@ -26,10 +26,11 @@ import { Add, Edit, Delete, Category, Search } from "@mui/icons-material";
 import { plants, users } from "@/data/mockData";
 import { Unit } from "@/data/types";
 import { glassCardStyles } from "./styles";
-import { DeleteConfirmDialog } from "./shared";
+import { DeleteConfirmDialog, TableSortButton } from "./shared";
 import { UnitDialog } from "./dashboard/UnitDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
+import { SortConfig, sortByGetter, toggleSortConfig } from "@/lib/sortUtils";
 
 export function UnitsTab() {
     const theme = useTheme();
@@ -45,6 +46,8 @@ export function UnitsTab() {
     const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
     const [unitToDelete, setUnitToDelete] = useState<Unit | null>(null);
     const [searchText, setSearchText] = useState('');
+    type SortKey = 'code' | 'plant' | 'owner' | 'areas' | 'status' | 'created';
+    const [sortConfig, setSortConfig] = useState<SortConfig<SortKey> | null>(null);
 
     const handleAdd = () => {
         setSelectedUnit(null);
@@ -121,6 +124,50 @@ export function UnitsTab() {
             owner?.name.toLowerCase().includes(search)
         );
     });
+
+    const handleSort = (key: SortKey) => {
+        setSortConfig((prev) => toggleSortConfig(prev, key));
+    };
+
+    const getSortValue = (unit: Unit, key: SortKey): string | number => {
+        switch (key) {
+            case 'code':
+                return unit.code.toLowerCase();
+            case 'plant': {
+                const plant = plants.find(p => p.id === unit.plantId);
+                return (plant?.name || '').toLowerCase();
+            }
+            case 'owner': {
+                const owner = users.find(u => u.id === unit.ownerId);
+                return (owner?.name || '').toLowerCase();
+            }
+            case 'areas':
+                return getAreaCount(unit.id);
+            case 'status':
+                return unit.status;
+            case 'created':
+                return new Date(unit.createdAt).getTime();
+            default:
+                return '';
+        }
+    };
+
+    const sortedUnits = useMemo(
+        () => sortByGetter(filteredUnits, sortConfig, getSortValue),
+        [filteredUnits, sortConfig]
+    );
+
+    const renderHeader = (label: string, key: SortKey) => (
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {label}
+            <TableSortButton
+                label={label}
+                active={sortConfig?.key === key}
+                direction={sortConfig?.direction ?? 'asc'}
+                onClick={() => handleSort(key)}
+            />
+        </Box>
+    );
 
     return (
         <Box>
@@ -262,17 +309,17 @@ export function UnitsTab() {
                         <Table>
                             <TableHead>
                                 <TableRow>
-                                    <TableCell>Code</TableCell>
-                                    <TableCell>Plant</TableCell>
-                                    <TableCell>Owner</TableCell>
-                                    <TableCell>Areas</TableCell>
-                                    <TableCell>Status</TableCell>
-                                    <TableCell>Created</TableCell>
+                                    <TableCell>{renderHeader('Code', 'code')}</TableCell>
+                                    <TableCell>{renderHeader('Plant', 'plant')}</TableCell>
+                                    <TableCell>{renderHeader('Owner', 'owner')}</TableCell>
+                                    <TableCell>{renderHeader('Areas', 'areas')}</TableCell>
+                                    <TableCell>{renderHeader('Status', 'status')}</TableCell>
+                                    <TableCell>{renderHeader('Created', 'created')}</TableCell>
                                     <TableCell align="right">Actions</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {filteredUnits.map((unit) => {
+                                {sortedUnits.map((unit) => {
                                     const plant = plants.find(p => p.id === unit.plantId);
                                     const owner = users.find(u => u.id === unit.ownerId);
                                     const areaCount = getAreaCount(unit.id);
@@ -351,7 +398,7 @@ export function UnitsTab() {
                                         </TableRow>
                                     );
                                 })}
-                                {filteredUnits.length === 0 && (
+                                {sortedUnits.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                                             <Typography color="text.secondary">

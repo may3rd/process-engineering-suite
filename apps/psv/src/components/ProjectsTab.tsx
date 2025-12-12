@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
     Box,
     Button,
@@ -26,10 +26,11 @@ import { Add, Edit, Delete, Folder, Search } from "@mui/icons-material";
 import { areas, units, users } from "@/data/mockData";
 import { Project } from "@/data/types";
 import { glassCardStyles } from "./styles";
-import { DeleteConfirmDialog } from "./shared";
+import { DeleteConfirmDialog, TableSortButton } from "./shared";
 import { ProjectDialog } from "./dashboard/ProjectDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
+import { SortConfig, sortByGetter, toggleSortConfig } from "@/lib/sortUtils";
 
 export function ProjectsTab() {
     const theme = useTheme();
@@ -45,6 +46,8 @@ export function ProjectsTab() {
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
     const [searchText, setSearchText] = useState('');
+    type SortKey = 'code' | 'area' | 'phase' | 'status' | 'psvs' | 'lead' | 'startDate';
+    const [sortConfig, setSortConfig] = useState<SortConfig<SortKey> | null>(null);
 
     const handleAdd = () => {
         setSelectedProject(null);
@@ -107,6 +110,52 @@ export function ProjectsTab() {
             lead?.name.toLowerCase().includes(search)
         );
     });
+
+    const handleSort = (key: SortKey) => {
+        setSortConfig((prev) => toggleSortConfig(prev, key));
+    };
+
+    const getSortValue = (project: Project, key: SortKey): string | number => {
+        switch (key) {
+            case 'code':
+                return project.code.toLowerCase();
+            case 'area': {
+                const area = areas.find(a => a.id === project.areaId);
+                return (area?.name || '').toLowerCase();
+            }
+            case 'phase':
+                return project.phase;
+            case 'status':
+                return project.status;
+            case 'psvs':
+                return getPsvCount(project.id);
+            case 'lead': {
+                const lead = users.find(u => u.id === project.leadId);
+                return (lead?.name || '').toLowerCase();
+            }
+            case 'startDate':
+                return new Date(project.startDate).getTime();
+            default:
+                return '';
+        }
+    };
+
+    const sortedProjects = useMemo(
+        () => sortByGetter(filteredProjects, sortConfig, getSortValue),
+        [filteredProjects, sortConfig]
+    );
+
+    const renderHeader = (label: string, key: SortKey) => (
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+            {label}
+            <TableSortButton
+                label={label}
+                active={sortConfig?.key === key}
+                direction={sortConfig?.direction ?? 'asc'}
+                onClick={() => handleSort(key)}
+            />
+        </Box>
+    );
 
     const getPhaseColor = (phase: Project['phase']) => {
         switch (phase) {
@@ -283,18 +332,18 @@ export function ProjectsTab() {
                         <Table>
                             <TableHead>
                                 <TableRow>
-                                    <TableCell>Code</TableCell>
-                                    <TableCell>Area</TableCell>
-                                    <TableCell>Phase</TableCell>
-                                    <TableCell>Status</TableCell>
-                                    <TableCell>PSVs</TableCell>
-                                    <TableCell>Lead</TableCell>
-                                    <TableCell>Start Date</TableCell>
+                                    <TableCell>{renderHeader('Code', 'code')}</TableCell>
+                                    <TableCell>{renderHeader('Area', 'area')}</TableCell>
+                                    <TableCell>{renderHeader('Phase', 'phase')}</TableCell>
+                                    <TableCell>{renderHeader('Status', 'status')}</TableCell>
+                                    <TableCell>{renderHeader('PSVs', 'psvs')}</TableCell>
+                                    <TableCell>{renderHeader('Lead', 'lead')}</TableCell>
+                                    <TableCell>{renderHeader('Start Date', 'startDate')}</TableCell>
                                     <TableCell align="right">Actions</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {filteredProjects.map((project) => {
+                                {sortedProjects.map((project) => {
                                     const area = areas.find(a => a.id === project.areaId);
                                     const unit = area ? units.find(u => u.id === area.unitId) : null;
                                     const lead = users.find(u => u.id === project.leadId);
@@ -385,7 +434,7 @@ export function ProjectsTab() {
                                         </TableRow>
                                     );
                                 })}
-                                {filteredProjects.length === 0 && (
+                                {sortedProjects.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                                             <Typography color="text.secondary">
