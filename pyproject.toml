@@ -1,0 +1,23 @@
+# process-engineering-suite/pyproject.toml   ← put this in the repo root
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "process-engineering-suite"
+version = "0.1.0"
+dependencies = []
+
+# Only include folders that actually contain Python packages
+[tool.uv.workspace]
+members = [
+  "apps/api",                # your FastAPI backend
+  "packages/hydraulics",     # only the real Python packages
+  # add more later like "packages/thermo", "packages/psv", etc.
+]
+
+# Makes these imports work:
+#   from engsuite.hydraulics import ...
+[tool.uv.sources]
+engsuite-hydraulics = { path = "packages/hydraulics", editable = true }
+# engsuite-thermo = { path = "packages/thermo", editable = true }   # when you add it
