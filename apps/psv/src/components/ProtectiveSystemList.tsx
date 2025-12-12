@@ -245,16 +245,19 @@ export function ProtectiveSystemList() {
                                 </Box>
 
                                 <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, gap: 0.5 }}>
-                                    <Tooltip title="View Details">
-                                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); selectPsv(psv.id); }}>
-                                            <Visibility fontSize="small" />
-                                        </IconButton>
-                                    </Tooltip>
-                                    <Tooltip title="Edit">
-                                        <IconButton size="small" onClick={(e) => { e.stopPropagation(); selectPsv(psv.id); }}>
-                                            <Edit fontSize="small" />
-                                        </IconButton>
-                                    </Tooltip>
+                                    {canEdit ? (
+                                        <Tooltip title="Edit">
+                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); selectPsv(psv.id); }}>
+                                                <Edit fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    ) : (
+                                        <Tooltip title="View Details">
+                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); selectPsv(psv.id); }}>
+                                                <Visibility fontSize="small" />
+                                            </IconButton>
+                                        </Tooltip>
+                                    )}
                                 </Box>
                             </CardContent>
                         </Card>

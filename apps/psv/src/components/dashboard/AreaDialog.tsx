@@ -15,13 +15,15 @@ import {
     Box,
 } from "@mui/material";
 import { Area } from "@/data/types";
-import { units, plants, customers } from "@/data/mockData";
+import { usePsvStore } from "@/store/usePsvStore";
+import { useShallow } from "zustand/react/shallow";
 
 interface AreaDialogProps {
     open: boolean;
     onClose: () => void;
     onSave: (area: Omit<Area, 'id' | 'createdAt'>) => void;
     area?: Area | null;
+    initialUnitId?: string;
 }
 
 export function AreaDialog({
@@ -29,7 +31,14 @@ export function AreaDialog({
     onClose,
     onSave,
     area,
+    initialUnitId,
 }: AreaDialogProps) {
+    const { customers, plants, units } = usePsvStore(useShallow((state) => ({
+        customers: state.customers,
+        plants: state.plants,
+        units: state.units,
+    })));
+
     const [name, setName] = useState('');
     const [code, setCode] = useState('');
     const [customerId, setCustomerId] = useState<string>('');
@@ -53,6 +62,19 @@ export function AreaDialog({
                     setCustomerId(plant.customerId);
                 }
             }
+        } else if (initialUnitId) {
+            setUnitId(initialUnitId);
+            const unit = units.find(u => u.id === initialUnitId);
+            if (unit) {
+                setPlantId(unit.plantId);
+                const plant = plants.find(p => p.id === unit.plantId);
+                if (plant) {
+                    setCustomerId(plant.customerId);
+                }
+            }
+            setName('');
+            setCode('');
+            setStatus('active');
         } else {
             setName('');
             setCode('');
@@ -61,7 +83,7 @@ export function AreaDialog({
             setUnitId('');
             setStatus('active');
         }
-    }, [area, open]);
+    }, [area, initialUnitId, open, units, plants]);
 
     const handleSubmit = () => {
         if (!name.trim() || !code.trim() || !unitId) return;

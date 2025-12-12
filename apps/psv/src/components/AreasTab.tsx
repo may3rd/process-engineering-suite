@@ -25,10 +25,7 @@ import {
 } from "@mui/material";
 import { Add, Edit, Delete, Map, Search } from "@mui/icons-material";
 import {
-    units,
-    getProjectsByArea,
-    getProtectiveSystemsByArea,
-    getEquipmentByArea
+    units
 } from "@/data/mockData";
 import { Area } from "@/data/types";
 import { glassCardStyles } from "./styles";
@@ -44,6 +41,9 @@ export function AreasTab() {
     const canApprove = useAuthStore((state) => state.canApprove());
     const { addArea, updateArea, deleteArea } = usePsvStore();
     const areas = usePsvStore((state) => state.areas);
+    const projects = usePsvStore((state) => state.projects);
+    const protectiveSystems = usePsvStore((state) => state.protectiveSystems);
+    const equipment = usePsvStore((state) => state.equipment);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -106,9 +106,9 @@ export function AreasTab() {
 
     const getAssetCounts = (areaId: string) => {
         return {
-            projects: getProjectsByArea(areaId).length,
-            psvs: getProtectiveSystemsByArea(areaId).length,
-            equipment: getEquipmentByArea(areaId).length,
+            projects: projects.filter(p => p.areaId === areaId).length,
+            psvs: protectiveSystems.filter(ps => ps.areaId === areaId).length,
+            equipment: equipment.filter(e => e.areaId === areaId).length,
         };
     };
 

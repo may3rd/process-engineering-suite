@@ -23,7 +23,7 @@ import {
     useMediaQuery,
 } from "@mui/material";
 import { Add, Edit, Delete, Apartment, Search } from "@mui/icons-material";
-import { customers, users, getUnitsByPlant } from "@/data/mockData";
+import { customers, users } from "@/data/mockData";
 import { Plant } from "@/data/types";
 import { glassCardStyles } from "./styles";
 import { DeleteConfirmDialog } from "./shared";
@@ -38,6 +38,7 @@ export function PlantsTab() {
     const canApprove = useAuthStore((state) => state.canApprove());
     const { addPlant, updatePlant, deletePlant } = usePsvStore();
     const plants = usePsvStore((state) => state.plants);
+    const units = usePsvStore((state) => state.units);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -108,7 +109,7 @@ export function PlantsTab() {
     };
 
     const getUnitCount = (plantId: string) => {
-        return getUnitsByPlant(plantId).length;
+        return units.filter(u => u.plantId === plantId).length;
     };
 
     // Filter plants based on search text

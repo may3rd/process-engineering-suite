@@ -49,6 +49,7 @@ class ProtectiveSystemCreate(BaseModel):
     ownerId: str
     valveType: Optional[str] = None
     tags: List[str] = []
+    projectIds: Optional[List[str]] = None
 
 
 class ProtectiveSystemUpdate(BaseModel):
@@ -64,6 +65,7 @@ class ProtectiveSystemUpdate(BaseModel):
     tags: Optional[List[str]] = None
     inletNetwork: Optional[dict] = None
     outletNetwork: Optional[dict] = None
+    projectIds: Optional[List[str]] = None
 
 
 class ScenarioResponse(BaseModel):

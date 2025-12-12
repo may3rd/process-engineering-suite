@@ -61,6 +61,7 @@ import {
     RateReview,
     CheckCircleOutline,
     PublishedWithChanges,
+    Visibility,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
 import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem, ProtectiveSystem } from "@/data/types";
@@ -670,10 +671,16 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                                 </IconButton>
                                             </Tooltip>
                                         )}
-                                        {canEdit && (
+                                        {canEdit ? (
                                             <Tooltip title="Edit">
                                                 <IconButton size="small" onClick={() => onEdit?.(sizing.id)}>
                                                     <Edit fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        ) : (
+                                            <Tooltip title="View Details">
+                                                <IconButton size="small" onClick={() => onEdit?.(sizing.id)}>
+                                                    <Visibility fontSize="small" />
                                                 </IconButton>
                                             </Tooltip>
                                         )}

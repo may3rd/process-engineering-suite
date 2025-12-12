@@ -185,9 +185,17 @@ class DatabaseService(DataAccessLayer):
         converted_data = self._convert_keys(data)
         
         # Remove fields that are relationships or properties
-        clean_data = {k: v for k, v in converted_data.items() if k not in ['project_ids', 'projects', 'projectIds']}
+        project_ids = converted_data.pop('projectIds', None) or converted_data.pop('project_ids', None)
+        clean_data = {k: v for k, v in converted_data.items() if k not in ['projects']}
         
         instance = ProtectiveSystem(**clean_data)
+        
+        # Handle project links
+        if project_ids:
+            stmt = select(Project).where(Project.id.in_(project_ids))
+            result = await self.session.execute(stmt)
+            instance.projects = list(result.scalars().all())
+            
         self.session.add(instance)
         await self.session.commit()
         
@@ -198,11 +206,31 @@ class DatabaseService(DataAccessLayer):
     async def update_protective_system(self, psv_id: str, data: dict) -> dict:
         # Convert camelCase keys to snake_case for ORM
         converted_data = self._convert_keys(data)
-        clean_data = {k: v for k, v in converted_data.items() if k not in ['project_ids', 'projects', 'projectIds']}
         
-        instance = await self._update(ProtectiveSystem, psv_id, clean_data)
+        project_ids = converted_data.pop('projectIds', None) or converted_data.pop('project_ids', None)
+        clean_data = {k: v for k, v in converted_data.items() if k not in ['projects']}
         
-        # Refresh projects to prevent Lazy Load error on serialization (projectIds property)
+        # Load instance with projects relationship
+        instance = await self._get_by_id(
+            ProtectiveSystem, 
+            psv_id, 
+            options=[selectinload(ProtectiveSystem.projects)]
+        )
+        if not instance:
+            raise ValueError(f"PSV {psv_id} not found")
+        
+        # Update scalar fields directly on instance
+        for key, value in clean_data.items():
+            if hasattr(instance, key):
+                setattr(instance, key, value)
+        
+        # Update project links if provided
+        if project_ids is not None:
+            stmt = select(Project).where(Project.id.in_(project_ids))
+            result = await self.session.execute(stmt)
+            instance.projects = list(result.scalars().all())
+        
+        await self.session.commit()
         await self.session.refresh(instance, attribute_names=['projects'])
         return instance
 

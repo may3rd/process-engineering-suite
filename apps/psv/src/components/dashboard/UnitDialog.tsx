@@ -16,13 +16,15 @@ import {
 } from "@mui/material";
 import { Unit } from "@/data/types";
 import { OwnerSelector } from "../shared";
-import { plants, customers } from "@/data/mockData";
+import { usePsvStore } from "@/store/usePsvStore";
+import { useShallow } from "zustand/react/shallow";
 
 interface UnitDialogProps {
     open: boolean;
     onClose: () => void;
     onSave: (unit: Omit<Unit, 'id' | 'createdAt'>) => void;
     unit?: Unit | null;
+    initialPlantId?: string;
 }
 
 export function UnitDialog({
@@ -30,7 +32,13 @@ export function UnitDialog({
     onClose,
     onSave,
     unit,
+    initialPlantId,
 }: UnitDialogProps) {
+    const { customers, plants } = usePsvStore(useShallow((state) => ({
+        customers: state.customers,
+        plants: state.plants,
+    })));
+
     const [name, setName] = useState('');
     const [code, setCode] = useState('');
     const [customerId, setCustomerId] = useState<string>('');
@@ -51,6 +59,16 @@ export function UnitDialog({
             if (plant) {
                 setCustomerId(plant.customerId);
             }
+        } else if (initialPlantId) {
+            setPlantId(initialPlantId);
+            const plant = plants.find(p => p.id === initialPlantId);
+            if (plant) {
+                setCustomerId(plant.customerId);
+            }
+            setName('');
+            setCode('');
+            setStatus('active');
+            setOwnerId(null);
         } else {
             setName('');
             setCode('');
@@ -59,7 +77,7 @@ export function UnitDialog({
             setStatus('active');
             setOwnerId(null);
         }
-    }, [unit, open]);
+    }, [unit, initialPlantId, open, plants]);
 
     const handleSubmit = () => {
         if (!name.trim() || !code.trim() || !plantId || !ownerId) return;

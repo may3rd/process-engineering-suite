@@ -17,8 +17,9 @@ import {
     Autocomplete,
 } from "@mui/material";
 import { ProtectiveSystem, ProtectiveSystemType, DesignCode, FluidPhase } from "@/data/types";
-import { areas, units, plants, customers, projects } from "@/data/mockData";
 import { OwnerSelector } from "../shared";
+import { usePsvStore } from "@/store/usePsvStore";
+import { useShallow } from "zustand/react/shallow";
 
 interface PSVDialogProps {
     open: boolean;
@@ -33,6 +34,14 @@ export function PSVDialog({
     onSave,
     psv,
 }: PSVDialogProps) {
+    const { customers, plants, units, areas, projects } = usePsvStore(useShallow((state) => ({
+        customers: state.customers,
+        plants: state.plants,
+        units: state.units,
+        areas: state.areas,
+        projects: state.projects,
+    })));
+
     const [name, setName] = useState('');
     const [tag, setTag] = useState('');
     const [customerId, setCustomerId] = useState<string>('');
@@ -43,8 +52,8 @@ export function PSVDialog({
     const [designCode, setDesignCode] = useState<DesignCode>('API-520');
     const [serviceFluid, setServiceFluid] = useState('');
     const [fluidPhase, setFluidPhase] = useState<FluidPhase>('gas');
-    const [setPressure, setSetPressure] = useState<number>(0);
-    const [mawp, setMawp] = useState<number>(0);
+    const [setPressure, setSetPressure] = useState<string>('');
+    const [mawp, setMawp] = useState<string>('');
     const [status, setStatus] = useState<'draft' | 'in_review' | 'checked' | 'approved' | 'issued'>('draft');
     const [ownerId, setOwnerId] = useState<string | null>(null);
     const [projectIds, setProjectIds] = useState<string[]>([]);
@@ -52,19 +61,19 @@ export function PSVDialog({
 
     useEffect(() => {
         if (psv) {
-            setName(psv.name);
-            setTag(psv.tag);
+            setName(psv.name || '');
+            setTag(psv.tag || '');
             setAreaId(psv.areaId);
             setType(psv.type);
             setDesignCode(psv.designCode);
-            setServiceFluid(psv.serviceFluid);
+            setServiceFluid(psv.serviceFluid || '');
             setFluidPhase(psv.fluidPhase);
-            setSetPressure(psv.setPressure);
-            setMawp(psv.mawp);
+            setSetPressure(psv.setPressure?.toString() || '');
+            setMawp(psv.mawp?.toString() || '');
             setStatus(psv.status);
             setOwnerId(psv.ownerId);
             setProjectIds(psv.projectIds || []);
-            setTags(psv.tags);
+            setTags(psv.tags || []); // Fix tags initialization too
 
             // Find and set area's hierarchy
             const area = areas.find(a => a.id === psv.areaId);
@@ -90,8 +99,8 @@ export function PSVDialog({
             setDesignCode('API-520');
             setServiceFluid('');
             setFluidPhase('gas');
-            setSetPressure(0);
-            setMawp(0);
+            setSetPressure('');
+            setMawp('');
             setStatus('draft');
             setOwnerId(null);
             setProjectIds([]);
@@ -100,7 +109,16 @@ export function PSVDialog({
     }, [psv, open]);
 
     const handleSubmit = () => {
-        if (!name.trim() || !tag.trim() || !areaId || !ownerId || !serviceFluid.trim()) return;
+        // Basic validation - name, tag, areaId, ownerId always required
+        if (!name.trim() || !tag.trim() || !areaId || !ownerId) return;
+
+        // For non-draft status, require service fluid and pressure values
+        if (status !== 'draft') {
+            if (!serviceFluid.trim()) return;
+            const sp = parseFloat(setPressure);
+            const mp = parseFloat(mawp);
+            if (isNaN(sp) || sp <= 0 || isNaN(mp) || mp <= 0) return;
+        }
 
         onSave({
             name: name.trim(),
@@ -110,11 +128,11 @@ export function PSVDialog({
             designCode,
             serviceFluid: serviceFluid.trim(),
             fluidPhase,
-            setPressure,
-            mawp,
+            setPressure: parseFloat(setPressure) || 0,
+            mawp: parseFloat(mawp) || 0,
             status,
             ownerId,
-            projectIds: projectIds.length > 0 ? projectIds : undefined,
+            projectIds, // Always send array
             tags,
         });
     };
@@ -124,7 +142,11 @@ export function PSVDialog({
     const filteredAreas = unitId ? areas.filter(a => a.unitId === unitId) : [];
     const availableProjects = areaId ? projects.filter(p => p.areaId === areaId) : [];
 
-    const isValid = name.trim() && tag.trim() && areaId && ownerId && serviceFluid.trim() && setPressure > 0 && mawp > 0;
+    // Parse for validation
+    const setPressureNum = parseFloat(setPressure);
+    const mawpNum = parseFloat(mawp);
+    const isValid = name.trim() && tag.trim() && areaId && ownerId &&
+        (status === 'draft' || (serviceFluid.trim() && !isNaN(setPressureNum) && setPressureNum > 0 && !isNaN(mawpNum) && mawpNum > 0));
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -295,7 +317,7 @@ export function PSVDialog({
                             label="Set Pressure (barg)"
                             type="number"
                             value={setPressure}
-                            onChange={(e) => setSetPressure(parseFloat(e.target.value) || 0)}
+                            onChange={(e) => setSetPressure(e.target.value)}
                             fullWidth
                             required
                         />
@@ -304,7 +326,7 @@ export function PSVDialog({
                             label="MAWP (barg)"
                             type="number"
                             value={mawp}
-                            onChange={(e) => setMawp(parseFloat(e.target.value) || 0)}
+                            onChange={(e) => setMawp(e.target.value)}
                             fullWidth
                             required
                         />

@@ -13,9 +13,11 @@ import {
     Select,
     MenuItem,
     Box,
+    useTheme,
 } from "@mui/material";
 import { Project } from "@/data/types";
-import { areas, units, plants, customers, users } from "@/data/mockData";
+import { usePsvStore } from "@/store/usePsvStore";
+import { useShallow } from "zustand/react/shallow";
 import { OwnerSelector } from "../shared";
 
 interface ProjectDialogProps {
@@ -23,6 +25,7 @@ interface ProjectDialogProps {
     onClose: () => void;
     onSave: (project: Omit<Project, 'id' | 'createdAt'>) => void;
     project?: Project | null;
+    initialAreaId?: string;
 }
 
 export function ProjectDialog({
@@ -30,7 +33,18 @@ export function ProjectDialog({
     onClose,
     onSave,
     project,
+    initialAreaId,
 }: ProjectDialogProps) {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
+
+    const { customers, plants, units, areas } = usePsvStore(useShallow((state) => ({
+        customers: state.customers,
+        plants: state.plants,
+        units: state.units,
+        areas: state.areas,
+    })));
+
     const [name, setName] = useState('');
     const [code, setCode] = useState('');
     const [customerId, setCustomerId] = useState<string>('');
@@ -67,6 +81,29 @@ export function ProjectDialog({
                     }
                 }
             }
+        } else if (initialAreaId) {
+            // Pre-fill hierarchy from initialAreaId
+            setAreaId(initialAreaId);
+            const area = areas.find(a => a.id === initialAreaId);
+            if (area) {
+                setUnitId(area.unitId);
+                const unit = units.find(u => u.id === area.unitId);
+                if (unit) {
+                    setPlantId(unit.plantId);
+                    const plant = plants.find(p => p.id === unit.plantId);
+                    if (plant) {
+                        setCustomerId(plant.customerId);
+                    }
+                }
+            }
+            // Reset other fields
+            setName('');
+            setCode('');
+            setPhase('design');
+            setStatus('draft');
+            setStartDate('');
+            setEndDate('');
+            setLeadId(null);
         } else {
             setName('');
             setCode('');
@@ -80,7 +117,7 @@ export function ProjectDialog({
             setEndDate('');
             setLeadId(null);
         }
-    }, [project, open]);
+    }, [project, initialAreaId, open, areas, units, plants]);
 
     const handleSubmit = () => {
         if (!name.trim() || !code.trim() || !areaId || !leadId || !startDate) return;
@@ -251,6 +288,11 @@ export function ProjectDialog({
                         fullWidth
                         required
                         InputLabelProps={{ shrink: true }}
+                        sx={{
+                            '& input::-webkit-calendar-picker-indicator': {
+                                filter: isDark ? 'invert(1)' : 'none',
+                            },
+                        }}
                     />
 
                     <TextField
@@ -261,6 +303,11 @@ export function ProjectDialog({
                         fullWidth
                         InputLabelProps={{ shrink: true }}
                         helperText="Optional"
+                        sx={{
+                            '& input::-webkit-calendar-picker-indicator': {
+                                filter: isDark ? 'invert(1)' : 'none',
+                            },
+                        }}
                     />
 
                     <OwnerSelector

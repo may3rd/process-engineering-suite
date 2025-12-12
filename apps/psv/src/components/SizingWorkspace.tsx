@@ -71,6 +71,7 @@ import {
     type ValidationResult,
     type ValidationError
 } from "@/lib/inputValidation";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface SizingWorkspaceProps {
     sizingCase: SizingCase;
@@ -117,6 +118,7 @@ const DENSITY_UNITS = ['kg/m³', 'lb/ft³'];
 export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSetPressure, onClose, onSave, onSaveNetworks, psvTag, onDelete }: SizingWorkspaceProps) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
+    const canEdit = useAuthStore((state) => state.canEdit());
     const [activeTab, setActiveTab] = useState(0);
     const [currentCase, setCurrentCase] = useState<SizingCase>(sizingCase);
     const [manualOrificeMode, setManualOrificeMode] = useState(false);
@@ -734,26 +736,28 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1 }}>
                     <Button variant="outlined" onClick={onClose}>
-                        Cancel
+                        {canEdit ? 'Cancel' : 'Close'}
                     </Button>
-                    {isCalculated && !isDirty ? (
-                        <Button
-                            variant="contained"
-                            color="success"
-                            onClick={handleSaveAndClose}
-                            startIcon={<CheckCircle />}
-                        >
-                            Save & Close
-                        </Button>
-                    ) : (
-                        <Button
-                            variant="contained"
-                            onClick={handleCalculate}
-                            disabled={!isDirty || isCalculating}
-                            startIcon={<Calculate />}
-                        >
-                            {isCalculating ? 'Calculating...' : 'Calculate'}
-                        </Button>
+                    {canEdit && (
+                        isCalculated && !isDirty ? (
+                            <Button
+                                variant="contained"
+                                color="success"
+                                onClick={handleSaveAndClose}
+                                startIcon={<CheckCircle />}
+                            >
+                                Save & Close
+                            </Button>
+                        ) : (
+                            <Button
+                                variant="contained"
+                                onClick={handleCalculate}
+                                disabled={!isDirty || isCalculating}
+                                startIcon={<Calculate />}
+                            >
+                                {isCalculating ? 'Calculating...' : 'Calculate'}
+                            </Button>
+                        )
                     )}
                 </Box>
             </Paper>
@@ -807,11 +811,13 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                     <Tab label="Outlet Piping" />
                     <Tab label="Results" />
                 </Tabs>
-                <Tooltip title="Delete Sizing Case">
-                    <IconButton onClick={() => setDeleteDialogOpen(true)} color="error" sx={{ mr: 2 }}>
-                        <Delete />
-                    </IconButton>
-                </Tooltip>
+                {canEdit && (
+                    <Tooltip title="Delete Sizing Case">
+                        <IconButton onClick={() => setDeleteDialogOpen(true)} color="error" sx={{ mr: 2 }}>
+                            <Delete />
+                        </IconButton>
+                    </Tooltip>
+                )}
             </Paper>
 
             {/* Content Area */}
@@ -1547,6 +1553,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                             onAddPipe={handleAddInletPipe}
                             onEditPipe={(id) => handleEditPipe(id, 'inlet')}
                             onDeletePipe={(id) => handleDeletePipe(id, 'inlet')}
+                            readOnly={!canEdit}
                         />
                     </Box>
                 </TabPanel>
@@ -1970,6 +1977,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                             onAddPipe={handleAddOutletPipe}
                             onEditPipe={(id) => handleEditPipe(id, 'outlet')}
                             onDeletePipe={(id) => handleDeletePipe(id, 'outlet')}
+                            readOnly={!canEdit}
                         />
                     </Box>
                 </TabPanel>

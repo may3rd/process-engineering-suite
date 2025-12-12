@@ -30,7 +30,6 @@ import { DeleteConfirmDialog } from "./shared";
 import { ProjectDialog } from "./dashboard/ProjectDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
-import { getProtectiveSystemsByProject } from "@/data/mockData";
 
 export function ProjectsTab() {
     const theme = useTheme();
@@ -39,6 +38,7 @@ export function ProjectsTab() {
     const canApprove = useAuthStore((state) => state.canApprove());
     const { addProject, updateProject, deleteProject } = usePsvStore();
     const projects = usePsvStore((state) => state.projects);
+    const protectiveSystems = usePsvStore((state) => state.protectiveSystems);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -91,7 +91,7 @@ export function ProjectsTab() {
     };
 
     const getPsvCount = (projectId: string) => {
-        return getProtectiveSystemsByProject(projectId).length;
+        return protectiveSystems.filter(ps => ps.projectIds?.includes(projectId)).length;
     };
 
     // Filter projects based on search text

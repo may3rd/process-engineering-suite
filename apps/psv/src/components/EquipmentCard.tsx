@@ -30,7 +30,6 @@ import { Add, Link as LinkIcon, Delete } from "@mui/icons-material";
 import { ProtectiveSystem, EquipmentLink } from "@/data/types";
 import { usePsvStore } from "../store/usePsvStore";
 import { glassCardStyles } from "./styles";
-import { equipment as allEquipment } from "@/data/mockData";
 import { v4 as uuidv4 } from "uuid";
 import { useAuthStore } from "@/store/useAuthStore";
 
@@ -39,7 +38,7 @@ interface EquipmentCardProps {
 }
 
 export function EquipmentCard({ psv }: EquipmentCardProps) {
-    const { equipmentLinkList, linkEquipment, unlinkEquipment } = usePsvStore();
+    const { equipmentLinkList, linkEquipment, unlinkEquipment, equipment: allEquipment } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
     const [open, setOpen] = useState(false);
     const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]);

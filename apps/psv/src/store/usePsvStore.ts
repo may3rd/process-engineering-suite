@@ -196,10 +196,88 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     initialize: async () => {
         set({ isLoading: true, error: null });
         try {
+            // Fetch customers
             const customers = await api.getCustomers();
+
+            // Fetch FULL Hierarchy for Dashboard counts
+            // Cascade: Customers -> Plants -> Units -> Areas -> Projects
+
+            // 1. All Plants
+            let allPlants: Plant[] = [];
+            try {
+                const plantsResults = await Promise.all(
+                    customers.map(c => api.getPlantsByCustomer(c.id))
+                );
+                allPlants = plantsResults.flat();
+            } catch (err) {
+                console.error("Failed to fetch plants:", err);
+            }
+
+            // 2. All Units
+            let allUnits: Unit[] = [];
+            try {
+                const unitsResults = await Promise.all(
+                    allPlants.map(p => api.getUnitsByPlant(p.id))
+                );
+                allUnits = unitsResults.flat();
+            } catch (err) {
+                console.error("Failed to fetch units:", err);
+            }
+
+            // 3. All Areas
+            let allAreas: Area[] = [];
+            try {
+                const areasResults = await Promise.all(
+                    allUnits.map(u => api.getAreasByUnit(u.id))
+                );
+                allAreas = areasResults.flat();
+            } catch (err) {
+                console.error("Failed to fetch areas:", err);
+            }
+
+            // 4. All Projects
+            let allProjects: Project[] = [];
+            try {
+                const projectsResults = await Promise.all(
+                    allAreas.map(a => api.getProjectsByArea(a.id))
+                );
+                allProjects = projectsResults.flat();
+            } catch (err) {
+                console.error("Failed to fetch projects:", err);
+            }
+
+            // 5. All Protective Systems (Global fetch supported)
+            let allPsvs: ProtectiveSystem[] = [];
+            try {
+                allPsvs = await api.getProtectiveSystems();
+            } catch (err) {
+                console.error("Failed to fetch PSVs:", err);
+            }
+
+            // Fetch equipment (fallback to empty if API fails)
+            let equipmentList: Equipment[] = [];
+            try {
+                equipmentList = await api.getEquipment();
+            } catch {
+                // If API fails, import mock data as fallback
+                const mockData = await import('@/data/mockData');
+                equipmentList = mockData.equipment;
+            }
+
             set({
                 customers,
                 customerList: customers,
+                plants: allPlants,
+                plantList: allPlants,
+                units: allUnits,
+                unitList: allUnits,
+                areas: allAreas,
+                areaList: allAreas,
+                projects: allProjects,
+                projectList: allProjects,
+                protectiveSystems: allPsvs,
+                psvList: allPsvs,
+                equipment: equipmentList,
                 isLoading: false
             });
         } catch (error) {
@@ -214,7 +292,23 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             const customer = id ? get().customers.find(c => c.id === id) || null : null;
-            const plantList = id ? await api.getPlantsByCustomer(id) : [];
+
+            // If selecting a customer, fetch fresh plants for that customer
+            let newPlants = get().plants;
+            let displayedPlants: Plant[] = [];
+
+            if (id) {
+                const fetchedPlants = await api.getPlantsByCustomer(id);
+                // Update global cache: remove old plants for this customer and add fresh ones
+                newPlants = [
+                    ...newPlants.filter(p => p.customerId !== id),
+                    ...fetchedPlants
+                ];
+                displayedPlants = fetchedPlants;
+            } else {
+                // If clearing selection, show all cached plants
+                displayedPlants = newPlants;
+            }
 
             set({
                 selection: {
@@ -231,8 +325,8 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
                 selectedArea: null,
                 selectedProject: null,
                 selectedPsv: null,
-                plantList,
-                plants: plantList, // Cache for future use
+                plantList: displayedPlants,
+                plants: newPlants, // Update cache, don't overwrite with subset!
                 unitList: [],
                 areaList: [],
                 projectList: [],
@@ -253,7 +347,21 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             const plant = id ? get().plants.find(p => p.id === id) || null : null;
-            const unitList = id ? await api.getUnitsByPlant(id) : [];
+
+            let newUnits = get().units;
+            let displayedUnits: Unit[] = [];
+
+            if (id) {
+                const fetchedUnits = await api.getUnitsByPlant(id);
+                // Merge units into global cache
+                newUnits = [
+                    ...newUnits.filter(u => u.plantId !== id),
+                    ...fetchedUnits
+                ];
+                displayedUnits = fetchedUnits;
+            } else {
+                displayedUnits = newUnits;
+            }
 
             set((state) => ({
                 selection: {
@@ -269,8 +377,8 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
                 selectedArea: null,
                 selectedProject: null,
                 selectedPsv: null,
-                unitList,
-                units: unitList,
+                unitList: displayedUnits,
+                units: newUnits, // Preserve global cache
                 areaList: [],
                 projectList: [],
                 psvList: [],
@@ -289,7 +397,21 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             const unit = id ? get().units.find(u => u.id === id) || null : null;
-            const areaList = id ? await api.getAreasByUnit(id) : [];
+
+            let newAreas = get().areas;
+            let displayedAreas: Area[] = [];
+
+            if (id) {
+                const fetchedAreas = await api.getAreasByUnit(id);
+                // Merge areas into global cache
+                newAreas = [
+                    ...newAreas.filter(a => a.unitId !== id),
+                    ...fetchedAreas
+                ];
+                displayedAreas = fetchedAreas;
+            } else {
+                displayedAreas = newAreas;
+            }
 
             set((state) => ({
                 selection: {
@@ -303,8 +425,8 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
                 selectedArea: null,
                 selectedProject: null,
                 selectedPsv: null,
-                areaList,
-                areas: areaList,
+                areaList: displayedAreas,
+                areas: newAreas, // Preserve global cache
                 projectList: [],
                 psvList: [],
                 scenarioList: [],
@@ -322,7 +444,21 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             const area = id ? get().areas.find(a => a.id === id) || null : null;
-            const projectList = id ? await api.getProjectsByArea(id) : [];
+
+            let newProjects = get().projects;
+            let displayedProjects: Project[] = [];
+
+            if (id) {
+                const fetchedProjects = await api.getProjectsByArea(id);
+                // Merge projects into global cache
+                newProjects = [
+                    ...newProjects.filter(p => p.areaId !== id),
+                    ...fetchedProjects
+                ];
+                displayedProjects = fetchedProjects;
+            } else {
+                displayedProjects = newProjects;
+            }
 
             set((state) => ({
                 selection: {
@@ -334,8 +470,8 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
                 selectedArea: area,
                 selectedProject: null,
                 selectedPsv: null,
-                projectList,
-                projects: projectList,
+                projectList: displayedProjects,
+                projects: newProjects, // Preserve global cache
                 psvList: [],
                 scenarioList: [],
                 sizingCaseList: [],
@@ -352,8 +488,33 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             const project = id ? get().projects.find(p => p.id === id) || null : null;
-            // PSVs are children of Area, not Project
-            const psvList = project ? await api.getProtectiveSystems(project.areaId) : [];
+            // PSVs are children of Area, not Project, but often filtered by Project context if needed
+            // For now, API gets PSVs by Area. 
+            // Better to display PSVs relevant to the project's area? 
+            // Or if backend supports getProtectiveSystems(projectId)? 
+            // Current code passes project.areaId. This assumes we want ALL PSVs in that area.
+
+            let newPsvs = get().protectiveSystems;
+            let displayedPsvs: ProtectiveSystem[] = [];
+
+            if (project) {
+                const fetchedPsvs = await api.getProtectiveSystems(project.areaId);
+                // Merge into global cache
+                newPsvs = [
+                    ...newPsvs.filter(p => p.areaId !== project.areaId),
+                    ...fetchedPsvs
+                ];
+                // Filter specifically for this project if possible? 
+                // The current API behavior (based on old code) fetches by areaId. 
+                // And presumably displays them. 
+                // But filtering strictly for this project ID might be better for "Project View".
+                // Let's stick to what it was doing: Fetch by Area. 
+                // But wait, if multiple projects share an area, this shows PSVs from other projects in the same area?
+                // Yes, unless we filter locally.
+                displayedPsvs = fetchedPsvs.filter(p => !p.projectIds || p.projectIds.includes(project.id));
+            } else {
+                displayedPsvs = newPsvs;
+            }
 
             set((state) => ({
                 selection: {
@@ -363,8 +524,8 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
                 },
                 selectedProject: project,
                 selectedPsv: null,
-                psvList,
-                protectiveSystems: psvList,
+                psvList: displayedPsvs,
+                protectiveSystems: newPsvs, // Preserve global cache
                 scenarioList: [],
                 sizingCaseList: [],
                 attachmentList: [],

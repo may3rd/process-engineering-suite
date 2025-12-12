@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import {
     Box,
     List,
@@ -10,6 +11,8 @@ import {
     Chip,
     useTheme,
     Paper,
+    IconButton,
+    Tooltip,
 } from "@mui/material";
 import {
     Business,
@@ -18,8 +21,15 @@ import {
     Domain,
     FolderSpecial,
     ChevronRight,
+    Add,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
+import { useAuthStore } from "@/store/useAuthStore";
+import { CustomerDialog } from "./dashboard/CustomerDialog";
+import { PlantDialog } from "./dashboard/PlantDialog";
+import { UnitDialog } from "./dashboard/UnitDialog";
+import { AreaDialog } from "./dashboard/AreaDialog";
+import { ProjectDialog } from "./dashboard/ProjectDialog";
 
 export function HierarchyBrowser() {
     const theme = useTheme();
@@ -37,7 +47,34 @@ export function HierarchyBrowser() {
         selectUnit,
         selectArea,
         selectProject,
+        selectedCustomer,
+        selectedPlant,
+        selectedUnit,
+        selectedArea,
+        addCustomer,
+        addPlant,
+        addUnit,
+        addArea,
+        addProject,
     } = usePsvStore();
+
+    // Auth and permissions
+    const canEdit = useAuthStore((state) => state.canEdit());
+    const canManageCustomer = useAuthStore((state) => state.canManageCustomer());
+    const canManageHierarchy = useAuthStore((state) => state.canManageHierarchy());
+
+    // Dialog state
+    const [customerDialogOpen, setCustomerDialogOpen] = useState(false);
+    const [plantDialogOpen, setPlantDialogOpen] = useState(false);
+    const [unitDialogOpen, setUnitDialogOpen] = useState(false);
+    const [areaDialogOpen, setAreaDialogOpen] = useState(false);
+    const [projectDialogOpen, setProjectDialogOpen] = useState(false);
+    const [isMounted, setIsMounted] = useState(false);
+
+    // Fix hydration mismatch - defer auth-dependent UI until client mount
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     // Determine current level and items to display
     const getCurrentLevel = () => {
@@ -106,19 +143,96 @@ export function HierarchyBrowser() {
         switch (status) {
             case 'active':
             case 'approved':
-            case 'issued':
                 return 'success';
+            case 'issued':
+                return 'primary';
             case 'in_review':
+                return 'info';
+            case 'checked':
             case 'construction':
                 return 'warning';
             case 'draft':
             case 'design':
-                return 'info';
+                return 'default';
             case 'inactive':
                 return 'error';
             default:
                 return 'default';
         }
+    };
+
+    // Check if user can add items at current level
+    const canAddItem = () => {
+        // Don't show until mounted (avoids SSR hydration mismatch)
+        if (!isMounted) return false;
+        if (!currentLevel) return false;
+        switch (currentLevel.level) {
+            case 'customer':
+                return canManageCustomer;
+            case 'plant':
+            case 'unit':
+            case 'area':
+            case 'project':
+                return canManageHierarchy;
+            default:
+                return false;
+        }
+    };
+
+    // Open appropriate dialog
+    const handleOpenDialog = () => {
+        if (!currentLevel) return;
+        switch (currentLevel.level) {
+            case 'customer':
+                setCustomerDialogOpen(true);
+                break;
+            case 'plant':
+                setPlantDialogOpen(true);
+                break;
+            case 'unit':
+                setUnitDialogOpen(true);
+                break;
+            case 'area':
+                setAreaDialogOpen(true);
+                break;
+            case 'project':
+                setProjectDialogOpen(true);
+                break;
+        }
+    };
+
+    // Save handlers
+    const handleSaveCustomer = (data: Omit<Parameters<typeof addCustomer>[0], 'id'>) => {
+        addCustomer(data);
+        setCustomerDialogOpen(false);
+    };
+
+    const handleSavePlant = (data: Omit<Parameters<typeof addPlant>[0], 'id'>) => {
+        if (selectedCustomer) {
+            addPlant({ ...data, customerId: selectedCustomer.id });
+        }
+        setPlantDialogOpen(false);
+    };
+
+    const handleSaveUnit = (data: Omit<Parameters<typeof addUnit>[0], 'id'>) => {
+        if (selectedPlant) {
+            addUnit({ ...data, plantId: selectedPlant.id });
+        }
+        setUnitDialogOpen(false);
+    };
+
+    const handleSaveArea = (data: Omit<Parameters<typeof addArea>[0], 'id'>) => {
+        if (selectedUnit) {
+            addArea({ ...data, unitId: selectedUnit.id });
+        }
+        setAreaDialogOpen(false);
+    };
+
+    const handleSaveProject = (data: Omit<Parameters<typeof addProject>[0], 'id'>) => {
+        if (selectedArea) {
+            addProject({ ...data, areaId: selectedArea.id });
+        }
+        setProjectDialogOpen(false);
     };
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -140,79 +254,131 @@ export function HierarchyBrowser() {
     };
 
     return (
-        <Paper
-            sx={{
-                borderRadius: "20px",
-                overflow: 'hidden',
-            }}
-        >
-            <Box
+        <>
+            <Paper
                 sx={{
-                    px: 3,
-                    py: 2,
-                    borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                    borderRadius: "20px",
+                    overflow: 'hidden',
                 }}
             >
-                <Typography variant="h6" fontWeight={600}>
-                    {currentLevel.title}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                    {currentLevel.items.length} item{currentLevel.items.length !== 1 ? 's' : ''}
-                </Typography>
-            </Box>
-
-            <List disablePadding>
-                {currentLevel.items.map((item) => (
-                    <ListItemButton
-                        key={item.id}
-                        onClick={() => handleSelect(item.id)}
-                        sx={{
-                            py: 2,
-                            px: 3,
-                            borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}`,
-                            '&:hover': {
-                                backgroundColor: isDark ? 'rgba(56, 189, 248, 0.08)' : 'rgba(2, 132, 199, 0.08)',
-                            },
-                        }}
-                    >
-                        <ListItemIcon
-                            sx={{
-                                minWidth: 48,
-                                color: 'primary.main',
-                            }}
-                        >
-                            {getIcon(currentLevel.level)}
-                        </ListItemIcon>
-                        <ListItemText
-                            primary={
-                                <Typography fontWeight={500}>
-                                    {item.name}
-                                </Typography>
-                            }
-                            secondary={getSubtitle(item, currentLevel.level)}
-                        />
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            {'status' in item && (
-                                <Chip
-                                    label={String(item.status).replace('_', ' ')}
-                                    size="small"
-                                    color={getStatusColor(String(item.status))}
-                                    sx={{ textTransform: 'capitalize' }}
-                                />
-                            )}
-                            <ChevronRight sx={{ color: 'text.secondary' }} />
-                        </Box>
-                    </ListItemButton>
-                ))}
-
-                {currentLevel.items.length === 0 && (
-                    <Box sx={{ py: 6, textAlign: 'center' }}>
-                        <Typography color="text.secondary">
-                            No {currentLevel.title.toLowerCase()} found
+                <Box
+                    sx={{
+                        px: 3,
+                        py: 2,
+                        borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                    }}
+                >
+                    <Box>
+                        <Typography variant="h6" fontWeight={600}>
+                            {currentLevel.title}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            {currentLevel.items.length} item{currentLevel.items.length !== 1 ? 's' : ''}
                         </Typography>
                     </Box>
-                )}
-            </List>
-        </Paper>
+                    {canAddItem() && (
+                        <Tooltip title={`Add ${currentLevel.level}`}>
+                            <IconButton
+                                onClick={handleOpenDialog}
+                                sx={{
+                                    bgcolor: 'primary.main',
+                                    color: 'white',
+                                    '&:hover': { bgcolor: 'primary.dark' },
+                                }}
+                            >
+                                <Add />
+                            </IconButton>
+                        </Tooltip>
+                    )}
+                </Box>
+
+                <List disablePadding>
+                    {currentLevel.items.map((item) => (
+                        <ListItemButton
+                            key={item.id}
+                            onClick={() => handleSelect(item.id)}
+                            sx={{
+                                py: 2,
+                                px: 3,
+                                borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}`,
+                                '&:hover': {
+                                    backgroundColor: isDark ? 'rgba(56, 189, 248, 0.08)' : 'rgba(2, 132, 199, 0.08)',
+                                },
+                            }}
+                        >
+                            <ListItemIcon
+                                sx={{
+                                    minWidth: 48,
+                                    color: 'primary.main',
+                                }}
+                            >
+                                {getIcon(currentLevel.level)}
+                            </ListItemIcon>
+                            <ListItemText
+                                primary={
+                                    <Typography fontWeight={500}>
+                                        {item.name}
+                                    </Typography>
+                                }
+                                secondary={getSubtitle(item, currentLevel.level)}
+                            />
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                {'status' in item && (
+                                    <Chip
+                                        label={String(item.status).replace('_', ' ')}
+                                        size="small"
+                                        color={getStatusColor(String(item.status))}
+                                        sx={{ textTransform: 'capitalize' }}
+                                    />
+                                )}
+                                <ChevronRight sx={{ color: 'text.secondary' }} />
+                            </Box>
+                        </ListItemButton>
+                    ))}
+
+                    {currentLevel.items.length === 0 && (
+                        <Box sx={{ py: 6, textAlign: 'center' }}>
+                            <Typography color="text.secondary">
+                                No {currentLevel.title.toLowerCase()} found
+                            </Typography>
+                        </Box>
+                    )}
+                </List>
+            </Paper>
+
+            {/* Dialogs */}
+            <CustomerDialog
+                open={customerDialogOpen}
+                onClose={() => setCustomerDialogOpen(false)}
+                onSave={handleSaveCustomer}
+            />
+            <PlantDialog
+                open={plantDialogOpen}
+                onClose={() => setPlantDialogOpen(false)}
+                onSave={handleSavePlant}
+                initialCustomerId={selectedCustomer?.id}
+            />
+            <UnitDialog
+                open={unitDialogOpen}
+                onClose={() => setUnitDialogOpen(false)}
+                onSave={handleSaveUnit}
+                initialPlantId={selectedPlant?.id}
+            />
+            <AreaDialog
+                open={areaDialogOpen}
+                onClose={() => setAreaDialogOpen(false)}
+                onSave={handleSaveArea}
+                initialUnitId={selectedUnit?.id}
+            />
+            <ProjectDialog
+                open={projectDialogOpen}
+                onClose={() => setProjectDialogOpen(false)}
+                onSave={handleSaveProject}
+                initialAreaId={selectedArea?.id}
+            />
+        </>
     );
 }

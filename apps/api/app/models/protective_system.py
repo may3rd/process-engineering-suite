@@ -81,6 +81,6 @@ class ProtectiveSystem(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixi
     todos = relationship("Todo", back_populates="protective_system", cascade="all, delete-orphan")
 
     @property
-    def projectIds(self) -> list[str]:
+    def project_ids(self) -> list[str]:
         """Return list of project IDs for API compatibility."""
         return [p.id for p in self.projects]

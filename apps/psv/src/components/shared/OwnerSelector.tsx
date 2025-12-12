@@ -30,6 +30,7 @@ export function OwnerSelector({
     disabled = false,
     filterRole,
 }: OwnerSelectorProps) {
+    // Show all users in dropdown for testing
     const filteredUsers = filterRole
         ? users.filter(u => filterRole.includes(u.role) && u.status === 'active')
         : users.filter(u => u.status === 'active');

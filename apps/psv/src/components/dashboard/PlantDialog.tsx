@@ -16,13 +16,14 @@ import {
 } from "@mui/material";
 import { Plant } from "@/data/types";
 import { OwnerSelector } from "../shared";
-import { customers } from "@/data/mockData";
+import { usePsvStore } from "@/store/usePsvStore";
 
 interface PlantDialogProps {
     open: boolean;
     onClose: () => void;
     onSave: (plant: Omit<Plant, 'id' | 'createdAt'>) => void;
     plant?: Plant | null;
+    initialCustomerId?: string;
 }
 
 export function PlantDialog({
@@ -30,7 +31,10 @@ export function PlantDialog({
     onClose,
     onSave,
     plant,
+    initialCustomerId,
 }: PlantDialogProps) {
+    const customers = usePsvStore((state) => state.customers);
+
     const [name, setName] = useState('');
     const [code, setCode] = useState('');
     const [customerId, setCustomerId] = useState<string>('');
@@ -44,6 +48,12 @@ export function PlantDialog({
             setCustomerId(plant.customerId);
             setStatus(plant.status);
             setOwnerId(plant.ownerId);
+        } else if (initialCustomerId) {
+            setCustomerId(initialCustomerId);
+            setName('');
+            setCode('');
+            setStatus('active');
+            setOwnerId(null);
         } else {
             setName('');
             setCode('');
@@ -51,7 +61,7 @@ export function PlantDialog({
             setStatus('active');
             setOwnerId(null);
         }
-    }, [plant, open]);
+    }, [plant, initialCustomerId, open]);
 
     const handleSubmit = () => {
         if (!name.trim() || !code.trim() || !customerId || !ownerId) return;
