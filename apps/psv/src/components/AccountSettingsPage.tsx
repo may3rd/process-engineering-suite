@@ -69,32 +69,9 @@ export function AccountSettingsPage() {
 
     return (
         <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
-            {/* Header */}
-            <Paper
-                sx={{
-                    ...glassCardStyles,
-                    p: 3,
-                    borderRadius: 0,
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                }}
-            >
-                <Box>
-                    <Typography variant="h4" fontWeight={700}>
-                        Account Settings
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        Manage your profile and preferences
-                    </Typography>
-                </Box>
-                <IconButton onClick={handleClose}>
-                    <Close />
-                </IconButton>
-            </Paper>
 
             {/* Content */}
-            <Box sx={{ flex: 1, overflow: 'auto', p: 3 }}>
+            <Box sx={{ flex: 1, overflow: 'auto', p: 3, pt: 0 }}>
                 <Stack spacing={3} sx={{ maxWidth: 800, mx: 'auto' }}>
                     {saveSuccess && (
                         <Alert severity="success">Profile updated successfully!</Alert>
@@ -102,9 +79,21 @@ export function AccountSettingsPage() {
 
                     {/* Profile Section */}
                     <Paper sx={{ p: 3, ...glassCardStyles }}>
-                        <Typography variant="h6" fontWeight={600} gutterBottom>
-                            Profile Information
-                        </Typography>
+                        <Box
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                mb: 1,
+                            }}
+                        >
+                            <Typography variant="h6" fontWeight={600}>
+                                Profile Information
+                            </Typography>
+                            <IconButton onClick={handleClose}>
+                                <Close />
+                            </IconButton>
+                        </Box>
                         <Divider sx={{ my: 2 }} />
 
                         <Stack spacing={3}>

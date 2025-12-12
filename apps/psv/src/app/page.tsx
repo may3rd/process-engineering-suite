@@ -46,9 +46,11 @@ export default function PsvApp() {
     return (
         <Box sx={{ minHeight: '100vh - 72px', pb: 4 }}>
             <Container maxWidth="xl" sx={{ pt: 4 }}>
-                <Box className="print-hide" sx={{ mb: 3 }}>
-                    <Breadcrumbs />
-                </Box>
+                {currentPage !== 'dashboard' && currentPage !== 'account' && (
+                    <Box className="print-hide" sx={{ mb: 3 }}>
+                        <Breadcrumbs />
+                    </Box>
+                )}
 
                 {isLoading && !selectedProject && !selectedPsv ? (
                     <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
