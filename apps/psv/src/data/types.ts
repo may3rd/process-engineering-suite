@@ -152,6 +152,8 @@ export interface SizingInputs {
     calculatedBackpressure?: number;  // barg - calculated from outlet network
     destinationPressure?: number;  // barg - destination pressure for backward calculation
     inletPressureDrop?: number;  // kPa - calculated from inlet network
+    dischargeCoefficient?: number; // Kd - manual override
+    backpressureCorrectionFactor?: number; // Kb - manual override
 }
 
 export interface SizingOutputs {

@@ -18,6 +18,7 @@ import {
     ListItemIcon,
     ListItemText,
     useTheme,
+    Alert,
 } from "@mui/material";
 import {
     Print,
@@ -95,6 +96,17 @@ export function SummaryTab() {
     // Find the governing scenario for this PSV
     const governingScenario = psvScenarios.find(s => s.isGoverning) || null;
 
+    // Find the sizing case for the governing scenario (must be calculated)
+    const governingSizingCase = governingScenario
+        ? psvSizingCases.find(c => c.scenarioId === governingScenario.id && c.status === 'calculated')
+        : null;
+
+    // Validation states for warnings
+    const governingScenarios = psvScenarios.filter(s => s.isGoverning);
+    const hasNoGoverning = psvScenarios.length > 0 && governingScenarios.length === 0;
+    const hasMultipleGoverning = governingScenarios.length > 1;
+    const governingNotSized = governingScenario && !governingSizingCase;
+
     const handlePrint = () => {
         window.print();
     };
@@ -143,6 +155,23 @@ export function SummaryTab() {
                     Print Summary
                 </Button>
             </Box>
+
+            {/* Governing Scenario Warnings */}
+            {hasMultipleGoverning && (
+                <Alert severity="error" variant="outlined" sx={{ mb: 2 }} className="no-print">
+                    <strong>Multiple governing scenarios selected.</strong> Only one scenario should be marked as governing. Go to Scenarios tab to fix.
+                </Alert>
+            )}
+            {hasNoGoverning && (
+                <Alert severity="warning" variant="outlined" sx={{ mb: 2 }} className="no-print">
+                    <strong>No governing scenario selected.</strong> Mark a scenario as governing in the Scenarios tab.
+                </Alert>
+            )}
+            {governingNotSized && !hasMultipleGoverning && (
+                <Alert severity="info" variant="outlined" sx={{ mb: 2 }} className="no-print">
+                    <strong>Governing scenario not sized.</strong> Create and calculate a sizing case for "{governingScenario?.cause.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}" to enable hydraulic validation.
+                </Alert>
+            )}
 
             {/* Company Header Placeholder */}
             <Paper sx={{ ...sectionStyles, mb: 2, textAlign: 'center', py: 1.5 }}>
@@ -377,6 +406,10 @@ export function SummaryTab() {
                                                 {sizingCase.outputs.requiredArea.toFixed(1)}
                                             </TableCell>
                                             <TableCell>
+                                                {(sizingCase.outputs.numberOfValves || 1) > 1
+                                                    ? `${sizingCase.outputs.numberOfValves} x `
+                                                    : ''
+                                                }
                                                 {sizingCase.outputs.selectedOrifice} ({sizingCase.outputs.orificeArea} mm²)
                                             </TableCell>
                                             <TableCell align="right">
@@ -411,7 +444,7 @@ export function SummaryTab() {
                 <Typography variant="h6" sx={headerStyles}>
                     Pipeline Hydraulics (Governing Scenario)
                 </Typography>
-                {governingScenario ? (
+                {governingScenario && governingSizingCase ? (
                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
                         {/* Inlet Pipeline */}
                         <Box>
@@ -503,7 +536,10 @@ export function SummaryTab() {
                     </Box>
                 ) : (
                     <Typography variant="body2" color="text.secondary">
-                        No governing scenario selected. Define a governing scenario to calculate hydraulics.
+                        {!governingScenario
+                            ? 'No governing scenario selected. Mark a scenario as governing to display hydraulics.'
+                            : 'Governing scenario has not been sized. Calculate a sizing case for the governing scenario to display hydraulics.'
+                        }
                     </Typography>
                 )}
             </Paper>

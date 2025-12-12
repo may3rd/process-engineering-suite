@@ -35,6 +35,7 @@ import {
     Menu,
     MenuItem,
     Fade,
+    Alert,
 } from "@mui/material";
 import {
     Info,
@@ -256,6 +257,28 @@ function ScenariosTab() {
                 })}
             </Box>
 
+            {/* Governing Scenario Warnings */}
+            {(() => {
+                const governingScenarios = scenarioList.filter(s => s.isGoverning);
+                const hasNoGoverning = scenarioList.length > 0 && governingScenarios.length === 0;
+                const hasMultipleGoverning = governingScenarios.length > 1;
+
+                return (
+                    <>
+                        {hasMultipleGoverning && (
+                            <Alert severity="error" sx={{ mb: 2 }}>
+                                <strong>Multiple governing scenarios selected.</strong> Only one scenario should be marked as governing. Edit scenarios to keep only one as governing.
+                            </Alert>
+                        )}
+                        {hasNoGoverning && (
+                            <Alert severity="warning" sx={{ mb: 2 }}>
+                                <strong>No governing scenario selected.</strong> Mark one scenario as governing by editing it and enabling the "Governing" toggle.
+                            </Alert>
+                        )}
+                    </>
+                );
+            })()}
+
             <Dialog
                 open={editorOpen}
                 onClose={() => setEditorOpen(false)}
@@ -416,6 +439,7 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
     const { sizingCaseList, scenarioList, selectedPsv, addSizingCase, updateSizingCase } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
+    const currentUser = useAuthStore((state) => state.currentUser);
     const [dialogOpen, setDialogOpen] = useState(false);
 
     const getScenarioName = (scenarioId: string) => {
@@ -490,7 +514,7 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
             },
             revisionNo: 1,
             status: 'draft',
-            createdBy: 'user-1',
+            createdBy: selectedPsv.ownerId,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };
@@ -524,6 +548,37 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                     </Button>
                 )}
             </Box>
+
+            {/* Governing Scenario Not Sized Alert */}
+            {(() => {
+                const governingScenario = scenarioList.find(s => s.isGoverning);
+                const governingSizingCase = governingScenario
+                    ? sizingCaseList.find(c => c.scenarioId === governingScenario.id && c.status === 'calculated')
+                    : null;
+                const governingNotSized = governingScenario && !governingSizingCase;
+
+                if (!governingNotSized) return null;
+
+                return (
+                    <Alert
+                        severity="info"
+                        sx={{ mb: 2 }}
+                        action={
+                            canEdit && (
+                                <Button
+                                    color="inherit"
+                                    size="small"
+                                    onClick={() => setDialogOpen(true)}
+                                >
+                                    Create Sizing Case
+                                </Button>
+                            )
+                        }
+                    >
+                        <strong>Governing scenario not sized.</strong> Create a sizing case for "{governingScenario.cause.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}" to enable hydraulic validation.
+                    </Alert>
+                );
+            })()}
 
             {/* Scenario Picker Dialog */}
             <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="sm" fullWidth>
@@ -578,6 +633,16 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                             <Typography variant="h6" fontWeight={600}>
                                                 {getScenarioName(sizing.scenarioId)}
                                             </Typography>
+                                            {scenarioList.find(s => s.id === sizing.scenarioId)?.isGoverning && (
+                                                <Chip
+                                                    icon={<Star sx={{ fontSize: 14 }} />}
+                                                    label="Governing"
+                                                    size="small"
+                                                    color="warning"
+                                                    variant="outlined"
+                                                    sx={{ height: 22, '& .MuiChip-icon': { ml: 0.5 } }}
+                                                />
+                                            )}
                                             <Chip
                                                 label={sizing.status}
                                                 size="small"
@@ -598,7 +663,7 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                                     onClick={() => updateSizingCase({
                                                         ...sizing,
                                                         status: 'verified',
-                                                        approvedBy: 'user-1'
+                                                        approvedBy: currentUser?.id
                                                     })}
                                                 >
                                                     <Verified fontSize="small" />
@@ -650,20 +715,22 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Z Factor</Typography>
-                                                <Typography variant="body2" fontWeight={500}>{sizing.inputs.compressibilityZ}</Typography>
+                                                <Typography variant="body2" fontWeight={500}>{sizing.inputs?.compressibilityZ ?? '-'}</Typography>
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">k (Cp/Cv)</Typography>
-                                                <Typography variant="body2" fontWeight={500}>{sizing.inputs.specificHeatRatio}</Typography>
+                                                <Typography variant="body2" fontWeight={500}>{sizing.inputs?.specificHeatRatio ?? '-'}</Typography>
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Backpressure</Typography>
-                                                <Typography variant="body2" fontWeight={500}>{typeof sizing.inputs.backpressure === 'number' ? sizing.inputs.backpressure.toFixed(3) : sizing.inputs.backpressure} barg</Typography>
+                                                <Typography variant="body2" fontWeight={500}>
+                                                    {typeof sizing.inputs?.backpressure === 'number' ? sizing.inputs.backpressure.toFixed(3) : (sizing.inputs?.backpressure ?? '-')} barg
+                                                </Typography>
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">BP Type</Typography>
                                                 <Typography variant="body2" fontWeight={500} sx={{ textTransform: 'capitalize' }}>
-                                                    {sizing.inputs.backpressureType.replace('_', ' ')}
+                                                    {sizing.inputs?.backpressureType?.replace('_', ' ') ?? '-'}
                                                 </Typography>
                                             </Box>
                                         </Box>
@@ -683,47 +750,47 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Required Area</Typography>
                                                 <Typography variant="body2" fontWeight={600} color="primary.main">
-                                                    {sizing.outputs.requiredArea.toLocaleString()} mm²
+                                                    {sizing.outputs?.requiredArea?.toLocaleString() ?? '-'} mm²
                                                 </Typography>
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Selected Orifice</Typography>
                                                 <Typography variant="h5" fontWeight={700} color="primary.main">
-                                                    {sizing.outputs.selectedOrifice}
+                                                    {sizing.outputs?.selectedOrifice ?? '-'}
                                                 </Typography>
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">
-                                                    {(sizing.outputs.numberOfValves || 1) > 1 ? 'Total Orifice Area' : 'Orifice Area'}
+                                                    {(sizing.outputs?.numberOfValves || 1) > 1 ? 'Total Orifice Area' : 'Orifice Area'}
                                                 </Typography>
                                                 <Typography variant="body2" fontWeight={500}>
-                                                    {(sizing.outputs.orificeArea * (sizing.outputs.numberOfValves || 1)).toLocaleString()} mm²
+                                                    {((sizing.outputs?.orificeArea ?? 0) * (sizing.outputs?.numberOfValves || 1)).toLocaleString()} mm²
                                                 </Typography>
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">% Used</Typography>
                                                 <Typography variant="body2" fontWeight={600} color={
-                                                    (sizing.outputs.requiredArea / (sizing.outputs.orificeArea * (sizing.outputs.numberOfValves || 1)) * 100) > 90 ? 'warning.main' : 'text.primary'
+                                                    ((sizing.outputs?.requiredArea ?? 0) / ((sizing.outputs?.orificeArea ?? 1) * (sizing.outputs?.numberOfValves || 1)) * 100) > 90 ? 'warning.main' : 'text.primary'
                                                 }>
-                                                    {(sizing.outputs.requiredArea / (sizing.outputs.orificeArea * (sizing.outputs.numberOfValves || 1)) * 100).toFixed(1)}%
+                                                    {((sizing.outputs?.requiredArea ?? 0) / ((sizing.outputs?.orificeArea ?? 1) * (sizing.outputs?.numberOfValves || 1)) * 100).toFixed(1)}%
                                                 </Typography>
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Number of Valves</Typography>
-                                                <Typography variant="body2" fontWeight={600} color={sizing.outputs.numberOfValves > 1 ? 'info.main' : 'text.primary'}>
-                                                    {sizing.outputs.numberOfValves || 1}
+                                                <Typography variant="body2" fontWeight={600} color={(sizing.outputs?.numberOfValves ?? 1) > 1 ? 'info.main' : 'text.primary'}>
+                                                    {sizing.outputs?.numberOfValves || 1}
                                                 </Typography>
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Rated Capacity</Typography>
-                                                <Typography variant="body2" fontWeight={500}>{sizing.outputs.ratedCapacity.toLocaleString()} kg/h</Typography>
+                                                <Typography variant="body2" fontWeight={500}>{sizing.outputs?.ratedCapacity?.toLocaleString() ?? '-'} kg/h</Typography>
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>Flow Type</Typography>
                                                 <Chip
-                                                    label={sizing.outputs.isCriticalFlow ? 'Critical' : 'Subcritical'}
+                                                    label={sizing.outputs?.isCriticalFlow ? 'Critical' : 'Subcritical'}
                                                     size="small"
-                                                    color={sizing.outputs.isCriticalFlow ? 'success' : 'info'}
+                                                    color={sizing.outputs?.isCriticalFlow ? 'success' : 'info'}
                                                 />
                                             </Box>
                                         </Box>
@@ -731,10 +798,10 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                 </Box>
 
                                 {/* Messages */}
-                                {sizing.outputs.messages.length > 0 && (
+                                {sizing.outputs?.messages?.length > 0 && (
                                     <Box sx={{ mt: 2 }}>
                                         <List dense disablePadding>
-                                            {sizing.outputs.messages.map((msg, idx) => (
+                                            {sizing.outputs?.messages?.map((msg, idx) => (
                                                 <ListItem key={idx} disablePadding sx={{ py: 0.25 }}>
                                                     <ListItemIcon sx={{ minWidth: 28 }}>
                                                         <Info sx={{ fontSize: 16, color: 'info.main' }} />
@@ -871,7 +938,7 @@ function NotesTab() {
     const [addTaskOpen, setAddTaskOpen] = useState(false);
     const [addCommentOpen, setAddCommentOpen] = useState(false);
     const [newTaskText, setNewTaskText] = useState('');
-    const [newTaskAssignee, setNewTaskAssignee] = useState('user-1');
+    const [newTaskAssignee, setNewTaskAssignee] = useState(selectedPsv?.ownerId || '');
     const [newTaskDueDate, setNewTaskDueDate] = useState('');
     const [newCommentText, setNewCommentText] = useState('');
 
@@ -902,12 +969,12 @@ function NotesTab() {
             completed: false,
             assignedTo: newTaskAssignee,
             dueDate: dueDate,
-            createdBy: 'user-1',
+            createdBy: selectedPsv.ownerId,
             createdAt: new Date().toISOString(),
         };
         addTodo(newTodo);
         setNewTaskText('');
-        setNewTaskAssignee('user-1');
+        setNewTaskAssignee(selectedPsv.ownerId);
         setNewTaskDueDate('');
         setAddTaskOpen(false);
     };
@@ -924,7 +991,7 @@ function NotesTab() {
             id: `comment-${Date.now()}`,
             protectiveSystemId: selectedPsv.id,
             body: newCommentText.trim(),
-            createdBy: 'user-1',
+            createdBy: selectedPsv.ownerId,
             createdAt: new Date().toISOString(),
         };
         addComment(newComment);

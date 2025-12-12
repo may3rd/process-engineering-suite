@@ -36,6 +36,7 @@ class ProtectiveSystemResponse(BaseModel):
 
 
 class ProtectiveSystemCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     areaId: str
     name: str
     tag: str
@@ -51,7 +52,9 @@ class ProtectiveSystemCreate(BaseModel):
 
 
 class ProtectiveSystemUpdate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     name: Optional[str] = None
+    designCode: Optional[str] = None
     serviceFluid: Optional[str] = None
     fluidPhase: Optional[str] = None
     setPressure: Optional[float] = None
@@ -83,6 +86,7 @@ class ScenarioResponse(BaseModel):
 
 
 class ScenarioCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     protectiveSystemId: str
     cause: str
     description: Optional[str] = None
@@ -98,6 +102,7 @@ class ScenarioCreate(BaseModel):
 
 
 class ScenarioUpdate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     cause: Optional[str] = None
     description: Optional[str] = None
     relievingTemp: Optional[float] = None
@@ -129,6 +134,7 @@ class SizingCaseResponse(BaseModel):
 
 
 class SizingCaseCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     protectiveSystemId: str
     scenarioId: Optional[str] = None
     standard: str = "API-520"
@@ -138,6 +144,7 @@ class SizingCaseCreate(BaseModel):
 
 
 class SizingCaseUpdate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     inputs: Optional[dict] = None
     outputs: Optional[dict] = None
     status: Optional[str] = None

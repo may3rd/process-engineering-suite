@@ -57,6 +57,7 @@ class AttachmentResponse(BaseModel):
 
 
 class AttachmentCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     protectiveSystemId: str
     fileUri: str
     fileName: str
@@ -78,6 +79,7 @@ class CommentResponse(BaseModel):
 
 
 class CommentCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     protectiveSystemId: str
     body: str
     createdBy: str
@@ -98,6 +100,7 @@ class TodoResponse(BaseModel):
 
 
 class TodoCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     protectiveSystemId: str
     text: str
     assignedTo: Optional[str] = None
@@ -106,6 +109,7 @@ class TodoCreate(BaseModel):
 
 
 class TodoUpdate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
     text: Optional[str] = None
     completed: Optional[bool] = None
     assignedTo: Optional[str] = None
@@ -163,6 +167,15 @@ async def create_comment(data: CommentCreate, dal: DAL):
     return await dal.create_comment(data.model_dump())
 
 
+@router.delete("/comments/{comment_id}")
+async def delete_comment(comment_id: str, dal: DAL):
+    """Delete a comment."""
+    success = await dal.delete_comment(comment_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Comment not found")
+    return {"message": "Comment deleted"}
+
+
 # --- Todo Endpoints ---
 
 @router.get("/psv/{psv_id}/todos", response_model=List[TodoResponse])
@@ -185,3 +198,12 @@ async def update_todo(todo_id: str, data: TodoUpdate, dal: DAL):
         return await dal.update_todo(todo_id, update_data)
     except ValueError as e:
         raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.delete("/todos/{todo_id}")
+async def delete_todo(todo_id: str, dal: DAL):
+    """Delete a todo."""
+    success = await dal.delete_todo(todo_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Todo not found")
+    return {"message": "Todo deleted"}

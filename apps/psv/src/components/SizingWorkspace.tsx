@@ -131,6 +131,9 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
     // Multiple valve support
     const [numberOfValves, setNumberOfValves] = useState(sizingCase.outputs.numberOfValves || 1);
 
+    // Hydraulic calculation flow source: 'relieving' = mass flow rate, 'rated' = rated capacity
+    const [hydraulicFlowSource, setHydraulicFlowSource] = useState<'relieving' | 'rated'>('relieving');
+
     // Local network state (from PSV, not sizing case)
     const [localInletNetwork, setLocalInletNetwork] = useState<PipelineNetwork | undefined>(inletNetwork);
     const [localOutletNetwork, setLocalOutletNetwork] = useState<PipelineNetwork | undefined>(outletNetwork);
@@ -177,6 +180,76 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
         }
     }, [currentCase.method]);
 
+    // Recompute hydraulic results on mount if case is already calculated and has networks
+    // This restores the hydraulic summary when re-opening an existing sizing case
+    useEffect(() => {
+        if (sizingCase.status === 'calculated') {
+            // Recompute inlet hydraulics if network exists
+            if (inletNetwork?.pipes?.length && sizingCase.inputs.massFlowRate && sizingCase.inputs.pressure) {
+                const fluid: FluidProperties = {
+                    phase: sizingCase.method === 'gas' ? 'gas' :
+                        sizingCase.method === 'liquid' ? 'liquid' :
+                            sizingCase.method === 'two_phase' ? 'two_phase' : 'gas',
+                    temperature: sizingCase.inputs.temperature,
+                    pressure: sizingCase.inputs.pressure,
+                    molecularWeight: sizingCase.inputs.molecularWeight,
+                    compressibilityZ: sizingCase.inputs.compressibilityZ,
+                    specificHeatRatio: sizingCase.inputs.specificHeatRatio,
+                    gasViscosity: sizingCase.inputs.gasViscosity || sizingCase.inputs.viscosity,
+                    liquidDensity: sizingCase.inputs.liquidDensity || sizingCase.inputs.density,
+                    liquidViscosity: sizingCase.inputs.liquidViscosity || sizingCase.inputs.viscosity,
+                };
+
+                const inletResult = calculateNetworkPressureDropWithWarnings(
+                    inletNetwork,
+                    sizingCase.inputs.massFlowRate,
+                    fluid,
+                    {
+                        boundaryPressure: sizingCase.inputs.pressure,
+                        boundaryPressureUnit: 'barg',
+                        boundaryTemperature: sizingCase.inputs.temperature,
+                        boundaryTemperatureUnit: 'C',
+                        direction: 'forward',
+                    }
+                );
+                setInletHydraulicResult(inletResult);
+            }
+
+            // Recompute outlet hydraulics if network exists
+            if (outletNetwork?.pipes?.length && sizingCase.inputs.massFlowRate && sizingCase.inputs.temperature) {
+                const fluid: FluidProperties = {
+                    phase: sizingCase.method === 'gas' ? 'gas' :
+                        sizingCase.method === 'liquid' ? 'liquid' :
+                            sizingCase.method === 'two_phase' ? 'two_phase' : 'gas',
+                    temperature: sizingCase.inputs.temperature,
+                    pressure: sizingCase.inputs.pressure,
+                    molecularWeight: sizingCase.inputs.molecularWeight,
+                    compressibilityZ: sizingCase.inputs.compressibilityZ,
+                    specificHeatRatio: sizingCase.inputs.specificHeatRatio,
+                    gasViscosity: sizingCase.inputs.gasViscosity || sizingCase.inputs.viscosity,
+                    liquidDensity: sizingCase.inputs.liquidDensity || sizingCase.inputs.density,
+                    liquidViscosity: sizingCase.inputs.liquidViscosity || sizingCase.inputs.viscosity,
+                };
+
+                const outletResult = calculateNetworkPressureDropWithWarnings(
+                    outletNetwork,
+                    sizingCase.inputs.massFlowRate,
+                    fluid,
+                    {
+                        boundaryPressure: sizingCase.inputs.destinationPressure || 0,
+                        boundaryPressureUnit: 'barg',
+                        boundaryTemperature: sizingCase.inputs.temperature,
+                        boundaryTemperatureUnit: 'C',
+                        direction: 'backward',
+                    }
+                );
+                setOutletHydraulicResult(outletResult);
+            }
+
+            // Set isCalculated to true since we're loading a calculated case
+            setIsCalculated(true);
+        }
+    }, []); // Run once on mount
 
     const handleConfirmDelete = () => {
         if (deleteConfirmationInput === "delete sizing case") {
@@ -391,11 +464,20 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
             // Collect all warnings from both networks
             const allWarnings: string[] = [];
 
+            // Determine flow rate for hydraulic calculations
+            // 'relieving' = mass flow rate from scenario, 'rated' = rated capacity of selected valve
+            const hydraulicFlowRate = hydraulicFlowSource === 'rated'
+                ? (currentCase.outputs?.ratedCapacity ?? currentCase.inputs.massFlowRate)
+                : currentCase.inputs.massFlowRate;
+
+            console.log('Hydraulic Flow Source:', hydraulicFlowSource);
+            console.log('Hydraulic Flow Rate (kg/h):', hydraulicFlowRate);
+
             if (localInletNetwork?.pipes?.length) {
                 console.log('--- INLET NETWORK ---');
                 const inletResult = calculateNetworkPressureDropWithWarnings(
                     localInletNetwork,
-                    currentCase.inputs.massFlowRate,
+                    hydraulicFlowRate,
                     fluid,
                     {
                         boundaryPressure: currentCase.inputs.pressure,
@@ -442,7 +524,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
 
                 const outletResult = calculateNetworkPressureDropWithWarnings(
                     localOutletNetwork,
-                    currentCase.inputs.massFlowRate,
+                    hydraulicFlowRate,
                     fluid,
                     {
                         boundaryPressure: currentCase.inputs.destinationPressure || 0,
@@ -489,11 +571,51 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
             const baseOutputs = calculateSizing(updatedInputs, currentCase.method);
 
             // Adjust outputs for multiple valves
+            // Re-select orifice based on per-valve required area
+            const requiredAreaPerValve = baseOutputs.requiredArea / numberOfValves;
+
+            // Find the smallest orifice that fits the per-valve area
+            let selectedOrificeForValves = ORIFICE_SIZES[ORIFICE_SIZES.length - 1]; // Default to largest
+            for (const orifice of ORIFICE_SIZES) {
+                if (orifice.area >= requiredAreaPerValve) {
+                    selectedOrificeForValves = orifice;
+                    break;
+                }
+            }
+
+            // Calculate percent used based on per-valve area vs selected orifice
+            const percentUsedPerValve = (requiredAreaPerValve / selectedOrificeForValves.area) * 100;
+
+            // Filter out the "exceeds largest standard orifice" warning if multi-valve makes it fit
+            let adjustedMessages = baseOutputs.messages;
+            if (numberOfValves > 1 && percentUsedPerValve <= 100) {
+                adjustedMessages = adjustedMessages.filter(
+                    msg => !msg.includes('WARNING: Required area exceeds largest standard orifice')
+                );
+            }
+
+            // Add high utilization warning if per-valve utilization is high
+            if (percentUsedPerValve > 90 && percentUsedPerValve <= 100) {
+                const hasHighUtilWarning = adjustedMessages.some(msg => msg.includes('High orifice utilization'));
+                if (!hasHighUtilWarning) {
+                    adjustedMessages = [...adjustedMessages, `NOTE: High orifice utilization (${percentUsedPerValve.toFixed(1)}%)`];
+                }
+            }
+
+            // Calculate rated capacity correctly:
+            // ratedCapacity = massFlowRate × (totalValveArea / requiredArea)
+            // where totalValveArea = numberOfValves × selectedOrificeArea
+            const totalValveArea = numberOfValves * selectedOrificeForValves.area;
+            const calculatedRatedCapacity = updatedInputs.massFlowRate * (totalValveArea / baseOutputs.requiredArea);
+
             const outputs = {
                 ...baseOutputs,
-                percentUsed: (baseOutputs.requiredArea / (numberOfValves * baseOutputs.orificeArea)) * 100,
-                ratedCapacity: baseOutputs.ratedCapacity * numberOfValves,
-                numberOfValves: numberOfValves, // Ensure this is saved
+                selectedOrifice: selectedOrificeForValves.designation,
+                orificeArea: selectedOrificeForValves.area,
+                percentUsed: Math.round(percentUsedPerValve * 10) / 10,
+                ratedCapacity: Math.round(calculatedRatedCapacity),
+                numberOfValves: numberOfValves,
+                messages: adjustedMessages,
             };
 
             // === PHASE 4: Merge validation results with outputs ===
@@ -1114,14 +1236,14 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                     </Typography>
                                     {currentCase.outputs?.inletValidation ? (
                                         <Alert
-                                            severity={currentCase.outputs.inletValidation.severity}
-                                            icon={currentCase.outputs.inletValidation.isValid ? <CheckCircle /> : <Warning />}
+                                            severity={currentCase.outputs?.inletValidation?.severity}
+                                            icon={currentCase.outputs?.inletValidation?.isValid ? <CheckCircle /> : <Warning />}
                                         >
                                             <Typography variant="body2">
-                                                {currentCase.outputs.inletPressureDrop !== undefined
+                                                {currentCase.outputs?.inletPressureDrop !== undefined
                                                     ? toDisplayDelta(currentCase.outputs.inletPressureDrop, 'pressure', 3)
                                                     : '—'} {getDeltaUnit('pressure') + " "}
-                                                ({currentCase.outputs.inletPressureDropPercent?.toFixed(2) || '—'}% of set pressure)
+                                                ({currentCase.outputs?.inletPressureDropPercent?.toFixed(2) || '—'}% of set pressure)
                                             </Typography>
                                             <Typography variant="caption">
                                                 {currentCase.outputs.inletValidation.message}
@@ -1147,9 +1269,63 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                 <TabPanel value={activeTab} index={2}>
                     <Box sx={{ maxWidth: 1000, mx: 'auto' }}>
                         <Typography variant="h6" sx={{ mb: 1 }}>Inlet Pipeline Configuration</Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                             Define the pipe segments from the protected equipment to the PSV inlet.
                         </Typography>
+
+                        {/* Flow Rate Source Toggle */}
+                        <Card sx={{ mb: 3, p: 2 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
+                                <Box>
+                                    <Typography variant="subtitle2" fontWeight={600}>
+                                        Hydraulic Calculation Flow Rate
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Select which flow rate to use for inlet/outlet pressure drop calculations
+                                    </Typography>
+                                </Box>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                    <RadioGroup
+                                        row
+                                        value={hydraulicFlowSource}
+                                        onChange={(e) => {
+                                            setHydraulicFlowSource(e.target.value as 'relieving' | 'rated');
+                                            setIsDirty(true);
+                                            setIsCalculated(false);
+                                        }}
+                                    >
+                                        <FormControlLabel
+                                            value="relieving"
+                                            control={<Radio size="small" />}
+                                            label={
+                                                <Box>
+                                                    <Typography variant="body2" fontWeight={500}>Relieving Rate</Typography>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        {toDisplay(currentCase.inputs.massFlowRate, 'flow').toLocaleString()} {preferences.flow}
+                                                    </Typography>
+                                                </Box>
+                                            }
+                                        />
+                                        <FormControlLabel
+                                            value="rated"
+                                            control={<Radio size="small" />}
+                                            label={
+                                                <Box>
+                                                    <Typography variant="body2" fontWeight={500}>Rated Capacity</Typography>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        {currentCase.outputs?.ratedCapacity
+                                                            ? `${toDisplay(currentCase.outputs.ratedCapacity, 'flow').toLocaleString()} ${preferences.flow}`
+                                                            : 'Calculate first'
+                                                        }
+                                                    </Typography>
+                                                </Box>
+                                            }
+                                            disabled={!currentCase.outputs?.ratedCapacity}
+                                        />
+                                    </RadioGroup>
+                                </Box>
+                            </Box>
+                        </Card>
 
                         {/* ===== INLET HYDRAULIC SUMMARY ===== */}
                         {(localInletNetwork?.pipes?.length ?? 0) > 0 && (
@@ -1428,16 +1604,38 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                     <TextField
                                         label="Discharge Coefficient (Kd)"
                                         type="number"
-                                        value={currentCase.outputs.dischargeCoefficient}
-                                        InputProps={{ readOnly: true }}
+                                        value={currentCase.inputs?.dischargeCoefficient ?? currentCase.outputs?.dischargeCoefficient ?? ''}
+                                        onChange={(e) => {
+                                            const val = parseFloat(e.target.value);
+                                            setCurrentCase({
+                                                ...currentCase,
+                                                inputs: {
+                                                    ...currentCase.inputs,
+                                                    dischargeCoefficient: isNaN(val) ? undefined : val
+                                                }
+                                            });
+                                            setIsDirty(true);
+                                            setIsCalculated(false);
+                                        }}
                                         fullWidth
                                         helperText="Per API-520 (0.975 for gas, 0.65 for liquid)"
                                     />
                                     <TextField
                                         label="Backpressure Correction (Kb)"
                                         type="number"
-                                        value={currentCase.outputs.backpressureCorrectionFactor}
-                                        InputProps={{ readOnly: true }}
+                                        value={currentCase.inputs?.backpressureCorrectionFactor ?? currentCase.outputs?.backpressureCorrectionFactor ?? ''}
+                                        onChange={(e) => {
+                                            const val = parseFloat(e.target.value);
+                                            setCurrentCase({
+                                                ...currentCase,
+                                                inputs: {
+                                                    ...currentCase.inputs,
+                                                    backpressureCorrectionFactor: isNaN(val) ? undefined : val
+                                                }
+                                            });
+                                            setIsDirty(true);
+                                            setIsCalculated(false);
+                                        }}
                                         fullWidth
                                         helperText="Calculated from backpressure ratio"
                                     />
@@ -1499,18 +1697,18 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                             {numberOfValves > 1 ? 'Required Area (per valve)' : 'Required Area'}
                                         </Typography>
                                         <Typography variant="h5" fontWeight={600} color="primary.main">
-                                            {Math.round(currentCase.outputs.requiredArea / numberOfValves).toLocaleString()} mm²
+                                            {Math.round((currentCase.outputs?.requiredArea ?? 0) / numberOfValves).toLocaleString()} mm²
                                         </Typography>
                                         {numberOfValves > 1 && (
                                             <Typography variant="caption" color="text.secondary">
-                                                Total: {currentCase.outputs.requiredArea.toLocaleString()} mm²
+                                                Total: {(currentCase.outputs?.requiredArea ?? 0).toLocaleString()} mm²
                                             </Typography>
                                         )}
                                     </Box>
                                     <TextField
                                         label="Selected Orifice"
                                         select
-                                        value={manualOrificeMode ? currentCase.outputs.selectedOrifice : getAutoSelectedOrifice().designation}
+                                        value={manualOrificeMode ? currentCase.outputs?.selectedOrifice : getAutoSelectedOrifice().designation}
                                         onChange={(e) => handleOrificeChange(e.target.value)}
                                         disabled={!manualOrificeMode}
                                         fullWidth
@@ -1519,7 +1717,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                             <MenuItem
                                                 key={o.designation}
                                                 value={o.designation}
-                                                disabled={o.area < (currentCase.outputs.requiredArea / numberOfValves)}
+                                                disabled={o.area < ((currentCase.outputs?.requiredArea ?? 0) / numberOfValves)}
                                             >
                                                 {o.designation} — {o.area.toLocaleString()} mm²
                                             </MenuItem>
@@ -1528,15 +1726,15 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                     <Box>
                                         <Typography variant="caption" color="text.secondary">Orifice Area</Typography>
                                         <Typography variant="h5" fontWeight={600}>
-                                            {(manualOrificeMode ? currentCase.outputs.orificeArea : getAutoSelectedOrifice().area).toLocaleString()} mm²
+                                            {(manualOrificeMode ? currentCase.outputs?.orificeArea : getAutoSelectedOrifice().area).toLocaleString()} mm²
                                         </Typography>
                                     </Box>
                                 </Box>
 
                                 {/* Utilization Bar */}
                                 {(() => {
-                                    const areaPerValve = currentCase.outputs.requiredArea / numberOfValves;
-                                    const selectedOrifice = manualOrificeMode ? currentCase.outputs.orificeArea : getAutoSelectedOrifice().area;
+                                    const areaPerValve = (currentCase.outputs?.requiredArea ?? 0) / numberOfValves;
+                                    const selectedOrifice = manualOrificeMode ? (currentCase.outputs?.orificeArea ?? 0) : getAutoSelectedOrifice().area;
                                     const utilization = (areaPerValve / selectedOrifice) * 100;
                                     return (
                                         <Box sx={{ mb: 2 }}>
@@ -1558,11 +1756,11 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
 
                                 <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
                                     <Chip
-                                        icon={currentCase.outputs.isCriticalFlow ? <CheckCircle /> : <Info />}
-                                        label={currentCase.outputs.isCriticalFlow ? 'Critical Flow' : 'Subcritical Flow'}
-                                        color={currentCase.outputs.isCriticalFlow ? 'success' : 'info'}
+                                        icon={currentCase.outputs?.isCriticalFlow ? <CheckCircle /> : <Info />}
+                                        label={currentCase.outputs?.isCriticalFlow ? 'Critical Flow' : 'Subcritical Flow'}
+                                        color={currentCase.outputs?.isCriticalFlow ? 'success' : 'info'}
                                     />
-                                    {currentCase.outputs.percentUsed > 90 && (
+                                    {(currentCase.outputs?.percentUsed ?? 0) > 90 && (
                                         <Chip
                                             icon={<Warning />}
                                             label="High Utilization"
@@ -1800,29 +1998,29 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
                                         <Typography variant="caption" color="text.secondary">Selected Orifice</Typography>
                                         <Typography variant="h3" fontWeight={700} color="primary.main">
-                                            {currentCase.outputs.selectedOrifice}
+                                            {currentCase.outputs?.selectedOrifice ?? '-'}
                                         </Typography>
                                     </Box>
                                     <Box>
                                         <Typography variant="caption" color="text.secondary">Orifice Area</Typography>
                                         <Typography variant="h5" fontWeight={600}>
-                                            {currentCase.outputs.orificeArea.toLocaleString()} mm²
+                                            {currentCase.outputs?.orificeArea?.toLocaleString() ?? '-'} mm²
                                         </Typography>
                                     </Box>
                                     <Box>
                                         <Typography variant="caption" color="text.secondary">% Used</Typography>
                                         <Typography variant="h5" fontWeight={600} color={
-                                            ((currentCase.outputs.requiredArea / (numberOfValves * currentCase.outputs.orificeArea)) * 100) > 90
+                                            ((currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100) > 90
                                                 ? 'warning.main'
                                                 : 'text.primary'
                                         }>
-                                            {((currentCase.outputs.requiredArea / (numberOfValves * currentCase.outputs.orificeArea)) * 100).toFixed(1)}%
+                                            {((currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100).toFixed(1)}%
                                         </Typography>
                                     </Box>
                                     <Box>
                                         <Typography variant="caption" color="text.secondary">Rated Capacity</Typography>
                                         <Typography variant="h5" fontWeight={600}>
-                                            {((currentCase.outputs.ratedCapacity / (currentCase.outputs.numberOfValves || 1)) * numberOfValves).toLocaleString()} kg/h
+                                            {(((currentCase.outputs?.ratedCapacity ?? 0) / (currentCase.outputs?.numberOfValves || 1)) * numberOfValves).toLocaleString()} kg/h
                                         </Typography>
                                     </Box>
                                     <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
@@ -1849,8 +2047,8 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                         </Typography>
                                         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
                                             <Typography variant="h6" fontWeight={600}>
-                                                {currentCase.outputs.inletPressureDrop !== undefined
-                                                    ? `${toDisplayDelta(currentCase.outputs.inletPressureDrop, 'pressure', 3)}`
+                                                {currentCase.outputs?.inletPressureDrop !== undefined
+                                                    ? `${toDisplayDelta(currentCase.outputs?.inletPressureDrop, 'pressure', 3)}`
                                                     : '—'}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
@@ -1860,13 +2058,13 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                         <Typography
                                             variant="caption"
                                             color={
-                                                currentCase.outputs.inletPressureDropPercent !== undefined
+                                                currentCase.outputs?.inletPressureDropPercent !== undefined
                                                     ? currentCase.outputs.inletPressureDropPercent > 3 ? 'error.main' : 'success.main'
                                                     : 'text.secondary'
                                             }
                                             fontWeight={500}
                                         >
-                                            {currentCase.outputs.inletPressureDropPercent !== undefined
+                                            {currentCase.outputs?.inletPressureDropPercent !== undefined
                                                 ? `${currentCase.outputs.inletPressureDropPercent.toFixed(2)}% of Set Pressure`
                                                 : 'Requires Inlet Piping'}
                                         </Typography>
@@ -1879,7 +2077,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                         </Typography>
                                         <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
                                             <Typography variant="h6" fontWeight={600}>
-                                                {toDisplay(currentCase.inputs.backpressure, 'pressure', 3)}
+                                                {toDisplay(currentCase.inputs?.backpressure, 'pressure', 3)}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
                                                 {preferences.pressure}
@@ -1887,12 +2085,12 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                         </Box>
                                         <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                                             <Typography variant="caption" color="text.secondary">
-                                                Superimposed: {currentCase.inputs.destinationPressure
+                                                Superimposed: {currentCase.inputs?.destinationPressure
                                                     ? `${toDisplay(currentCase.inputs.destinationPressure, 'pressure', 2)} ${preferences.pressure}`
                                                     : `0 ${preferences.pressure}`}
                                             </Typography>
                                             <Typography variant="caption" color="text.secondary">
-                                                Built-up: {currentCase.outputs.builtUpBackpressure
+                                                Built-up: {currentCase.outputs?.builtUpBackpressure
                                                     ? `${toDisplayDelta(currentCase.outputs.builtUpBackpressure, 'pressure', 2)} ${getDeltaUnit('pressure')}`
                                                     : `0 ${getDeltaUnit('pressure')}`}
                                             </Typography>
@@ -1900,10 +2098,10 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                     </Box>
                                 </Box>
                             </CardContent>
-                        </Card>
+                        </Card >
 
                         {/* Flow Analysis */}
-                        <Card sx={{ mb: 3 }}>
+                        < Card sx={{ mb: 3 }}>
                             <CardContent>
                                 <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                                     Flow Analysis
@@ -1921,161 +2119,190 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                     <Box>
                                         <Typography variant="caption" color="text.secondary">Discharge Coefficient</Typography>
                                         <Typography variant="h6" fontWeight={600}>
-                                            {currentCase.outputs.dischargeCoefficient}
+                                            {currentCase.outputs?.dischargeCoefficient ?? '-'}
                                         </Typography>
                                     </Box>
                                     <Box>
                                         <Typography variant="caption" color="text.secondary">BP Correction Factor</Typography>
                                         <Typography variant="h6" fontWeight={600}>
-                                            {currentCase.outputs.backpressureCorrectionFactor}
+                                            {currentCase.outputs?.backpressureCorrectionFactor ?? '-'}
                                         </Typography>
                                     </Box>
                                 </Box>
                             </CardContent>
-                        </Card>
+                        </Card >
 
                         {/* Messages & Warnings */}
-                        {currentCase.outputs.messages.length > 0 && (
-                            <Card sx={{ mb: 3 }}>
-                                <CardContent>
-                                    <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                        Notes & Warnings
-                                    </Typography>
-                                    <List dense disablePadding>
-                                        {currentCase.outputs.messages.map((msg, idx) => (
-                                            <ListItem key={idx} disablePadding sx={{ py: 0.5 }}>
-                                                <ListItemIcon sx={{ minWidth: 32 }}>
-                                                    <Info sx={{ fontSize: 18, color: 'info.main' }} />
-                                                </ListItemIcon>
-                                                <ListItemText primary={msg} primaryTypographyProps={{ variant: 'body2' }} />
-                                            </ListItem>
-                                        ))}
-                                    </List>
-                                </CardContent>
-                            </Card>
-                        )}
+                        {(() => {
+                            // Compute live percentUsed based on current numberOfValves
+                            const livePercentUsed = (currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100;
+
+                            // Filter messages - remove "exceeds largest" warning if multi-valve makes it fit
+                            const filteredMessages = (currentCase.outputs?.messages ?? []).filter(msg => {
+                                if (msg.includes('WARNING: Required area exceeds largest standard orifice') && livePercentUsed <= 100) {
+                                    return false;
+                                }
+                                return true;
+                            });
+
+                            if (filteredMessages.length === 0) return null;
+
+                            return (
+                                <Card sx={{ mb: 3 }}>
+                                    <CardContent>
+                                        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                            Notes & Warnings
+                                        </Typography>
+                                        <List dense disablePadding>
+                                            {filteredMessages.map((msg, idx) => (
+                                                <ListItem key={idx} disablePadding sx={{ py: 0.5 }}>
+                                                    <ListItemIcon sx={{ minWidth: 32 }}>
+                                                        <Info sx={{ fontSize: 18, color: 'info.main' }} />
+                                                    </ListItemIcon>
+                                                    <ListItemText primary={msg} primaryTypographyProps={{ variant: 'body2' }} />
+                                                </ListItem>
+                                            ))}
+                                        </List>
+                                    </CardContent>
+                                </Card>
+                            );
+                        })()}
 
                         {/* Status Alert */}
-                        <Alert
-                            severity={currentCase.outputs.percentUsed <= 100 ? 'success' : 'error'}
-                            sx={{ mb: 3 }}
-                        >
-                            {currentCase.outputs.percentUsed <= 100
-                                ? `${currentCase.outputs.numberOfValves > 1 ? `${currentCase.outputs.numberOfValves} x ` : ''}Orifice ${currentCase.outputs.selectedOrifice} is adequately sized with ${(100 - currentCase.outputs.percentUsed).toFixed(1)}% margin.`
-                                : `${currentCase.outputs.numberOfValves > 1 ? `${currentCase.outputs.numberOfValves} x ` : ''}Orifice ${currentCase.outputs.selectedOrifice} is undersized. Select a larger orifice.`
-                            }
-                        </Alert>
+                        {(() => {
+                            // Compute live percentUsed based on current numberOfValves
+                            const livePercentUsed = (currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100;
+                            const isAdequatelySized = livePercentUsed <= 100;
+
+                            return (
+                                <Alert
+                                    severity={isAdequatelySized ? 'success' : 'error'}
+                                    sx={{ mb: 3 }}
+                                >
+                                    {isAdequatelySized
+                                        ? `${numberOfValves > 1 ? `${numberOfValves} x ` : ''}Orifice ${currentCase.outputs?.selectedOrifice ?? '-'} is adequately sized with ${(100 - livePercentUsed).toFixed(1)}% margin.`
+                                        : `${numberOfValves > 1 ? `${numberOfValves} x ` : ''}Orifice ${currentCase.outputs?.selectedOrifice ?? '-'} is undersized. Select a larger orifice.`
+                                    }
+                                </Alert>
+                            );
+                        })()}
 
                         {/* Hydraulic Calculations Report */}
-                        {(inletHydraulicResult?.segments?.length || outletHydraulicResult?.segments?.length) && (
-                            <Box sx={{ mb: 3 }}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                                    <Typography variant="subtitle1" fontWeight={600}>
-                                        Hydraulic Calculations Report
-                                    </Typography>
-                                    <Button
-                                        variant="outlined"
-                                        size="small"
-                                        onClick={() => setHydraulicReportDialogOpen(true)}
-                                    >
-                                        Open Full Report
-                                    </Button>
+                        {
+                            (inletHydraulicResult?.segments?.length || outletHydraulicResult?.segments?.length) && (
+                                <Box sx={{ mb: 3 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                                        <Typography variant="subtitle1" fontWeight={600}>
+                                            Hydraulic Calculations Report
+                                        </Typography>
+                                        <Button
+                                            variant="outlined"
+                                            size="small"
+                                            onClick={() => setHydraulicReportDialogOpen(true)}
+                                        >
+                                            Open Full Report
+                                        </Button>
+                                    </Box>
+
+                                    {inletHydraulicResult && inletHydraulicResult.segments.length > 0 && (
+                                        <>
+                                            {/* Inlet Warnings */}
+                                            {inletHydraulicResult.segments.some(s => s.isErosional) && (
+                                                <Alert severity="error" sx={{ mb: 1 }}>
+                                                    <strong>Inlet - Erosional Velocity:</strong> {inletHydraulicResult.segments.filter(s => s.isErosional).map(s => `${s.name} (${s.velocity?.toFixed(1)} m/s)`).join(', ')}
+                                                </Alert>
+                                            )}
+                                            {inletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.7) && (
+                                                <Alert severity="error" sx={{ mb: 1 }}>
+                                                    <strong>Inlet - High Mach (&gt;0.7):</strong> {inletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
+                                                </Alert>
+                                            )}
+                                            {inletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7) && (
+                                                <Alert severity="warning" sx={{ mb: 1 }}>
+                                                    <strong>Inlet - Elevated Mach (&gt;0.5):</strong> {inletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
+                                                </Alert>
+                                            )}
+                                            <HydraulicReportTable
+                                                title="Inlet Piping Network"
+                                                segments={inletHydraulicResult.segments}
+                                                totalPressureDropKPa={inletHydraulicResult.pressureDropKPa}
+                                                hasChokedFlow={inletHydraulicResult.hasChokedFlow}
+                                                warnings={inletHydraulicResult.warnings}
+                                                defaultExpanded={inletHydraulicResult.hasChokedFlow}
+                                            />
+                                        </>
+                                    )}
+
+                                    {outletHydraulicResult && outletHydraulicResult.segments.length > 0 && (
+                                        <>
+                                            {/* Outlet Warnings */}
+                                            {outletHydraulicResult.segments.some(s => s.isErosional) && (
+                                                <Alert severity="error" sx={{ mb: 1 }}>
+                                                    <strong>Outlet - Erosional Velocity:</strong> {outletHydraulicResult.segments.filter(s => s.isErosional).map(s => `${s.name} (${s.velocity?.toFixed(1)} m/s)`).join(', ')}
+                                                </Alert>
+                                            )}
+                                            {outletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.7) && (
+                                                <Alert severity="error" sx={{ mb: 1 }}>
+                                                    <strong>Outlet - High Mach (&gt;0.7):</strong> {outletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
+                                                </Alert>
+                                            )}
+                                            {outletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7) && (
+                                                <Alert severity="warning" sx={{ mb: 1 }}>
+                                                    <strong>Outlet - Elevated Mach (&gt;0.5):</strong> {outletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
+                                                </Alert>
+                                            )}
+                                            <HydraulicReportTable
+                                                title="Outlet Piping Network"
+                                                segments={outletHydraulicResult.segments}
+                                                totalPressureDropKPa={outletHydraulicResult.pressureDropKPa}
+                                                hasChokedFlow={outletHydraulicResult.hasChokedFlow}
+                                                warnings={outletHydraulicResult.warnings}
+                                                defaultExpanded={outletHydraulicResult.hasChokedFlow}
+                                            />
+                                        </>
+                                    )}
                                 </Box>
-
-                                {inletHydraulicResult && inletHydraulicResult.segments.length > 0 && (
-                                    <>
-                                        {/* Inlet Warnings */}
-                                        {inletHydraulicResult.segments.some(s => s.isErosional) && (
-                                            <Alert severity="error" sx={{ mb: 1 }}>
-                                                <strong>Inlet - Erosional Velocity:</strong> {inletHydraulicResult.segments.filter(s => s.isErosional).map(s => `${s.name} (${s.velocity?.toFixed(1)} m/s)`).join(', ')}
-                                            </Alert>
-                                        )}
-                                        {inletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.7) && (
-                                            <Alert severity="error" sx={{ mb: 1 }}>
-                                                <strong>Inlet - High Mach (&gt;0.7):</strong> {inletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
-                                            </Alert>
-                                        )}
-                                        {inletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7) && (
-                                            <Alert severity="warning" sx={{ mb: 1 }}>
-                                                <strong>Inlet - Elevated Mach (&gt;0.5):</strong> {inletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
-                                            </Alert>
-                                        )}
-                                        <HydraulicReportTable
-                                            title="Inlet Piping Network"
-                                            segments={inletHydraulicResult.segments}
-                                            totalPressureDropKPa={inletHydraulicResult.pressureDropKPa}
-                                            hasChokedFlow={inletHydraulicResult.hasChokedFlow}
-                                            warnings={inletHydraulicResult.warnings}
-                                            defaultExpanded={inletHydraulicResult.hasChokedFlow}
-                                        />
-                                    </>
-                                )}
-
-                                {outletHydraulicResult && outletHydraulicResult.segments.length > 0 && (
-                                    <>
-                                        {/* Outlet Warnings */}
-                                        {outletHydraulicResult.segments.some(s => s.isErosional) && (
-                                            <Alert severity="error" sx={{ mb: 1 }}>
-                                                <strong>Outlet - Erosional Velocity:</strong> {outletHydraulicResult.segments.filter(s => s.isErosional).map(s => `${s.name} (${s.velocity?.toFixed(1)} m/s)`).join(', ')}
-                                            </Alert>
-                                        )}
-                                        {outletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.7) && (
-                                            <Alert severity="error" sx={{ mb: 1 }}>
-                                                <strong>Outlet - High Mach (&gt;0.7):</strong> {outletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
-                                            </Alert>
-                                        )}
-                                        {outletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7) && (
-                                            <Alert severity="warning" sx={{ mb: 1 }}>
-                                                <strong>Outlet - Elevated Mach (&gt;0.5):</strong> {outletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
-                                            </Alert>
-                                        )}
-                                        <HydraulicReportTable
-                                            title="Outlet Piping Network"
-                                            segments={outletHydraulicResult.segments}
-                                            totalPressureDropKPa={outletHydraulicResult.pressureDropKPa}
-                                            hasChokedFlow={outletHydraulicResult.hasChokedFlow}
-                                            warnings={outletHydraulicResult.warnings}
-                                            defaultExpanded={outletHydraulicResult.hasChokedFlow}
-                                        />
-                                    </>
-                                )}
-                            </Box>
-                        )}
+                            )
+                        }
 
                         {/* Inlet Pressure Drop Validation Alert */}
-                        {currentCase.outputs?.inletValidation && (
-                            <Alert
-                                severity={currentCase.outputs.inletValidation.severity}
-                                sx={{ mb: 3 }}
-                                icon={
-                                    currentCase.outputs.inletValidation.isValid ?
-                                        <CheckCircle /> :
-                                        currentCase.outputs.inletValidation.severity === 'warning' ?
-                                            <Warning /> :
-                                            <ErrorIcon />
-                                }
-                            >
-                                <strong>Inlet Pressure Drop Validation:</strong> {currentCase.outputs.inletValidation.message}
-                                {currentCase.outputs.inletPressureDropPercent !== undefined && (
-                                    <Typography variant="body2" sx={{ mt: 0.5 }}>
-                                        Inlet ΔP: {currentCase.outputs.inletPressureDropPercent.toFixed(1)}% of set pressure
-                                        {localInletNetwork && localInletNetwork.pipes && ` (${localInletNetwork.pipes.length} pipe${localInletNetwork.pipes.length !== 1 ? 's' : ''})`}
-                                    </Typography>
-                                )}
-                            </Alert>
-                        )}
+                        {
+                            currentCase.outputs?.inletValidation && (
+                                <Alert
+                                    severity={currentCase.outputs.inletValidation.severity}
+                                    sx={{ mb: 3 }}
+                                    icon={
+                                        currentCase.outputs.inletValidation.isValid ?
+                                            <CheckCircle /> :
+                                            currentCase.outputs.inletValidation.severity === 'warning' ?
+                                                <Warning /> :
+                                                <ErrorIcon />
+                                    }
+                                >
+                                    <strong>Inlet Pressure Drop Validation:</strong> {currentCase.outputs.inletValidation.message}
+                                    {currentCase.outputs.inletPressureDropPercent !== undefined && (
+                                        <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                            Inlet ΔP: {currentCase.outputs.inletPressureDropPercent.toFixed(1)}% of set pressure
+                                            {localInletNetwork && localInletNetwork.pipes && ` (${localInletNetwork.pipes.length} pipe${localInletNetwork.pipes.length !== 1 ? 's' : ''})`}
+                                        </Typography>
+                                    )}
+                                </Alert>
+                            )
+                        }
 
                         {/* Combined Hydraulic Warnings */}
-                        {hydraulicWarnings.length > 0 && (
-                            <Alert severity="warning" sx={{ mb: 3 }}>
-                                <strong>Hydraulic Calculation Warnings:</strong>
-                                <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
-                                    {hydraulicWarnings.map((warning, idx) => (
-                                        <li key={idx}>{warning}</li>
-                                    ))}
-                                </Box>
-                            </Alert>
-                        )}
+                        {
+                            hydraulicWarnings.length > 0 && (
+                                <Alert severity="warning" sx={{ mb: 3 }}>
+                                    <strong>Hydraulic Calculation Warnings:</strong>
+                                    <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                                        {hydraulicWarnings.map((warning, idx) => (
+                                            <li key={idx}>{warning}</li>
+                                        ))}
+                                    </Box>
+                                </Alert>
+                            )
+                        }
 
                         {/* Export Actions */}
                         <Box sx={{ display: 'flex', gap: 2 }}>
@@ -2086,7 +2313,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                 Export to Excel
                             </Button>
                         </Box>
-                    </Box>
+                    </Box >
                 </TabPanel >
             </Box >
 
@@ -2128,7 +2355,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
             </Dialog >
 
             {/* Pipe Editor Dialog */}
-            <PipeEditorDialog
+            < PipeEditorDialog
                 open={pipeEditorOpen}
                 pipe={editingPipe}
                 pipeType={editingPipeType}
@@ -2136,11 +2363,13 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                     ? psvSetPressure
                     : currentCase.inputs.destinationPressure ?? 0}
                 accumulationPct={10}
-                fluidPhase={currentCase.method === 'gas' || currentCase.method === 'steam'
-                    ? currentCase.method
-                    : currentCase.method === 'two_phase'
-                        ? 'two_phase'
-                        : 'liquid'}
+                fluidPhase={
+                    currentCase.method === 'gas' || currentCase.method === 'steam'
+                        ? currentCase.method
+                        : currentCase.method === 'two_phase'
+                            ? 'two_phase'
+                            : 'liquid'
+                }
                 onSave={handleSavePipe}
                 onCancel={() => {
                     setPipeEditorOpen(false);

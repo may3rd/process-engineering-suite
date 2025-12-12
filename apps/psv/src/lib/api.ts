@@ -4,167 +4,27 @@
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
-// --- Types (matching backend responses) ---
-
-export interface User {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    status: string;
-}
+import {
+    Customer,
+    Plant,
+    Unit,
+    Area,
+    Project,
+    ProtectiveSystem,
+    OverpressureScenario as Scenario,
+    SizingCase,
+    Equipment,
+    Attachment,
+    Comment,
+    TodoItem,
+    User
+} from '@/data/types';
 
 export interface LoginResponse {
     accessToken: string;
     tokenType: string;
     expiresIn: number;
     user: User;
-}
-
-export interface Customer {
-    id: string;
-    name: string;
-    code: string;
-    status: string;
-    ownerId: string;
-    createdAt: string;
-}
-
-export interface Plant {
-    id: string;
-    customerId: string;
-    name: string;
-    code: string;
-    location: string | null;
-    status: string;
-    ownerId: string;
-    createdAt: string;
-}
-
-export interface Unit {
-    id: string;
-    plantId: string;
-    name: string;
-    code: string;
-    service: string | null;
-    status: string;
-    ownerId: string;
-    createdAt: string;
-}
-
-export interface Area {
-    id: string;
-    unitId: string;
-    name: string;
-    code: string;
-    status: string;
-    createdAt: string;
-}
-
-export interface Project {
-    id: string;
-    areaId: string;
-    name: string;
-    code: string;
-    phase: string;
-    status: string;
-    startDate: string;
-    endDate?: string;
-    leadId: string;
-    createdAt: string;
-}
-
-export interface ProtectiveSystem {
-    id: string;
-    areaId: string;
-    projectIds?: string[];
-    name: string;
-    tag: string;
-    type: string;
-    designCode: string;
-    serviceFluid?: string;
-    fluidPhase: string;
-    setPressure: number;
-    mawp: number;
-    ownerId: string;
-    status: string;
-    valveType?: string;
-    tags: string[];
-    inletNetwork?: any;
-    outletNetwork?: any;
-    createdAt: string;
-    updatedAt: string;
-}
-
-export interface Scenario {
-    id: string;
-    protectiveSystemId: string;
-    cause: string;
-    description?: string;
-    relievingTemp: number;
-    relievingPressure: number;
-    phase: string;
-    relievingRate: number;
-    accumulationPct: number;
-    requiredCapacity: number;
-    assumptions: string[];
-    codeRefs: string[];
-    isGoverning: boolean;
-    createdAt: string;
-    updatedAt: string;
-}
-
-export interface SizingCase {
-    id: string;
-    protectiveSystemId: string;
-    scenarioId?: string;
-    standard: string;
-    method: string;
-    inputs: Record<string, any>;
-    outputs: Record<string, any>;
-    revisionNo: number;
-    status: string;
-    createdBy: string;
-    approvedBy?: string;
-    createdAt: string;
-    updatedAt: string;
-}
-
-export interface Equipment {
-    id: string;
-    areaId: string;
-    type: string;
-    tag: string;
-    name: string;
-    description?: string;
-    designPressure?: number;
-    mawp?: number;
-    designTemperature?: number;
-    ownerId: string;
-    status: string;
-    locationRef?: string;
-    createdAt: string;
-    updatedAt: string;
-}
-
-export interface Comment {
-    id: string;
-    protectiveSystemId: string;
-    body: string;
-    createdBy: string;
-    createdAt: string;
-    updatedAt: string;
-}
-
-export interface TodoItem {
-    id: string;
-    protectiveSystemId: string;
-    text: string;
-    completed: boolean;
-    assignedTo?: string;
-    dueDate?: string;
-    createdBy: string;
-    createdAt: string;
 }
 
 // --- API Client Class ---
@@ -258,6 +118,96 @@ class ApiClient {
 
     async getProjectsByArea(areaId: string): Promise<Project[]> {
         return this.request<Project[]>(`/hierarchy/areas/${areaId}/projects`);
+    }
+
+    async createCustomer(data: Partial<Customer>): Promise<Customer> {
+        return this.request<Customer>('/hierarchy/customers', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async updateCustomer(id: string, data: Partial<Customer>): Promise<Customer> {
+        return this.request<Customer>(`/hierarchy/customers/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async deleteCustomer(id: string): Promise<void> {
+        await this.request(`/hierarchy/customers/${id}`, { method: 'DELETE' });
+    }
+
+    async createPlant(data: Partial<Plant>): Promise<Plant> {
+        return this.request<Plant>('/hierarchy/plants', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async updatePlant(id: string, data: Partial<Plant>): Promise<Plant> {
+        return this.request<Plant>(`/hierarchy/plants/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async deletePlant(id: string): Promise<void> {
+        await this.request(`/hierarchy/plants/${id}`, { method: 'DELETE' });
+    }
+
+    async createUnit(data: Partial<Unit>): Promise<Unit> {
+        return this.request<Unit>('/hierarchy/units', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async updateUnit(id: string, data: Partial<Unit>): Promise<Unit> {
+        return this.request<Unit>(`/hierarchy/units/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async deleteUnit(id: string): Promise<void> {
+        await this.request(`/hierarchy/units/${id}`, { method: 'DELETE' });
+    }
+
+    async createArea(data: Partial<Area>): Promise<Area> {
+        return this.request<Area>('/hierarchy/areas', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async updateArea(id: string, data: Partial<Area>): Promise<Area> {
+        return this.request<Area>(`/hierarchy/areas/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async deleteArea(id: string): Promise<void> {
+        await this.request(`/hierarchy/areas/${id}`, { method: 'DELETE' });
+    }
+
+    async createProject(data: Partial<Project>): Promise<Project> {
+        return this.request<Project>('/hierarchy/projects', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async updateProject(id: string, data: Partial<Project>): Promise<Project> {
+        return this.request<Project>(`/hierarchy/projects/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async deleteProject(id: string): Promise<void> {
+        await this.request(`/hierarchy/projects/${id}`, { method: 'DELETE' });
     }
 
     // --- PSV ---

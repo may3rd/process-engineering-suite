@@ -595,15 +595,16 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             const psv = get().psvList.find(p => p.id === psvId);
             if (!psv) return;
 
-            const updatedPsv = { ...psv, tags: [...psv.tags, tag] };
-            await api.updateProtectiveSystem(psvId, { tags: updatedPsv.tags });
+            // Optimistic update logic was flawed. Now using API response.
+            // But API update requires just the tags array usually if using Partial.
+            const updated = await api.updateProtectiveSystem(psvId, { tags: [...psv.tags, tag] });
 
             set((state) => {
-                const newPsvList = state.psvList.map(p => p.id === psvId ? updatedPsv : p);
+                const newPsvList = state.psvList.map(p => p.id === psvId ? updated : p);
                 return {
                     psvList: newPsvList,
-                    protectiveSystems: state.protectiveSystems.map(p => p.id === psvId ? updatedPsv : p),
-                    selectedPsv: state.selectedPsv?.id === psvId ? updatedPsv : state.selectedPsv,
+                    protectiveSystems: state.protectiveSystems.map(p => p.id === psvId ? updated : p),
+                    selectedPsv: state.selectedPsv?.id === psvId ? updated : state.selectedPsv,
                 };
             });
             toast.success('Tag added');
@@ -619,15 +620,14 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             const psv = get().psvList.find(p => p.id === psvId);
             if (!psv) return;
 
-            const updatedPsv = { ...psv, tags: psv.tags.filter(t => t !== tag) };
-            await api.updateProtectiveSystem(psvId, { tags: updatedPsv.tags });
+            const updated = await api.updateProtectiveSystem(psvId, { tags: psv.tags.filter(t => t !== tag) });
 
             set((state) => {
-                const newPsvList = state.psvList.map(p => p.id === psvId ? updatedPsv : p);
+                const newPsvList = state.psvList.map(p => p.id === psvId ? updated : p);
                 return {
                     psvList: newPsvList,
-                    protectiveSystems: state.protectiveSystems.map(p => p.id === psvId ? updatedPsv : p),
-                    selectedPsv: state.selectedPsv?.id === psvId ? updatedPsv : state.selectedPsv,
+                    protectiveSystems: state.protectiveSystems.map(p => p.id === psvId ? updated : p),
+                    selectedPsv: state.selectedPsv?.id === psvId ? updated : state.selectedPsv,
                 };
             });
             toast.success('Tag removed');
@@ -781,54 +781,223 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     // Customer
     addCustomer: async (customer) => {
         try {
-            const newCustomer = { ...customer, status: customer.status || 'active', ownerId: customer.ownerId || 'user-maetee' };
-            // Note: API doesn't have create customer endpoint yet, would throw
-            toast.error('Create customer not implemented yet');
+            const created = await api.createCustomer(customer);
+            set((state) => ({
+                customers: [...state.customers, created],
+                customerList: [...state.customerList, created], // Assuming customerList follows customers
+            }));
+            toast.success('Customer added');
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to add customer';
-            toast.error('Failed to add customer', { description: message });
+            toast.error('Failed to add customer');
             throw error;
         }
     },
 
     updateCustomer: async (id, updates) => {
         try {
-            // Note: API doesn't have update customer endpoint yet
-            toast.error('Update customer not implemented yet');
+            const updated = await api.updateCustomer(id, updates);
+            set((state) => ({
+                customers: state.customers.map(c => c.id === id ? updated : c),
+                customerList: state.customerList.map(c => c.id === id ? updated : c),
+                selectedCustomer: state.selectedCustomer?.id === id ? updated : state.selectedCustomer,
+            }));
+            toast.success('Customer updated');
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to update customer';
-            toast.error('Failed to update customer', { description: message });
+            toast.error('Failed to update customer');
             throw error;
         }
     },
 
     deleteCustomer: async (id) => {
         try {
-            // Note: API doesn't have delete customer endpoint yet
-            toast.error('Delete customer not implemented yet');
+            await api.deleteCustomer(id);
+            set((state) => ({
+                customers: state.customers.filter(c => c.id !== id),
+                customerList: state.customerList.filter(c => c.id !== id),
+                selectedCustomer: state.selectedCustomer?.id === id ? null : state.selectedCustomer,
+            }));
+            toast.success('Customer deleted');
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to delete customer';
-            toast.error('Failed to delete customer', { description: message });
+            toast.error('Failed to delete customer');
             throw error;
         }
     },
 
-    // Similar stubs for Plant, Unit, Area, Project, Equipment
-    addPlant: async () => { toast.error('Not implemented yet'); },
-    updatePlant: async () => { toast.error('Not implemented yet'); },
-    deletePlant: async () => { toast.error('Not implemented yet'); },
+    addPlant: async (plant) => {
+        try {
+            const created = await api.createPlant(plant);
+            set((state) => ({
+                plants: [...state.plants, created],
+                plantList: state.selectedCustomer?.id === created.customerId ? [...state.plantList, created] : state.plantList,
+            }));
+            toast.success('Plant added');
+        } catch (error) {
+            toast.error('Failed to add plant');
+            throw error;
+        }
+    },
 
-    addUnit: async () => { toast.error('Not implemented yet'); },
-    updateUnit: async () => { toast.error('Not implemented yet'); },
-    deleteUnit: async () => { toast.error('Not implemented yet'); },
+    updatePlant: async (id, updates) => {
+        try {
+            const updated = await api.updatePlant(id, updates);
+            set((state) => ({
+                plants: state.plants.map(p => p.id === id ? updated : p),
+                plantList: state.plantList.map(p => p.id === id ? updated : p),
+                selectedPlant: state.selectedPlant?.id === id ? updated : state.selectedPlant,
+            }));
+            toast.success('Plant updated');
+        } catch (error) {
+            toast.error('Failed to update plant');
+            throw error;
+        }
+    },
 
-    addArea: async () => { toast.error('Not implemented yet'); },
-    updateArea: async () => { toast.error('Not implemented yet'); },
-    deleteArea: async () => { toast.error('Not implemented yet'); },
+    deletePlant: async (id) => {
+        try {
+            await api.deletePlant(id);
+            set((state) => ({
+                plants: state.plants.filter(p => p.id !== id),
+                plantList: state.plantList.filter(p => p.id !== id),
+                selectedPlant: state.selectedPlant?.id === id ? null : state.selectedPlant,
+            }));
+            toast.success('Plant deleted');
+        } catch (error) {
+            toast.error('Failed to delete plant');
+            throw error;
+        }
+    },
 
-    addProject: async () => { toast.error('Not implemented yet'); },
-    updateProject: async () => { toast.error('Not implemented yet'); },
-    deleteProject: async () => { toast.error('Not implemented yet'); },
+    addUnit: async (unit) => {
+        try {
+            const created = await api.createUnit(unit);
+            set((state) => ({
+                units: [...state.units, created],
+                unitList: state.selectedPlant?.id === created.plantId ? [...state.unitList, created] : state.unitList,
+            }));
+            toast.success('Unit added');
+        } catch (error) {
+            toast.error('Failed to add unit');
+            throw error;
+        }
+    },
+
+    updateUnit: async (id, updates) => {
+        try {
+            const updated = await api.updateUnit(id, updates);
+            set((state) => ({
+                units: state.units.map(u => u.id === id ? updated : u),
+                unitList: state.unitList.map(u => u.id === id ? updated : u),
+                selectedUnit: state.selectedUnit?.id === id ? updated : state.selectedUnit,
+            }));
+            toast.success('Unit updated');
+        } catch (error) {
+            toast.error('Failed to update unit');
+            throw error;
+        }
+    },
+
+    deleteUnit: async (id) => {
+        try {
+            await api.deleteUnit(id);
+            set((state) => ({
+                units: state.units.filter(u => u.id !== id),
+                unitList: state.unitList.filter(u => u.id !== id),
+                selectedUnit: state.selectedUnit?.id === id ? null : state.selectedUnit,
+            }));
+            toast.success('Unit deleted');
+        } catch (error) {
+            toast.error('Failed to delete unit');
+            throw error;
+        }
+    },
+
+    addArea: async (area) => {
+        try {
+            const created = await api.createArea(area);
+            set((state) => ({
+                areas: [...state.areas, created],
+                areaList: state.selectedUnit?.id === created.unitId ? [...state.areaList, created] : state.areaList,
+            }));
+            toast.success('Area added');
+        } catch (error) {
+            toast.error('Failed to add area');
+            throw error;
+        }
+    },
+
+    updateArea: async (id, updates) => {
+        try {
+            const updated = await api.updateArea(id, updates);
+            set((state) => ({
+                areas: state.areas.map(a => a.id === id ? updated : a),
+                areaList: state.areaList.map(a => a.id === id ? updated : a),
+                selectedArea: state.selectedArea?.id === id ? updated : state.selectedArea,
+            }));
+            toast.success('Area updated');
+        } catch (error) {
+            toast.error('Failed to update area');
+            throw error;
+        }
+    },
+
+    deleteArea: async (id) => {
+        try {
+            await api.deleteArea(id);
+            set((state) => ({
+                areas: state.areas.filter(a => a.id !== id),
+                areaList: state.areaList.filter(a => a.id !== id),
+                selectedArea: state.selectedArea?.id === id ? null : state.selectedArea,
+            }));
+            toast.success('Area deleted');
+        } catch (error) {
+            toast.error('Failed to delete area');
+            throw error;
+        }
+    },
+
+    addProject: async (project) => {
+        try {
+            const created = await api.createProject(project);
+            set((state) => ({
+                projects: [...state.projects, created],
+                projectList: state.selectedArea?.id === created.areaId ? [...state.projectList, created] : state.projectList,
+            }));
+            toast.success('Project added');
+        } catch (error) {
+            toast.error('Failed to add project');
+            throw error;
+        }
+    },
+
+    updateProject: async (id, updates) => {
+        try {
+            const updated = await api.updateProject(id, updates);
+            set((state) => ({
+                projects: state.projects.map(p => p.id === id ? updated : p),
+                projectList: state.projectList.map(p => p.id === id ? updated : p),
+                selectedProject: state.selectedProject?.id === id ? updated : state.selectedProject,
+            }));
+            toast.success('Project updated');
+        } catch (error) {
+            toast.error('Failed to update project');
+            throw error;
+        }
+    },
+
+    deleteProject: async (id) => {
+        try {
+            await api.deleteProject(id);
+            set((state) => ({
+                projects: state.projects.filter(p => p.id !== id),
+                projectList: state.projectList.filter(p => p.id !== id),
+                selectedProject: state.selectedProject?.id === id ? null : state.selectedProject,
+            }));
+            toast.success('Project deleted');
+        } catch (error) {
+            toast.error('Failed to delete project');
+            throw error;
+        }
+    },
 
     addProtectiveSystem: async (psv) => {
         try {

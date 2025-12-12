@@ -29,10 +29,11 @@ export function ProtectiveSystemList() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const { psvList, selectPsv, selectedProject, selectedArea, addProtectiveSystem } = usePsvStore();
+    const currentUser = useAuthStore((state) => state.currentUser);
     const canEdit = useAuthStore((state) => state.canEdit());
 
     const handleAddPsv = () => {
-        if (!selectedArea || !selectedProject) return;
+        if (!selectedArea || !selectedProject || !currentUser) return;
 
         const newPsvData = {
             areaId: selectedArea.id,
@@ -45,7 +46,7 @@ export function ProtectiveSystemList() {
             fluidPhase: 'gas' as const,
             setPressure: 0,
             mawp: 0,
-            ownerId: 'user-1',
+            ownerId: currentUser.id,
             status: 'draft' as const,
             tags: [],
         };

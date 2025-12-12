@@ -237,9 +237,9 @@ export function calculateGasArea(inputs: SizingInputs): SizingResult {
 
     // Calculate coefficients
     const C = calculateC(k);
-    const Kd = DEFAULT_KD_GAS;
+    const Kd = inputs.dischargeCoefficient ?? DEFAULT_KD_GAS;
     const Kc = DEFAULT_KC;
-    const Kb = calculateKb(P2 / P1, 'conventional');
+    const Kb = inputs.backpressureCorrectionFactor ?? calculateKb(P2 / P1, 'conventional');
 
     // Determine flow regime
     const Pcf = calculateCriticalFlowPressure(P1, k);
@@ -312,8 +312,8 @@ export function calculateLiquidArea(inputs: SizingInputs): SizingResult {
     // Q (gpm) = W (kg/h) / (density (kg/m³) × 0.2271)
     const Q = inputs.massFlowRate / (density * 0.2271);
 
-    const Kd = DEFAULT_KD_LIQUID;
-    const Kw = 1.0; // Backpressure correction for balanced valves (assume conventional)
+    const Kd = inputs.dischargeCoefficient ?? DEFAULT_KD_LIQUID;
+    const Kw = inputs.backpressureCorrectionFactor ?? 1.0; // Backpressure correction for balanced valves (assume conventional)
     const Kc = DEFAULT_KC;
     let Kv = 1.0; // Initial viscosity correction
 
@@ -369,8 +369,8 @@ export function calculateSteamArea(inputs: SizingInputs): SizingResult {
     const P1 = bargToPsia(inputs.pressure);
     const P2 = bargToPsia(inputs.backpressure);
 
-    const Kd = DEFAULT_KD_GAS;
-    const Kb = calculateKb(P2 / P1, 'conventional');
+    const Kd = inputs.dischargeCoefficient ?? DEFAULT_KD_GAS;
+    const Kb = inputs.backpressureCorrectionFactor ?? calculateKb(P2 / P1, 'conventional');
     const Kc = DEFAULT_KC;
     const Kn = 1.0; // Napier correction (for P1 > 1500 psia)
     const Ksh = 1.0; // Superheat correction (1.0 for saturated steam)
