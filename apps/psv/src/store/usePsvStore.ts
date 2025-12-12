@@ -22,6 +22,7 @@ import { toast } from '@/lib/toast';
 const dataService = getDataService();
 
 const LOCAL_NOTES_KEY = 'psv_local_notes_v1';
+const LOCAL_COMMENTS_KEY = 'psv_local_comments_v1';
 
 function readLocalNotes(): Record<string, ProjectNote[]> {
     if (typeof window === 'undefined') return {};
@@ -47,6 +48,32 @@ function setLocalNotes(psvId: string, notes: ProjectNote[]) {
     const map = readLocalNotes();
     map[psvId] = notes;
     writeLocalNotes(map);
+}
+
+function readLocalComments(): Record<string, Comment[]> {
+    if (typeof window === 'undefined') return {};
+    try {
+        const raw = localStorage.getItem(LOCAL_COMMENTS_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch {
+        return {};
+    }
+}
+
+function writeLocalComments(map: Record<string, Comment[]>) {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(LOCAL_COMMENTS_KEY, JSON.stringify(map));
+}
+
+function getLocalComments(psvId: string): Comment[] {
+    const map = readLocalComments();
+    return map[psvId] ?? [];
+}
+
+function setLocalComments(psvId: string, comments: Comment[]) {
+    const map = readLocalComments();
+    map[psvId] = comments;
+    writeLocalComments(map);
 }
 
 interface HierarchySelection {
@@ -597,7 +624,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
                             /not found|method not allowed|failed to fetch/i.test(msg)
                         ) {
                             console.warn('Comments endpoint unavailable, continuing without comments');
-                            return [];
+                            return getLocalComments(id);
                         }
                     }
                     throw error;
@@ -1028,7 +1055,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             toast.success('Note added');
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to add note';
-            if (message && /404|not\s+found/i.test(message)) {
+            if (message && (/404|405/.test(message) || /not found|method not allowed|failed to fetch/i.test(message))) {
                 console.warn('Note endpoint unavailable, storing locally');
                 const existing = getLocalNotes(fallbackNote.protectiveSystemId);
                 setLocalNotes(fallbackNote.protectiveSystemId, [...existing, fallbackNote]);
@@ -1056,7 +1083,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             toast.success('Note updated');
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to update note';
-            if (message && /404|not\s+found/i.test(message)) {
+            if (message && (/404|405/.test(message) || /not found|method not allowed|failed to fetch/i.test(message))) {
                 console.warn('Note update endpoint unavailable, updating locally');
                 const current = get().noteList.find((n) => n.id === id);
                 if (current) {
@@ -1087,7 +1114,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             toast.success('Note deleted');
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to delete note';
-            if (message && /404|not\s+found/i.test(message)) {
+            if (message && (/404|405/.test(message) || /not found|method not allowed|failed to fetch/i.test(message))) {
                 console.warn('Note endpoint unavailable, removing locally');
                 const current = get().noteList.find((n) => n.id === id);
                 if (current) {
@@ -1115,6 +1142,16 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             toast.success('Comment added');
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to add comment';
+            if (message && /404|405/.test(message) || /not found|method not allowed|failed to fetch/i.test(message || '')) {
+                console.warn('Comment endpoint unavailable, storing locally');
+                const existing = getLocalComments(comment.protectiveSystemId);
+                setLocalComments(comment.protectiveSystemId, [...existing, comment]);
+                set((state) => ({
+                    commentList: [...state.commentList, comment],
+                }));
+                toast.success('Comment added (local only)');
+                return;
+            }
             toast.error('Failed to add comment', { description: message });
             throw error;
         }
@@ -1133,8 +1170,15 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             toast.success('Comment updated');
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to update comment';
-            if (message && /404|not\s+found/i.test(message)) {
+            if (message && (/404|405/.test(message) || /not found|method not allowed|failed to fetch/i.test(message))) {
                 console.warn('Comment update endpoint unavailable, updating locally');
+                const current = get().commentList.find((c) => c.id === id);
+                if (current) {
+                    const local = getLocalComments(current.protectiveSystemId).map((c) =>
+                        c.id === id ? { ...c, ...payload } as Comment : c
+                    );
+                    setLocalComments(current.protectiveSystemId, local);
+                }
                 set((state) => ({
                     commentList: state.commentList.map((c) =>
                         c.id === id ? { ...c, ...payload } as Comment : c
@@ -1157,6 +1201,19 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             toast.success('Comment deleted');
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to delete comment';
+            if (message && (/404|405/.test(message) || /not found|method not allowed|failed to fetch/i.test(message))) {
+                console.warn('Comment delete endpoint unavailable, removing locally');
+                const current = get().commentList.find((c) => c.id === id);
+                if (current) {
+                    const local = getLocalComments(current.protectiveSystemId).filter((c) => c.id !== id);
+                    setLocalComments(current.protectiveSystemId, local);
+                }
+                set((state) => ({
+                    commentList: state.commentList.filter((c) => c.id !== id)
+                }));
+                toast.success('Comment deleted (local only)');
+                return;
+            }
             toast.error('Failed to delete comment', { description: message });
             throw error;
         }
