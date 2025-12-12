@@ -1,6 +1,7 @@
 "use client";
 
-import { Box, Container } from "@mui/material";
+import { Box, Container, CircularProgress } from "@mui/material";
+import { useEffect } from "react";
 
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { HierarchyBrowser } from "@/components/HierarchyBrowser";
@@ -11,7 +12,12 @@ import { AccountSettingsPage } from "@/components/AccountSettingsPage";
 import { usePsvStore } from "@/store/usePsvStore";
 
 export default function PsvApp() {
-    const { selection, selectedProject, selectedPsv, currentPage } = usePsvStore();
+    const { selection, selectedProject, selectedPsv, currentPage, isLoading, initialize } = usePsvStore();
+
+    // Initialize data on mount
+    useEffect(() => {
+        initialize();
+    }, [initialize]);
 
     // Determine what to render based on selection state
     const renderContent = () => {
@@ -38,13 +44,19 @@ export default function PsvApp() {
     };
 
     return (
-        <Box sx={{ minHeight: '100vh - 72', pb: 4 }}>
+        <Box sx={{ minHeight: '100vh - 72px', pb: 4 }}>
             <Container maxWidth="xl" sx={{ pt: 4 }}>
                 <Box className="print-hide" sx={{ mb: 3 }}>
                     <Breadcrumbs />
                 </Box>
 
-                {renderContent()}
+                {isLoading && !selectedProject && !selectedPsv ? (
+                    <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '50vh' }}>
+                        <CircularProgress />
+                    </Box>
+                ) : (
+                    renderContent()
+                )}
             </Container>
         </Box>
     );

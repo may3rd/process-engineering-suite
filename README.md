@@ -125,6 +125,83 @@ Run the Python API in Docker (to avoid environment setup) while running the Fron
 - **Development**: Code changes are reflected automatically due to volume mounts. If you add new dependencies, run `docker-compose -f infra/docker-compose.yml build`.
 - **Production**: Re-run the `docker build` command to bake changes into a new image.
 
+#### Restarting API After Code Changes
+
+If you modified the Python API code or added new dependencies:
+
+```bash
+# Quick restart (if no dependency changes)
+cd infra
+docker-compose restart api
+
+# Full rebuild (if dependencies changed in requirements.txt)
+cd infra
+docker-compose up -d --build api
+
+# View logs
+docker-compose logs -f api
+```
+
+#### Database Setup
+
+The API supports both **PostgreSQL** (production) and **mock data** (fallback).
+
+**Environment Variables:**
+- `DATABASE_URL`: PostgreSQL connection string (e.g., `postgresql+asyncpg://postgres:password@postgres:5432/engsuite`)
+- `USE_MOCK_DATA`: Set to `true` to force mock data even if database is available
+
+**Running with PostgreSQL:**
+
+1. Start PostgreSQL and API:
+   ```bash
+   cd infra
+   docker-compose up -d postgres api
+   ```
+
+2. Run Database Migrations:
+   ```bash
+   # Create initial migration (if needed)
+   docker-compose exec -w /app/apps/api api alembic revision --autogenerate -m "initial_schema"
+
+   # Apply migrations
+   docker-compose exec -w /app/apps/api api alembic upgrade head
+   ```
+
+3. Seed Data (Optional):
+   ```bash
+   # Populate database from mock data
+   curl -X POST http://localhost:8000/admin/seed-from-mock
+   ```
+
+
+**Testing API Endpoints:**
+
+```bash
+# Check data source (mock or database)
+curl http://localhost:8000/admin/data-source
+
+# Get customers (hierarchy)
+curl http://localhost:8000/hierarchy/customers
+
+# Get PSVs
+curl http://localhost:8000/psv
+
+# Login
+curl -X POST http://localhost:8000/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"maetee","password":"linkinpark"}'
+```
+
+**Database Backup:**
+
+```bash
+# Create backup
+docker exec infra-postgres-1 pg_dump -U postgres engsuite > backup_$(date +%Y%m%d).sql
+
+# Restore backup
+docker exec -i infra-postgres-1 psql -U postgres engsuite < backup_20241212.sql
+```
+
 ## Key Features
 
 - **Theme Synchronization**: Seamlessly switch between Light and Dark modes from the Dashboard, with preferences persisted across applications.

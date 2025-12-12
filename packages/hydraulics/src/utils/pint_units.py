@@ -68,7 +68,7 @@ u.define("@alias kg_cm2g = kgcm2g = kgfcm2g = kgf_cm2g")
 
 # Conventional water column units (ρ_water = 1000 kg/m³, g = 9.80665 m/s²)
 u.define("mmH2O = 9.80665 pascal = mmH₂O = mmH2O_g = mmWG = mmwg = millimeter_water")
-u.define("cmH2O = 10 * mmH2O = cmH₂O = cmH2O_g = cmWG = cmwg = centimeter_water")
+# u.define("cmH2O = 10 * mmH2O = cmH₂O = cmH2O_g = cmWG = cmwg = centimeter_water")
 
 def u_convert_float(value: float, from_unit: str, to_unit: str) -> float:
     """

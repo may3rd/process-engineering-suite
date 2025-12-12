@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # All Web Apps (Ports 3000, 3002, 3003, etc.)
   apps:

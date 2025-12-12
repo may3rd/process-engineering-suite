@@ -1,0 +1,614 @@
+{
+  "users": [
+    {
+      "id": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "name": "John Smith",
+      "email": "john.smith@acme.com",
+      "role": "engineer",
+      "status": "active"
+    },
+    {
+      "id": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "name": "Sarah Johnson",
+      "email": "sarah.johnson@acme.com",
+      "role": "lead",
+      "status": "active"
+    },
+    {
+      "id": "22ee3f22-898a-461b-85ec-83f84d250810",
+      "name": "Mike Chen",
+      "email": "mike.chen@acme.com",
+      "role": "approver",
+      "status": "active"
+    },
+    {
+      "id": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "name": "Emily Davis",
+      "email": "emily.davis@gep.com",
+      "role": "engineer",
+      "status": "active"
+    },
+    {
+      "id": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "name": "Maetee",
+      "email": "maetee@eng-suite.com",
+      "role": "admin",
+      "status": "active"
+    },
+    {
+      "id": "1b9de640-0851-4ed5-941c-411efa30585c",
+      "name": "Test Lead",
+      "email": "lead@eng-suite.com",
+      "role": "lead",
+      "status": "active"
+    },
+    {
+      "id": "f97ba14f-1fe6-4ad8-8c6e-241c12efcc27",
+      "name": "Test Approver",
+      "email": "approver@eng-suite.com",
+      "role": "approver",
+      "status": "active"
+    },
+    {
+      "id": "2252f300-f2f3-4911-863d-40a5baa25346",
+      "name": "Test Engineer",
+      "email": "engineer@eng-suite.com",
+      "role": "engineer",
+      "status": "active"
+    }
+  ],
+  "credentials": [
+    {
+      "id": "5fec821f-238a-4885-9b58-d4bf399bb653",
+      "userId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "username": "maetee",
+      "passwordHash": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.VlS9I6Kf2ysVPK",
+      "failedAttempts": 0
+    },
+    {
+      "id": "f047fff4-8deb-439b-aef4-3f0d6fc3828a",
+      "userId": "1b9de640-0851-4ed5-941c-411efa30585c",
+      "username": "lead",
+      "passwordHash": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.VlS9I6Kf2ysVPK",
+      "failedAttempts": 0
+    },
+    {
+      "id": "fd9a95c9-1a10-4392-96fa-407d55183a4c",
+      "userId": "f97ba14f-1fe6-4ad8-8c6e-241c12efcc27",
+      "username": "approver",
+      "passwordHash": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.VlS9I6Kf2ysVPK",
+      "failedAttempts": 0
+    },
+    {
+      "id": "d4fcabc8-36d1-4ce1-9ec2-b282aa361cc0",
+      "userId": "2252f300-f2f3-4911-863d-40a5baa25346",
+      "username": "engineer",
+      "passwordHash": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.VlS9I6Kf2ysVPK",
+      "failedAttempts": 0
+    }
+  ],
+  "customers": [
+    {
+      "id": "5654fc8f-f576-4cba-a9d0-fe2ac1eb1e2c",
+      "name": "Acme Petrochemical",
+      "code": "ACME",
+      "status": "active",
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "createdAt": "2024-01-15T08:00:00Z"
+    },
+    {
+      "id": "bc479980-8e75-4bec-ae36-f8437e1471d5",
+      "name": "Global Energy Partners",
+      "code": "GEP",
+      "status": "active",
+      "ownerId": "22ee3f22-898a-461b-85ec-83f84d250810",
+      "createdAt": "2024-02-20T10:30:00Z"
+    }
+  ],
+  "plants": [
+    {
+      "id": "427a7965-13bc-48a3-96a1-b8f882c7ff62",
+      "customerId": "5654fc8f-f576-4cba-a9d0-fe2ac1eb1e2c",
+      "name": "Houston Refinery",
+      "code": "HOU-REF",
+      "location": "Houston, TX, USA",
+      "status": "active",
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "createdAt": "2024-01-20T09:00:00Z"
+    },
+    {
+      "id": "be0fa93c-c3f8-4c81-842f-e2af54fbee75",
+      "customerId": "5654fc8f-f576-4cba-a9d0-fe2ac1eb1e2c",
+      "name": "Baytown Chemical Complex",
+      "code": "BAY-CHEM",
+      "location": "Baytown, TX, USA",
+      "status": "active",
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "createdAt": "2024-01-25T11:00:00Z"
+    },
+    {
+      "id": "d1632a0a-a600-4274-b307-cce0cb50c3c7",
+      "customerId": "bc479980-8e75-4bec-ae36-f8437e1471d5",
+      "name": "Singapore LNG Terminal",
+      "code": "SG-LNG",
+      "location": "Jurong Island, Singapore",
+      "status": "active",
+      "ownerId": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "createdAt": "2024-03-01T08:00:00Z"
+    },
+    {
+      "id": "57d54a94-de67-41c1-9764-065984647638",
+      "customerId": "bc479980-8e75-4bec-ae36-f8437e1471d5",
+      "name": "Rotterdam Storage Facility",
+      "code": "RTM-STOR",
+      "location": "Rotterdam, Netherlands",
+      "status": "active",
+      "ownerId": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "createdAt": "2024-03-15T14:00:00Z"
+    }
+  ],
+  "units": [
+    {
+      "id": "5a7f3ab0-f7c6-4cdc-bb0a-a4b62318f4ac",
+      "plantId": "427a7965-13bc-48a3-96a1-b8f882c7ff62",
+      "name": "Crude Distillation Unit",
+      "code": "CDU-100",
+      "service": "Crude Oil Processing",
+      "status": "active",
+      "ownerId": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "createdAt": "2024-02-01T10:00:00Z"
+    },
+    {
+      "id": "6a6dceb5-71c9-43a8-bc1e-4691f8d1e896",
+      "plantId": "427a7965-13bc-48a3-96a1-b8f882c7ff62",
+      "name": "Vacuum Distillation Unit",
+      "code": "VDU-200",
+      "service": "Vacuum Distillation",
+      "status": "active",
+      "ownerId": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "createdAt": "2024-02-05T10:00:00Z"
+    },
+    {
+      "id": "4cca7df9-091e-4960-8b11-b27011de9abe",
+      "plantId": "be0fa93c-c3f8-4c81-842f-e2af54fbee75",
+      "name": "Ethylene Cracker",
+      "code": "ETH-100",
+      "service": "Ethylene Production",
+      "status": "active",
+      "ownerId": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "createdAt": "2024-02-10T10:00:00Z"
+    },
+    {
+      "id": "3553f0ab-3cdc-42c2-bd26-d30683c6a637",
+      "plantId": "d1632a0a-a600-4274-b307-cce0cb50c3c7",
+      "name": "LNG Receiving Terminal",
+      "code": "LNG-REC",
+      "service": "LNG Regasification",
+      "status": "active",
+      "ownerId": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "createdAt": "2024-03-20T10:00:00Z"
+    }
+  ],
+  "areas": [
+    {
+      "id": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
+      "unitId": "5a7f3ab0-f7c6-4cdc-bb0a-a4b62318f4ac",
+      "name": "Atmospheric Section",
+      "code": "CDU-100-ATM",
+      "status": "active",
+      "createdAt": "2024-02-10T10:00:00Z"
+    },
+    {
+      "id": "52519920-7f49-44a1-b601-62a891d1f41d",
+      "unitId": "5a7f3ab0-f7c6-4cdc-bb0a-a4b62318f4ac",
+      "name": "Preheat Train",
+      "code": "CDU-100-PHT",
+      "status": "active",
+      "createdAt": "2024-02-10T10:00:00Z"
+    },
+    {
+      "id": "136fb02a-a1b3-46c3-b2b5-bbcdcbb8eb3d",
+      "unitId": "6a6dceb5-71c9-43a8-bc1e-4691f8d1e896",
+      "name": "Vacuum Column",
+      "code": "VDU-200-COL",
+      "status": "active",
+      "createdAt": "2024-02-15T10:00:00Z"
+    },
+    {
+      "id": "ba68c07b-d72a-4155-aa45-2cf91ce28fb3",
+      "unitId": "4cca7df9-091e-4960-8b11-b27011de9abe",
+      "name": "Furnace Area",
+      "code": "ETH-100-FUR",
+      "status": "active",
+      "createdAt": "2024-02-20T10:00:00Z"
+    },
+    {
+      "id": "780cbf94-e8ff-4ec4-9d69-786a0cd3f095",
+      "unitId": "3553f0ab-3cdc-42c2-bd26-d30683c6a637",
+      "name": "Vaporizer Section",
+      "code": "LNG-REC-VAP",
+      "status": "active",
+      "createdAt": "2024-03-25T10:00:00Z"
+    }
+  ],
+  "projects": [
+    {
+      "id": "b29268ba-d545-4a87-9df4-c6eb47f5208f",
+      "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
+      "name": "CDU Atmospheric Tower Relief Study",
+      "code": "ACME-2024-001",
+      "phase": "design",
+      "status": "in_review",
+      "startDate": "2024-06-01",
+      "leadId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "createdAt": "2024-06-01T08:00:00Z"
+    },
+    {
+      "id": "93d3f6a9-ed74-448c-83f4-fc3fe830edab",
+      "areaId": "52519920-7f49-44a1-b601-62a891d1f41d",
+      "name": "Preheat Exchanger PSV Review",
+      "code": "ACME-2024-002",
+      "phase": "design",
+      "status": "draft",
+      "startDate": "2024-07-15",
+      "leadId": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "createdAt": "2024-07-15T08:00:00Z"
+    }
+  ],
+  "equipment": [
+    {
+      "id": "ade8593f-0554-47b7-9873-4f88e61f5eb0",
+      "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
+      "type": "column",
+      "tag": "T-101",
+      "name": "Atmospheric Crude Tower",
+      "description": "Atmospheric Crude Tower",
+      "designPressure": 3.5,
+      "mawp": 4.0,
+      "designTemperature": 400,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-06-05T10:00:00Z",
+      "updatedAt": "2024-06-05T10:00:00Z"
+    },
+    {
+      "id": "72ad9e44-c348-4e76-886c-223e30aef4a3",
+      "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
+      "type": "vessel",
+      "tag": "V-102",
+      "name": "Overhead Accumulator",
+      "description": "Overhead Accumulator",
+      "designPressure": 5.0,
+      "mawp": 6.0,
+      "designTemperature": 150,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-06-05T10:00:00Z",
+      "updatedAt": "2024-06-05T10:00:00Z"
+    }
+  ],
+  "protectiveSystems": [
+    {
+      "id": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
+      "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
+      "projectIds": [
+        "b29268ba-d545-4a87-9df4-c6eb47f5208f"
+      ],
+      "name": "Atmospheric Tower Overhead PSV",
+      "tag": "PSV-101A",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "Light Ends (C1-C4)",
+      "fluidPhase": "gas",
+      "setPressure": 2.8,
+      "mawp": 3.5,
+      "ownerId": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "status": "in_review",
+      "valveType": "conventional",
+      "tags": [
+        "critical",
+        "fire-case"
+      ],
+      "createdAt": "2024-06-10T08:00:00Z",
+      "updatedAt": "2024-09-15T14:30:00Z",
+      "inletNetwork": {
+        "nodes": [
+          {
+            "id": "n1",
+            "label": "Equipment",
+            "type": "equipment",
+            "position": {
+              "x": 100,
+              "y": 200
+            }
+          },
+          {
+            "id": "n2",
+            "label": "PSV",
+            "type": "psv",
+            "position": {
+              "x": 400,
+              "y": 200
+            }
+          }
+        ],
+        "pipes": [
+          {
+            "id": "p1",
+            "source": "n1",
+            "target": "n2",
+            "diameter": 4,
+            "length": 5,
+            "schedule": "40",
+            "roughness": 0.045,
+            "fittings": [
+              {
+                "type": "elbow_90_lr",
+                "quantity": 2
+              },
+              {
+                "type": "gate_valve",
+                "quantity": 1
+              }
+            ]
+          }
+        ]
+      },
+      "outletNetwork": {
+        "nodes": [
+          {
+            "id": "n1",
+            "label": "PSV",
+            "type": "psv",
+            "position": {
+              "x": 100,
+              "y": 200
+            }
+          },
+          {
+            "id": "n2",
+            "label": "Header",
+            "type": "header",
+            "position": {
+              "x": 400,
+              "y": 200
+            }
+          }
+        ],
+        "pipes": [
+          {
+            "id": "p1",
+            "source": "n1",
+            "target": "n2",
+            "diameter": 6,
+            "length": 15,
+            "schedule": "40",
+            "roughness": 0.045,
+            "fittings": [
+              {
+                "type": "elbow_90_lr",
+                "quantity": 3
+              },
+              {
+                "type": "tee_run",
+                "quantity": 1
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "id": "a50b3dcd-c40a-4a62-afc2-ba38566441c8",
+      "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
+      "projectIds": [
+        "b29268ba-d545-4a87-9df4-c6eb47f5208f"
+      ],
+      "name": "Atmospheric Tower Overhead PSV (Spare)",
+      "tag": "PSV-101B",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "Light Ends (C1-C4)",
+      "fluidPhase": "gas",
+      "setPressure": 2.9,
+      "mawp": 3.5,
+      "ownerId": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "status": "draft",
+      "valveType": "balanced_bellows",
+      "tags": [
+        "spare"
+      ],
+      "createdAt": "2024-06-10T08:00:00Z",
+      "updatedAt": "2024-09-10T10:00:00Z",
+      "inletNetwork": {
+        "nodes": [
+          {
+            "id": "n1",
+            "label": "Equipment",
+            "type": "equipment",
+            "position": {
+              "x": 100,
+              "y": 200
+            }
+          },
+          {
+            "id": "n2",
+            "label": "PSV",
+            "type": "psv",
+            "position": {
+              "x": 400,
+              "y": 200
+            }
+          }
+        ],
+        "pipes": [
+          {
+            "id": "p1",
+            "source": "n1",
+            "target": "n2",
+            "diameter": 4,
+            "length": 4,
+            "schedule": "40",
+            "roughness": 0.045,
+            "fittings": [
+              {
+                "type": "elbow_90_lr",
+                "quantity": 1
+              },
+              {
+                "type": "gate_valve",
+                "quantity": 1
+              }
+            ]
+          }
+        ]
+      },
+      "outletNetwork": {
+        "nodes": [
+          {
+            "id": "n1",
+            "label": "PSV",
+            "type": "psv",
+            "position": {
+              "x": 100,
+              "y": 200
+            }
+          },
+          {
+            "id": "n2",
+            "label": "Header",
+            "type": "header",
+            "position": {
+              "x": 400,
+              "y": 200
+            }
+          }
+        ],
+        "pipes": [
+          {
+            "id": "p1",
+            "source": "n1",
+            "target": "n2",
+            "diameter": 6,
+            "length": 12,
+            "schedule": "40",
+            "roughness": 0.045,
+            "fittings": [
+              {
+                "type": "elbow_90_lr",
+                "quantity": 2
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "scenarios": [
+    {
+      "id": "b43e9a7f-727d-4ba4-8bc6-70ceff24fb47",
+      "protectiveSystemId": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
+      "cause": "blocked_outlet",
+      "description": "Blocked outlet scenario for atmospheric tower",
+      "relievingTemp": 180,
+      "relievingPressure": 2.8,
+      "phase": "gas",
+      "relievingRate": 50000,
+      "accumulationPct": 10,
+      "requiredCapacity": 50000,
+      "assumptions": [
+        "Valve fully open",
+        "Normal operations"
+      ],
+      "codeRefs": [
+        "API-521 Section 5"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-06-15T10:00:00Z",
+      "updatedAt": "2024-06-15T10:00:00Z"
+    },
+    {
+      "id": "a70330cc-d47a-4d9b-af98-1e7b06308656",
+      "protectiveSystemId": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
+      "cause": "fire_case",
+      "description": "Fire case - external pool fire",
+      "relievingTemp": 200,
+      "relievingPressure": 3.08,
+      "phase": "gas",
+      "relievingRate": 85000,
+      "accumulationPct": 21,
+      "requiredCapacity": 85000,
+      "assumptions": [
+        "API 521 fire zone",
+        "Adequate drainage"
+      ],
+      "codeRefs": [
+        "API-521 Section 5.15"
+      ],
+      "isGoverning": false,
+      "createdAt": "2024-06-16T10:00:00Z",
+      "updatedAt": "2024-06-16T10:00:00Z"
+    }
+  ],
+  "sizingCases": [
+    {
+      "id": "d1b5aff2-7393-4845-999c-0d9c7bf75465",
+      "protectiveSystemId": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
+      "scenarioId": "b43e9a7f-727d-4ba4-8bc6-70ceff24fb47",
+      "standard": "API-520",
+      "method": "gas",
+      "inputs": {
+        "massFlowRate": 50000,
+        "temperature": 180,
+        "pressure": 2.8,
+        "molecularWeight": 44,
+        "compressibilityZ": 0.95,
+        "specificHeatRatio": 1.15
+      },
+      "outputs": {
+        "requiredArea": 1200,
+        "selectedOrifice": "J",
+        "selectedArea": 1264
+      },
+      "revisionNo": 1,
+      "status": "calculated",
+      "createdBy": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "createdAt": "2024-06-20T10:00:00Z",
+      "updatedAt": "2024-06-20T10:00:00Z"
+    }
+  ],
+  "equipmentLinks": [
+    {
+      "id": "afd0e6d1-c8bd-41ab-9069-fb40a8b57e87",
+      "protectiveSystemId": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
+      "equipmentId": "ade8593f-0554-47b7-9873-4f88e61f5eb0",
+      "isPrimary": true,
+      "relationship": "protects",
+      "notes": "Primary protection for atmospheric tower",
+      "createdAt": "2024-06-12T10:00:00Z"
+    }
+  ],
+  "attachments": [],
+  "comments": [
+    {
+      "id": "369063ca-a937-4025-9aeb-ef785a2483e8",
+      "protectiveSystemId": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
+      "body": "Reviewed fire case calculations, looks good.",
+      "createdBy": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "createdAt": "2024-09-01T14:00:00Z",
+      "updatedAt": "2024-09-01T14:00:00Z"
+    }
+  ],
+  "todos": [
+    {
+      "id": "174b7bf7-27fc-44fd-bedf-34ee09102948",
+      "protectiveSystemId": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
+      "text": "Update P&ID with new PSV size",
+      "completed": false,
+      "assignedTo": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "dueDate": "2024-10-15",
+      "createdBy": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "createdAt": "2024-09-05T10:00:00Z"
+    }
+  ]
+}

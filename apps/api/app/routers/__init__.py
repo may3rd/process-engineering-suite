@@ -1,0 +1,14 @@
+"""Routers package init."""
+from .hierarchy import router as hierarchy_router
+from .psv import router as psv_router
+from .supporting import router as supporting_router
+from .admin import router as admin_router
+from .auth import router as auth_router
+
+__all__ = [
+    "hierarchy_router",
+    "psv_router",
+    "supporting_router",
+    "admin_router",
+    "auth_router",
+]

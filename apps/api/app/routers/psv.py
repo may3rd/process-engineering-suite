@@ -1,0 +1,257 @@
+"""PSV (Protective Systems) API router."""
+from typing import List, Optional
+from datetime import datetime
+
+from fastapi import APIRouter, HTTPException
+from pydantic import BaseModel, ConfigDict, Field
+
+from ..dependencies import DAL
+
+router = APIRouter(prefix="/psv", tags=["psv"])
+
+
+# --- Pydantic Schemas ---
+
+class ProtectiveSystemResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    id: str
+    area_id: str = Field(serialization_alias="areaId")
+    project_ids: Optional[List[str]] = Field(default=None, serialization_alias="projectIds", alias="projectIds")
+    name: str
+    tag: str
+    type: str
+    design_code: str = Field(serialization_alias="designCode")
+    service_fluid: Optional[str] = Field(default=None, serialization_alias="serviceFluid")
+    fluid_phase: str = Field(serialization_alias="fluidPhase")
+    set_pressure: float = Field(serialization_alias="setPressure")
+    mawp: float
+    owner_id: str = Field(serialization_alias="ownerId")
+    status: str
+    valve_type: Optional[str] = Field(default=None, serialization_alias="valveType")
+    tags: List[str] = []
+    inlet_network: Optional[dict] = Field(default=None, serialization_alias="inletNetwork")
+    outlet_network: Optional[dict] = Field(default=None, serialization_alias="outletNetwork")
+    created_at: datetime = Field(serialization_alias="createdAt")
+    updated_at: datetime = Field(serialization_alias="updatedAt")
+
+
+class ProtectiveSystemCreate(BaseModel):
+    areaId: str
+    name: str
+    tag: str
+    type: str = "psv"
+    designCode: str = "API-520"
+    serviceFluid: Optional[str] = None
+    fluidPhase: str = "gas"
+    setPressure: float
+    mawp: float
+    ownerId: str
+    valveType: Optional[str] = None
+    tags: List[str] = []
+
+
+class ProtectiveSystemUpdate(BaseModel):
+    name: Optional[str] = None
+    serviceFluid: Optional[str] = None
+    fluidPhase: Optional[str] = None
+    setPressure: Optional[float] = None
+    mawp: Optional[float] = None
+    status: Optional[str] = None
+    valveType: Optional[str] = None
+    tags: Optional[List[str]] = None
+    inletNetwork: Optional[dict] = None
+    outletNetwork: Optional[dict] = None
+
+
+class ScenarioResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    id: str
+    protective_system_id: str = Field(serialization_alias="protectiveSystemId")
+    cause: str
+    description: Optional[str] = None
+    relieving_temp: float = Field(serialization_alias="relievingTemp")
+    relieving_pressure: float = Field(serialization_alias="relievingPressure")
+    phase: str
+    relieving_rate: float = Field(serialization_alias="relievingRate")
+    accumulation_pct: float = Field(serialization_alias="accumulationPct")
+    required_capacity: float = Field(serialization_alias="requiredCapacity")
+    assumptions: List[str] = []
+    code_refs: List[str] = Field(default=[], serialization_alias="codeRefs")
+    is_governing: bool = Field(default=False, serialization_alias="isGoverning")
+    created_at: datetime = Field(serialization_alias="createdAt")
+    updated_at: datetime = Field(serialization_alias="updatedAt")
+
+
+class ScenarioCreate(BaseModel):
+    protectiveSystemId: str
+    cause: str
+    description: Optional[str] = None
+    relievingTemp: float
+    relievingPressure: float
+    phase: str
+    relievingRate: float
+    accumulationPct: float
+    requiredCapacity: float
+    assumptions: List[str] = []
+    codeRefs: List[str] = []
+    isGoverning: bool = False
+
+
+class ScenarioUpdate(BaseModel):
+    cause: Optional[str] = None
+    description: Optional[str] = None
+    relievingTemp: Optional[float] = None
+    relievingPressure: Optional[float] = None
+    phase: Optional[str] = None
+    relievingRate: Optional[float] = None
+    accumulationPct: Optional[float] = None
+    requiredCapacity: Optional[float] = None
+    assumptions: Optional[List[str]] = None
+    codeRefs: Optional[List[str]] = None
+    isGoverning: Optional[bool] = None
+
+
+class SizingCaseResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    id: str
+    protective_system_id: str = Field(serialization_alias="protectiveSystemId")
+    scenario_id: Optional[str] = Field(default=None, serialization_alias="scenarioId")
+    standard: str
+    method: str
+    inputs: dict = {}
+    outputs: dict = {}
+    revision_no: int = Field(default=1, serialization_alias="revisionNo")
+    status: str
+    created_by: str = Field(serialization_alias="createdBy")
+    approved_by: Optional[str] = Field(default=None, serialization_alias="approvedBy")
+    created_at: datetime = Field(serialization_alias="createdAt")
+    updated_at: datetime = Field(serialization_alias="updatedAt")
+
+
+class SizingCaseCreate(BaseModel):
+    protectiveSystemId: str
+    scenarioId: Optional[str] = None
+    standard: str = "API-520"
+    method: str
+    inputs: dict = {}
+    createdBy: str
+
+
+class SizingCaseUpdate(BaseModel):
+    inputs: Optional[dict] = None
+    outputs: Optional[dict] = None
+    status: Optional[str] = None
+    approvedBy: Optional[str] = None
+
+
+# --- PSV Endpoints ---
+
+@router.get("", response_model=List[ProtectiveSystemResponse])
+async def get_protective_systems(dal: DAL, area_id: Optional[str] = None):
+    """Get all protective systems, optionally filtered by area."""
+    return await dal.get_protective_systems(area_id)
+
+
+@router.get("/{psv_id}", response_model=ProtectiveSystemResponse)
+async def get_protective_system(psv_id: str, dal: DAL):
+    """Get a single protective system by ID."""
+    psv = await dal.get_protective_system_by_id(psv_id)
+    if not psv:
+        raise HTTPException(status_code=404, detail="PSV not found")
+    return psv
+
+
+@router.post("", response_model=ProtectiveSystemResponse)
+async def create_protective_system(data: ProtectiveSystemCreate, dal: DAL):
+    """Create a new protective system."""
+    return await dal.create_protective_system(data.model_dump())
+
+
+@router.put("/{psv_id}", response_model=ProtectiveSystemResponse)
+async def update_protective_system(psv_id: str, data: ProtectiveSystemUpdate, dal: DAL):
+    """Update a protective system."""
+    try:
+        # Only include non-None values
+        update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+        return await dal.update_protective_system(psv_id, update_data)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.delete("/{psv_id}")
+async def delete_protective_system(psv_id: str, dal: DAL):
+    """Soft delete a protective system."""
+    success = await dal.delete_protective_system(psv_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="PSV not found")
+    return {"message": "PSV deleted"}
+
+
+# --- Scenario Endpoints ---
+
+@router.get("/{psv_id}/scenarios", response_model=List[ScenarioResponse])
+async def get_scenarios(psv_id: str, dal: DAL):
+    """Get scenarios for a protective system."""
+    return await dal.get_scenarios_by_psv(psv_id)
+
+
+@router.post("/{psv_id}/scenarios", response_model=ScenarioResponse)
+async def create_scenario(psv_id: str, data: ScenarioCreate, dal: DAL):
+    """Create a new scenario for a protective system."""
+    data_dict = data.model_dump()
+    data_dict["protectiveSystemId"] = psv_id
+    return await dal.create_scenario(data_dict)
+
+
+@router.put("/scenarios/{scenario_id}", response_model=ScenarioResponse)
+async def update_scenario(scenario_id: str, data: ScenarioUpdate, dal: DAL):
+    """Update a scenario."""
+    try:
+        update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+        return await dal.update_scenario(scenario_id, update_data)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.delete("/scenarios/{scenario_id}")
+async def delete_scenario(scenario_id: str, dal: DAL):
+    """Delete a scenario."""
+    success = await dal.delete_scenario(scenario_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Scenario not found")
+    return {"message": "Scenario deleted"}
+
+
+# --- Sizing Case Endpoints ---
+
+@router.get("/{psv_id}/sizing-cases", response_model=List[SizingCaseResponse])
+async def get_sizing_cases(psv_id: str, dal: DAL):
+    """Get sizing cases for a protective system."""
+    return await dal.get_sizing_cases_by_psv(psv_id)
+
+
+@router.post("/{psv_id}/sizing-cases", response_model=SizingCaseResponse)
+async def create_sizing_case(psv_id: str, data: SizingCaseCreate, dal: DAL):
+    """Create a new sizing case."""
+    data_dict = data.model_dump()
+    data_dict["protectiveSystemId"] = psv_id
+    return await dal.create_sizing_case(data_dict)
+
+
+@router.put("/sizing-cases/{case_id}", response_model=SizingCaseResponse)
+async def update_sizing_case(case_id: str, data: SizingCaseUpdate, dal: DAL):
+    """Update a sizing case."""
+    try:
+        update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+        return await dal.update_sizing_case(case_id, update_data)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.delete("/sizing-cases/{case_id}")
+async def delete_sizing_case(case_id: str, dal: DAL):
+    """Delete a sizing case."""
+    success = await dal.delete_sizing_case(case_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Sizing case not found")
+    return {"message": "Sizing case deleted"}

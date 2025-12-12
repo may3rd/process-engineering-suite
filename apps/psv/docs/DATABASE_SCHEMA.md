@@ -109,6 +109,7 @@ erDiagram
 | mawp | DECIMAL(10,2) | Maximum allowable working pressure (barg) |
 | owner_id | UUID | FK → users.id |
 | status | ENUM('draft', 'in_review', 'checked', 'approved', 'issued') | Status |
+| valve_type | ENUM('conventional', 'balanced_bellows', 'pilot_operated') | Valve operating type (nullable) |
 | project_tags | UUID[] | Optional FK array → projects.id |
 | tags | TEXT[] | Tags array |
 | inlet_network | JSONB | Shared inlet piping configuration |
@@ -226,8 +227,23 @@ erDiagram
 | id | UUID | Primary key |
 | name | VARCHAR(255) | Display name |
 | email | VARCHAR(255) | Email (unique) |
-| role | ENUM('engineer', 'lead', 'approver', 'viewer') | Role |
+| role | ENUM('engineer', 'lead', 'approver', 'admin', 'viewer') | Role |
 | status | ENUM('active', 'inactive') | Status |
+| created_at | TIMESTAMP | Creation time |
+| updated_at | TIMESTAMP | Last update |
+
+#### `credentials`
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| user_id | UUID | FK → users.id (CASCADE) |
+| username | VARCHAR(100) | Login username (unique) |
+| password_hash | VARCHAR(255) | Bcrypt hashed password |
+| last_login | TIMESTAMP | Last successful login (nullable) |
+| failed_attempts | INTEGER | Failed login count (default 0) |
+| locked_until | TIMESTAMP | Account lockout time (nullable) |
+| created_at | TIMESTAMP | Creation time |
+| updated_at | TIMESTAMP | Last update |
 
 ---
 
