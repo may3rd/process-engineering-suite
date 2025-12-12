@@ -66,6 +66,36 @@ apps/psv/
 - Database connectivity
 - User authentication
 
+## Demo Mode (localStorage)
+
+The app supports a **localStorage-based demo mode** for offline use or deployments without a backend API.
+
+### Enable Demo Mode
+
+**Option 1: Environment Variable**
+```bash
+NEXT_PUBLIC_USE_LOCAL_STORAGE=true npm run dev
+```
+
+**Option 2: Create `.env.local`**
+```bash
+echo "NEXT_PUBLIC_USE_LOCAL_STORAGE=true" > .env.local
+npm run dev
+```
+
+**Option 3: Vercel Deployment**
+Add `NEXT_PUBLIC_USE_LOCAL_STORAGE=true` in Vercel project settings → Environment Variables.
+
+### Demo Credentials
+- **Username:** `engineer`
+- **Password:** `engineer`
+
+### How It Works
+- All data operations use browser localStorage instead of API
+- Pre-populated with mock data on first visit
+- Data persists in each user's browser (not shared)
+- No backend server required
+
 ## Related Documentation
 
 - [DEVELOPING.md](./DEVELOPING.md) - Development guide and architecture
