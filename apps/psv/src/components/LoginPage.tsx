@@ -185,10 +185,7 @@ export function LoginPage({ onSuccess, onContinueAsGuest }: LoginPageProps) {
                     }}
                 >
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                        Test Accounts:
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontFamily: 'monospace' }}>
-                        maetee / linknipark (Admin)
+                        Test Account:
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontFamily: 'monospace' }}>
                         engineer / engineer (Engineer)

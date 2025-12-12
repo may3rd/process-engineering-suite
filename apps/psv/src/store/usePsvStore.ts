@@ -14,8 +14,11 @@ import type {
     Equipment,
     Comment,
 } from '@/data/types';
-import { api } from '@/lib/api';
+import { getDataService } from '@/lib/api';
 import { toast } from '@/lib/toast';
+
+// Get the appropriate data service based on environment
+const dataService = getDataService();
 
 interface HierarchySelection {
     customerId: string | null;
@@ -197,7 +200,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             // Fetch customers
-            const customers = await api.getCustomers();
+            const customers = await dataService.getCustomers();
 
             // Fetch FULL Hierarchy for Dashboard counts
             // Cascade: Customers -> Plants -> Units -> Areas -> Projects
@@ -206,7 +209,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             let allPlants: Plant[] = [];
             try {
                 const plantsResults = await Promise.all(
-                    customers.map(c => api.getPlantsByCustomer(c.id))
+                    customers.map(c => dataService.getPlantsByCustomer(c.id))
                 );
                 allPlants = plantsResults.flat();
             } catch (err) {
@@ -217,7 +220,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             let allUnits: Unit[] = [];
             try {
                 const unitsResults = await Promise.all(
-                    allPlants.map(p => api.getUnitsByPlant(p.id))
+                    allPlants.map(p => dataService.getUnitsByPlant(p.id))
                 );
                 allUnits = unitsResults.flat();
             } catch (err) {
@@ -228,7 +231,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             let allAreas: Area[] = [];
             try {
                 const areasResults = await Promise.all(
-                    allUnits.map(u => api.getAreasByUnit(u.id))
+                    allUnits.map(u => dataService.getAreasByUnit(u.id))
                 );
                 allAreas = areasResults.flat();
             } catch (err) {
@@ -239,7 +242,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             let allProjects: Project[] = [];
             try {
                 const projectsResults = await Promise.all(
-                    allAreas.map(a => api.getProjectsByArea(a.id))
+                    allAreas.map(a => dataService.getProjectsByArea(a.id))
                 );
                 allProjects = projectsResults.flat();
             } catch (err) {
@@ -249,7 +252,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             // 5. All Protective Systems (Global fetch supported)
             let allPsvs: ProtectiveSystem[] = [];
             try {
-                allPsvs = await api.getProtectiveSystems();
+                allPsvs = await dataService.getProtectiveSystems();
             } catch (err) {
                 console.error("Failed to fetch PSVs:", err);
             }
@@ -257,7 +260,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             // Fetch equipment (fallback to empty if API fails)
             let equipmentList: Equipment[] = [];
             try {
-                equipmentList = await api.getEquipment();
+                equipmentList = await dataService.getEquipment();
             } catch {
                 // If API fails, import mock data as fallback
                 const mockData = await import('@/data/mockData');
@@ -298,7 +301,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             let displayedPlants: Plant[] = [];
 
             if (id) {
-                const fetchedPlants = await api.getPlantsByCustomer(id);
+                const fetchedPlants = await dataService.getPlantsByCustomer(id);
                 // Update global cache: remove old plants for this customer and add fresh ones
                 newPlants = [
                     ...newPlants.filter(p => p.customerId !== id),
@@ -352,7 +355,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             let displayedUnits: Unit[] = [];
 
             if (id) {
-                const fetchedUnits = await api.getUnitsByPlant(id);
+                const fetchedUnits = await dataService.getUnitsByPlant(id);
                 // Merge units into global cache
                 newUnits = [
                     ...newUnits.filter(u => u.plantId !== id),
@@ -402,7 +405,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             let displayedAreas: Area[] = [];
 
             if (id) {
-                const fetchedAreas = await api.getAreasByUnit(id);
+                const fetchedAreas = await dataService.getAreasByUnit(id);
                 // Merge areas into global cache
                 newAreas = [
                     ...newAreas.filter(a => a.unitId !== id),
@@ -449,7 +452,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             let displayedProjects: Project[] = [];
 
             if (id) {
-                const fetchedProjects = await api.getProjectsByArea(id);
+                const fetchedProjects = await dataService.getProjectsByArea(id);
                 // Merge projects into global cache
                 newProjects = [
                     ...newProjects.filter(p => p.areaId !== id),
@@ -498,7 +501,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             let displayedPsvs: ProtectiveSystem[] = [];
 
             if (project) {
-                const fetchedPsvs = await api.getProtectiveSystems(project.areaId);
+                const fetchedPsvs = await dataService.getProtectiveSystems(project.areaId);
                 // Merge into global cache
                 newPsvs = [
                     ...newPsvs.filter(p => p.areaId !== project.areaId),
@@ -543,12 +546,12 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     selectPsv: async (id) => {
         set({ isLoading: true, error: null });
         try {
-            const psv = id ? await api.getProtectiveSystem(id) : null;
+            const psv = id ? await dataService.getProtectiveSystem(id) : null;
             const [scenarioList, sizingCaseList, todoList, commentList] = id ? await Promise.all([
-                api.getScenarios(id),
-                api.getSizingCases(id),
-                api.getTodos(id),
-                api.getComments(id),
+                dataService.getScenarios(id),
+                dataService.getSizingCases(id),
+                dataService.getTodos(id),
+                dataService.getComments(id),
             ]) : [[], [], [], []];
 
             set((state) => ({
@@ -644,7 +647,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     updateSizingCase: async (updatedCase) => {
         try {
-            const updated = await api.updateSizingCase(updatedCase.id, updatedCase);
+            const updated = await dataService.updateSizingCase(updatedCase.id, updatedCase);
             set((state) => ({
                 sizingCaseList: state.sizingCaseList.map((c) =>
                     c.id === updated.id ? updated : c
@@ -661,7 +664,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     addSizingCase: async (newCase) => {
         try {
             if (!get().selectedPsv) throw new Error('No PSV selected');
-            const created = await api.createSizingCase(get().selectedPsv!.id, newCase);
+            const created = await dataService.createSizingCase(get().selectedPsv!.id, newCase);
             set((state) => ({
                 sizingCaseList: [...state.sizingCaseList, created],
             }));
@@ -675,7 +678,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     updatePsv: async (updatedPsv) => {
         try {
-            const updated = await api.updateProtectiveSystem(updatedPsv.id, updatedPsv);
+            const updated = await dataService.updateProtectiveSystem(updatedPsv.id, updatedPsv);
             set((state) => {
                 const newList = state.psvList.map(p => p.id === updated.id ? updated : p);
                 return {
@@ -694,7 +697,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deleteSizingCase: async (id) => {
         try {
-            await api.deleteSizingCase(id);
+            await dataService.deleteSizingCase(id);
             set((state) => ({
                 sizingCaseList: state.sizingCaseList.filter((c) => c.id !== id),
             }));
@@ -709,7 +712,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     addScenario: async (newScenario) => {
         try {
             if (!get().selectedPsv) throw new Error('No PSV selected');
-            const created = await api.createScenario(get().selectedPsv!.id, newScenario);
+            const created = await dataService.createScenario(get().selectedPsv!.id, newScenario);
             set((state) => ({
                 scenarioList: [...state.scenarioList, created],
             }));
@@ -723,7 +726,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     updateScenario: async (updatedScenario) => {
         try {
-            const updated = await api.updateScenario(updatedScenario.id, updatedScenario);
+            const updated = await dataService.updateScenario(updatedScenario.id, updatedScenario);
             set((state) => ({
                 scenarioList: state.scenarioList.map((s) =>
                     s.id === updated.id ? updated : s
@@ -739,7 +742,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deleteScenario: async (id) => {
         try {
-            await api.deleteScenario(id);
+            await dataService.deleteScenario(id);
             set((state) => ({
                 scenarioList: state.scenarioList.filter((s) => s.id !== id),
             }));
@@ -758,7 +761,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
             // Optimistic update logic was flawed. Now using API response.
             // But API update requires just the tags array usually if using Partial.
-            const updated = await api.updateProtectiveSystem(psvId, { tags: [...psv.tags, tag] });
+            const updated = await dataService.updateProtectiveSystem(psvId, { tags: [...psv.tags, tag] });
 
             set((state) => {
                 const newPsvList = state.psvList.map(p => p.id === psvId ? updated : p);
@@ -781,7 +784,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             const psv = get().psvList.find(p => p.id === psvId);
             if (!psv) return;
 
-            const updated = await api.updateProtectiveSystem(psvId, { tags: psv.tags.filter(t => t !== tag) });
+            const updated = await dataService.updateProtectiveSystem(psvId, { tags: psv.tags.filter(t => t !== tag) });
 
             set((state) => {
                 const newPsvList = state.psvList.map(p => p.id === psvId ? updated : p);
@@ -813,7 +816,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deletePsv: async (id) => {
         try {
-            await api.deleteProtectiveSystem(id);
+            await dataService.deleteProtectiveSystem(id);
             const state = get();
             set((state) => ({
                 psvList: state.psvList.filter((p) => p.id !== id),
@@ -836,7 +839,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deleteAttachment: async (id) => {
         try {
-            await api.deleteAttachment(id);
+            await dataService.deleteAttachment(id);
             set((state) => ({
                 attachmentList: state.attachmentList.filter((a) => a.id !== id)
             }));
@@ -850,7 +853,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     addAttachment: async (attachment) => {
         try {
-            const created = await api.createAttachment(attachment);
+            const created = await dataService.createAttachment(attachment);
             set((state) => ({
                 attachmentList: [...state.attachmentList, created]
             }));
@@ -865,7 +868,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     // Todo Actions
     addTodo: async (todo) => {
         try {
-            const created = await api.createTodo(todo);
+            const created = await dataService.createTodo(todo);
             set((state) => ({
                 todoList: [...state.todoList, created]
             }));
@@ -879,7 +882,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deleteTodo: async (id) => {
         try {
-            await api.deleteTodo(id);
+            await dataService.deleteTodo(id);
             set((state) => ({
                 todoList: state.todoList.filter((t) => t.id !== id)
             }));
@@ -896,7 +899,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             const todo = get().todoList.find((t) => t.id === id);
             if (!todo) return;
 
-            const updated = await api.updateTodo(id, { completed: !todo.completed });
+            const updated = await dataService.updateTodo(id, { completed: !todo.completed });
             set((state) => ({
                 todoList: state.todoList.map((t) =>
                     t.id === id ? updated : t
@@ -912,7 +915,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     // Comment Actions
     addComment: async (comment) => {
         try {
-            const created = await api.createComment(comment);
+            const created = await dataService.createComment(comment);
             set((state) => ({
                 commentList: [...state.commentList, created]
             }));
@@ -926,7 +929,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deleteComment: async (id) => {
         try {
-            await api.deleteComment(id);
+            await dataService.deleteComment(id);
             set((state) => ({
                 commentList: state.commentList.filter((c) => c.id !== id)
             }));
@@ -942,7 +945,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     // Customer
     addCustomer: async (customer) => {
         try {
-            const created = await api.createCustomer(customer);
+            const created = await dataService.createCustomer(customer);
             set((state) => ({
                 customers: [...state.customers, created],
                 customerList: [...state.customerList, created], // Assuming customerList follows customers
@@ -956,7 +959,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     updateCustomer: async (id, updates) => {
         try {
-            const updated = await api.updateCustomer(id, updates);
+            const updated = await dataService.updateCustomer(id, updates);
             set((state) => ({
                 customers: state.customers.map(c => c.id === id ? updated : c),
                 customerList: state.customerList.map(c => c.id === id ? updated : c),
@@ -971,7 +974,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deleteCustomer: async (id) => {
         try {
-            await api.deleteCustomer(id);
+            await dataService.deleteCustomer(id);
             set((state) => ({
                 customers: state.customers.filter(c => c.id !== id),
                 customerList: state.customerList.filter(c => c.id !== id),
@@ -986,7 +989,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     addPlant: async (plant) => {
         try {
-            const created = await api.createPlant(plant);
+            const created = await dataService.createPlant(plant);
             set((state) => ({
                 plants: [...state.plants, created],
                 plantList: state.selectedCustomer?.id === created.customerId ? [...state.plantList, created] : state.plantList,
@@ -1000,7 +1003,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     updatePlant: async (id, updates) => {
         try {
-            const updated = await api.updatePlant(id, updates);
+            const updated = await dataService.updatePlant(id, updates);
             set((state) => ({
                 plants: state.plants.map(p => p.id === id ? updated : p),
                 plantList: state.plantList.map(p => p.id === id ? updated : p),
@@ -1015,7 +1018,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deletePlant: async (id) => {
         try {
-            await api.deletePlant(id);
+            await dataService.deletePlant(id);
             set((state) => ({
                 plants: state.plants.filter(p => p.id !== id),
                 plantList: state.plantList.filter(p => p.id !== id),
@@ -1030,7 +1033,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     addUnit: async (unit) => {
         try {
-            const created = await api.createUnit(unit);
+            const created = await dataService.createUnit(unit);
             set((state) => ({
                 units: [...state.units, created],
                 unitList: state.selectedPlant?.id === created.plantId ? [...state.unitList, created] : state.unitList,
@@ -1044,7 +1047,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     updateUnit: async (id, updates) => {
         try {
-            const updated = await api.updateUnit(id, updates);
+            const updated = await dataService.updateUnit(id, updates);
             set((state) => ({
                 units: state.units.map(u => u.id === id ? updated : u),
                 unitList: state.unitList.map(u => u.id === id ? updated : u),
@@ -1059,7 +1062,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deleteUnit: async (id) => {
         try {
-            await api.deleteUnit(id);
+            await dataService.deleteUnit(id);
             set((state) => ({
                 units: state.units.filter(u => u.id !== id),
                 unitList: state.unitList.filter(u => u.id !== id),
@@ -1074,7 +1077,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     addArea: async (area) => {
         try {
-            const created = await api.createArea(area);
+            const created = await dataService.createArea(area);
             set((state) => ({
                 areas: [...state.areas, created],
                 areaList: state.selectedUnit?.id === created.unitId ? [...state.areaList, created] : state.areaList,
@@ -1088,7 +1091,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     updateArea: async (id, updates) => {
         try {
-            const updated = await api.updateArea(id, updates);
+            const updated = await dataService.updateArea(id, updates);
             set((state) => ({
                 areas: state.areas.map(a => a.id === id ? updated : a),
                 areaList: state.areaList.map(a => a.id === id ? updated : a),
@@ -1103,7 +1106,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deleteArea: async (id) => {
         try {
-            await api.deleteArea(id);
+            await dataService.deleteArea(id);
             set((state) => ({
                 areas: state.areas.filter(a => a.id !== id),
                 areaList: state.areaList.filter(a => a.id !== id),
@@ -1118,7 +1121,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     addProject: async (project) => {
         try {
-            const created = await api.createProject(project);
+            const created = await dataService.createProject(project);
             set((state) => ({
                 projects: [...state.projects, created],
                 projectList: state.selectedArea?.id === created.areaId ? [...state.projectList, created] : state.projectList,
@@ -1132,7 +1135,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     updateProject: async (id, updates) => {
         try {
-            const updated = await api.updateProject(id, updates);
+            const updated = await dataService.updateProject(id, updates);
             set((state) => ({
                 projects: state.projects.map(p => p.id === id ? updated : p),
                 projectList: state.projectList.map(p => p.id === id ? updated : p),
@@ -1147,7 +1150,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deleteProject: async (id) => {
         try {
-            await api.deleteProject(id);
+            await dataService.deleteProject(id);
             set((state) => ({
                 projects: state.projects.filter(p => p.id !== id),
                 projectList: state.projectList.filter(p => p.id !== id),
@@ -1162,7 +1165,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     addProtectiveSystem: async (psv) => {
         try {
-            const created = await api.createProtectiveSystem(psv);
+            const created = await dataService.createProtectiveSystem(psv);
             set((state) => ({
                 psvList: [...state.psvList, created],
                 protectiveSystems: [...state.protectiveSystems, created],
@@ -1177,7 +1180,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     updateProtectiveSystem: async (id, updates) => {
         try {
-            const updated = await api.updateProtectiveSystem(id, updates);
+            const updated = await dataService.updateProtectiveSystem(id, updates);
             set((state) => ({
                 psvList: state.psvList.map(p => p.id === id ? updated : p),
                 protectiveSystems: state.protectiveSystems.map(p => p.id === id ? updated : p),
@@ -1193,7 +1196,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deleteProtectiveSystem: async (id) => {
         try {
-            await api.deleteProtectiveSystem(id);
+            await dataService.deleteProtectiveSystem(id);
             set((state) => ({
                 psvList: state.psvList.filter(p => p.id !== id),
                 protectiveSystems: state.protectiveSystems.filter(p => p.id !== id),
@@ -1209,7 +1212,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     addEquipment: async (data) => {
         try {
-            const created = await api.createEquipment(data);
+            const created = await dataService.createEquipment(data);
             set((state) => ({
                 equipment: [...state.equipment, created],
             }));
@@ -1222,7 +1225,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     },
     updateEquipment: async (id, updates) => {
         try {
-            const updated = await api.updateEquipment(id, updates);
+            const updated = await dataService.updateEquipment(id, updates);
             set((state) => ({
                 equipment: state.equipment.map(e => e.id === id ? updated : e),
             }));
@@ -1235,7 +1238,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     },
     deleteEquipment: async (id) => {
         try {
-            await api.deleteEquipment(id);
+            await dataService.deleteEquipment(id);
             set((state) => ({
                 equipment: state.equipment.filter(e => e.id !== id),
             }));

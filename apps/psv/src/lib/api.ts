@@ -381,5 +381,19 @@ class ApiClient {
     }
 }
 
+// Environment variable to toggle between API and localStorage
+export const USE_LOCAL_STORAGE = process.env.NEXT_PUBLIC_USE_LOCAL_STORAGE === 'true';
+
 // Export singleton instance
 export const api = new ApiClient();
+
+// Import localStorage service for demo mode
+import { localStorageService } from './localStorageService';
+
+// Factory function to get the appropriate data service
+export function getDataService() {
+    return USE_LOCAL_STORAGE ? localStorageService : api;
+}
+
+// Export type for the data service (union of both interfaces)
+export type DataService = typeof api | typeof localStorageService;

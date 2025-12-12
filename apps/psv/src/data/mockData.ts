@@ -35,6 +35,7 @@ export const validOwnersForDb = users; // All users are valid now
 export const credentials: MockCredential[] = [
     { userId: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad', username: 'maetee', password: 'linkinpark' },
     { userId: 'c34f5c40-8193-4e39-a628-e684361c2b67', username: 'lead', password: 'lead' },
+    { userId: '2252f300-f2f3-4911-863d-40a5baa25346', username: 'engineer', password: 'engineer' },
 ];
 
 // Customers
