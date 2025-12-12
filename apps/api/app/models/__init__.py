@@ -15,6 +15,7 @@ from .equipment_link import EquipmentLink
 from .attachment import Attachment
 from .comment import Comment
 from .todo import Todo
+from .project_note import ProjectNote
 
 __all__ = [
     # Base
@@ -40,4 +41,5 @@ __all__ = [
     "Attachment",
     "Comment",
     "Todo",
+    "ProjectNote",
 ]

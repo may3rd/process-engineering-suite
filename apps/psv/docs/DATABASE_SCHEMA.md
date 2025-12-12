@@ -208,6 +208,18 @@ erDiagram
 | created_by | UUID | FK → users.id |
 | created_at | TIMESTAMP | Creation time |
 | updated_at | TIMESTAMP | Last update |
+| updated_by | UUID | FK → users.id (nullable) |
+
+#### `project_notes`
+| Column | Type | Description |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| protective_system_id | UUID | FK → protective_systems.id |
+| body | TEXT | Printable note |
+| created_by | UUID | FK → users.id |
+| created_at | TIMESTAMP | Creation time |
+| updated_by | UUID | FK → users.id (nullable) |
+| updated_at | TIMESTAMP | Last update |
 
 #### `todos`
 | Column | Type | Description |
@@ -373,4 +385,3 @@ The `sizing_cases.inputs` JSONB column contains the following structure (as of D
   "backpressureType": "superimposed"
 }
 ```
-

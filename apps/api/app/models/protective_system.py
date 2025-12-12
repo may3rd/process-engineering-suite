@@ -79,6 +79,7 @@ class ProtectiveSystem(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixi
     attachments = relationship("Attachment", back_populates="protective_system", cascade="all, delete-orphan")
     comments = relationship("Comment", back_populates="protective_system", cascade="all, delete-orphan")
     todos = relationship("Todo", back_populates="protective_system", cascade="all, delete-orphan")
+    notes = relationship("ProjectNote", back_populates="protective_system", cascade="all, delete-orphan")
 
     @property
     def project_ids(self) -> list[str]:

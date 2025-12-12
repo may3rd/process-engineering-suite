@@ -1,4 +1,4 @@
-"""Comment model."""
+"""ProjectNote model - formal notes for protective systems."""
 from typing import Optional
 
 from sqlalchemy import Text, ForeignKey
@@ -8,11 +8,11 @@ from sqlalchemy.dialects.postgresql import UUID
 from .base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
 
-class Comment(Base, UUIDPrimaryKeyMixin, TimestampMixin):
-    """Comment table - comments on protective systems."""
-    
-    __tablename__ = "comments"
-    
+class ProjectNote(Base, UUIDPrimaryKeyMixin, TimestampMixin):
+    """Printable note associated with a protective system."""
+
+    __tablename__ = "project_notes"
+
     protective_system_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False),
         ForeignKey("protective_systems.id", ondelete="CASCADE"),
@@ -29,6 +29,7 @@ class Comment(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         ForeignKey("users.id"),
         nullable=True,
     )
-    
-    # Relationships
-    protective_system = relationship("ProtectiveSystem", back_populates="comments")
+
+    protective_system = relationship(
+        "ProtectiveSystem", back_populates="notes", lazy="joined"
+    )

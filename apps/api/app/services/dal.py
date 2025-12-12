@@ -189,6 +189,28 @@ class DataAccessLayer(ABC):
     async def delete_attachment(self, attachment_id: str) -> bool:
         """Delete an attachment."""
         pass
+
+    # --- Notes ---
+
+    @abstractmethod
+    async def get_notes_by_psv(self, psv_id: str) -> List[dict]:
+        """Get notes for a protective system."""
+        pass
+
+    @abstractmethod
+    async def create_note(self, data: dict) -> dict:
+        """Create a new note."""
+        pass
+
+    @abstractmethod
+    async def update_note(self, note_id: str, data: dict) -> dict:
+        """Update a note."""
+        pass
+
+    @abstractmethod
+    async def delete_note(self, note_id: str) -> bool:
+        """Delete a note."""
+        pass
     
     # --- Comments ---
     

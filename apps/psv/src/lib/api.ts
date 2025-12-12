@@ -327,6 +327,18 @@ class ApiClient {
         };
     }
 
+    private mapNote(raw: any): ProjectNote {
+        return {
+            id: raw.id,
+            protectiveSystemId: raw.protectiveSystemId ?? raw.psvId,
+            body: raw.body,
+            createdBy: raw.createdBy,
+            createdAt: raw.createdAt,
+            updatedBy: raw.updatedBy,
+            updatedAt: raw.updatedAt,
+        };
+    }
+
     // --- Equipment Links ---
 
     async getEquipmentLinks(psvId: string): Promise<EquipmentLink[]> {
@@ -356,21 +368,24 @@ class ApiClient {
     // --- Notes ---
 
     async getNotes(psvId: string): Promise<ProjectNote[]> {
-        return this.request<ProjectNote[]>(`/psv/${psvId}/notes`);
+        const response = await this.request<any[]>(`/psv/${psvId}/notes`);
+        return response.map((item) => this.mapNote(item));
     }
 
     async createNote(data: Partial<ProjectNote>): Promise<ProjectNote> {
-        return this.request<ProjectNote>('/notes', {
+        const response = await this.request<any>('/notes', {
             method: 'POST',
             body: JSON.stringify(data),
         });
+        return this.mapNote(response);
     }
 
     async updateNote(id: string, data: Partial<ProjectNote>): Promise<ProjectNote> {
-        return this.request<ProjectNote>(`/notes/${id}`, {
+        const response = await this.request<any>(`/notes/${id}`, {
             method: 'PUT',
             body: JSON.stringify(data),
         });
+        return this.mapNote(response);
     }
 
     async deleteNote(id: string): Promise<void> {

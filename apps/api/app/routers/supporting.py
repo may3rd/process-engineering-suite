@@ -85,7 +85,8 @@ class CommentResponse(BaseModel):
     body: str
     created_by: str = Field(serialization_alias="createdBy")
     created_at: datetime = Field(serialization_alias="createdAt")
-    updated_at: datetime = Field(serialization_alias="updatedAt")
+    updated_at: Optional[datetime] = Field(default=None, serialization_alias="updatedAt")
+    updated_by: Optional[str] = Field(default=None, serialization_alias="updatedBy")
 
 
 class CommentCreate(BaseModel):
@@ -96,6 +97,32 @@ class CommentCreate(BaseModel):
 
 
 class CommentUpdate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    body: Optional[str] = None
+    updatedBy: Optional[str] = None
+
+
+# --- Project Notes ---
+
+class ProjectNoteResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    id: str
+    protective_system_id: str = Field(serialization_alias="protectiveSystemId")
+    body: str
+    created_by: str = Field(serialization_alias="createdBy")
+    created_at: datetime = Field(serialization_alias="createdAt")
+    updated_by: Optional[str] = Field(default=None, serialization_alias="updatedBy")
+    updated_at: Optional[datetime] = Field(default=None, serialization_alias="updatedAt")
+
+
+class ProjectNoteCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    protectiveSystemId: str
+    body: str
+    createdBy: str
+
+
+class ProjectNoteUpdate(BaseModel):
     model_config = ConfigDict(extra='ignore')
     body: Optional[str] = None
     updatedBy: Optional[str] = None
@@ -256,6 +283,38 @@ async def update_comment(comment_id: str, data: CommentUpdate, dal: DAL):
         return await dal.update_comment(comment_id, {k: v for k, v in data.model_dump().items() if v is not None})
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+
+
+# --- Notes Endpoints ---
+
+@router.get("/psv/{psv_id}/notes", response_model=List[ProjectNoteResponse])
+async def get_notes(psv_id: str, dal: DAL):
+    """Get printable notes for a protective system."""
+    return await dal.get_notes_by_psv(psv_id)
+
+
+@router.post("/notes", response_model=ProjectNoteResponse)
+async def create_note(data: ProjectNoteCreate, dal: DAL):
+    """Create a new note."""
+    return await dal.create_note(data.model_dump())
+
+
+@router.put("/notes/{note_id}", response_model=ProjectNoteResponse)
+async def update_note(note_id: str, data: ProjectNoteUpdate, dal: DAL):
+    """Update an existing note."""
+    try:
+        return await dal.update_note(note_id, {k: v for k, v in data.model_dump().items() if v is not None})
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.delete("/notes/{note_id}")
+async def delete_note(note_id: str, dal: DAL):
+    """Delete a note."""
+    success = await dal.delete_note(note_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Note not found")
+    return {"success": True}
 
 
 @router.delete("/comments/{comment_id}")

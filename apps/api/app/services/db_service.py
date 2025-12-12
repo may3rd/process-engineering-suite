@@ -11,7 +11,8 @@ from sqlalchemy.orm import selectinload
 from ..models import (
     User, Credential, Customer, Plant, Unit, Area, Project,
     ProtectiveSystem, OverpressureScenario, SizingCase,
-    Equipment, EquipmentLink, Attachment, Comment, Todo
+    Equipment, EquipmentLink, Attachment, Comment, Todo,
+    ProjectNote,
 )
 from .dal import DataAccessLayer
 
@@ -332,6 +333,22 @@ class DatabaseService(DataAccessLayer):
     async def delete_attachment(self, attachment_id: str) -> bool:
         return await self._delete(Attachment, attachment_id)
 
+    # --- Notes ---
+
+    async def get_notes_by_psv(self, psv_id: str) -> List[dict]:
+        return await self._get_all(ProjectNote, ProjectNote.protective_system_id == psv_id)
+
+    async def create_note(self, data: dict) -> dict:
+        converted_data = self._convert_keys(data)
+        return await self._create(ProjectNote, converted_data)
+
+    async def update_note(self, note_id: str, data: dict) -> dict:
+        converted_data = self._convert_keys(data)
+        return await self._update(ProjectNote, note_id, converted_data)
+
+    async def delete_note(self, note_id: str) -> bool:
+        return await self._delete(ProjectNote, note_id)
+
     # --- Comments ---
 
     async def get_comments_by_psv(self, psv_id: str) -> List[dict]:
@@ -423,6 +440,7 @@ class DatabaseService(DataAccessLayer):
             "unitPreferences": "unit_preferences",
             "isPrimary": "is_primary",
             "createdBy": "created_by",
+            "updatedBy": "updated_by",
             "approvedBy": "approved_by",
             "relationship": "relationship_type",
             "inletNetwork": "inlet_network",

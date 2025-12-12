@@ -21,6 +21,34 @@ import { toast } from '@/lib/toast';
 // Get the appropriate data service based on environment
 const dataService = getDataService();
 
+const LOCAL_NOTES_KEY = 'psv_local_notes_v1';
+
+function readLocalNotes(): Record<string, ProjectNote[]> {
+    if (typeof window === 'undefined') return {};
+    try {
+        const raw = localStorage.getItem(LOCAL_NOTES_KEY);
+        return raw ? JSON.parse(raw) : {};
+    } catch {
+        return {};
+    }
+}
+
+function writeLocalNotes(map: Record<string, ProjectNote[]>) {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(LOCAL_NOTES_KEY, JSON.stringify(map));
+}
+
+function getLocalNotes(psvId: string): ProjectNote[] {
+    const map = readLocalNotes();
+    return map[psvId] ?? [];
+}
+
+function setLocalNotes(psvId: string, notes: ProjectNote[]) {
+    const map = readLocalNotes();
+    map[psvId] = notes;
+    writeLocalNotes(map);
+}
+
 interface HierarchySelection {
     customerId: string | null;
     plantId: string | null;
@@ -561,13 +589,28 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
                 dataService.getScenarios(id),
                 dataService.getSizingCases(id),
                 dataService.getTodos(id),
-                dataService.getComments(id),
+                dataService.getComments(id).catch((error: unknown) => {
+                    if (error instanceof Error) {
+                        const msg = error.message || '';
+                        if (
+                            /404|405/.test(msg) ||
+                            /not found|method not allowed|failed to fetch/i.test(msg)
+                        ) {
+                            console.warn('Comments endpoint unavailable, continuing without comments');
+                            return [];
+                        }
+                    }
+                    throw error;
+                }),
                 dataService.getNotes(id).catch((error: unknown) => {
                     if (error instanceof Error) {
                         const msg = error.message || '';
-                        if (/404/.test(msg) || msg.toLowerCase().includes('not found')) {
+                        if (
+                            /404|405/.test(msg) ||
+                            /not found|method not allowed|failed to fetch/i.test(msg)
+                        ) {
                             console.warn('Notes endpoint unavailable, continuing without notes');
-                            return [];
+                            return getLocalNotes(id);
                         }
                     }
                     throw error;
@@ -575,7 +618,10 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
                 dataService.getEquipmentLinks(id).catch((error: unknown) => {
                     if (error instanceof Error) {
                         const msg = error.message || '';
-                        if (/404/.test(msg) || msg.toLowerCase().includes('not found')) {
+                        if (
+                            /404|405/.test(msg) ||
+                            /not found|method not allowed|failed to fetch/i.test(msg)
+                        ) {
                             console.warn('Equipment links endpoint unavailable, continuing without links');
                             return [];
                         }
@@ -984,6 +1030,8 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             const message = error instanceof Error ? error.message : 'Failed to add note';
             if (message && /404|not\s+found/i.test(message)) {
                 console.warn('Note endpoint unavailable, storing locally');
+                const existing = getLocalNotes(fallbackNote.protectiveSystemId);
+                setLocalNotes(fallbackNote.protectiveSystemId, [...existing, fallbackNote]);
                 set((state) => ({
                     noteList: [...state.noteList, fallbackNote],
                 }));
@@ -1010,6 +1058,13 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             const message = error instanceof Error ? error.message : 'Failed to update note';
             if (message && /404|not\s+found/i.test(message)) {
                 console.warn('Note update endpoint unavailable, updating locally');
+                const current = get().noteList.find((n) => n.id === id);
+                if (current) {
+                    const localNotes = getLocalNotes(current.protectiveSystemId).map(n =>
+                        n.id === id ? { ...n, ...payload } as ProjectNote : n
+                    );
+                    setLocalNotes(current.protectiveSystemId, localNotes);
+                }
                 set((state) => ({
                     noteList: state.noteList.map((n) =>
                         n.id === id ? { ...n, ...payload } as ProjectNote : n
@@ -1034,6 +1089,11 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             const message = error instanceof Error ? error.message : 'Failed to delete note';
             if (message && /404|not\s+found/i.test(message)) {
                 console.warn('Note endpoint unavailable, removing locally');
+                const current = get().noteList.find((n) => n.id === id);
+                if (current) {
+                    const localNotes = getLocalNotes(current.protectiveSystemId).filter(n => n.id !== id);
+                    setLocalNotes(current.protectiveSystemId, localNotes);
+                }
                 set((state) => ({
                     noteList: state.noteList.filter((n) => n.id !== id)
                 }));

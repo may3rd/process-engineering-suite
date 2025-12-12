@@ -48,6 +48,7 @@ class MockService(DataAccessLayer):
                 "equipmentLinks": [],
                 "attachments": [],
                 "comments": [],
+                "notes": [],
                 "todos": [],
             }
     
@@ -241,8 +242,8 @@ class MockService(DataAccessLayer):
                 return True
         return False
     
-    # --- Comments ---
-    
+    # --- Comments & Notes ---
+
     async def get_comments_by_psv(self, psv_id: str) -> List[dict]:
         return [c for c in self._data.get("comments", []) if c["protectiveSystemId"] == psv_id]
     
@@ -265,6 +266,37 @@ class MockService(DataAccessLayer):
                 comments[i] = updated
                 return updated
         raise ValueError(f"Comment not found: {comment_id}")
+
+    async def get_notes_by_psv(self, psv_id: str) -> List[dict]:
+        return [n for n in self._data.get("notes", []) if n["protectiveSystemId"] == psv_id]
+
+    async def create_note(self, data: dict) -> dict:
+        data["id"] = str(uuid4())
+        data["createdAt"] = datetime.utcnow().isoformat()
+        data.setdefault("updatedAt", None)
+        self._data.setdefault("notes", []).append(data)
+        return data
+
+    async def update_note(self, note_id: str, data: dict) -> dict:
+        notes = self._data.get("notes", [])
+        for i, note in enumerate(notes):
+            if note["id"] == note_id:
+                updated = {
+                    **note,
+                    **data,
+                    "updatedAt": data.get("updatedAt") or datetime.utcnow().isoformat(),
+                }
+                notes[i] = updated
+                return updated
+        raise ValueError(f"Note not found: {note_id}")
+
+    async def delete_note(self, note_id: str) -> bool:
+        notes = self._data.get("notes", [])
+        for i, note in enumerate(notes):
+            if note["id"] == note_id:
+                del notes[i]
+                return True
+        return False
     
     # --- Todos ---
     
