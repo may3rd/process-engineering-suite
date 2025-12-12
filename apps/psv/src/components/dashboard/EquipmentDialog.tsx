@@ -13,10 +13,12 @@ import {
     Select,
     MenuItem,
     Box,
+    FormHelperText,
 } from "@mui/material";
 import { Equipment, EquipmentType } from "@/data/types";
 import { areas, units, plants, customers } from "@/data/mockData";
 import { OwnerSelector } from "../shared";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface EquipmentDialogProps {
     open: boolean;
@@ -44,6 +46,8 @@ export function EquipmentDialog({
     const [designTemperature, setDesignTemperature] = useState<number>(0);
     const [status, setStatus] = useState<'active' | 'inactive'>('active');
     const [ownerId, setOwnerId] = useState<string | null>(null);
+    const canEdit = useAuthStore((state) => state.canEdit());
+    const canDeactivate = useAuthStore((state) => ['lead', 'approver', 'admin'].includes(state.currentUser?.role || ''));
 
     useEffect(() => {
         if (equipment) {
@@ -108,6 +112,9 @@ export function EquipmentDialog({
     const filteredPlants = customerId ? plants.filter(p => p.customerId === customerId) : [];
     const filteredUnits = plantId ? units.filter(u => u.plantId === plantId) : [];
     const filteredAreas = unitId ? areas.filter(a => a.unitId === unitId) : [];
+    const statusEnabledForUser = (value: 'active' | 'inactive') =>
+        value === 'inactive' ? canDeactivate : canEdit;
+    const statusLocked = !statusEnabledForUser(status);
 
     const isValid = tag.trim() && name.trim() && areaId && ownerId && designPressure > 0 && mawp > 0;
 
@@ -280,10 +287,24 @@ export function EquipmentDialog({
                                 value={status}
                                 onChange={(e) => setStatus(e.target.value as typeof status)}
                                 label="Status"
+                                disabled={statusLocked}
                             >
-                                <MenuItem value="active">Active</MenuItem>
-                                <MenuItem value="inactive">Inactive</MenuItem>
+                                <MenuItem value="active" disabled={!statusEnabledForUser('active')}>
+                                    Active
+                                </MenuItem>
+                                <MenuItem value="inactive" disabled={!statusEnabledForUser('inactive')}>
+                                    Inactive
+                                </MenuItem>
                             </Select>
+                            {statusLocked ? (
+                                <FormHelperText sx={{ color: 'text.secondary' }}>
+                                    You don&apos;t have permission to set this status.
+                                </FormHelperText>
+                            ) : !statusEnabledForUser('inactive') ? (
+                                <FormHelperText sx={{ color: 'text.secondary' }}>
+                                    Only leads or approvers can deactivate equipment.
+                                </FormHelperText>
+                            ) : null}
                         </FormControl>
 
                         <OwnerSelector

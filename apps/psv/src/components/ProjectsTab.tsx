@@ -21,8 +21,11 @@ import {
     CardActions,
     useTheme,
     useMediaQuery,
+    Grid,
+    Stack,
+    InputAdornment,
 } from "@mui/material";
-import { Add, Edit, Delete, Folder, Search } from "@mui/icons-material";
+import { Add, Edit, Delete, Folder, Search, Shield, CheckCircle } from "@mui/icons-material";
 import { areas, units, users } from "@/data/mockData";
 import { Project } from "@/data/types";
 import { glassCardStyles } from "./styles";
@@ -31,6 +34,7 @@ import { ProjectDialog } from "./dashboard/ProjectDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
 import { SortConfig, sortByGetter, toggleSortConfig } from "@/lib/sortUtils";
+import { getWorkflowStatusColor, getWorkflowStatusLabel } from "@/lib/statusColors";
 
 export function ProjectsTab() {
     const theme = useTheme();
@@ -167,21 +171,46 @@ export function ProjectsTab() {
         }
     };
 
-    const getStatusColor = (status: Project['status']) => {
-        switch (status) {
-            case 'draft': return 'default';
-            case 'in_review': return 'info';
-            case 'checked': return 'warning';
-            case 'approved': return 'success';
-            case 'issued': return 'primary';
-            default: return 'default';
-        }
-    };
+    const summaryCards = useMemo(() => {
+        const reviewCount = projects.filter(project =>
+            ['in_review', 'checked'].includes(project.status)
+        ).length;
+        const linkedPsvs = protectiveSystems.filter(psv => (psv.projectIds || []).length > 0).length;
+        return [
+            {
+                label: 'Total Projects',
+                value: projects.length,
+                helper: 'Across all phases',
+                icon: <Folder color="primary" />,
+            },
+            {
+                label: 'In Review',
+                value: reviewCount,
+                helper: 'Awaiting approval',
+                icon: <CheckCircle color="warning" />,
+            },
+            {
+                label: 'PSVs Linked',
+                value: linkedPsvs,
+                helper: 'Tagged protective systems',
+                icon: <Shield color="secondary" />,
+            },
+        ];
+    }, [projects, protectiveSystems]);
 
     return (
         <Box>
             {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 3,
+                    flexWrap: 'wrap',
+                    gap: 2,
+                }}
+            >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Folder color="primary" sx={{ fontSize: 28 }} />
                     <Typography variant="h5" fontWeight={600}>
@@ -199,18 +228,50 @@ export function ProjectsTab() {
                 )}
             </Box>
 
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+                {summaryCards.map(card => (
+                    <Grid item xs={12} md={4} key={card.label}>
+                        <Paper sx={{ ...glassCardStyles, p: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                {card.icon}
+                                <Typography variant="body2" color="text.secondary">
+                                    {card.label}
+                                </Typography>
+                            </Stack>
+                            <Typography variant="h4" fontWeight={700}>
+                                {card.value}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {card.helper}
+                            </Typography>
+                        </Paper>
+                    </Grid>
+                ))}
+            </Grid>
+
             {/* Search Bar */}
-            <TextField
-                placeholder="Search by code, name, area, or lead..."
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                size="small"
-                fullWidth
-                sx={{ mb: 2 }}
-                InputProps={{
-                    startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-                }}
-            />
+            <Paper sx={{ ...glassCardStyles, p: 2, mb: 3 }}>
+                <Stack
+                    direction={{ xs: 'column', md: 'row' }}
+                    spacing={2}
+                    alignItems={{ xs: 'stretch', md: 'center' }}
+                >
+                    <TextField
+                        placeholder="Search by code, name, area, or lead..."
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        size="small"
+                        fullWidth
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Search fontSize="small" />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                </Stack>
+            </Paper>
 
             {/* Mobile Card View */}
             {isMobile ? (
@@ -242,9 +303,9 @@ export function ProjectsTab() {
                                                 sx={{ textTransform: 'capitalize' }}
                                             />
                                             <Chip
-                                                label={project.status.replace('_', ' ')}
+                                                label={getWorkflowStatusLabel(project.status)}
                                                 size="small"
-                                                color={getStatusColor(project.status)}
+                                                color={getWorkflowStatusColor(project.status)}
                                                 sx={{ textTransform: 'capitalize' }}
                                             />
                                         </Box>
@@ -385,9 +446,9 @@ export function ProjectsTab() {
                                             </TableCell>
                                             <TableCell>
                                                 <Chip
-                                                    label={project.status.replace('_', ' ')}
+                                                    label={getWorkflowStatusLabel(project.status)}
                                                     size="small"
-                                                    color={getStatusColor(project.status)}
+                                                    color={getWorkflowStatusColor(project.status)}
                                                     sx={{ textTransform: 'capitalize' }}
                                                 />
                                             </TableCell>

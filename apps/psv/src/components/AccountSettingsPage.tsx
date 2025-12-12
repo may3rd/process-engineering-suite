@@ -172,7 +172,7 @@ export function AccountSettingsPage() {
                                 variant="contained"
                                 startIcon={<Save />}
                                 onClick={handleSaveProfile}
-                                sx={{ alignSelf: 'flex-start' }}
+                                sx={{ alignSelf: 'flex-end' }}
                             >
                                 Save Profile
                             </Button>

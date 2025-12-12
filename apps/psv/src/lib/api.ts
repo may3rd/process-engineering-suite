@@ -382,7 +382,8 @@ class ApiClient {
 }
 
 // Environment variable to toggle between API and localStorage
-export const USE_LOCAL_STORAGE = process.env.NEXT_PUBLIC_USE_LOCAL_STORAGE === 'true';
+// Default to localStorage when not explicitly disabled to ensure the demo works without a backend.
+export const USE_LOCAL_STORAGE = process.env.NEXT_PUBLIC_USE_LOCAL_STORAGE !== 'false';
 
 // Export singleton instance
 export const api = new ApiClient();

@@ -355,9 +355,9 @@ export function HydraulicReportDialog({
                                 <TableCell sx={{ color: "white", fontWeight: "bold", minWidth: 60 }}>
                                     Unit
                                 </TableCell>
-                                {visibleSegments.map((seg, idx) => (
+                                {visibleSegments.map((seg) => (
                                     <TableCell
-                                        key={seg.pipeId}
+                                        key={`${seg.network}-${seg.pipeId}`}
                                         align="center"
                                         sx={{
                                             color: "white",

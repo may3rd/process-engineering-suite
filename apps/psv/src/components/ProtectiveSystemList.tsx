@@ -24,6 +24,7 @@ import { usePsvStore } from "@/store/usePsvStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ProtectiveSystemType, ProtectiveSystem } from "@/data/types";
 import { v4 as uuidv4 } from 'uuid';
+import { getWorkflowStatusColor, getWorkflowStatusLabel } from "@/lib/statusColors";
 
 export function ProtectiveSystemList() {
     const theme = useTheme();
@@ -95,15 +96,6 @@ export function ProtectiveSystemList() {
                 return 'PRV';
             default:
                 return (type as string).replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
-        }
-    };
-
-    const getStatusColor = (status: string): "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" => {
-        switch (status) {
-            case 'approved': return 'success';
-            case 'issued': return 'info';
-            case 'in_review': return 'warning';
-            default: return 'default';
         }
     };
 
@@ -190,9 +182,9 @@ export function ProtectiveSystemList() {
                                         </Box>
                                     </Box>
                                     <Chip
-                                        label={psv.status.replace('_', ' ')}
+                                        label={getWorkflowStatusLabel(psv.status)}
                                         size="small"
-                                        color={getStatusColor(psv.status)}
+                                        color={getWorkflowStatusColor(psv.status)}
                                         sx={{ textTransform: 'capitalize' }}
                                     />
                                 </Box>

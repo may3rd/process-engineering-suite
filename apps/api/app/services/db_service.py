@@ -199,7 +199,9 @@ class DatabaseService(DataAccessLayer):
         self.session.add(instance)
         await self.session.commit()
         
-        # Refresh with projects relationship loaded
+        # Refresh to ensure timestamps and scalar columns have latest values
+        await self.session.refresh(instance)
+        # Ensure projects relationship stays loaded
         await self.session.refresh(instance, attribute_names=['projects'])
         return instance
 
@@ -231,6 +233,7 @@ class DatabaseService(DataAccessLayer):
             instance.projects = list(result.scalars().all())
         
         await self.session.commit()
+        await self.session.refresh(instance)
         await self.session.refresh(instance, attribute_names=['projects'])
         return instance
 

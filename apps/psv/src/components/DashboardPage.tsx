@@ -48,6 +48,7 @@ import { AreasTab } from './AreasTab';
 import { ProjectsTab } from './ProjectsTab';
 import { PSVsTab } from './PSVsTab';
 import { EquipmentTab } from './EquipmentTab';
+import { UsersTab } from './UsersTab';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -90,7 +91,7 @@ export function DashboardPage() {
     };
 
     return (
-        <Box sx={{ height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        <Box sx={{ height: '100vh - 1px', display: 'flex', flexDirection: 'column' }}>
             {/* Header */}
             <Paper
                 sx={{
@@ -177,9 +178,7 @@ export function DashboardPage() {
                 )}
                 {canManageUsers() && (
                     <TabPanel value={activeTab} index={visibleTabs.findIndex(t => t.label === "Users")}>
-                        <Box sx={{ p: 3 }}>
-                            <Typography color="text.secondary">Users Tab - Coming Soon</Typography>
-                        </Box>
+                        <UsersTab />
                     </TabPanel>
                 )}
             </Box>

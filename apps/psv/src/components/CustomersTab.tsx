@@ -21,8 +21,11 @@ import {
     CardActions,
     useTheme,
     useMediaQuery,
+    Grid,
+    Stack,
+    InputAdornment,
 } from "@mui/material";
-import { Add, Edit, Delete, Business, Search } from "@mui/icons-material";
+import { Add, Edit, Delete, Business, Search, People, Factory } from "@mui/icons-material";
 import { users } from "@/data/mockData";
 import { Customer } from "@/data/types";
 import { glassCardStyles } from "./styles";
@@ -38,6 +41,8 @@ export function CustomersTab() {
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const { addCustomer, updateCustomer, deleteCustomer } = usePsvStore();
+    const plants = usePsvStore((state) => state.plants);
+    const projects = usePsvStore((state) => state.projects);
     const customers = usePsvStore((state) => state.customers);
 
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -188,10 +193,43 @@ export function CustomersTab() {
         </Box>
     );
 
+    const summaryCards = useMemo(() => {
+        const activeCustomers = customers.filter(customer => customer.status === 'active').length;
+        return [
+            {
+                label: 'Customers',
+                value: customers.length,
+                helper: 'Across all markets',
+                icon: <Business color="primary" />,
+            },
+            {
+                label: 'Active Accounts',
+                value: activeCustomers,
+                helper: 'Licensed clients',
+                icon: <People color="success" />,
+            },
+            {
+                label: 'Plants',
+                value: plants.length,
+                helper: `${projects.length} projects underway`,
+                icon: <Factory color="secondary" />,
+            },
+        ];
+    }, [customers, plants.length, projects.length]);
+
     return (
         <Box>
             {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 3,
+                    flexWrap: 'wrap',
+                    gap: 2,
+                }}
+            >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Business color="primary" sx={{ fontSize: 28 }} />
                     <Typography variant="h5" fontWeight={600}>
@@ -209,18 +247,50 @@ export function CustomersTab() {
                 )}
             </Box>
 
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+                {summaryCards.map(card => (
+                    <Grid item xs={12} md={4} key={card.label}>
+                        <Paper sx={{ ...glassCardStyles, p: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                {card.icon}
+                                <Typography variant="body2" color="text.secondary">
+                                    {card.label}
+                                </Typography>
+                            </Stack>
+                            <Typography variant="h4" fontWeight={700}>
+                                {card.value}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {card.helper}
+                            </Typography>
+                        </Paper>
+                    </Grid>
+                ))}
+            </Grid>
+
             {/* Search Bar */}
-            <TextField
-                placeholder="Search by code, name, or owner..."
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                size="small"
-                fullWidth
-                sx={{ mb: 2 }}
-                InputProps={{
-                    startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-                }}
-            />
+            <Paper sx={{ ...glassCardStyles, p: 2, mb: 3 }}>
+                <Stack
+                    direction={{ xs: 'column', md: 'row' }}
+                    spacing={2}
+                    alignItems={{ xs: 'stretch', md: 'center' }}
+                >
+                    <TextField
+                        placeholder="Search by code, name, or owner..."
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        size="small"
+                        fullWidth
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Search fontSize="small" />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                </Stack>
+            </Paper>
 
             {/* Mobile Card View */}
             {isMobile ? (

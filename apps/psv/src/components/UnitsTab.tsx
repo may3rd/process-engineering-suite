@@ -21,8 +21,11 @@ import {
     CardActions,
     useTheme,
     useMediaQuery,
+    Grid,
+    Stack,
+    InputAdornment,
 } from "@mui/material";
-import { Add, Edit, Delete, Category, Search } from "@mui/icons-material";
+import { Add, Edit, Delete, Category, Search, Map, Timeline } from "@mui/icons-material";
 import { plants, users } from "@/data/mockData";
 import { Unit } from "@/data/types";
 import { glassCardStyles } from "./styles";
@@ -40,6 +43,8 @@ export function UnitsTab() {
     const { addUnit, updateUnit, deleteUnit } = usePsvStore();
     const units = usePsvStore((state) => state.units);
     const areas = usePsvStore((state) => state.areas);
+    const projects = usePsvStore((state) => state.projects);
+    const protectiveSystems = usePsvStore((state) => state.protectiveSystems);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -169,10 +174,42 @@ export function UnitsTab() {
         </Box>
     );
 
+    const summaryCards = useMemo(() => {
+        return [
+            {
+                label: 'Units',
+                value: units.length,
+                helper: 'Across all plants',
+                icon: <Category color="primary" />,
+            },
+            {
+                label: 'Areas',
+                value: areas.length,
+                helper: 'Physical subdivisions',
+                icon: <Map color="secondary" />,
+            },
+            {
+                label: 'Projects',
+                value: projects.length,
+                helper: `${protectiveSystems.length} PSVs tracked`,
+                icon: <Timeline color="warning" />,
+            },
+        ];
+    }, [areas.length, projects.length, protectiveSystems.length, units.length]);
+
     return (
         <Box>
             {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 3,
+                    flexWrap: 'wrap',
+                    gap: 2,
+                }}
+            >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Category color="primary" sx={{ fontSize: 28 }} />
                     <Typography variant="h5" fontWeight={600}>
@@ -190,18 +227,50 @@ export function UnitsTab() {
                 )}
             </Box>
 
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+                {summaryCards.map(card => (
+                    <Grid item xs={12} md={4} key={card.label}>
+                        <Paper sx={{ ...glassCardStyles, p: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                {card.icon}
+                                <Typography variant="body2" color="text.secondary">
+                                    {card.label}
+                                </Typography>
+                            </Stack>
+                            <Typography variant="h4" fontWeight={700}>
+                                {card.value}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {card.helper}
+                            </Typography>
+                        </Paper>
+                    </Grid>
+                ))}
+            </Grid>
+
             {/* Search Bar */}
-            <TextField
-                placeholder="Search by code, name, plant, or owner..."
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                size="small"
-                fullWidth
-                sx={{ mb: 2 }}
-                InputProps={{
-                    startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-                }}
-            />
+            <Paper sx={{ ...glassCardStyles, p: 2, mb: 3 }}>
+                <Stack
+                    direction={{ xs: 'column', md: 'row' }}
+                    spacing={2}
+                    alignItems={{ xs: 'stretch', md: 'center' }}
+                >
+                    <TextField
+                        placeholder="Search by code, name, plant, or owner..."
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        size="small"
+                        fullWidth
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Search fontSize="small" />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                </Stack>
+            </Paper>
 
             {/* Mobile Card View */}
             {isMobile ? (

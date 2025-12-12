@@ -29,6 +29,7 @@ import {
 import { usePsvStore } from "@/store/usePsvStore";
 import { getEquipmentLinksByPsv, equipment, getUserById } from "@/data/mockData";
 import { PipelineNetwork, OverpressureScenario } from "@/data/types";
+import { getWorkflowStatusLabel } from "@/lib/statusColors";
 
 // Helper functions for hydraulic calculations
 function calculateTotalLength(network: PipelineNetwork): number {
@@ -222,7 +223,7 @@ export function SummaryTab() {
                         <Box>
                             <Typography variant="caption" color="text.secondary">Status</Typography>
                             <Typography variant="body2" fontWeight={500} sx={{ textTransform: 'capitalize' }}>
-                                {selectedPsv.status.replace('_', ' ')}
+                                {getWorkflowStatusLabel(selectedPsv.status)}
                             </Typography>
                         </Box>
                         <Box>

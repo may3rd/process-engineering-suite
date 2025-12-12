@@ -21,8 +21,11 @@ import {
     CardActions,
     useTheme,
     useMediaQuery,
+    Grid,
+    Stack,
+    InputAdornment,
 } from "@mui/material";
-import { Add, Edit, Delete, Shield, Search } from "@mui/icons-material";
+import { Add, Edit, Delete, Shield, Search, Bolt, AssignmentTurnedIn } from "@mui/icons-material";
 import { areas, units, users } from "@/data/mockData";
 import { ProtectiveSystem } from "@/data/types";
 import { glassCardStyles } from "./styles";
@@ -31,6 +34,7 @@ import { PSVDialog } from "./dashboard/PSVDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
 import { SortConfig, sortByGetter, toggleSortConfig } from "@/lib/sortUtils";
+import { getWorkflowStatusColor, getWorkflowStatusLabel } from "@/lib/statusColors";
 
 export function PSVsTab() {
     const theme = useTheme();
@@ -151,35 +155,51 @@ export function PSVsTab() {
         </Box>
     );
 
-    const getStatusColor = (status: ProtectiveSystem['status']) => {
-        switch (status) {
-            case 'draft': return 'default';
-            case 'in_review': return 'info';
-            case 'checked': return 'warning';
-            case 'approved': return 'success';
-            case 'issued': return 'primary';
-            default: return 'default';
-        }
-    };
-
     const getTypeLabel = (type: ProtectiveSystem['type']) => {
         return type.toUpperCase().replace('_', ' ');
     };
 
+    const summaryCards = useMemo(() => {
+        const draftCount = protectiveSystems.filter(psv => psv.status === 'draft').length;
+        const inReview = protectiveSystems.filter(psv => ['in_review', 'checked'].includes(psv.status)).length;
+        return [
+            {
+                label: 'Protective Systems',
+                value: protectiveSystems.length,
+                helper: 'Across all areas',
+                icon: <Shield color="primary" />,
+            },
+            {
+                label: 'Open Items',
+                value: draftCount + inReview,
+                helper: `${draftCount} drafts • ${inReview} in review`,
+                icon: <Bolt color="warning" />,
+            },
+            {
+                label: 'Approved',
+                value: protectiveSystems.filter(psv => psv.status === 'approved').length,
+                helper: 'Ready for execution',
+                icon: <AssignmentTurnedIn color="success" />,
+            },
+        ];
+    }, [protectiveSystems]);
+
     return (
         <Box>
             {/* Header */}
-            <Box sx={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: { xs: 'flex-start', sm: 'center' },
-                mb: 3,
-                flexDirection: { xs: 'column', sm: 'row' },
-                gap: 2,
-            }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 3,
+                    flexWrap: 'wrap',
+                    gap: 2,
+                }}
+            >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Shield color="primary" sx={{ fontSize: { xs: 24, sm: 28 } }} />
-                    <Typography variant="h5" fontWeight={600} sx={{ fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
+                    <Shield color="primary" sx={{ fontSize: 28 }} />
+                    <Typography variant="h5" fontWeight={600}>
                         PSVs & Protective Devices
                     </Typography>
                 </Box>
@@ -198,18 +218,50 @@ export function PSVsTab() {
                 )}
             </Box>
 
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+                {summaryCards.map(card => (
+                    <Grid item xs={12} md={4} key={card.label}>
+                        <Paper sx={{ ...glassCardStyles, p: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                {card.icon}
+                                <Typography variant="body2" color="text.secondary">
+                                    {card.label}
+                                </Typography>
+                            </Stack>
+                            <Typography variant="h4" fontWeight={700}>
+                                {card.value}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {card.helper}
+                            </Typography>
+                        </Paper>
+                    </Grid>
+                ))}
+            </Grid>
+
             {/* Search Bar */}
-            <TextField
-                placeholder="Search by tag, name, fluid, area, or owner..."
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                size="small"
-                fullWidth
-                sx={{ mb: 2 }}
-                InputProps={{
-                    startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-                }}
-            />
+            <Paper sx={{ ...glassCardStyles, p: 2, mb: 3 }}>
+                <Stack
+                    direction={{ xs: 'column', md: 'row' }}
+                    spacing={2}
+                    alignItems={{ xs: 'stretch', md: 'center' }}
+                >
+                    <TextField
+                        placeholder="Search by tag, name, fluid, area, or owner..."
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        size="small"
+                        fullWidth
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Search fontSize="small" />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                </Stack>
+            </Paper>
 
             {/* Mobile Card View */}
             {isMobile ? (
@@ -236,9 +288,9 @@ export function PSVsTab() {
                                             </Typography>
                                         </Box>
                                         <Chip
-                                            label={psv.status.replace('_', ' ')}
+                                            label={getWorkflowStatusLabel(psv.status)}
                                             size="small"
-                                            color={getStatusColor(psv.status)}
+                                            color={getWorkflowStatusColor(psv.status)}
                                             sx={{ textTransform: 'capitalize', flexShrink: 0 }}
                                         />
                                     </Box>
@@ -390,12 +442,12 @@ export function PSVsTab() {
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>
-                                                <Chip
-                                                    label={psv.status.replace('_', ' ')}
-                                                    size="small"
-                                                    color={getStatusColor(psv.status)}
-                                                    sx={{ textTransform: 'capitalize' }}
-                                                />
+                                            <Chip
+                                                label={getWorkflowStatusLabel(psv.status)}
+                                                size="small"
+                                                color={getWorkflowStatusColor(psv.status)}
+                                                sx={{ textTransform: 'capitalize' }}
+                                            />
                                             </TableCell>
                                             <TableCell>
                                                 <Typography variant="body2">

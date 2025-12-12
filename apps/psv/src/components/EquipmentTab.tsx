@@ -21,8 +21,11 @@ import {
     CardActions,
     useTheme,
     useMediaQuery,
+    Grid,
+    Stack,
+    InputAdornment,
 } from "@mui/material";
-import { Add, Edit, Delete, Settings, Search } from "@mui/icons-material";
+import { Add, Edit, Delete, Settings, Search, Opacity, ThermostatAuto } from "@mui/icons-material";
 import { areas, units, users } from "@/data/mockData";
 import { Equipment } from "@/data/types";
 import { glassCardStyles } from "./styles";
@@ -167,10 +170,44 @@ export function EquipmentTab() {
         return type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
     };
 
+    const summaryCards = useMemo(() => {
+        const pressureVessels = equipment.filter(e => e.type.includes('vessel')).length;
+        const inspectionDue = equipment.filter(e => e.status === 'inspection_due').length;
+        return [
+            {
+                label: 'Equipment Items',
+                value: equipment.length,
+                helper: 'Across all areas',
+                icon: <Settings color="primary" />,
+            },
+            {
+                label: 'Pressure Assets',
+                value: pressureVessels,
+                helper: 'Pressure vessels & tanks',
+                icon: <Opacity color="secondary" />,
+            },
+            {
+                label: 'Inspection Due',
+                value: inspectionDue,
+                helper: 'Requires attention',
+                icon: <ThermostatAuto color="warning" />,
+            },
+        ];
+    }, [equipment]);
+
     return (
         <Box>
             {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 3,
+                    flexWrap: 'wrap',
+                    gap: 2,
+                }}
+            >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Settings color="primary" sx={{ fontSize: 28 }} />
                     <Typography variant="h5" fontWeight={600}>
@@ -188,18 +225,50 @@ export function EquipmentTab() {
                 )}
             </Box>
 
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+                {summaryCards.map(card => (
+                    <Grid item xs={12} md={4} key={card.label}>
+                        <Paper sx={{ ...glassCardStyles, p: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                {card.icon}
+                                <Typography variant="body2" color="text.secondary">
+                                    {card.label}
+                                </Typography>
+                            </Stack>
+                            <Typography variant="h4" fontWeight={700}>
+                                {card.value}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {card.helper}
+                            </Typography>
+                        </Paper>
+                    </Grid>
+                ))}
+            </Grid>
+
             {/* Search Bar */}
-            <TextField
-                placeholder="Search by tag, name, type, area, or owner..."
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                size="small"
-                fullWidth
-                sx={{ mb: 2 }}
-                InputProps={{
-                    startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-                }}
-            />
+            <Paper sx={{ ...glassCardStyles, p: 2, mb: 3 }}>
+                <Stack
+                    direction={{ xs: 'column', md: 'row' }}
+                    spacing={2}
+                    alignItems={{ xs: 'stretch', md: 'center' }}
+                >
+                    <TextField
+                        placeholder="Search by tag, name, type, area, or owner..."
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        size="small"
+                        fullWidth
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Search fontSize="small" />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                </Stack>
+            </Paper>
 
             {/* Mobile Card View */}
             {isMobile ? (

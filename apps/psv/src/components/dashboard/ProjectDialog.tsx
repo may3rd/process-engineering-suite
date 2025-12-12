@@ -14,11 +14,21 @@ import {
     MenuItem,
     Box,
     useTheme,
+    FormHelperText,
 } from "@mui/material";
 import { Project } from "@/data/types";
 import { usePsvStore } from "@/store/usePsvStore";
 import { useShallow } from "zustand/react/shallow";
 import { OwnerSelector } from "../shared";
+import { useAuthStore } from "@/store/useAuthStore";
+import { WORKFLOW_STATUS_SEQUENCE, getWorkflowStatusLabel } from "@/lib/statusColors";
+
+const PROJECT_STATUS_OPTIONS: { value: Project['status']; label: string }[] = WORKFLOW_STATUS_SEQUENCE.map(
+    (status) => ({
+        value: status,
+        label: getWorkflowStatusLabel(status),
+    })
+);
 
 interface ProjectDialogProps {
     open: boolean;
@@ -44,6 +54,11 @@ export function ProjectDialog({
         units: state.units,
         areas: state.areas,
     })));
+    const canEdit = useAuthStore((state) => state.canEdit());
+    const canApprove = useAuthStore((state) => state.canApprove());
+    const currentRole = useAuthStore((state) => state.currentUser?.role);
+    const canCheck = ['lead', 'approver', 'admin'].includes(currentRole || '');
+    const canIssue = canCheck || canApprove;
 
     const [name, setName] = useState('');
     const [code, setCode] = useState('');
@@ -145,6 +160,33 @@ export function ProjectDialog({
     const filteredAreas = unitId
         ? areas.filter(a => a.unitId === unitId)
         : [];
+
+    const statusEnabledForUser = (value: Project['status']) => {
+        switch (value) {
+            case 'checked':
+                return canCheck;
+            case 'approved':
+                return canApprove;
+            case 'issued':
+                return canIssue;
+            default:
+                return canEdit;
+        }
+    };
+    const statusIndex = WORKFLOW_STATUS_SEQUENCE.indexOf(status);
+    const statusEnabledSequentially = (value: Project['status']) => {
+        const targetIndex = WORKFLOW_STATUS_SEQUENCE.indexOf(value);
+        if (targetIndex === -1 || statusIndex === -1) return true;
+        if (targetIndex <= statusIndex) return true;
+        return targetIndex === statusIndex + 1;
+    };
+    const statusLocked = !statusEnabledForUser(status);
+    const restrictedLabels = PROJECT_STATUS_OPTIONS
+        .filter(option => !statusEnabledForUser(option.value))
+        .map(option => option.label);
+    const sequentialLabels = PROJECT_STATUS_OPTIONS
+        .filter(option => statusEnabledForUser(option.value) && !statusEnabledSequentially(option.value) && WORKFLOW_STATUS_SEQUENCE.indexOf(option.value) > statusIndex)
+        .map(option => option.label);
 
     const isValid = name.trim() && code.trim() && areaId && leadId && startDate;
 
@@ -271,13 +313,34 @@ export function ProjectDialog({
                             value={status}
                             onChange={(e) => setStatus(e.target.value as typeof status)}
                             label="Status"
+                            disabled={statusLocked}
                         >
-                            <MenuItem value="draft">Draft</MenuItem>
-                            <MenuItem value="in_review">In Review</MenuItem>
-                            <MenuItem value="checked">Checked</MenuItem>
-                            <MenuItem value="approved">Approved</MenuItem>
-                            <MenuItem value="issued">Issued</MenuItem>
+                            {PROJECT_STATUS_OPTIONS.map(option => (
+                                <MenuItem
+                                    key={option.value}
+                                    value={option.value}
+                                    disabled={
+                                        !statusEnabledForUser(option.value) ||
+                                        !statusEnabledSequentially(option.value)
+                                    }
+                                >
+                                    {option.label}
+                                </MenuItem>
+                            ))}
                         </Select>
+                        {statusLocked ? (
+                            <FormHelperText sx={{ color: 'text.secondary' }}>
+                                You don&apos;t have permission to apply this status.
+                            </FormHelperText>
+                        ) : sequentialLabels.length > 0 ? (
+                            <FormHelperText sx={{ color: 'text.secondary' }}>
+                                Progress sequentially: Draft → In Review → Checked → Approved → Issued.
+                            </FormHelperText>
+                        ) : restrictedLabels.length > 0 ? (
+                            <FormHelperText sx={{ color: 'text.secondary' }}>
+                                Only elevated roles can mark projects as {restrictedLabels.join(', ')}.
+                            </FormHelperText>
+                        ) : null}
                     </FormControl>
 
                     <TextField

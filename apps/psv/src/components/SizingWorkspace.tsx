@@ -79,8 +79,12 @@ interface SizingWorkspaceProps {
     outletNetwork?: PipelineNetwork;
     psvSetPressure?: number;
     onClose: () => void;
-    onSave: (updatedCase: SizingCase) => void;
-    onSaveNetworks?: (inlet: PipelineNetwork | undefined, outlet: PipelineNetwork | undefined) => void;
+    onSave: (updatedCase: SizingCase, context?: { networkChanged?: boolean }) => void;
+    onSaveNetworks?: (
+        inlet: PipelineNetwork | undefined,
+        outlet: PipelineNetwork | undefined,
+        networkChanged?: boolean
+    ) => void;
     psvTag?: string;
     onDelete?: () => void;
 }
@@ -139,6 +143,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
     // Local network state (from PSV, not sizing case)
     const [localInletNetwork, setLocalInletNetwork] = useState<PipelineNetwork | undefined>(inletNetwork);
     const [localOutletNetwork, setLocalOutletNetwork] = useState<PipelineNetwork | undefined>(outletNetwork);
+    const [networkDirty, setNetworkDirty] = useState(false);
 
     // Unit state
     // Unit Conversion Hook
@@ -347,6 +352,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
         setLocalInletNetwork(updatedNetwork);
         setIsDirty(true);
         setIsCalculated(false);
+        setNetworkDirty(true);
     };
 
     const handleAddOutletPipe = () => {
@@ -368,6 +374,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
         setLocalOutletNetwork(updatedNetwork);
         setIsDirty(true);
         setIsCalculated(false);
+        setNetworkDirty(true);
     };
 
     const handleEditPipe = (id: string, type: 'inlet' | 'outlet') => {
@@ -400,6 +407,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
         setEditingPipe(null);
         setIsDirty(true);
         setIsCalculated(false);
+        setNetworkDirty(true);
     };
 
     const handleDeletePipe = (id: string, type: 'inlet' | 'outlet') => {
@@ -420,6 +428,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
         }
         setIsDirty(true);
         setIsCalculated(false);
+        setNetworkDirty(true);
     };
 
     // Calculate using API-520/521 equations
@@ -695,7 +704,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                 numberOfValves,
             },
         };
-        onSaveNetworks?.(localInletNetwork, localOutletNetwork);
+        onSaveNetworks?.(localInletNetwork, localOutletNetwork, networkDirty);
 
         // Save unit preferences
         const finalCase = {
@@ -703,7 +712,8 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
             unitPreferences: preferences
         };
 
-        onSave(finalCase);
+        onSave(finalCase, { networkChanged: networkDirty });
+        setNetworkDirty(false);
         onClose();
     };
 

@@ -54,6 +54,7 @@ import {
     Add,
     AddCircle,
     Star,
+    Calculate,
     Verified,
     Delete,
     KeyboardArrowDown,
@@ -78,6 +79,7 @@ import { SummaryTab } from "./SummaryTab";
 import { glassCardStyles } from "./styles";
 import { useAuthStore } from "@/store/useAuthStore";
 import { PipelineHydraulicsCard } from "./PipelineHydraulicsCard";
+import { WORKFLOW_STATUS_SEQUENCE, getWorkflowStatusColor, getWorkflowStatusLabel, SIZING_STATUS_SEQUENCE, getSizingStatusColor, getSizingStatusLabel } from "@/lib/statusColors";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -440,8 +442,10 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
     const { sizingCaseList, scenarioList, selectedPsv, addSizingCase, updateSizingCase } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
+    const canCheck = useAuthStore((state) => ['lead', 'approver', 'admin'].includes(state.currentUser?.role || ''));
     const currentUser = useAuthStore((state) => state.currentUser);
     const [dialogOpen, setDialogOpen] = useState(false);
+    const [statusMenu, setStatusMenu] = useState<{ anchorEl: HTMLElement; sizing: SizingCase } | null>(null);
 
     const getScenarioName = (scenarioId: string) => {
         const scenario = scenarioList.find(s => s.id === scenarioId);
@@ -449,19 +453,59 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
         return scenario.cause.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     };
 
-    const getStatusColor = (status: string): "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" => {
+    const sizingStatusOptions = SIZING_STATUS_SEQUENCE.map((status) => ({
+        value: status,
+        label: getSizingStatusLabel(status),
+        icon:
+            status === 'draft' ? <Drafts fontSize="small" /> :
+            status === 'calculated' ? <Calculate fontSize="small" /> :
+            status === 'verified' ? <Verified fontSize="small" /> :
+            <CheckCircleOutline fontSize="small" />,
+    }));
+
+    const sizingStatusPermission = (status: SizingCase['status']) => {
         switch (status) {
-            case 'approved':
-                return 'success';
-            case 'verified':
-                return 'info';
-            case 'calculated':
-                return 'warning';
             case 'draft':
-                return 'default';
+            case 'calculated':
+                return canEdit;
+            case 'verified':
+                return canCheck;
+            case 'approved':
+                return canApprove;
             default:
-                return 'default';
+                return false;
         }
+    };
+
+    const canTransitionToStatus = (sizing: SizingCase, target: SizingCase['status']) => {
+        if (sizing.status === target) return false;
+        const currentIndex = SIZING_STATUS_SEQUENCE.indexOf(sizing.status);
+        const targetIndex = SIZING_STATUS_SEQUENCE.indexOf(target);
+        if (currentIndex === -1 || targetIndex === -1) return false;
+        const sequential = targetIndex <= currentIndex || targetIndex === currentIndex + 1;
+        return sequential && sizingStatusPermission(target);
+    };
+
+    const hasStatusActions = (sizing: SizingCase) =>
+        SIZING_STATUS_SEQUENCE.some(status => canTransitionToStatus(sizing, status));
+
+    const handleStatusMenuOpen = (event: MouseEvent<HTMLElement>, sizing: SizingCase) => {
+        if (!hasStatusActions(sizing)) return;
+        setStatusMenu({ anchorEl: event.currentTarget, sizing });
+    };
+
+    const handleStatusMenuClose = () => setStatusMenu(null);
+
+    const handleStatusSelect = (nextStatus: SizingCase['status']) => {
+        if (!statusMenu) return;
+        const { sizing } = statusMenu;
+        if (!canTransitionToStatus(sizing, nextStatus)) return;
+        updateSizingCase({
+            ...sizing,
+            status: nextStatus,
+            approvedBy: nextStatus === 'approved' ? currentUser?.id : undefined,
+        });
+        handleStatusMenuClose();
     };
 
     const handleCreateSizingCase = (scenario: OverpressureScenario) => {
@@ -645,10 +689,11 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                                 />
                                             )}
                                             <Chip
-                                                label={sizing.status}
+                                                label={getSizingStatusLabel(sizing.status)}
                                                 size="small"
-                                                color={getStatusColor(sizing.status)}
-                                                sx={{ textTransform: 'capitalize' }}
+                                                color={getSizingStatusColor(sizing.status)}
+                                                sx={{ textTransform: 'capitalize', cursor: hasStatusActions(sizing) ? 'pointer' : 'default' }}
+                                                onClick={hasStatusActions(sizing) ? (event) => handleStatusMenuOpen(event, sizing) : undefined}
                                             />
                                         </Box>
                                         <Typography variant="body2" color="text.secondary">
@@ -656,21 +701,6 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                         </Typography>
                                     </Box>
                                     <Box sx={{ display: 'flex', gap: 1 }}>
-                                        {canApprove && sizing.status === 'calculated' && (
-                                            <Tooltip title="Verify">
-                                                <IconButton
-                                                    size="small"
-                                                    color="success"
-                                                    onClick={() => updateSizingCase({
-                                                        ...sizing,
-                                                        status: 'verified',
-                                                        approvedBy: currentUser?.id
-                                                    })}
-                                                >
-                                                    <Verified fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
-                                        )}
                                         {canEdit ? (
                                             <Tooltip title="Edit">
                                                 <IconButton size="small" onClick={() => onEdit?.(sizing.id)}>
@@ -822,6 +852,29 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                             </CardContent>
                         </Card>
                     ))}
+                    <Menu
+                        anchorEl={statusMenu?.anchorEl}
+                        open={Boolean(statusMenu)}
+                        onClose={handleStatusMenuClose}
+                        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                    >
+                        {sizingStatusOptions.map((option) => {
+                            const disabled = !statusMenu || !canTransitionToStatus(statusMenu.sizing, option.value);
+                            return (
+                                <MenuItem
+                                    key={option.value}
+                                    disabled={disabled}
+                                    onClick={() => handleStatusSelect(option.value)}
+                                >
+                                    <ListItemIcon sx={{ color: disabled ? 'text.disabled' : 'inherit' }}>
+                                        {option.icon}
+                                    </ListItemIcon>
+                                    <ListItemText primary={option.label} />
+                                </MenuItem>
+                            );
+                        })}
+                    </Menu>
                 </Box>
             ) : (
                 <Paper sx={{ py: 6, textAlign: 'center' }}>
@@ -1217,6 +1270,7 @@ export function ProtectiveSystemDetail() {
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const canCheck = useAuthStore((state) => ['lead', 'approver', 'admin'].includes(state.currentUser?.role || ''));
+    const canIssue = canCheck || canApprove;
     const [activeTab, setActiveTab] = useState(0);
     const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -1239,8 +1293,13 @@ export function ProtectiveSystemDetail() {
                     outletNetwork={selectedPsv?.outletNetwork}
                     psvSetPressure={selectedPsv?.setPressure || 0}
                     onClose={() => setEditingCaseId(null)}
-                    onSave={(updated) => {
+                    onSave={(updated, context) => {
                         updateSizingCase(updated);
+                        if (context?.networkChanged && selectedPsv) {
+                            sizingCaseList
+                                .filter(c => c.id !== updated.id && c.status !== 'draft')
+                                .forEach(c => updateSizingCase({ ...c, status: 'draft' }));
+                        }
                         setEditingCaseId(null);
                     }}
                     onSaveNetworks={(updatedInlet, updatedOutlet) => {
@@ -1303,7 +1362,36 @@ export function ProtectiveSystemDetail() {
         setActiveTab(newValue);
     };
 
+    const statusSequenceIndex = WORKFLOW_STATUS_SEQUENCE.indexOf(selectedPsv.status);
+    const statusEnabledSequentially = (value: ProtectiveSystem['status']) => {
+        const targetIndex = WORKFLOW_STATUS_SEQUENCE.indexOf(value);
+        if (targetIndex === -1 || statusSequenceIndex === -1) return true;
+        if (targetIndex <= statusSequenceIndex) return true;
+        return targetIndex === statusSequenceIndex + 1;
+    };
+    const statusPermissionFor = (value: ProtectiveSystem['status']) => {
+        let roleAllowed: boolean;
+        switch (value) {
+            case 'checked':
+                roleAllowed = canCheck;
+                break;
+            case 'approved':
+                roleAllowed = canApprove;
+                break;
+            case 'issued':
+                roleAllowed = canIssue;
+                break;
+            default:
+                roleAllowed = canEdit;
+        }
+        return roleAllowed && statusEnabledSequentially(value);
+    };
+    const canOpenStatusMenu =
+        Boolean(selectedPsv) &&
+        WORKFLOW_STATUS_SEQUENCE.filter(value => value !== selectedPsv.status).some(value => statusPermissionFor(value));
+
     const handleStatusClick = (event: MouseEvent<HTMLElement>) => {
+        if (!canOpenStatusMenu) return;
         setStatusMenuAnchor(event.currentTarget);
     };
 
@@ -1312,20 +1400,10 @@ export function ProtectiveSystemDetail() {
     };
 
     const handleStatusChange = (status: ProtectiveSystem['status']) => {
-        if (selectedPsv) {
+        if (selectedPsv && statusPermissionFor(status)) {
             updatePsv({ ...selectedPsv, status });
         }
         handleStatusClose();
-    };
-
-    const getStatusColor = (status: string) => {
-        switch (status) {
-            case 'approved': return 'success';
-            case 'issued': return 'info';
-            case 'checked': return 'info';
-            case 'in_review': return 'warning';
-            default: return 'default';
-        }
     };
 
     const getStatusIcon = (status: string) => {
@@ -1337,17 +1415,6 @@ export function ProtectiveSystemDetail() {
             default: return <Drafts fontSize="small" />;
         }
     };
-
-    const getStatusLabel = (status: string) => {
-        switch (status) {
-            case 'in_review': return 'In Review';
-            case 'checked': return 'Checked';
-            case 'issued': return 'Issued';
-            case 'approved': return 'Approved';
-            case 'draft': return 'Draft';
-            default: return status;
-        }
-    }
 
     return (
         <Box>
@@ -1361,23 +1428,11 @@ export function ProtectiveSystemDetail() {
                             </Typography>
                             <Chip
                                 icon={getStatusIcon(selectedPsv.status)}
-                                label={getStatusLabel(selectedPsv.status)}
-                                color={getStatusColor(selectedPsv.status) as any}
-                                onClick={
-                                    canEdit && (selectedPsv.status !== 'issued' || canCheck)
-                                        ? handleStatusClick
-                                        : undefined
-                                }
-                                deleteIcon={
-                                    canEdit && (selectedPsv.status !== 'issued' || canCheck)
-                                        ? <KeyboardArrowDown />
-                                        : undefined
-                                }
-                                onDelete={
-                                    canEdit && (selectedPsv.status !== 'issued' || canCheck)
-                                        ? handleStatusClick
-                                        : undefined
-                                } // Shows the arrow and makes it clickable
+                                label={getWorkflowStatusLabel(selectedPsv.status)}
+                                color={getWorkflowStatusColor(selectedPsv.status) as any}
+                                onClick={canOpenStatusMenu ? handleStatusClick : undefined}
+                                deleteIcon={canOpenStatusMenu ? <KeyboardArrowDown /> : undefined}
+                                onDelete={canOpenStatusMenu ? handleStatusClick : undefined} // Shows the arrow and makes it clickable
                                 sx={{
                                     textTransform: 'capitalize',
                                     fontWeight: 600,
@@ -1386,7 +1441,7 @@ export function ProtectiveSystemDetail() {
                                         color: 'inherit',
                                         opacity: 0.7
                                     },
-                                    cursor: canEdit && (selectedPsv.status !== 'issued' || canCheck) ? 'pointer' : 'default'
+                                    cursor: canOpenStatusMenu ? 'pointer' : 'default'
                                 }}
                             />
                             <Menu
@@ -1395,28 +1450,36 @@ export function ProtectiveSystemDetail() {
                                 onClose={handleStatusClose}
                                 slots={{ transition: Fade }}
                             >
-                                <MenuItem onClick={() => handleStatusChange('draft')} selected={selectedPsv.status === 'draft'}>
+                                <MenuItem
+                                    onClick={() => handleStatusChange('draft')}
+                                    selected={selectedPsv.status === 'draft'}
+                                    disabled={!statusPermissionFor('draft')}
+                                >
                                     <ListItemIcon><Drafts fontSize="small" /></ListItemIcon>
                                     <ListItemText>Draft</ListItemText>
                                 </MenuItem>
-                                <MenuItem onClick={() => handleStatusChange('in_review')} selected={selectedPsv.status === 'in_review'}>
+                                <MenuItem
+                                    onClick={() => handleStatusChange('in_review')}
+                                    selected={selectedPsv.status === 'in_review'}
+                                    disabled={!statusPermissionFor('in_review')}
+                                >
                                     <ListItemIcon><RateReview fontSize="small" sx={{ color: 'warning.main' }} /></ListItemIcon>
                                     <ListItemText>In Review</ListItemText>
                                 </MenuItem>
-                                {canCheck && (
+                                {statusPermissionFor('checked') && (
                                     <MenuItem onClick={() => handleStatusChange('checked')} selected={selectedPsv.status === 'checked'}>
                                         <ListItemIcon><Verified fontSize="small" sx={{ color: 'info.main' }} /></ListItemIcon>
                                         <ListItemText>Checked</ListItemText>
                                     </MenuItem>
                                 )}
-                                {canApprove && (
+                                {statusPermissionFor('approved') && (
                                     <MenuItem onClick={() => handleStatusChange('approved')} selected={selectedPsv.status === 'approved'}>
                                         <ListItemIcon><CheckCircleOutline fontSize="small" sx={{ color: 'success.main' }} /></ListItemIcon>
                                         <ListItemText>Approved</ListItemText>
                                     </MenuItem>
                                 )}
-                                {/* Issued can only be set from Approved status, by engineer/lead/approver */}
-                                {selectedPsv.status === 'approved' && (canEdit || canApprove) && (
+                                {/* Issued can only be set from Approved status, by elevated roles */}
+                                {selectedPsv.status === 'approved' && statusPermissionFor('issued') && (
                                     <MenuItem onClick={() => handleStatusChange('issued')}>
                                         <ListItemIcon><PublishedWithChanges fontSize="small" sx={{ color: 'info.main' }} /></ListItemIcon>
                                         <ListItemText>Issued</ListItemText>

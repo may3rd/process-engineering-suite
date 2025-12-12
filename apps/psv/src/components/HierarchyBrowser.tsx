@@ -30,6 +30,7 @@ import { PlantDialog } from "./dashboard/PlantDialog";
 import { UnitDialog } from "./dashboard/UnitDialog";
 import { AreaDialog } from "./dashboard/AreaDialog";
 import { ProjectDialog } from "./dashboard/ProjectDialog";
+import { getWorkflowStatusColor, getWorkflowStatusLabel, isWorkflowStatus } from "@/lib/statusColors";
 
 export function HierarchyBrowser() {
     const theme = useTheme();
@@ -140,22 +141,18 @@ export function HierarchyBrowser() {
     };
 
     const getStatusColor = (status: string) => {
+        if (isWorkflowStatus(status)) {
+            return getWorkflowStatusColor(status);
+        }
         switch (status) {
             case 'active':
-            case 'approved':
                 return 'success';
-            case 'issued':
-                return 'primary';
-            case 'in_review':
-                return 'info';
-            case 'checked':
-            case 'construction':
-                return 'warning';
-            case 'draft':
-            case 'design':
-                return 'default';
             case 'inactive':
                 return 'error';
+            case 'construction':
+                return 'warning';
+            case 'design':
+                return 'default';
             default:
                 return 'default';
         }
@@ -328,7 +325,11 @@ export function HierarchyBrowser() {
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 {'status' in item && (
                                     <Chip
-                                        label={String(item.status).replace('_', ' ')}
+                                        label={
+                                            isWorkflowStatus(String(item.status))
+                                                ? getWorkflowStatusLabel(String(item.status))
+                                                : String(item.status).replace('_', ' ')
+                                        }
                                         size="small"
                                         color={getStatusColor(String(item.status))}
                                         sx={{ textTransform: 'capitalize' }}

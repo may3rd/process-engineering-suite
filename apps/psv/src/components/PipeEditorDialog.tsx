@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
     Dialog,
     DialogTitle,
@@ -121,6 +121,21 @@ export function PipeEditorDialog({
     const [newFittingType, setNewFittingType] = useState("elbow_90");
     const [newFittingCount, setNewFittingCount] = useState(1);
 
+    const availableFittingOptions = useMemo(
+        () => FITTING_OPTIONS.filter(option => !fittings.some(f => f.type === option.value)),
+        [fittings],
+    );
+
+    useEffect(() => {
+        if (!availableFittingOptions.length) {
+            setNewFittingType("");
+            return;
+        }
+        if (!availableFittingOptions.some(opt => opt.value === newFittingType)) {
+            setNewFittingType(availableFittingOptions[0].value);
+        }
+    }, [availableFittingOptions, newFittingType]);
+
     // Initialize form when pipe changes
     useEffect(() => {
         if (extendedPipe) {
@@ -198,6 +213,7 @@ export function PipeEditorDialog({
     };
 
     const handleAddFitting = () => {
+        if (!newFittingType) return;
         const newFitting: FittingType = {
             type: newFittingType,
             count: newFittingCount,
@@ -525,10 +541,17 @@ export function PipeEditorDialog({
                             onChange={(e) => setNewFittingType(e.target.value)}
                             size="small"
                             sx={{ flex: 1 }}
+                            disabled={!availableFittingOptions.length}
                         >
-                            {FITTING_OPTIONS.map(opt => (
-                                <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
-                            ))}
+                            {availableFittingOptions.length ? (
+                                availableFittingOptions.map(opt => (
+                                    <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                                ))
+                            ) : (
+                                <MenuItem value="" disabled>
+                                    All fittings added
+                                </MenuItem>
+                            )}
                         </TextField>
                         <TextField
                             label="Count"
@@ -539,7 +562,12 @@ export function PipeEditorDialog({
                             sx={{ width: 80 }}
                             slotProps={{ htmlInput: { min: 1 } }}
                         />
-                        <Button variant="outlined" onClick={handleAddFitting} startIcon={<Add />}>
+                        <Button
+                            variant="outlined"
+                            onClick={handleAddFitting}
+                            startIcon={<Add />}
+                            disabled={!newFittingType}
+                        >
                             Add
                         </Button>
                     </Box>

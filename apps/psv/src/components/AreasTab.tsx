@@ -22,8 +22,11 @@ import {
     CardActions,
     useTheme,
     useMediaQuery,
+    Grid,
+    Stack,
+    InputAdornment,
 } from "@mui/material";
-import { Add, Edit, Delete, Map, Search } from "@mui/icons-material";
+import { Add, Edit, Delete, Map, Search, Inventory2, Build } from "@mui/icons-material";
 import {
     units
 } from "@/data/mockData";
@@ -172,10 +175,45 @@ export function AreasTab() {
         </Box>
     );
 
+    const summaryCards = useMemo(() => {
+        const totalProjects = projects.length;
+        const totalPsvs = protectiveSystems.length;
+        const totalEquipment = equipment.length;
+        return [
+            {
+                label: 'Areas',
+                value: areas.length,
+                helper: 'Across all units',
+                icon: <Map color="primary" />,
+            },
+            {
+                label: 'Projects',
+                value: totalProjects,
+                helper: 'Active initiatives',
+                icon: <Inventory2 color="secondary" />,
+            },
+            {
+                label: 'Assets',
+                value: totalPsvs + totalEquipment,
+                helper: 'PSVs + equipment',
+                icon: <Build color="warning" />,
+            },
+        ];
+    }, [areas.length, equipment.length, protectiveSystems.length, projects.length]);
+
     return (
         <Box>
             {/* Header */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 3,
+                    flexWrap: 'wrap',
+                    gap: 2,
+                }}
+            >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Map color="primary" sx={{ fontSize: 28 }} />
                     <Typography variant="h5" fontWeight={600}>
@@ -193,18 +231,50 @@ export function AreasTab() {
                 )}
             </Box>
 
+            <Grid container spacing={2} sx={{ mb: 3 }}>
+                {summaryCards.map(card => (
+                    <Grid item xs={12} md={4} key={card.label}>
+                        <Paper sx={{ ...glassCardStyles, p: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                            <Stack direction="row" spacing={1} alignItems="center">
+                                {card.icon}
+                                <Typography variant="body2" color="text.secondary">
+                                    {card.label}
+                                </Typography>
+                            </Stack>
+                            <Typography variant="h4" fontWeight={700}>
+                                {card.value}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {card.helper}
+                            </Typography>
+                        </Paper>
+                    </Grid>
+                ))}
+            </Grid>
+
             {/* Search Bar */}
-            <TextField
-                placeholder="Search by code, name, or unit..."
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-                size="small"
-                fullWidth
-                sx={{ mb: 2 }}
-                InputProps={{
-                    startAdornment: <Search sx={{ mr: 1, color: 'text.secondary' }} />,
-                }}
-            />
+            <Paper sx={{ ...glassCardStyles, p: 2, mb: 3 }}>
+                <Stack
+                    direction={{ xs: 'column', md: 'row' }}
+                    spacing={2}
+                    alignItems={{ xs: 'stretch', md: 'center' }}
+                >
+                    <TextField
+                        placeholder="Search by code, name, or unit..."
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        size="small"
+                        fullWidth
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Search fontSize="small" />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+                </Stack>
+            </Paper>
 
             {/* Mobile Card View */}
             {isMobile ? (
