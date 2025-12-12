@@ -68,7 +68,7 @@ import { usePsvStore } from "@/store/usePsvStore";
 import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem, ProtectiveSystem, ProjectNote } from "@/data/types";
 import { SizingWorkspace } from "./SizingWorkspace";
 import { ScenarioEditor } from "./ScenarioEditor"; // Import ScenarioEditor
-import { getAttachmentsByPsv, getEquipmentLinksByPsv, equipment, getUserById, users } from "@/data/mockData";
+import { getUserById, users } from "@/data/mockData";
 import { useState, useEffect, MouseEvent } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { BasicInfoCard } from "./BasicInfoCard";

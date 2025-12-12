@@ -42,6 +42,16 @@ class EquipmentLinkResponse(BaseModel):
     created_at: datetime = Field(serialization_alias="createdAt")
 
 
+class EquipmentLinkCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    protectiveSystemId: str
+    equipmentId: str
+    isPrimary: bool = False
+    scenarioId: Optional[str] = None
+    relationship: Optional[str] = "protects"
+    notes: Optional[str] = None
+
+
 # --- Attachment Schemas ---
 
 class AttachmentResponse(BaseModel):
@@ -83,6 +93,12 @@ class CommentCreate(BaseModel):
     protectiveSystemId: str
     body: str
     createdBy: str
+
+
+class CommentUpdate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    body: Optional[str] = None
+    updatedBy: Optional[str] = None
 
 
 # --- Todo Schemas ---
@@ -181,6 +197,21 @@ async def get_equipment_links(psv_id: str, dal: DAL):
     return await dal.get_equipment_links_by_psv(psv_id)
 
 
+@router.post("/equipment-links", response_model=EquipmentLinkResponse)
+async def create_equipment_link(data: EquipmentLinkCreate, dal: DAL):
+    """Create a new equipment link."""
+    return await dal.create_equipment_link(data.model_dump())
+
+
+@router.delete("/equipment-links/{link_id}")
+async def delete_equipment_link(link_id: str, dal: DAL):
+    """Delete an equipment link."""
+    success = await dal.delete_equipment_link(link_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Equipment link not found")
+    return {"success": True}
+
+
 # --- Attachment Endpoints ---
 
 @router.get("/psv/{psv_id}/attachments", response_model=List[AttachmentResponse])
@@ -216,6 +247,15 @@ async def get_comments(psv_id: str, dal: DAL):
 async def create_comment(data: CommentCreate, dal: DAL):
     """Create a new comment."""
     return await dal.create_comment(data.model_dump())
+
+
+@router.put("/comments/{comment_id}", response_model=CommentResponse)
+async def update_comment(comment_id: str, data: CommentUpdate, dal: DAL):
+    """Update an existing comment."""
+    try:
+        return await dal.update_comment(comment_id, {k: v for k, v in data.model_dump().items() if v is not None})
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
 
 
 @router.delete("/comments/{comment_id}")

@@ -13,6 +13,7 @@ import {
     OverpressureScenario as Scenario,
     SizingCase,
     Equipment,
+    EquipmentLink,
     Attachment,
     Comment,
     TodoItem,
@@ -30,6 +31,7 @@ import {
     scenarios as mockScenarios,
     sizingCases as mockSizingCases,
     equipment as mockEquipment,
+    equipmentLinks as mockEquipmentLinks,
     attachments as mockAttachments,
     comments as mockComments,
     todos as mockTodos,
@@ -48,6 +50,7 @@ const STORAGE_KEYS = {
     SCENARIOS: 'psv_demo_scenarios',
     SIZING_CASES: 'psv_demo_sizing_cases',
     EQUIPMENT: 'psv_demo_equipment',
+    EQUIPMENT_LINKS: 'psv_demo_equipment_links',
     ATTACHMENTS: 'psv_demo_attachments',
     NOTES: 'psv_demo_notes',
     COMMENTS: 'psv_demo_comments',
@@ -97,6 +100,7 @@ function initializeIfNeeded(): void {
         localStorage.setItem(STORAGE_KEYS.SCENARIOS, JSON.stringify(mockScenarios));
         localStorage.setItem(STORAGE_KEYS.SIZING_CASES, JSON.stringify(mockSizingCases));
         localStorage.setItem(STORAGE_KEYS.EQUIPMENT, JSON.stringify(mockEquipment));
+        localStorage.setItem(STORAGE_KEYS.EQUIPMENT_LINKS, JSON.stringify(mockEquipmentLinks));
         localStorage.setItem(STORAGE_KEYS.ATTACHMENTS, JSON.stringify(mockAttachments));
         localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(mockNotes));
         localStorage.setItem(STORAGE_KEYS.COMMENTS, JSON.stringify(mockComments));
@@ -531,6 +535,40 @@ class LocalStorageService {
     async getEquipment(areaId?: string): Promise<Equipment[]> {
         const equipment = getItem<Equipment>(STORAGE_KEYS.EQUIPMENT, mockEquipment);
         return areaId ? equipment.filter(e => e.areaId === areaId) : equipment;
+    }
+
+    async getEquipmentLinks(psvId: string): Promise<EquipmentLink[]> {
+        const links = getItem<EquipmentLink>(STORAGE_KEYS.EQUIPMENT_LINKS, mockEquipmentLinks);
+        return links.filter(link => link.psvId === psvId);
+    }
+
+    async createEquipmentLink(data: {
+        protectiveSystemId: string;
+        equipmentId: string;
+        isPrimary?: boolean;
+        scenarioId?: string;
+        relationship?: string;
+        notes?: string;
+    }): Promise<EquipmentLink> {
+        const links = getItem<EquipmentLink>(STORAGE_KEYS.EQUIPMENT_LINKS, mockEquipmentLinks);
+        const newLink: EquipmentLink = {
+            id: uuidv4(),
+            psvId: data.protectiveSystemId,
+            equipmentId: data.equipmentId,
+            isPrimary: data.isPrimary ?? false,
+            scenarioId: data.scenarioId,
+            relationship: data.relationship,
+            notes: data.notes,
+            createdAt: now(),
+        };
+        links.push(newLink);
+        setItem(STORAGE_KEYS.EQUIPMENT_LINKS, links);
+        return newLink;
+    }
+
+    async deleteEquipmentLink(id: string): Promise<void> {
+        const links = getItem<EquipmentLink>(STORAGE_KEYS.EQUIPMENT_LINKS, mockEquipmentLinks);
+        setItem(STORAGE_KEYS.EQUIPMENT_LINKS, links.filter(link => link.id !== id));
     }
 
     async createEquipment(data: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Equipment> {

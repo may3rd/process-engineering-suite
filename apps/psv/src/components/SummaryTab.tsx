@@ -27,7 +27,7 @@ import {
     Star,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
-import { getEquipmentLinksByPsv, equipment, getUserById } from "@/data/mockData";
+import { getUserById } from "@/data/mockData";
 import { PipelineNetwork, OverpressureScenario } from "@/data/types";
 import { getWorkflowStatusLabel } from "@/lib/statusColors";
 
@@ -82,12 +82,14 @@ export function SummaryTab() {
         scenarioList,
         sizingCaseList,
         attachmentList,
+        equipmentLinkList,
+        equipment: equipmentList,
         noteList,
     } = usePsvStore();
 
     if (!selectedPsv) return null;
 
-    const linkedEquipment = getEquipmentLinksByPsv(selectedPsv.id);
+    const linkedEquipment = equipmentLinkList.filter(link => link.psvId === selectedPsv.id);
     const owner = getUserById(selectedPsv.ownerId);
     const psvScenarios = scenarioList.filter(s => s.protectiveSystemId === selectedPsv.id);
     const psvSizingCases = sizingCaseList.filter(c => c.protectiveSystemId === selectedPsv.id);
@@ -308,7 +310,7 @@ export function SummaryTab() {
                             </TableHead>
                             <TableBody>
                                 {linkedEquipment.map((link) => {
-                                    const eq = equipment.find(e => e.id === link.equipmentId);
+                                    const eq = equipmentList.find(e => e.id === link.equipmentId);
                                     return eq ? (
                                         <TableRow key={link.id}>
                                             <TableCell>{eq.tag}</TableCell>

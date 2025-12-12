@@ -14,6 +14,7 @@ import {
     OverpressureScenario as Scenario,
     SizingCase,
     Equipment,
+    EquipmentLink,
     Attachment,
     Comment,
     TodoItem,
@@ -311,6 +312,45 @@ class ApiClient {
 
     async deleteEquipment(id: string): Promise<void> {
         await this.request(`/equipment/${id}`, { method: 'DELETE' });
+    }
+
+    private mapEquipmentLink(raw: any): EquipmentLink {
+        return {
+            id: raw.id,
+            psvId: raw.protectiveSystemId ?? raw.psvId,
+            equipmentId: raw.equipmentId,
+            isPrimary: raw.isPrimary ?? false,
+            scenarioId: raw.scenarioId ?? raw.scenarioID,
+            relationship: raw.relationship,
+            notes: raw.notes,
+            createdAt: raw.createdAt,
+        };
+    }
+
+    // --- Equipment Links ---
+
+    async getEquipmentLinks(psvId: string): Promise<EquipmentLink[]> {
+        const response = await this.request<any[]>(`/psv/${psvId}/equipment-links`);
+        return response.map((item) => this.mapEquipmentLink(item));
+    }
+
+    async createEquipmentLink(data: {
+        protectiveSystemId: string;
+        equipmentId: string;
+        isPrimary?: boolean;
+        scenarioId?: string;
+        relationship?: string;
+        notes?: string;
+    }): Promise<EquipmentLink> {
+        const created = await this.request<any>('/equipment-links', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+        return this.mapEquipmentLink(created);
+    }
+
+    async deleteEquipmentLink(id: string): Promise<void> {
+        await this.request(`/equipment-links/${id}`, { method: 'DELETE' });
     }
 
     // --- Notes ---

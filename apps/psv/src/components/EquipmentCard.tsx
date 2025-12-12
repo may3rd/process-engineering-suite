@@ -27,10 +27,9 @@ import {
     ListItemIcon,
 } from "@mui/material";
 import { Add, Link as LinkIcon, Delete } from "@mui/icons-material";
-import { ProtectiveSystem, EquipmentLink } from "@/data/types";
+import { ProtectiveSystem } from "@/data/types";
 import { usePsvStore } from "../store/usePsvStore";
 import { glassCardStyles } from "./styles";
-import { v4 as uuidv4 } from "uuid";
 import { useAuthStore } from "@/store/useAuthStore";
 
 interface EquipmentCardProps {
@@ -44,7 +43,8 @@ export function EquipmentCard({ psv }: EquipmentCardProps) {
     const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]);
 
     // Determine currently linked equipment IDs to exclude/disable them in list
-    const linkedEquipmentIds = equipmentLinkList.map(l => l.equipmentId);
+    const linksForPsv = equipmentLinkList.filter(link => link.psvId === psv.id);
+    const linkedEquipmentIds = linksForPsv.map(l => l.equipmentId);
 
     // Get PSV's unit through its area
     const psvArea = areas.find(a => a.id === psv.areaId);
@@ -59,19 +59,18 @@ export function EquipmentCard({ psv }: EquipmentCardProps) {
     const equipmentInSameUnit = allEquipment.filter(eq => areasInSameUnit.includes(eq.areaId));
     const availableEquipment = equipmentInSameUnit.filter(eq => !linkedEquipmentIds.includes(eq.id));
 
-    const handleLink = () => {
-        selectedEquipmentIds.forEach(eqId => {
-            const link: EquipmentLink = {
-                id: uuidv4(),
-                psvId: psv.id,
-                equipmentId: eqId,
-                isPrimary: false,  // Default to false, can be updated later
-                createdAt: new Date().toISOString(),
-            };
-            linkEquipment(link);
-        });
-        setSelectedEquipmentIds([]);
-        setOpen(false);
+    const handleLink = async () => {
+        try {
+            await Promise.all(
+                selectedEquipmentIds.map(eqId =>
+                    linkEquipment({ psvId: psv.id, equipmentId: eqId })
+                )
+            );
+            setSelectedEquipmentIds([]);
+            setOpen(false);
+        } catch (error) {
+            console.error(error);
+        }
     };
 
     const toggleSelection = (id: string) => {
@@ -123,7 +122,7 @@ export function EquipmentCard({ psv }: EquipmentCardProps) {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {equipmentLinkList.map((link) => {
+                        {linksForPsv.map((link) => {
                             const eq = allEquipment.find(e => e.id === link.equipmentId);
                             if (!eq) return null;
                             return (
@@ -137,20 +136,26 @@ export function EquipmentCard({ psv }: EquipmentCardProps) {
                                     <TableCell align="right">
                                         {canEdit && (
                                             <Tooltip title="Unlink">
-                                                <IconButton
-                                                    size="small"
-                                                    color="error"
-                                                    onClick={() => unlinkEquipment(link.id)}
-                                                >
-                                                    <Delete fontSize="small" />
-                                                </IconButton>
+                                                    <IconButton
+                                                        size="small"
+                                                        color="error"
+                                                        onClick={async () => {
+                                                            try {
+                                                                await unlinkEquipment(link.id);
+                                                            } catch (error) {
+                                                                console.error(error);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <Delete fontSize="small" />
+                                                    </IconButton>
                                             </Tooltip>
                                         )}
                                     </TableCell>
                                 </TableRow>
                             );
                         })}
-                        {equipmentLinkList.length === 0 && (
+                        {linksForPsv.length === 0 && (
                             <TableRow>
                                 <TableCell colSpan={5} align="center" sx={{ color: 'text.secondary', py: 3 }}>
                                     No equipment linked.

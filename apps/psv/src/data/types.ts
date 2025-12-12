@@ -256,6 +256,8 @@ export interface EquipmentLink {
     equipmentId: string;
     isPrimary: boolean;       // Primary protection device
     scenarioId?: string;      // Optional link to specific scenario
+    relationship?: string;
+    notes?: string;
     createdAt: string;
 }
 

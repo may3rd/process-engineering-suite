@@ -99,8 +99,8 @@ interface PsvStore {
     removePsvTag: (psvId: string, tag: string) => Promise<void>;
 
     // Equipment Link Actions
-    linkEquipment: (link: EquipmentLink) => void;
-    unlinkEquipment: (linkId: string) => void;
+    linkEquipment: (link: { psvId: string; equipmentId: string; isPrimary?: boolean; scenarioId?: string; relationship?: string; notes?: string }) => Promise<void>;
+    unlinkEquipment: (linkId: string) => Promise<void>;
     deletePsv: (id: string) => Promise<void>;
     deleteAttachment: (id: string) => Promise<void>;
     addAttachment: (attachment: Attachment) => Promise<void>;
@@ -557,7 +557,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             const psv = id ? await dataService.getProtectiveSystem(id) : null;
-            const [scenarioList, sizingCaseList, todoList, commentList, noteList] = id ? await Promise.all([
+            const [scenarioList, sizingCaseList, todoList, commentList, noteList, equipmentLinks] = id ? await Promise.all([
                 dataService.getScenarios(id),
                 dataService.getSizingCases(id),
                 dataService.getTodos(id),
@@ -572,7 +572,17 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
                     }
                     throw error;
                 }),
-            ]) : [[], [], [], [], []];
+                dataService.getEquipmentLinks(id).catch((error: unknown) => {
+                    if (error instanceof Error) {
+                        const msg = error.message || '';
+                        if (/404/.test(msg) || msg.toLowerCase().includes('not found')) {
+                            console.warn('Equipment links endpoint unavailable, continuing without links');
+                            return [];
+                        }
+                    }
+                    throw error;
+                }),
+            ]) : [[], [], [], [], [], []];
 
             set((state) => ({
                 selection: {
@@ -585,6 +595,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
                 todoList,
                 commentList,
                 noteList,
+                equipmentLinkList: equipmentLinks,
                 activeTab: 0, // Reset to overview tab
                 isLoading: false
             }));
@@ -823,16 +834,39 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         }
     },
 
-    linkEquipment: (link) => {
-        set((state) => ({
-            equipmentLinkList: [...state.equipmentLinkList, link]
-        }));
+    linkEquipment: async ({ psvId, equipmentId, isPrimary = false, scenarioId, relationship, notes }) => {
+        try {
+            const created = await dataService.createEquipmentLink({
+                protectiveSystemId: psvId,
+                equipmentId,
+                isPrimary,
+                scenarioId,
+                relationship,
+                notes,
+            });
+            set((state) => ({
+                equipmentLinkList: [...state.equipmentLinkList, created],
+            }));
+            toast.success('Equipment linked');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to link equipment';
+            toast.error('Failed to link equipment', { description: message });
+            throw error;
+        }
     },
 
-    unlinkEquipment: (linkId) => {
-        set((state) => ({
-            equipmentLinkList: state.equipmentLinkList.filter(l => l.id !== linkId)
-        }));
+    unlinkEquipment: async (linkId) => {
+        try {
+            await dataService.deleteEquipmentLink(linkId);
+            set((state) => ({
+                equipmentLinkList: state.equipmentLinkList.filter(l => l.id !== linkId)
+            }));
+            toast.success('Equipment unlinked');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to unlink equipment';
+            toast.error('Failed to unlink equipment', { description: message });
+            throw error;
+        }
     },
 
     deletePsv: async (id) => {

@@ -207,6 +207,20 @@ class MockService(DataAccessLayer):
     
     async def get_equipment_links_by_psv(self, psv_id: str) -> List[dict]:
         return [l for l in self._data.get("equipmentLinks", []) if l["protectiveSystemId"] == psv_id]
+
+    async def create_equipment_link(self, data: dict) -> dict:
+        data["id"] = str(uuid4())
+        data["createdAt"] = datetime.utcnow().isoformat()
+        self._data.setdefault("equipmentLinks", []).append(data)
+        return data
+
+    async def delete_equipment_link(self, link_id: str) -> bool:
+        links = self._data.get("equipmentLinks", [])
+        for i, link in enumerate(links):
+            if link["id"] == link_id:
+                del links[i]
+                return True
+        return False
     
     # --- Attachments ---
     
@@ -238,6 +252,19 @@ class MockService(DataAccessLayer):
         data["updatedAt"] = datetime.utcnow().isoformat()
         self._data.setdefault("comments", []).append(data)
         return data
+
+    async def update_comment(self, comment_id: str, data: dict) -> dict:
+        comments = self._data.get("comments", [])
+        for i, comment in enumerate(comments):
+            if comment["id"] == comment_id:
+                updated = {
+                    **comment,
+                    **data,
+                    "updatedAt": datetime.utcnow().isoformat(),
+                }
+                comments[i] = updated
+                return updated
+        raise ValueError(f"Comment not found: {comment_id}")
     
     # --- Todos ---
     

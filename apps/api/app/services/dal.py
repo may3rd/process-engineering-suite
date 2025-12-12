@@ -147,6 +147,16 @@ class DataAccessLayer(ABC):
     async def get_equipment_links_by_psv(self, psv_id: str) -> List[dict]:
         """Get equipment links for a protective system."""
         pass
+
+    @abstractmethod
+    async def create_equipment_link(self, data: dict) -> dict:
+        """Create a new equipment link."""
+        pass
+
+    @abstractmethod
+    async def delete_equipment_link(self, link_id: str) -> bool:
+        """Delete an equipment link."""
+        pass
     
     @abstractmethod
     async def create_equipment(self, data: dict) -> dict:
@@ -190,6 +200,11 @@ class DataAccessLayer(ABC):
     @abstractmethod
     async def create_comment(self, data: dict) -> dict:
         """Create a new comment."""
+        pass
+
+    @abstractmethod
+    async def update_comment(self, comment_id: str, data: dict) -> dict:
+        """Update an existing comment."""
         pass
     
     # --- Todos ---

@@ -292,6 +292,13 @@ class DatabaseService(DataAccessLayer):
     async def get_equipment_links_by_psv(self, psv_id: str) -> List[dict]:
         return await self._get_all(EquipmentLink, EquipmentLink.protective_system_id == psv_id)
 
+    async def create_equipment_link(self, data: dict) -> dict:
+        converted_data = self._convert_keys(data)
+        return await self._create(EquipmentLink, converted_data)
+
+    async def delete_equipment_link(self, link_id: str) -> bool:
+        return await self._delete(EquipmentLink, link_id)
+
     async def create_equipment(self, data: dict) -> dict:
         converted_data = self._convert_keys(data)
         return await self._create(Equipment, converted_data)
@@ -333,6 +340,18 @@ class DatabaseService(DataAccessLayer):
     async def create_comment(self, data: dict) -> dict:
         converted_data = self._convert_keys(data)
         return await self._create(Comment, converted_data)
+
+    async def update_comment(self, comment_id: str, data: dict) -> dict:
+        converted_data = self._convert_keys(data)
+        instance = await self._get_by_id(Comment, comment_id)
+        if not instance:
+            raise ValueError(f"Comment {comment_id} not found")
+        for key, value in converted_data.items():
+            if hasattr(instance, key):
+                setattr(instance, key, value)
+        await self.session.commit()
+        await self.session.refresh(instance)
+        return instance
 
     async def delete_comment(self, comment_id: str) -> bool:
         return await self._delete(Comment, comment_id)
