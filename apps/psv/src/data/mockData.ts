@@ -14,6 +14,7 @@ import {
     TodoItem,
     User,
     MockCredential,
+    ProjectNote,
 } from './types';
 
 // Users - Synced with Database (engsuite)
@@ -791,6 +792,24 @@ export const attachments: Attachment[] = [
     },
 ];
 
+// Formal Notes (displayed in summary)
+export const notes: ProjectNote[] = [
+    {
+        id: 'n1000001-0001-0001-0001-000000000001',
+        protectiveSystemId: '11111111-1111-1111-1111-111111111111',
+        body: 'Relief calculations are based on API-520 (2023) with accumulation limited to 10%.',
+        createdBy: '22ee3f22-898a-461b-85ec-83f84d250810',
+        createdAt: '2024-09-05T14:30:00Z',
+    },
+    {
+        id: 'n1000002-0001-0001-0001-000000000002',
+        protectiveSystemId: '66666666-6666-6666-6666-666666666666',
+        body: 'Cryogenic service requires SS316L trim and soft seat; vendor spec PSV-CRYO-221 applies.',
+        createdBy: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        createdAt: '2024-09-12T11:00:00Z',
+    },
+];
+
 // Comments (replaces notes)
 export const comments: Comment[] = [
     {
@@ -903,6 +922,10 @@ export function getEquipmentLinksByPsv(psvId: string): EquipmentLink[] {
 
 export function getAttachmentsByPsv(psvId: string): Attachment[] {
     return attachments.filter(a => a.protectiveSystemId === psvId);
+}
+
+export function getNotesByPsv(psvId: string): ProjectNote[] {
+    return notes.filter(n => n.protectiveSystemId === psvId);
 }
 
 export function getCommentsByPsv(psvId: string): Comment[] {

@@ -65,7 +65,7 @@ import {
     Visibility,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
-import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem, ProtectiveSystem } from "@/data/types";
+import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem, ProtectiveSystem, ProjectNote } from "@/data/types";
 import { SizingWorkspace } from "./SizingWorkspace";
 import { ScenarioEditor } from "./ScenarioEditor"; // Import ScenarioEditor
 import { getAttachmentsByPsv, getEquipmentLinksByPsv, equipment, getUserById, users } from "@/data/mockData";
@@ -132,6 +132,7 @@ function ScenariosTab() {
     const isDark = theme.palette.mode === 'dark';
     const { scenarioList, selectedPsv, addScenario, updateScenario, deleteScenario } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
+    const currentUser = useAuthStore((state) => state.currentUser);
     const [editorOpen, setEditorOpen] = useState(false);
     const [editingScenario, setEditingScenario] = useState<OverpressureScenario | undefined>(undefined);
 
@@ -987,25 +988,40 @@ function NotesTab() {
         selectedPsv,
         todoList,
         commentList,
+        noteList,
         addTodo,
         deleteTodo,
         toggleTodo,
         addComment,
-        deleteComment
+        deleteComment,
+        updateComment,
+        addNote,
+        updateNote,
+        deleteNote,
     } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
+    const currentUser = useAuthStore((state) => state.currentUser);
 
     const [addTaskOpen, setAddTaskOpen] = useState(false);
     const [addCommentOpen, setAddCommentOpen] = useState(false);
+    const [addNoteOpen, setAddNoteOpen] = useState(false);
+    const [editCommentOpen, setEditCommentOpen] = useState(false);
+    const [editNoteOpen, setEditNoteOpen] = useState(false);
     const [newTaskText, setNewTaskText] = useState('');
     const [newTaskAssignee, setNewTaskAssignee] = useState(selectedPsv?.ownerId || '');
     const [newTaskDueDate, setNewTaskDueDate] = useState('');
     const [newCommentText, setNewCommentText] = useState('');
+    const [newNoteText, setNewNoteText] = useState('');
+    const [editCommentText, setEditCommentText] = useState('');
+    const [editNoteText, setEditNoteText] = useState('');
+    const [editingComment, setEditingComment] = useState<Comment | null>(null);
+    const [editingNote, setEditingNote] = useState<ProjectNote | null>(null);
 
     if (!selectedPsv) return null;
 
     const filteredTodos = todoList.filter(t => t.protectiveSystemId === selectedPsv.id);
     const filteredComments = commentList.filter(c => c.protectiveSystemId === selectedPsv.id);
+    const filteredNotes = noteList.filter(n => n.protectiveSystemId === selectedPsv.id);
 
     const formatDate = (dateStr: string) => {
         return new Date(dateStr).toLocaleDateString('en-US', {
@@ -1047,11 +1063,12 @@ function NotesTab() {
 
     const handleAddComment = () => {
         if (!newCommentText.trim()) return;
+        const creatorId = currentUser?.id || selectedPsv.ownerId;
         const newComment: Comment = {
             id: `comment-${Date.now()}`,
             protectiveSystemId: selectedPsv.id,
             body: newCommentText.trim(),
-            createdBy: selectedPsv.ownerId,
+            createdBy: creatorId,
             createdAt: new Date().toISOString(),
         };
         addComment(newComment);
@@ -1059,9 +1076,65 @@ function NotesTab() {
         setAddCommentOpen(false);
     };
 
+    const handleStartEditComment = (comment: Comment) => {
+        setEditingComment(comment);
+        setEditCommentText(comment.body);
+        setEditCommentOpen(true);
+    };
+
+    const handleUpdateComment = () => {
+        if (!editingComment || !editCommentText.trim()) return;
+        updateComment(editingComment.id, {
+            body: editCommentText.trim(),
+            updatedBy: currentUser?.id || selectedPsv.ownerId,
+            updatedAt: new Date().toISOString(),
+        });
+        setEditCommentOpen(false);
+        setEditingComment(null);
+        setEditCommentText('');
+    };
+
     const handleDeleteComment = (id: string) => {
         if (window.confirm("Are you sure you want to delete this comment?")) {
             deleteComment(id);
+        }
+    };
+
+    const handleAddNote = () => {
+        if (!newNoteText.trim()) return;
+        const creatorId = currentUser?.id || selectedPsv.ownerId;
+        addNote({
+            id: `note-${Date.now()}`,
+            protectiveSystemId: selectedPsv.id,
+            body: newNoteText.trim(),
+            createdBy: creatorId,
+            createdAt: new Date().toISOString(),
+        });
+        setNewNoteText('');
+        setAddNoteOpen(false);
+    };
+
+    const handleStartEditNote = (note: ProjectNote) => {
+        setEditingNote(note);
+        setEditNoteText(note.body);
+        setEditNoteOpen(true);
+    };
+
+    const handleUpdateNote = () => {
+        if (!editingNote || !editNoteText.trim()) return;
+        updateNote(editingNote.id, {
+            body: editNoteText.trim(),
+            updatedBy: currentUser?.id || selectedPsv.ownerId,
+            updatedAt: new Date().toISOString(),
+        });
+        setEditNoteOpen(false);
+        setEditingNote(null);
+        setEditNoteText('');
+    };
+
+    const handleDeleteNote = (id: string) => {
+        if (window.confirm("Delete this note? It will be removed from the printable summary.")) {
+            deleteNote(id);
         }
     };
 
@@ -1134,6 +1207,74 @@ function NotesTab() {
                 )}
             </Box>
 
+            {/* Notes Section */}
+            <Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                    <Box>
+                        <Typography variant="h6" fontWeight={600}>
+                            Notes
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            These appear on the printable summary.
+                        </Typography>
+                    </Box>
+                    {canEdit && (
+                        <Button variant="contained" startIcon={<AddCircle />} size="small" onClick={() => setAddNoteOpen(true)}>
+                            Add Note
+                        </Button>
+                    )}
+                </Box>
+
+                {filteredNotes.length > 0 ? (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        {filteredNotes.map((note) => {
+                            const author = getUserById(note.updatedBy || note.createdBy);
+                            const timestamp = note.updatedAt || note.createdAt;
+                            return (
+                                <Card
+                                    key={note.id}
+                                    variant="outlined"
+                                    sx={{
+                                        borderColor: 'success.main',
+                                        backgroundColor: (theme) => theme.palette.mode === 'dark'
+                                            ? 'rgba(34, 197, 94, 0.08)'
+                                            : 'rgba(34, 197, 94, 0.12)',
+                                    }}
+                                >
+                                    <CardContent sx={{ pb: '16px !important' }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
+                                            <Box>
+                                                <Typography fontWeight={600}>
+                                                    {note.body}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {author?.name || 'Unknown'}, {new Date(timestamp).toLocaleDateString()}
+                                                </Typography>
+                                            </Box>
+                                            {canEdit && (
+                                                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                                    <IconButton size="small" onClick={() => handleStartEditNote(note)}>
+                                                        <Edit fontSize="small" />
+                                                    </IconButton>
+                                                    <IconButton size="small" onClick={() => handleDeleteNote(note.id)}>
+                                                        <Delete fontSize="small" />
+                                                    </IconButton>
+                                                </Box>
+                                            )}
+                                        </Box>
+                                    </CardContent>
+                                </Card>
+                            );
+                        })}
+                    </Box>
+                ) : (
+                    <Paper variant="outlined" sx={{ py: 4, textAlign: 'center' }}>
+                        <Description sx={{ fontSize: 32, color: 'text.secondary', mb: 1 }} />
+                        <Typography color="text.secondary">No notes</Typography>
+                    </Paper>
+                )}
+            </Box>
+
             {/* Comments Section */}
             <Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -1150,26 +1291,31 @@ function NotesTab() {
                 {filteredComments.length > 0 ? (
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         {filteredComments.map((comment) => {
-                            const author = getUserById(comment.createdBy);
+                            const author = getUserById(comment.updatedBy || comment.createdBy);
+                            const timestamp = comment.updatedAt || comment.createdAt;
                             return (
                                 <Card key={comment.id} variant="outlined">
                                     <CardContent sx={{ pb: '16px !important' }}>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 1 }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
                                             <Box>
-                                                <Typography variant="subtitle2" fontWeight={600}>
-                                                    {author?.name || 'Unknown'}
+                                                <Typography fontWeight={600}>
+                                                    {comment.body}
                                                 </Typography>
                                                 <Typography variant="caption" color="text.secondary">
-                                                    {formatDate(comment.createdAt)}
+                                                    {author?.name || 'Unknown'}, {formatDate(timestamp)}
                                                 </Typography>
                                             </Box>
                                             {canEdit && (
-                                                <IconButton size="small" onClick={() => handleDeleteComment(comment.id)}>
-                                                    <Delete fontSize="small" />
-                                                </IconButton>
+                                                <Box sx={{ display: 'flex', gap: 0.5 }}>
+                                                    <IconButton size="small" onClick={() => handleStartEditComment(comment)}>
+                                                        <Edit fontSize="small" />
+                                                    </IconButton>
+                                                    <IconButton size="small" onClick={() => handleDeleteComment(comment.id)}>
+                                                        <Delete fontSize="small" />
+                                                    </IconButton>
+                                                </Box>
                                             )}
                                         </Box>
-                                        <Typography variant="body2">{comment.body}</Typography>
                                     </CardContent>
                                 </Card>
                             );
@@ -1217,6 +1363,15 @@ function NotesTab() {
                         value={newTaskDueDate}
                         onChange={(e) => setNewTaskDueDate(e.target.value)}
                         slotProps={{ inputLabel: { shrink: true } }}
+                        sx={{
+                            '& input::-webkit-calendar-picker-indicator': {
+                                filter: (theme) =>
+                                    theme.palette.mode === 'dark'
+                                        ? 'invert(0.8)'
+                                        : 'invert(0.2)',
+                                opacity: 0.9,
+                            },
+                        }}
                         helperText="Default: 1 week from today"
                     />
                 </DialogContent>
@@ -1247,6 +1402,74 @@ function NotesTab() {
                     <Button onClick={() => setAddCommentOpen(false)}>Cancel</Button>
                     <Button variant="contained" onClick={handleAddComment} disabled={!newCommentText.trim()}>
                         Add
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog open={editCommentOpen} onClose={() => setEditCommentOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Edit Comment</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        fullWidth
+                        multiline
+                        rows={3}
+                        label="Comment"
+                        value={editCommentText}
+                        onChange={(e) => setEditCommentText(e.target.value)}
+                        sx={{ mt: 1 }}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setEditCommentOpen(false)}>Cancel</Button>
+                    <Button variant="contained" onClick={handleUpdateComment} disabled={!editCommentText.trim()}>
+                        Save
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Add Note Dialog */}
+            <Dialog open={addNoteOpen} onClose={() => setAddNoteOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>New Note</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        fullWidth
+                        multiline
+                        rows={4}
+                        label="Formal note"
+                        value={newNoteText}
+                        onChange={(e) => setNewNoteText(e.target.value)}
+                        sx={{ mt: 1 }}
+                        helperText="Displayed on the printable summary"
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setAddNoteOpen(false)}>Cancel</Button>
+                    <Button variant="contained" onClick={handleAddNote} disabled={!newNoteText.trim()}>
+                        Save Note
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            <Dialog open={editNoteOpen} onClose={() => setEditNoteOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Edit Note</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        fullWidth
+                        multiline
+                        rows={4}
+                        label="Note"
+                        value={editNoteText}
+                        onChange={(e) => setEditNoteText(e.target.value)}
+                        sx={{ mt: 1 }}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setEditNoteOpen(false)}>Cancel</Button>
+                    <Button variant="contained" onClick={handleUpdateNote} disabled={!editNoteText.trim()}>
+                        Save
                     </Button>
                 </DialogActions>
             </Dialog>

@@ -278,6 +278,17 @@ export interface Comment {
     createdBy: string;
     createdAt: string;
     updatedAt?: string;
+    updatedBy?: string;
+}
+
+export interface ProjectNote {
+    id: string;
+    protectiveSystemId: string;
+    body: string;
+    createdBy: string;
+    createdAt: string;
+    updatedAt?: string;
+    updatedBy?: string;
 }
 
 export interface TodoItem {

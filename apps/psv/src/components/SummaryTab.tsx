@@ -82,7 +82,7 @@ export function SummaryTab() {
         scenarioList,
         sizingCaseList,
         attachmentList,
-        commentList,
+        noteList,
     } = usePsvStore();
 
     if (!selectedPsv) return null;
@@ -92,7 +92,7 @@ export function SummaryTab() {
     const psvScenarios = scenarioList.filter(s => s.protectiveSystemId === selectedPsv.id);
     const psvSizingCases = sizingCaseList.filter(c => c.protectiveSystemId === selectedPsv.id);
     const psvAttachments = attachmentList.filter(a => a.protectiveSystemId === selectedPsv.id);
-    const psvComments = commentList.filter(c => c.protectiveSystemId === selectedPsv.id);
+    const psvNotes = noteList.filter(n => n.protectiveSystemId === selectedPsv.id);
 
     // Find the governing scenario for this PSV
     const governingScenario = psvScenarios.find(s => s.isGoverning) || null;
@@ -548,15 +548,15 @@ export function SummaryTab() {
             {/* Notes */}
             <Paper sx={sectionStyles}>
                 <Typography variant="h6" sx={headerStyles}>
-                    Notes ({psvComments.length})
+                    Notes ({psvNotes.length})
                 </Typography>
-                {psvComments.length > 0 ? (
+                {psvNotes.length > 0 ? (
                     <List dense disablePadding>
-                        {psvComments.map((comment) => (
-                            <ListItem key={comment.id} disablePadding sx={{ py: 0.5, alignItems: 'flex-start' }}>
+                        {psvNotes.map((note) => (
+                            <ListItem key={note.id} disablePadding sx={{ py: 0.5, alignItems: 'flex-start' }}>
                                 <ListItemText
-                                    primary={comment.body}
-                                    secondary={`— ${getUserById(comment.createdBy)?.name || 'Unknown'}, ${new Date(comment.createdAt).toLocaleDateString()}`}
+                                    primary={note.body}
+                                    secondary={`— ${getUserById(note.createdBy)?.name || 'Unknown'}, ${new Date(note.createdAt).toLocaleDateString()}`}
                                 />
                             </ListItem>
                         ))}

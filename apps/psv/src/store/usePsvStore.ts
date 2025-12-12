@@ -13,6 +13,7 @@ import type {
     EquipmentLink,
     Equipment,
     Comment,
+    ProjectNote,
 } from '@/data/types';
 import { getDataService } from '@/lib/api';
 import { toast } from '@/lib/toast';
@@ -140,8 +141,15 @@ interface PsvStore {
     toggleTodo: (id: string) => Promise<void>;
     todoList: TodoItem[];
 
+    // Notes Actions (async)
+    addNote: (note: ProjectNote) => Promise<void>;
+    updateNote: (id: string, updates: Partial<ProjectNote>) => Promise<void>;
+    deleteNote: (id: string) => Promise<void>;
+    noteList: ProjectNote[];
+
     // Comment Actions (async)
     addComment: (comment: Comment) => Promise<void>;
+    updateComment: (id: string, updates: Partial<Comment>) => Promise<void>;
     deleteComment: (id: string) => Promise<void>;
     commentList: Comment[];
 }
@@ -186,6 +194,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     equipmentLinkList: [],
     attachmentList: [],
     todoList: [],
+    noteList: [],
     commentList: [],
 
     // UI state
@@ -533,6 +542,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
                 sizingCaseList: [],
                 attachmentList: [],
                 todoList: [],
+                noteList: [],
                 commentList: [],
                 isLoading: false
             }));
@@ -547,12 +557,22 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         set({ isLoading: true, error: null });
         try {
             const psv = id ? await dataService.getProtectiveSystem(id) : null;
-            const [scenarioList, sizingCaseList, todoList, commentList] = id ? await Promise.all([
+            const [scenarioList, sizingCaseList, todoList, commentList, noteList] = id ? await Promise.all([
                 dataService.getScenarios(id),
                 dataService.getSizingCases(id),
                 dataService.getTodos(id),
                 dataService.getComments(id),
-            ]) : [[], [], [], []];
+                dataService.getNotes(id).catch((error: unknown) => {
+                    if (error instanceof Error) {
+                        const msg = error.message || '';
+                        if (/404/.test(msg) || msg.toLowerCase().includes('not found')) {
+                            console.warn('Notes endpoint unavailable, continuing without notes');
+                            return [];
+                        }
+                    }
+                    throw error;
+                }),
+            ]) : [[], [], [], [], []];
 
             set((state) => ({
                 selection: {
@@ -564,6 +584,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
                 sizingCaseList,
                 todoList,
                 commentList,
+                noteList,
                 activeTab: 0, // Reset to overview tab
                 isLoading: false
             }));
@@ -912,6 +933,84 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         }
     },
 
+    // Notes Actions
+    addNote: async (note) => {
+        const fallbackNote: ProjectNote = {
+            ...note,
+            id: note.id || `note-${Date.now()}`,
+            createdAt: note.createdAt || new Date().toISOString(),
+        };
+        try {
+            const created = await dataService.createNote(note);
+            set((state) => ({
+                noteList: [...state.noteList, created]
+            }));
+            toast.success('Note added');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to add note';
+            if (message && /404|not\s+found/i.test(message)) {
+                console.warn('Note endpoint unavailable, storing locally');
+                set((state) => ({
+                    noteList: [...state.noteList, fallbackNote],
+                }));
+                toast.success('Note added (local only)');
+                return;
+            }
+            toast.error('Failed to add note', { description: message });
+            throw error;
+        }
+    },
+
+    updateNote: async (id, updates) => {
+        const payload: Partial<ProjectNote> = {
+            ...updates,
+            updatedAt: updates.updatedAt || new Date().toISOString(),
+        };
+        try {
+            const updated = await dataService.updateNote(id, payload);
+            set((state) => ({
+                noteList: state.noteList.map((n) => n.id === id ? updated : n)
+            }));
+            toast.success('Note updated');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to update note';
+            if (message && /404|not\s+found/i.test(message)) {
+                console.warn('Note update endpoint unavailable, updating locally');
+                set((state) => ({
+                    noteList: state.noteList.map((n) =>
+                        n.id === id ? { ...n, ...payload } as ProjectNote : n
+                    )
+                }));
+                toast.success('Note updated (local only)');
+                return;
+            }
+            toast.error('Failed to update note', { description: message });
+            throw error;
+        }
+    },
+
+    deleteNote: async (id) => {
+        try {
+            await dataService.deleteNote(id);
+            set((state) => ({
+                noteList: state.noteList.filter((n) => n.id !== id)
+            }));
+            toast.success('Note deleted');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to delete note';
+            if (message && /404|not\s+found/i.test(message)) {
+                console.warn('Note endpoint unavailable, removing locally');
+                set((state) => ({
+                    noteList: state.noteList.filter((n) => n.id !== id)
+                }));
+                toast.success('Note deleted (local only)');
+                return;
+            }
+            toast.error('Failed to delete note', { description: message });
+            throw error;
+        }
+    },
+
     // Comment Actions
     addComment: async (comment) => {
         try {
@@ -923,6 +1022,34 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to add comment';
             toast.error('Failed to add comment', { description: message });
+            throw error;
+        }
+    },
+
+    updateComment: async (id, updates) => {
+        const payload: Partial<Comment> = {
+            ...updates,
+            updatedAt: updates.updatedAt || new Date().toISOString(),
+        };
+        try {
+            const updated = await dataService.updateComment(id, payload);
+            set((state) => ({
+                commentList: state.commentList.map((c) => c.id === id ? updated : c)
+            }));
+            toast.success('Comment updated');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to update comment';
+            if (message && /404|not\s+found/i.test(message)) {
+                console.warn('Comment update endpoint unavailable, updating locally');
+                set((state) => ({
+                    commentList: state.commentList.map((c) =>
+                        c.id === id ? { ...c, ...payload } as Comment : c
+                    )
+                }));
+                toast.success('Comment updated (local only)');
+                return;
+            }
+            toast.error('Failed to update comment', { description: message });
             throw error;
         }
     },

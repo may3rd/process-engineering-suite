@@ -17,7 +17,8 @@ import {
     Attachment,
     Comment,
     TodoItem,
-    User
+    User,
+    ProjectNote,
 } from '@/data/types';
 
 export interface LoginResponse {
@@ -312,6 +313,30 @@ class ApiClient {
         await this.request(`/equipment/${id}`, { method: 'DELETE' });
     }
 
+    // --- Notes ---
+
+    async getNotes(psvId: string): Promise<ProjectNote[]> {
+        return this.request<ProjectNote[]>(`/psv/${psvId}/notes`);
+    }
+
+    async createNote(data: Partial<ProjectNote>): Promise<ProjectNote> {
+        return this.request<ProjectNote>('/notes', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async updateNote(id: string, data: Partial<ProjectNote>): Promise<ProjectNote> {
+        return this.request<ProjectNote>(`/notes/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async deleteNote(id: string): Promise<void> {
+        await this.request(`/notes/${id}`, { method: 'DELETE' });
+    }
+
     // --- Comments ---
 
     async getComments(psvId: string): Promise<Comment[]> {
@@ -321,6 +346,13 @@ class ApiClient {
     async createComment(data: Partial<Comment>): Promise<Comment> {
         return this.request<Comment>('/comments', {
             method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async updateComment(id: string, data: Partial<Comment>): Promise<Comment> {
+        return this.request<Comment>(`/comments/${id}`, {
+            method: 'PUT',
             body: JSON.stringify(data),
         });
     }

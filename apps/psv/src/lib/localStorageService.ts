@@ -16,7 +16,8 @@ import {
     Attachment,
     Comment,
     TodoItem,
-    User
+    User,
+    ProjectNote,
 } from '@/data/types';
 import {
     users as mockUsers,
@@ -33,6 +34,7 @@ import {
     comments as mockComments,
     todos as mockTodos,
     credentials as mockCredentials,
+    notes as mockNotes,
 } from '@/data/mockData';
 
 // localStorage keys
@@ -47,6 +49,7 @@ const STORAGE_KEYS = {
     SIZING_CASES: 'psv_demo_sizing_cases',
     EQUIPMENT: 'psv_demo_equipment',
     ATTACHMENTS: 'psv_demo_attachments',
+    NOTES: 'psv_demo_notes',
     COMMENTS: 'psv_demo_comments',
     TODOS: 'psv_demo_todos',
     USERS: 'psv_demo_users',
@@ -95,6 +98,7 @@ function initializeIfNeeded(): void {
         localStorage.setItem(STORAGE_KEYS.SIZING_CASES, JSON.stringify(mockSizingCases));
         localStorage.setItem(STORAGE_KEYS.EQUIPMENT, JSON.stringify(mockEquipment));
         localStorage.setItem(STORAGE_KEYS.ATTACHMENTS, JSON.stringify(mockAttachments));
+        localStorage.setItem(STORAGE_KEYS.NOTES, JSON.stringify(mockNotes));
         localStorage.setItem(STORAGE_KEYS.COMMENTS, JSON.stringify(mockComments));
         localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify(mockTodos));
         localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(mockUsers));
@@ -557,6 +561,49 @@ class LocalStorageService {
         setItem(STORAGE_KEYS.EQUIPMENT, equipment.filter(e => e.id !== id));
     }
 
+    // --- Notes ---
+
+    async getNotes(psvId: string): Promise<ProjectNote[]> {
+        const notes = getItem<ProjectNote>(STORAGE_KEYS.NOTES, mockNotes);
+        return notes.filter(n => n.protectiveSystemId === psvId);
+    }
+
+    async createNote(data: Partial<ProjectNote>): Promise<ProjectNote> {
+        const notes = getItem<ProjectNote>(STORAGE_KEYS.NOTES, mockNotes);
+        const newNote: ProjectNote = {
+            id: uuidv4(),
+            protectiveSystemId: data.protectiveSystemId || '',
+            body: data.body || '',
+            createdBy: data.createdBy || '',
+            createdAt: now(),
+            updatedAt: data.updatedAt,
+            updatedBy: data.updatedBy,
+        };
+        notes.push(newNote);
+        setItem(STORAGE_KEYS.NOTES, notes);
+        return newNote;
+    }
+
+    async updateNote(id: string, data: Partial<ProjectNote>): Promise<ProjectNote> {
+        const notes = getItem<ProjectNote>(STORAGE_KEYS.NOTES, mockNotes);
+        const index = notes.findIndex(n => n.id === id);
+        if (index === -1) throw new Error('Note not found');
+        const updated: ProjectNote = {
+            ...notes[index],
+            ...data,
+            updatedAt: data.updatedAt || now(),
+            updatedBy: data.updatedBy ?? notes[index].updatedBy,
+        };
+        notes[index] = updated;
+        setItem(STORAGE_KEYS.NOTES, notes);
+        return updated;
+    }
+
+    async deleteNote(id: string): Promise<void> {
+        const notes = getItem<ProjectNote>(STORAGE_KEYS.NOTES, mockNotes);
+        setItem(STORAGE_KEYS.NOTES, notes.filter(n => n.id !== id));
+    }
+
     // --- Comments ---
 
     async getComments(psvId: string): Promise<Comment[]> {
@@ -572,11 +619,27 @@ class LocalStorageService {
             body: data.body || '',
             createdBy: data.createdBy || '',
             createdAt: now(),
-            updatedAt: now(),
+            updatedAt: data.updatedAt,
+            updatedBy: data.updatedBy,
         };
         comments.push(newComment);
         setItem(STORAGE_KEYS.COMMENTS, comments);
         return newComment;
+    }
+
+    async updateComment(id: string, data: Partial<Comment>): Promise<Comment> {
+        const comments = getItem<Comment>(STORAGE_KEYS.COMMENTS, mockComments);
+        const index = comments.findIndex(c => c.id === id);
+        if (index === -1) throw new Error('Comment not found');
+        const updated: Comment = {
+            ...comments[index],
+            ...data,
+            updatedAt: data.updatedAt || now(),
+            updatedBy: data.updatedBy ?? comments[index].updatedBy,
+        };
+        comments[index] = updated;
+        setItem(STORAGE_KEYS.COMMENTS, comments);
+        return updated;
     }
 
     async deleteComment(id: string): Promise<void> {

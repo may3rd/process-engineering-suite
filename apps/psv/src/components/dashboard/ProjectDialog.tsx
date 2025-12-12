@@ -353,7 +353,8 @@ export function ProjectDialog({
                         InputLabelProps={{ shrink: true }}
                         sx={{
                             '& input::-webkit-calendar-picker-indicator': {
-                                filter: isDark ? 'invert(1)' : 'none',
+                                filter: isDark ? 'invert(0.85)' : 'invert(0.15)',
+                                opacity: 0.9,
                             },
                         }}
                     />
@@ -368,7 +369,8 @@ export function ProjectDialog({
                         helperText="Optional"
                         sx={{
                             '& input::-webkit-calendar-picker-indicator': {
-                                filter: isDark ? 'invert(1)' : 'none',
+                                filter: isDark ? 'invert(0.85)' : 'invert(0.15)',
+                                opacity: 0.9,
                             },
                         }}
                     />
