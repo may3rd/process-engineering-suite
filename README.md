@@ -92,17 +92,28 @@ Build a single image containing all services (managed by supervisord). Suitable 
 docker build -t process-engineering-suite .
 
 # Run
-docker run -p 3000:3000 -p 3002:3002 -p 3003:3003 -p 8000:8000 process-engineering-suite
+# Run (Requires external PostgreSQL database)
+docker run \
+  -p 3000:3000 \
+  -p 3002:3002 \
+  -p 3003:3003 \
+  -p 8000:8000 \
+  -e DATABASE_URL="postgresql+asyncpg://user:password@host:5432/dbname" \
+  process-engineering-suite
 ```
 
 #### Hybrid Development (Recommended)
 Run the Python API in Docker (to avoid environment setup) while running the Frontend locally (for maximum performance).
 
-1. Start only the API:
+1. Start the Backend Services (API & Database):
 
+   To run both the Python API and PostgreSQL database (recommended):
+   
    ```bash
-   docker-compose -f infra/docker-compose.yml up --build api
+   docker-compose -f infra/docker-compose.yml --env-file .env up api postgres
    ```
+
+   *Note: If you only need the API without the database, you can run `docker-compose -f infra/docker-compose.yml up api`.*
 
 2. In a new terminal, start the frontend:
 

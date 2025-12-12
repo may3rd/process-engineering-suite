@@ -20,7 +20,8 @@ services:
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:
-      - [api, postgres]
+      - api
+      - postgres
 
   # Python API (Port 8000)
   api:
@@ -41,18 +42,18 @@ services:
     # Run with reload for dev
     command: uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload
 
-    postgres:
-      image: postgres:17-alpine  # Latest stable version as of 2025-12-12
-      restart: unless-stopped
-      ports:
-        - "5432:5432"
-      environment:
-        - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
-        - POSTGRES_USER=postgres
-        - POSTGRES_DB=engsuite
-      volumes:
-        - postgres_data:/var/lib/postgresql/data
-        - ./backup:/backup # For backup
+  postgres:
+    image: postgres:17-alpine # Latest stable version as of 2025-12-12
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=engsuite
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./backup:/backup # For backup
 
 volumes:
   postgres_data:
