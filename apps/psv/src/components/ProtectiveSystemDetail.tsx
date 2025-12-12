@@ -75,6 +75,7 @@ import { TagsCard } from "./TagsCard";
 import { SummaryTab } from "./SummaryTab";
 import { glassCardStyles } from "./styles";
 import { useAuthStore } from "@/store/useAuthStore";
+import { PipelineHydraulicsCard } from "./PipelineHydraulicsCard";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -100,19 +101,9 @@ function TabPanel(props: TabPanelProps) {
 
 // Overview Tab Content
 function OverviewTab() {
-    const theme = useTheme();
-    const isDark = theme.palette.mode === 'dark';
     const { selectedPsv } = usePsvStore();
 
     if (!selectedPsv) return null;
-
-    const equipmentLinks = getEquipmentLinksByPsv(selectedPsv.id);
-    const linkedEquipment = equipmentLinks.map(link => {
-        const equip = equipment.find(e => e.id === link.equipmentId);
-        return { ...link, equipment: equip };
-    });
-
-    const owner = getUserById(selectedPsv.ownerId);
 
     return (
         <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: 3 }}>

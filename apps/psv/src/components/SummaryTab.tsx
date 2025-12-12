@@ -27,6 +27,50 @@ import {
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
 import { getEquipmentLinksByPsv, equipment, getUserById } from "@/data/mockData";
+import { PipelineNetwork, OverpressureScenario } from "@/data/types";
+
+// Helper functions for hydraulic calculations
+function calculateTotalLength(network: PipelineNetwork): number {
+    return network.pipes.reduce((sum, pipe) => {
+        const pipeLength = pipe.length ?? 0;
+        const length = pipe.lengthUnit === 'ft' ? pipeLength * 0.3048 : pipeLength;
+        return sum + length;
+    }, 0);
+}
+
+function calculateAvgDiameter(network: PipelineNetwork): number {
+    if (network.pipes.length === 0) return 0;
+    return network.pipes.reduce((sum, pipe) => {
+        const pipeDiameter = pipe.diameter ?? 0;
+        const diameter = pipe.diameterUnit === 'in' ? pipeDiameter * 25.4 : pipeDiameter;
+        return sum + diameter;
+    }, 0) / network.pipes.length;
+}
+
+function calculateVelocity(network: PipelineNetwork, scenario: OverpressureScenario): number {
+    const avgDiameter = calculateAvgDiameter(network);
+    if (avgDiameter === 0) return 0;
+    const massFlowRate = scenario.relievingRate; // kg/h
+    const density = scenario.phase === 'gas' || scenario.phase === 'steam' ? 10 : 800;
+    const volumetricFlow = (massFlowRate / density) / 3600; // m³/s
+    const area = Math.PI * Math.pow(avgDiameter / 1000, 2) / 4; // m²
+    return volumetricFlow / area;
+}
+
+function calculatePressureDrop(network: PipelineNetwork, scenario: OverpressureScenario): number {
+    const totalLength = calculateTotalLength(network);
+    const avgDiameter = calculateAvgDiameter(network);
+    if (avgDiameter === 0) return 0;
+    const velocity = calculateVelocity(network, scenario);
+    const density = scenario.phase === 'gas' || scenario.phase === 'steam' ? 10 : 800;
+    const frictionFactor = 0.02; // Simplified
+    return frictionFactor * (totalLength / (avgDiameter / 1000)) * (density * Math.pow(velocity, 2) / 2) / 1000;
+}
+
+function calculatePressureDropPercent(network: PipelineNetwork, scenario: OverpressureScenario, setPressure: number): number {
+    const pressureDrop = calculatePressureDrop(network, scenario);
+    return (pressureDrop / (setPressure * 100)) * 100;
+}
 
 export function SummaryTab() {
     const theme = useTheme();
@@ -47,6 +91,9 @@ export function SummaryTab() {
     const psvSizingCases = sizingCaseList.filter(c => c.protectiveSystemId === selectedPsv.id);
     const psvAttachments = attachmentList.filter(a => a.protectiveSystemId === selectedPsv.id);
     const psvComments = commentList.filter(c => c.protectiveSystemId === selectedPsv.id);
+
+    // Find the governing scenario for this PSV
+    const governingScenario = psvScenarios.find(s => s.isGoverning) || null;
 
     const handlePrint = () => {
         window.print();
@@ -356,6 +403,108 @@ export function SummaryTab() {
                     </TableContainer>
                 ) : (
                     <Typography variant="body2" color="text.secondary">No sizing cases calculated.</Typography>
+                )}
+            </Paper>
+
+            {/* Pipeline Hydraulics - Inlet & Outlet */}
+            <Paper sx={sectionStyles}>
+                <Typography variant="h6" sx={headerStyles}>
+                    Pipeline Hydraulics (Governing Scenario)
+                </Typography>
+                {governingScenario ? (
+                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                        {/* Inlet Pipeline */}
+                        <Box>
+                            <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
+                                Inlet Pipeline
+                            </Typography>
+                            {selectedPsv.inletNetwork && selectedPsv.inletNetwork.pipes.length > 0 ? (
+                                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.5 }}>
+                                    <Typography variant="caption" color="text.secondary">Total Length</Typography>
+                                    <Typography variant="body2" fontWeight={500}>
+                                        {calculateTotalLength(selectedPsv.inletNetwork).toFixed(1)} m
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">Nominal Diameter</Typography>
+                                    <Typography variant="body2" fontWeight={500}>
+                                        {calculateAvgDiameter(selectedPsv.inletNetwork).toFixed(0)} mm
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">Velocity</Typography>
+                                    <Typography variant="body2" fontWeight={500}>
+                                        {calculateVelocity(selectedPsv.inletNetwork, governingScenario).toFixed(1)} m/s
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">Pressure Drop</Typography>
+                                    <Typography variant="body2" fontWeight={500}>
+                                        {calculatePressureDrop(selectedPsv.inletNetwork, governingScenario).toFixed(1)} kPa
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">ΔP / Set Pressure</Typography>
+                                    <Typography
+                                        variant="body2"
+                                        fontWeight={600}
+                                        color={calculatePressureDropPercent(selectedPsv.inletNetwork, governingScenario, selectedPsv.setPressure) <= 3 ? 'success.main' : 'warning.main'}
+                                    >
+                                        {calculatePressureDropPercent(selectedPsv.inletNetwork, governingScenario, selectedPsv.setPressure).toFixed(1)}%
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">Status</Typography>
+                                    <Chip
+                                        label={calculatePressureDropPercent(selectedPsv.inletNetwork, governingScenario, selectedPsv.setPressure) <= 3 ? 'PASS' : 'WARNING'}
+                                        size="small"
+                                        color={calculatePressureDropPercent(selectedPsv.inletNetwork, governingScenario, selectedPsv.setPressure) <= 3 ? 'success' : 'warning'}
+                                        sx={{ height: 20, fontSize: '0.7rem' }}
+                                    />
+                                </Box>
+                            ) : (
+                                <Typography variant="body2" color="text.secondary">No inlet piping defined</Typography>
+                            )}
+                        </Box>
+
+                        {/* Outlet Pipeline */}
+                        <Box>
+                            <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
+                                Outlet Pipeline
+                            </Typography>
+                            {selectedPsv.outletNetwork && selectedPsv.outletNetwork.pipes.length > 0 ? (
+                                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.5 }}>
+                                    <Typography variant="caption" color="text.secondary">Total Length</Typography>
+                                    <Typography variant="body2" fontWeight={500}>
+                                        {calculateTotalLength(selectedPsv.outletNetwork).toFixed(1)} m
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">Nominal Diameter</Typography>
+                                    <Typography variant="body2" fontWeight={500}>
+                                        {calculateAvgDiameter(selectedPsv.outletNetwork).toFixed(0)} mm
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">Velocity</Typography>
+                                    <Typography variant="body2" fontWeight={500}>
+                                        {calculateVelocity(selectedPsv.outletNetwork, governingScenario).toFixed(1)} m/s
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">Pressure Drop</Typography>
+                                    <Typography variant="body2" fontWeight={500}>
+                                        {calculatePressureDrop(selectedPsv.outletNetwork, governingScenario).toFixed(1)} kPa
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">ΔP / Set Pressure</Typography>
+                                    <Typography
+                                        variant="body2"
+                                        fontWeight={600}
+                                        color={calculatePressureDropPercent(selectedPsv.outletNetwork, governingScenario, selectedPsv.setPressure) <= 10 ? 'success.main' : 'warning.main'}
+                                    >
+                                        {calculatePressureDropPercent(selectedPsv.outletNetwork, governingScenario, selectedPsv.setPressure).toFixed(1)}%
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">Status</Typography>
+                                    <Chip
+                                        label={calculatePressureDropPercent(selectedPsv.outletNetwork, governingScenario, selectedPsv.setPressure) <= 10 ? 'PASS' : 'WARNING'}
+                                        size="small"
+                                        color={calculatePressureDropPercent(selectedPsv.outletNetwork, governingScenario, selectedPsv.setPressure) <= 10 ? 'success' : 'warning'}
+                                        sx={{ height: 20, fontSize: '0.7rem' }}
+                                    />
+                                </Box>
+                            ) : (
+                                <Typography variant="body2" color="text.secondary">No outlet piping defined</Typography>
+                            )}
+                        </Box>
+                    </Box>
+                ) : (
+                    <Typography variant="body2" color="text.secondary">
+                        No governing scenario selected. Define a governing scenario to calculate hydraulics.
+                    </Typography>
                 )}
             </Paper>
 

@@ -60,6 +60,7 @@ export type { PipeProps, NodeProps };
 export type ProtectiveSystemType = 'psv' | 'rupture_disc' | 'breather_valve' | 'flame_arrestor' | 'tank_vent' | 'control_valve' | 'vent_system' | 'prv';
 export type DesignCode = 'API-520' | 'API-521' | 'API-2000' | 'ASME-VIII';
 export type FluidPhase = 'gas' | 'liquid' | 'steam' | 'two_phase';
+export type ValveOperatingType = 'conventional' | 'balanced_bellows' | 'pilot_operated';
 
 export interface ProtectiveSystem {
     id: string;
@@ -75,6 +76,7 @@ export interface ProtectiveSystem {
     mawp: number; // barg
     ownerId: string;
     status: 'draft' | 'in_review' | 'checked' | 'approved' | 'issued';
+    valveType?: ValveOperatingType; // Conventional, Balanced Bellows, or Pilot Operated
     tags: string[];
     // Shared piping networks (one physical install per device)
     inletNetwork?: PipelineNetwork;
@@ -192,6 +194,19 @@ export interface UnitPreferences {
 export interface PipelineNetwork {
     nodes: NodeProps[];
     pipes: PipeProps[];
+}
+
+// Calculated hydraulic summary for inlet/outlet pipelines
+export interface PipelineHydraulicSummary {
+    totalLength: number;        // m
+    nominalDiameter: number;    // mm
+    velocity: number;           // m/s
+    pressureDrop: number;       // kPa
+    pressureDropPercent: number; // % of set pressure
+    reynoldsNumber: number;
+    frictionFactor: number;
+    validationStatus: 'pass' | 'warning' | 'fail';
+    validationMessage: string;
 }
 
 export interface SizingCase {

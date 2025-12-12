@@ -17,9 +17,11 @@ import {
     MenuItem,
     InputAdornment,
     LinearProgress,
+    ToggleButtonGroup,
+    ToggleButton,
 } from "@mui/material";
-import { Edit } from "@mui/icons-material";
-import { ProtectiveSystem, FluidPhase } from "@/data/types";
+import { Edit, Settings as SettingsIcon } from "@mui/icons-material";
+import { ProtectiveSystem, FluidPhase, ValveOperatingType } from "@/data/types";
 import { usePsvStore } from "../store/usePsvStore";
 import { glassCardStyles } from "./styles";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -35,6 +37,12 @@ const PHASE_OPTIONS: { value: FluidPhase; label: string }[] = [
     { value: 'two_phase', label: 'Two-Phase' },
 ];
 
+const VALVE_TYPE_OPTIONS: { value: ValveOperatingType; label: string; short: string }[] = [
+    { value: 'conventional', label: 'Conventional', short: 'Conv.' },
+    { value: 'balanced_bellows', label: 'Balanced Bellows', short: 'Bal. Bellows' },
+    { value: 'pilot_operated', label: 'Pilot Operated', short: 'Pilot' },
+];
+
 export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
     const { updatePsv } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
@@ -44,6 +52,7 @@ export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
         fluidPhase: psv.fluidPhase || 'gas',
         setPressure: psv.setPressure || 0,
         mawp: psv.mawp || 0,
+        valveType: psv.valveType || 'conventional',
     });
 
     const handleEdit = () => {
@@ -52,6 +61,7 @@ export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
             fluidPhase: psv.fluidPhase || 'gas',
             setPressure: psv.setPressure || 0,
             mawp: psv.mawp || 0,
+            valveType: psv.valveType || 'conventional',
         });
         setOpen(true);
     };
@@ -63,6 +73,7 @@ export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
             fluidPhase: formData.fluidPhase,
             setPressure: formData.setPressure,
             mawp: formData.mawp,
+            valveType: formData.valveType as ValveOperatingType,
         });
         setOpen(false);
     };
@@ -70,6 +81,20 @@ export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
     // Calculate ratio for visual
     const ratio = psv.mawp && psv.setPressure ? (psv.setPressure / psv.mawp) * 100 : 0;
     const ratioColor = ratio > 95 ? 'error' : ratio > 85 ? 'warning' : 'success';
+
+    const getValveTypeLabel = (type?: ValveOperatingType) => {
+        const option = VALVE_TYPE_OPTIONS.find(o => o.value === type);
+        return option?.label || 'Not Set';
+    };
+
+    const getValveTypeColor = (type?: ValveOperatingType): 'primary' | 'secondary' | 'warning' | 'default' => {
+        switch (type) {
+            case 'conventional': return 'default';
+            case 'balanced_bellows': return 'primary';
+            case 'pilot_operated': return 'secondary';
+            default: return 'default';
+        }
+    };
 
     return (
         <Paper
@@ -102,6 +127,27 @@ export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
             </Box>
 
             <Stack spacing={2}>
+                {/* Valve Type - Prominent Display */}
+                <Box sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    borderBottom: '1px solid',
+                    borderColor: 'divider',
+                    pb: 1.5
+                }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <SettingsIcon sx={{ fontSize: 16, color: 'text.secondary' }} />
+                        <Typography variant="body2" color="text.secondary">Valve Type</Typography>
+                    </Box>
+                    <Chip
+                        size="small"
+                        label={getValveTypeLabel(psv.valveType)}
+                        color={getValveTypeColor(psv.valveType)}
+                        variant="filled"
+                    />
+                </Box>
+
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid', borderColor: 'divider', pb: 1 }}>
                     <Typography variant="body2" color="text.secondary">Service Fluid</Typography>
                     <Typography variant="body2" fontWeight={500}>{psv.serviceFluid || '-'}</Typography>
@@ -137,6 +183,23 @@ export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
                 <DialogTitle>Edit Operating Conditions</DialogTitle>
                 <DialogContent dividers>
                     <Stack spacing={3} sx={{ mt: 1 }}>
+                        {/* Valve Type Selector - Toggle Buttons */}
+                        <Box>
+                            <Typography variant="subtitle2" sx={{ mb: 1 }}>Valve Operating Type</Typography>
+                            <ToggleButtonGroup
+                                value={formData.valveType}
+                                exclusive
+                                onChange={(_e, value) => value && setFormData({ ...formData, valveType: value })}
+                                fullWidth
+                                size="small"
+                            >
+                                {VALVE_TYPE_OPTIONS.map(opt => (
+                                    <ToggleButton key={opt.value} value={opt.value}>
+                                        {opt.label}
+                                    </ToggleButton>
+                                ))}
+                            </ToggleButtonGroup>
+                        </Box>
                         <TextField
                             label="Service Fluid"
                             value={formData.serviceFluid}
@@ -180,3 +243,4 @@ export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
         </Paper>
     );
 }
+
