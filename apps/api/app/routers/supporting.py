@@ -124,6 +124,57 @@ async def get_equipment(dal: DAL, area_id: Optional[str] = None):
     return await dal.get_equipment(area_id)
 
 
+class EquipmentCreate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    areaId: str
+    type: str
+    tag: str
+    name: str
+    description: Optional[str] = None
+    designPressure: Optional[float] = None
+    mawp: Optional[float] = None
+    designTemperature: Optional[float] = None
+    ownerId: str
+    status: str = "active"
+
+
+class EquipmentUpdate(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    type: Optional[str] = None
+    tag: Optional[str] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    designPressure: Optional[float] = None
+    mawp: Optional[float] = None
+    designTemperature: Optional[float] = None
+    status: Optional[str] = None
+
+
+@router.post("/equipment", response_model=EquipmentResponse)
+async def create_equipment(data: EquipmentCreate, dal: DAL):
+    """Create a new equipment."""
+    return await dal.create_equipment(data.model_dump())
+
+
+@router.put("/equipment/{equipment_id}", response_model=EquipmentResponse)
+async def update_equipment(equipment_id: str, data: EquipmentUpdate, dal: DAL):
+    """Update an equipment."""
+    try:
+        update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+        return await dal.update_equipment(equipment_id, update_data)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.delete("/equipment/{equipment_id}")
+async def delete_equipment(equipment_id: str, dal: DAL):
+    """Delete an equipment."""
+    success = await dal.delete_equipment(equipment_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Equipment not found")
+    return {"success": True}
+
+
 @router.get("/psv/{psv_id}/equipment-links", response_model=List[EquipmentLinkResponse])
 async def get_equipment_links(psv_id: str, dal: DAL):
     """Get equipment links for a protective system."""

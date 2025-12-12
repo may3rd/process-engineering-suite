@@ -1207,7 +1207,43 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         }
     },
 
-    addEquipment: () => { toast.error('Not implemented yet'); },
-    updateEquipment: () => { toast.error('Not implemented yet'); },
-    deleteEquipment: () => { toast.error('Not implemented yet'); },
+    addEquipment: async (data) => {
+        try {
+            const created = await api.createEquipment(data);
+            set((state) => ({
+                equipment: [...state.equipment, created],
+            }));
+            toast.success('Equipment created');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to create equipment';
+            toast.error('Failed to create equipment', { description: message });
+            throw error;
+        }
+    },
+    updateEquipment: async (id, updates) => {
+        try {
+            const updated = await api.updateEquipment(id, updates);
+            set((state) => ({
+                equipment: state.equipment.map(e => e.id === id ? updated : e),
+            }));
+            toast.success('Equipment updated');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to update equipment';
+            toast.error('Failed to update equipment', { description: message });
+            throw error;
+        }
+    },
+    deleteEquipment: async (id) => {
+        try {
+            await api.deleteEquipment(id);
+            set((state) => ({
+                equipment: state.equipment.filter(e => e.id !== id),
+            }));
+            toast.success('Equipment deleted');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to delete equipment';
+            toast.error('Failed to delete equipment', { description: message });
+            throw error;
+        }
+    },
 }));

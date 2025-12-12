@@ -38,7 +38,7 @@ interface EquipmentCardProps {
 }
 
 export function EquipmentCard({ psv }: EquipmentCardProps) {
-    const { equipmentLinkList, linkEquipment, unlinkEquipment, equipment: allEquipment } = usePsvStore();
+    const { equipmentLinkList, linkEquipment, unlinkEquipment, equipment: allEquipment, areas } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
     const [open, setOpen] = useState(false);
     const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]);
@@ -46,8 +46,18 @@ export function EquipmentCard({ psv }: EquipmentCardProps) {
     // Determine currently linked equipment IDs to exclude/disable them in list
     const linkedEquipmentIds = equipmentLinkList.map(l => l.equipmentId);
 
-    // Filter available equipment (simple mock filtering)
-    const availableEquipment = allEquipment.filter(eq => !linkedEquipmentIds.includes(eq.id));
+    // Get PSV's unit through its area
+    const psvArea = areas.find(a => a.id === psv.areaId);
+    const psvUnitId = psvArea?.unitId;
+
+    // Get all areas in the same unit
+    const areasInSameUnit = psvUnitId
+        ? areas.filter(a => a.unitId === psvUnitId).map(a => a.id)
+        : [];
+
+    // Filter equipment to only show items from areas in the same unit
+    const equipmentInSameUnit = allEquipment.filter(eq => areasInSameUnit.includes(eq.areaId));
+    const availableEquipment = equipmentInSameUnit.filter(eq => !linkedEquipmentIds.includes(eq.id));
 
     const handleLink = () => {
         selectedEquipmentIds.forEach(eqId => {

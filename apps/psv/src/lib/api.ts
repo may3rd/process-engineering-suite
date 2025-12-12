@@ -294,6 +294,24 @@ class ApiClient {
         return this.request<Equipment[]>(`/equipment${query}`);
     }
 
+    async createEquipment(data: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Equipment> {
+        return this.request<Equipment>('/equipment', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async updateEquipment(id: string, data: Partial<Equipment>): Promise<Equipment> {
+        return this.request<Equipment>(`/equipment/${id}`, {
+            method: 'PUT',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async deleteEquipment(id: string): Promise<void> {
+        await this.request(`/equipment/${id}`, { method: 'DELETE' });
+    }
+
     // --- Comments ---
 
     async getComments(psvId: string): Promise<Comment[]> {

@@ -22,6 +22,7 @@ import { ProtectiveSystem, ProtectiveSystemType, DesignCode } from "@/data/types
 import { usePsvStore } from "../store/usePsvStore";
 import { glassCardStyles } from "./styles";
 import { useAuthStore } from "@/store/useAuthStore";
+import { getUserById } from "@/data/mockData";
 
 interface BasicInfoCardProps {
     psv: ProtectiveSystem;
@@ -47,12 +48,15 @@ export function BasicInfoCard({ psv }: BasicInfoCardProps) {
     const { updatePsv } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
     const [open, setOpen] = useState(false);
+
+    // Get actual owner from ownerId
+    const owner = getUserById(psv.ownerId);
+
     const [formData, setFormData] = useState({
         tag: psv.tag,
         name: psv.name,
         type: psv.type,
         designCode: psv.designCode || 'API-520',
-        owner: 'John Smith', // Mock fields not yet in type
     });
 
     const handleEdit = () => {
@@ -61,7 +65,6 @@ export function BasicInfoCard({ psv }: BasicInfoCardProps) {
             name: psv.name,
             type: psv.type,
             designCode: psv.designCode || 'API-520',
-            owner: 'John Smith',
         });
         setOpen(true);
     };
@@ -126,7 +129,7 @@ export function BasicInfoCard({ psv }: BasicInfoCardProps) {
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1 }}>
                     <Typography variant="body2" color="text.secondary">Owner</Typography>
-                    <Typography variant="body2" fontWeight={500}>John Smith</Typography>
+                    <Typography variant="body2" fontWeight={500}>{owner?.name || 'Unknown'}</Typography>
                 </Box>
             </Stack>
 

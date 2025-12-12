@@ -148,6 +148,21 @@ class DataAccessLayer(ABC):
         """Get equipment links for a protective system."""
         pass
     
+    @abstractmethod
+    async def create_equipment(self, data: dict) -> dict:
+        """Create a new equipment."""
+        pass
+    
+    @abstractmethod
+    async def update_equipment(self, equipment_id: str, data: dict) -> dict:
+        """Update an equipment."""
+        pass
+    
+    @abstractmethod
+    async def delete_equipment(self, equipment_id: str) -> bool:
+        """Delete an equipment."""
+        pass
+    
     # --- Attachments ---
     
     @abstractmethod
