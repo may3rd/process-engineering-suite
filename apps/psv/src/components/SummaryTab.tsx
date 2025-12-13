@@ -28,7 +28,7 @@ import {
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
 import { getUserById } from "@/data/mockData";
-import { PipelineNetwork, OverpressureScenario } from "@/data/types";
+import { PipelineNetwork, OverpressureScenario, PipeProps } from "@/data/types";
 import { getWorkflowStatusLabel } from "@/lib/statusColors";
 
 // Helper functions for hydraulic calculations
@@ -113,12 +113,30 @@ function formatNumberValue(value: number | null | undefined, unit?: string, digi
     return `${value.toFixed(digits)}${unit ? ` ${unit}` : ''}`;
 }
 
-function getNodeLabels(network?: PipelineNetwork) {
-    if (!network) return {} as Record<string, string>;
+function getNodeLabels(network?: PipelineNetwork): Record<string, string> {
+    if (!network?.nodes?.length) return {};
     return network.nodes.reduce<Record<string, string>>((acc, node) => {
         acc[node.id] = node.label || node.id;
         return acc;
     }, {});
+}
+
+function formatFluidLabel(pipe: PipeProps): string {
+    const candidate =
+        pipe.fluid?.name ||
+        (typeof pipe.fluid?.phase === 'string' ? pipe.fluid?.phase : undefined) ||
+        (pipe.resultSummary?.inletState?.phase as string | undefined) ||
+        (pipe.resultSummary?.outletState?.phase as string | undefined);
+
+    if (!candidate) return '—';
+
+    return candidate
+        .toString()
+        .replace(/_/g, ' ')
+        .split(' ')
+        .filter(Boolean)
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
 }
 
 type PipelineSegmentRow = {
@@ -134,10 +152,29 @@ type PipelineSegmentRow = {
     pressureDrop?: number;
 };
 
-function getPipelineSegments(network?: PipelineNetwork): PipelineSegmentRow[] {
+function getPipelineSegments(network: PipelineNetwork | undefined, kind: 'inlet' | 'outlet'): PipelineSegmentRow[] {
     if (!network) return [];
 
     const nodeLabels = getNodeLabels(network);
+    const totalSegments = network.pipes.length;
+
+    const getFallbackLabel = (index: number, position: 'start' | 'end'): string => {
+        const isFirst = index === 0;
+        const isLast = index === totalSegments - 1;
+
+        if (kind === 'inlet') {
+            if (position === 'start') {
+                return isFirst ? 'Protected Equipment' : `Inlet Node ${index + 1}`;
+            }
+            return isLast ? 'PSV Inlet' : `Inlet Node ${index + 2}`;
+        }
+
+        if (position === 'start') {
+            return isFirst ? 'PSV Outlet' : `Outlet Node ${index + 1}`;
+        }
+        return isLast ? 'Disposal/Header' : `Outlet Node ${index + 2}`;
+    };
+
     return network.pipes.map<PipelineSegmentRow>((pipe, index) => {
         const lengthMeters = toMeters(pipe.length, pipe.lengthUnit);
         const diameterMm = toMillimeters(
@@ -145,17 +182,25 @@ function getPipelineSegments(network?: PipelineNetwork): PipelineSegmentRow[] {
             pipe.inletDiameterUnit ?? pipe.diameterUnit ?? pipe.pipeDiameterUnit ?? pipe.outletDiameterUnit
         );
         const fittings = pipe.fittings?.map(f => `${f.count}x ${f.type}`).join(', ');
-        const pressureDrop = pipe.pressureDropCalculationResults?.totalSegmentPressureDrop;
+        const pressureDropPa = pipe.pressureDropCalculationResults?.totalSegmentPressureDrop;
+        const pressureDrop = typeof pressureDropPa === 'number' ? pressureDropPa / 1000 : undefined;
+
+        const startLabel = pipe.startNodeId && pipe.startNodeId.trim().length > 0
+            ? nodeLabels[pipe.startNodeId] || pipe.startNodeId
+            : getFallbackLabel(index, 'start');
+        const endLabel = pipe.endNodeId && pipe.endNodeId.trim().length > 0
+            ? nodeLabels[pipe.endNodeId] || pipe.endNodeId
+            : getFallbackLabel(index, 'end');
 
         return {
             id: pipe.id,
             label: pipe.name || `Segment ${index + 1}`,
-            start: nodeLabels[pipe.startNodeId] || pipe.startNodeId,
-            end: nodeLabels[pipe.endNodeId] || pipe.endNodeId,
+            start: startLabel,
+            end: endLabel,
             lengthMeters,
             diameterMm,
             sectionType: (pipe.pipeSectionType || 'pipeline').replace('_', ' '),
-            fluid: pipe.fluid?.name || pipe.fluid?.phase || '—',
+            fluid: formatFluidLabel(pipe),
             fittings,
             pressureDrop,
         };
@@ -201,6 +246,7 @@ function summarizePipeline(
     scenario: OverpressureScenario,
     setPressure: number,
     limit: number,
+    kind: 'inlet' | 'outlet',
 ) {
     if (!network || network.pipes.length === 0) return null;
 
@@ -209,7 +255,7 @@ function summarizePipeline(
     const velocity = calculateVelocity(network, scenario);
     const pressureDrop = calculatePressureDrop(network, scenario);
     const percent = calculatePressureDropPercent(network, scenario, setPressure);
-    const segments = getPipelineSegments(network);
+    const segments = getPipelineSegments(network, kind);
     const diameterValues = segments
         .map(segment => segment.diameterMm)
         .filter(value => Number.isFinite(value) && value > 0);
@@ -290,13 +336,13 @@ export function SummaryTab() {
         { label: 'Workflow Status', value: getWorkflowStatusLabel(selectedPsv.status) },
     ];
 
-    const inletSegments = getPipelineSegments(selectedPsv.inletNetwork);
-    const outletSegments = getPipelineSegments(selectedPsv.outletNetwork);
+    const inletSegments = getPipelineSegments(selectedPsv.inletNetwork, 'inlet');
+    const outletSegments = getPipelineSegments(selectedPsv.outletNetwork, 'outlet');
     const inletOverview = governingScenario && governingSizingCase && selectedPsv.inletNetwork
-        ? summarizePipeline(selectedPsv.inletNetwork, governingScenario, selectedPsv.setPressure, 3)
+        ? summarizePipeline(selectedPsv.inletNetwork, governingScenario, selectedPsv.setPressure, 3, 'inlet')
         : null;
     const outletOverview = governingScenario && governingSizingCase && selectedPsv.outletNetwork
-        ? summarizePipeline(selectedPsv.outletNetwork, governingScenario, selectedPsv.setPressure, 10)
+        ? summarizePipeline(selectedPsv.outletNetwork, governingScenario, selectedPsv.setPressure, 10, 'outlet')
         : null;
     const inletBaseLength = selectedPsv.inletNetwork ? calculateTotalLength(selectedPsv.inletNetwork) : 0;
     const inletAvgDiameter = selectedPsv.inletNetwork ? calculateAvgDiameter(selectedPsv.inletNetwork) : 0;
@@ -306,14 +352,6 @@ export function SummaryTab() {
     const formatScenarioCause = (cause?: string) => {
         if (!cause) return '—';
         return cause.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    };
-
-    const summaryCounts = {
-        equipment: linkedEquipment.length,
-        scenarios: psvScenarios.length,
-        sizingCases: psvSizingCases.length,
-        attachments: psvAttachments.length,
-        notes: psvNotes.length,
     };
 
     const generatedTimestamp = new Date().toLocaleString();
@@ -450,7 +488,7 @@ export function SummaryTab() {
             <Box
                 sx={{
                     display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(2, minmax(0, 1fr))' },
                     gap: 1.5,
                     mb: 2,
                 }}
@@ -508,7 +546,7 @@ export function SummaryTab() {
                         </Box>
                         <Box>
                             <Typography variant="caption" color="text.secondary">Relief Scenarios</Typography>
-                            <Typography variant="body2" fontWeight={500}>{summaryCounts.scenarios}</Typography>
+                            <Typography variant="body2" fontWeight={500}>{psvScenarios.length}</Typography>
                         </Box>
                         <Box>
                             <Typography variant="caption" color="text.secondary">Governing Scenario</Typography>
@@ -526,51 +564,6 @@ export function SummaryTab() {
                                 {governingScenario ? `${governingScenario.relievingPressure} barg` : '—'}
                             </Typography>
                         </Box>
-                    </Box>
-                </Paper>
-
-                <Paper sx={sectionStyles}>
-                    <Typography variant="h6" sx={headerStyles}>
-                        Ownership & Records
-                    </Typography>
-                    <Box sx={infoGridStyles}>
-                        <Box>
-                            <Typography variant="caption" color="text.secondary">Owner</Typography>
-                            <Typography variant="body2" fontWeight={500}>{owner?.name || 'N/A'}</Typography>
-                        </Box>
-                        <Box>
-                            <Typography variant="caption" color="text.secondary">Updated</Typography>
-                            <Typography variant="body2" fontWeight={500}>
-                                {new Date(selectedPsv.updatedAt).toLocaleDateString()}
-                            </Typography>
-                        </Box>
-                        <Box>
-                            <Typography variant="caption" color="text.secondary">Equipment Linked</Typography>
-                            <Typography variant="body2" fontWeight={500}>{summaryCounts.equipment}</Typography>
-                        </Box>
-                        <Box>
-                            <Typography variant="caption" color="text.secondary">Sizing Cases</Typography>
-                            <Typography variant="body2" fontWeight={500}>{summaryCounts.sizingCases}</Typography>
-                        </Box>
-                        <Box>
-                            <Typography variant="caption" color="text.secondary">Attachments</Typography>
-                            <Typography variant="body2" fontWeight={500}>{summaryCounts.attachments}</Typography>
-                        </Box>
-                        <Box>
-                            <Typography variant="caption" color="text.secondary">Notes</Typography>
-                            <Typography variant="body2" fontWeight={500}>{summaryCounts.notes}</Typography>
-                        </Box>
-                    </Box>
-                    <Divider sx={{ my: 1.5 }} />
-                    <Typography variant="caption" color="text.secondary">Tags</Typography>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                        {selectedPsv.tags.length > 0 ? (
-                            selectedPsv.tags.map((tag) => (
-                                <Chip key={tag} label={tag} size="small" sx={{ fontSize: '0.7rem' }} />
-                            ))
-                        ) : (
-                            <Typography variant="caption" color="text.secondary">None</Typography>
-                        )}
                     </Box>
                 </Paper>
             </Box>
@@ -802,7 +795,7 @@ export function SummaryTab() {
                     </Typography>
                 )}
                 <Divider sx={{ my: 2 }} />
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 2 }}>
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr', gap: 2 }}>
                     {[{ title: 'Inlet Network Segments', segments: inletSegments, hasNetwork: !!selectedPsv.inletNetwork }, { title: 'Outlet Network Segments', segments: outletSegments, hasNetwork: !!selectedPsv.outletNetwork }].map((segmentGroup) => (
                         <Box key={segmentGroup.title}>
                             <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
@@ -859,7 +852,7 @@ export function SummaryTab() {
             <Box
                 sx={{
                     display: 'grid',
-                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                    gridTemplateColumns: '1fr',
                     gap: 1.5,
                     mb: 2,
                 }}

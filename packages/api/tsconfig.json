@@ -1,0 +1,11 @@
+{
+    "extends": "../../packages/tsconfig/base.json", // Inherit settings
+    "compilerOptions": {
+      "outDir": "dist",          // Where compiled files go
+      "rootDir": "src",          // Where your code lives
+      "declaration": true,       // Generate .d.ts files (Python: Type Hints)
+      "declarationMap": true     // Allows "Go to Definition" to work across apps
+    },
+    "include": ["src/**/*"],
+    "exclude": ["node_modules", "dist"]
+  }
