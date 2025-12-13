@@ -74,10 +74,172 @@ function calculatePressureDropPercent(network: PipelineNetwork, scenario: Overpr
     return (pressureDrop / (setPressure * 100)) * 100;
 }
 
+function toMeters(length?: number, unit?: string): number {
+    if (!length) return 0;
+    switch ((unit || 'm').toLowerCase()) {
+        case 'ft':
+            return length * 0.3048;
+        case 'km':
+            return length * 1000;
+        case 'cm':
+            return length / 100;
+        case 'mm':
+            return length / 1000;
+        default:
+            return length;
+    }
+}
+
+function toMillimeters(diameter?: number, unit?: string): number {
+    if (!diameter) return 0;
+    switch ((unit || 'mm').toLowerCase()) {
+        case 'ft':
+        case 'ft-in':
+            return diameter * 304.8;
+        case 'in':
+            return diameter * 25.4;
+        case 'cm':
+            return diameter * 10;
+        case 'm':
+            return diameter * 1000;
+        default:
+            return diameter;
+    }
+}
+
+function formatNumberValue(value: number | null | undefined, unit?: string, digits = 1): string {
+    if (value === undefined || value === null) return '—';
+    if (Number.isNaN(value)) return '—';
+    return `${value.toFixed(digits)}${unit ? ` ${unit}` : ''}`;
+}
+
+function getNodeLabels(network?: PipelineNetwork) {
+    if (!network) return {} as Record<string, string>;
+    return network.nodes.reduce<Record<string, string>>((acc, node) => {
+        acc[node.id] = node.label || node.id;
+        return acc;
+    }, {});
+}
+
+type PipelineSegmentRow = {
+    id: string;
+    label: string;
+    start: string;
+    end: string;
+    lengthMeters: number;
+    diameterMm: number;
+    sectionType: string;
+    fluid: string;
+    fittings?: string;
+    pressureDrop?: number;
+};
+
+function getPipelineSegments(network?: PipelineNetwork): PipelineSegmentRow[] {
+    if (!network) return [];
+
+    const nodeLabels = getNodeLabels(network);
+    return network.pipes.map<PipelineSegmentRow>((pipe, index) => {
+        const lengthMeters = toMeters(pipe.length, pipe.lengthUnit);
+        const diameterMm = toMillimeters(
+            pipe.inletDiameter ?? pipe.diameter ?? pipe.pipeDiameter ?? pipe.outletDiameter,
+            pipe.inletDiameterUnit ?? pipe.diameterUnit ?? pipe.pipeDiameterUnit ?? pipe.outletDiameterUnit
+        );
+        const fittings = pipe.fittings?.map(f => `${f.count}x ${f.type}`).join(', ');
+        const pressureDrop = pipe.pressureDropCalculationResults?.totalSegmentPressureDrop;
+
+        return {
+            id: pipe.id,
+            label: pipe.name || `Segment ${index + 1}`,
+            start: nodeLabels[pipe.startNodeId] || pipe.startNodeId,
+            end: nodeLabels[pipe.endNodeId] || pipe.endNodeId,
+            lengthMeters,
+            diameterMm,
+            sectionType: (pipe.pipeSectionType || 'pipeline').replace('_', ' '),
+            fluid: pipe.fluid?.name || pipe.fluid?.phase || '—',
+            fittings,
+            pressureDrop,
+        };
+    });
+}
+
+type HydraulicStatus = {
+    label: string;
+    color: 'success' | 'warning' | 'error' | 'default';
+    message: string;
+};
+
+function getHydraulicStatus(percent: number, limit: number): HydraulicStatus {
+    if (!Number.isFinite(percent)) {
+        return { label: 'N/A', color: 'default', message: 'Awaiting hydraulic data' };
+    }
+
+    if (percent <= limit * 0.8) {
+        return {
+            label: 'PASS',
+            color: 'success',
+            message: `Within ${limit}% design criteria`,
+        };
+    }
+
+    if (percent <= limit) {
+        return {
+            label: 'CAUTION',
+            color: 'warning',
+            message: `Approaching ${limit}% design criteria`,
+        };
+    }
+
+    return {
+        label: 'EXCEEDS',
+        color: 'error',
+        message: `Exceeds ${limit}% allowable drop`,
+    };
+}
+
+function summarizePipeline(
+    network: PipelineNetwork,
+    scenario: OverpressureScenario,
+    setPressure: number,
+    limit: number,
+) {
+    if (!network || network.pipes.length === 0) return null;
+
+    const totalLength = calculateTotalLength(network);
+    const avgDiameter = calculateAvgDiameter(network);
+    const velocity = calculateVelocity(network, scenario);
+    const pressureDrop = calculatePressureDrop(network, scenario);
+    const percent = calculatePressureDropPercent(network, scenario, setPressure);
+    const segments = getPipelineSegments(network);
+    const diameterValues = segments
+        .map(segment => segment.diameterMm)
+        .filter(value => Number.isFinite(value) && value > 0);
+
+    const minDiameter = diameterValues.length > 0 ? Math.min(...diameterValues) : undefined;
+    const maxDiameter = diameterValues.length > 0 ? Math.max(...diameterValues) : undefined;
+
+    return {
+        totalLength,
+        avgDiameter,
+        minDiameter,
+        maxDiameter,
+        velocity,
+        pressureDrop,
+        percent,
+        limit,
+        segmentCount: segments.length,
+        status: getHydraulicStatus(percent, limit),
+    };
+}
+
 export function SummaryTab() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const {
+        selectedCustomer,
+        selectedPlant,
+        selectedUnit,
+        selectedArea,
+        selectedProject,
         selectedPsv,
         scenarioList,
         sizingCaseList,
@@ -110,6 +272,55 @@ export function SummaryTab() {
     const hasMultipleGoverning = governingScenarios.length > 1;
     const governingNotSized = governingScenario && !governingSizingCase;
 
+    const facilityDescriptor = selectedPlant
+        ? `${selectedPlant.name}${selectedUnit ? ` / ${selectedUnit.name}` : ''}`
+        : selectedUnit?.name || '—';
+    const areaDescriptor = selectedArea
+        ? `${selectedArea.code ? `${selectedArea.code} – ` : ''}${selectedArea.name}`
+        : '—';
+
+    const documentMetadata = [
+        { label: 'Client', value: selectedCustomer?.name || '—' },
+        { label: 'Facility', value: facilityDescriptor },
+        { label: 'Area', value: areaDescriptor },
+        { label: 'Project', value: selectedProject?.name || '—' },
+        { label: 'Document No.', value: selectedPsv.tag },
+        { label: 'Prepared By', value: owner?.name || '—' },
+        { label: 'Revision Date', value: new Date(selectedPsv.updatedAt).toLocaleDateString() },
+        { label: 'Workflow Status', value: getWorkflowStatusLabel(selectedPsv.status) },
+    ];
+
+    const inletSegments = getPipelineSegments(selectedPsv.inletNetwork);
+    const outletSegments = getPipelineSegments(selectedPsv.outletNetwork);
+    const inletOverview = governingScenario && governingSizingCase && selectedPsv.inletNetwork
+        ? summarizePipeline(selectedPsv.inletNetwork, governingScenario, selectedPsv.setPressure, 3)
+        : null;
+    const outletOverview = governingScenario && governingSizingCase && selectedPsv.outletNetwork
+        ? summarizePipeline(selectedPsv.outletNetwork, governingScenario, selectedPsv.setPressure, 10)
+        : null;
+    const inletBaseLength = selectedPsv.inletNetwork ? calculateTotalLength(selectedPsv.inletNetwork) : 0;
+    const inletAvgDiameter = selectedPsv.inletNetwork ? calculateAvgDiameter(selectedPsv.inletNetwork) : 0;
+    const outletBaseLength = selectedPsv.outletNetwork ? calculateTotalLength(selectedPsv.outletNetwork) : 0;
+    const outletAvgDiameter = selectedPsv.outletNetwork ? calculateAvgDiameter(selectedPsv.outletNetwork) : 0;
+
+    const formatScenarioCause = (cause?: string) => {
+        if (!cause) return '—';
+        return cause.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    };
+
+    const summaryCounts = {
+        equipment: linkedEquipment.length,
+        scenarios: psvScenarios.length,
+        sizingCases: psvSizingCases.length,
+        attachments: psvAttachments.length,
+        notes: psvNotes.length,
+    };
+
+    const generatedTimestamp = new Date().toLocaleString();
+    const hydraulicMessage = !governingScenario
+        ? 'No governing scenario selected. Mark a scenario as governing to evaluate inlet/outlet hydraulics.'
+        : 'Governing scenario has not been sized. Calculate a sizing case for the governing scenario to evaluate inlet/outlet hydraulics.';
+
     const handlePrint = () => {
         window.print();
     };
@@ -117,9 +328,11 @@ export function SummaryTab() {
     const sectionStyles = {
         mb: 2,
         p: 1.5,
-        bgcolor: isDark ? 'background.paper' : 'white',
+        bgcolor: isDark ? 'background.paper' : 'grey.50',
         borderRadius: 1,
-        border: 0,
+        border: 1,
+        borderColor: 'divider',
+        boxShadow: 'none',
         '@media print': {
             breakInside: 'avoid',
             boxShadow: 'none',
@@ -137,6 +350,15 @@ export function SummaryTab() {
         borderColor: 'divider',
     };
 
+    const infoGridStyles = {
+        display: 'grid',
+        gridTemplateColumns: {
+            xs: 'repeat(2, minmax(0, 1fr))',
+            sm: 'repeat(3, minmax(0, 1fr))',
+        },
+        gap: 1,
+    };
+
     return (
         <Box
             sx={{
@@ -147,7 +369,6 @@ export function SummaryTab() {
                 },
             }}
         >
-            {/* Print Button */}
             <Box className="no-print" sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
                 <Button
                     variant="contained"
@@ -159,7 +380,6 @@ export function SummaryTab() {
                 </Button>
             </Box>
 
-            {/* Governing Scenario Warnings */}
             {hasMultipleGoverning && (
                 <Alert severity="error" variant="outlined" sx={{ mb: 2 }} className="no-print">
                     <strong>Multiple governing scenarios selected.</strong> Only one scenario should be marked as governing. Go to Scenarios tab to fix.
@@ -172,66 +392,88 @@ export function SummaryTab() {
             )}
             {governingNotSized && !hasMultipleGoverning && (
                 <Alert severity="info" variant="outlined" sx={{ mb: 2 }} className="no-print">
-                    <strong>Governing scenario not sized.</strong> Create and calculate a sizing case for "{governingScenario?.cause.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}" to enable hydraulic validation.
+                    <strong>Governing scenario not sized.</strong> Create and calculate a sizing case for "{formatScenarioCause(governingScenario?.cause)}" to enable hydraulic validation.
                 </Alert>
             )}
 
-            {/* Company Header Placeholder */}
-            <Paper sx={{ ...sectionStyles, mb: 2, textAlign: 'center', py: 1.5 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1, mb: 0.5 }}>
-                    <Business sx={{ fontSize: 28, color: 'text.secondary' }} />
-                    <Box>
-                        <Typography variant="body2" color="text.secondary" fontWeight={500}>
-                            [Company Logo Placeholder]
+            <Paper
+                sx={{
+                    ...sectionStyles,
+                    mb: 2,
+                    bgcolor: isDark ? 'background.paper' : 'white',
+                    borderColor: 'primary.light',
+                    p: 2,
+                }}
+            >
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Business sx={{ fontSize: 32, color: 'text.secondary' }} />
+                        <Box>
+                            <Typography variant="subtitle2" color="text.secondary" fontWeight={500}>
+                                Pressure Relief Engineering Sheet
+                            </Typography>
+                            <Typography variant="h5" fontWeight={700}>
+                                PSV Summary
+                            </Typography>
+                        </Box>
+                    </Box>
+                    <Box sx={{ textAlign: { xs: 'left', sm: 'right' } }}>
+                        <Typography variant="h5" color="primary.main" fontWeight={700}>
+                            {selectedPsv.tag}
                         </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.7rem' }}>
-                            Company Name • Project Name • Document Reference
+                        <Typography variant="body2" color="text.secondary">
+                            {selectedPsv.name}
                         </Typography>
                     </Box>
                 </Box>
-                <Divider sx={{ my: 1 }} />
-                <Typography variant="h5" fontWeight={700}>
-                    PSV Data Sheet
-                </Typography>
-                <Typography variant="h6" color="primary.main" sx={{ mt: 0.5 }}>
-                    {selectedPsv.tag}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                    {selectedPsv.name}
-                </Typography>
+                <Divider sx={{ my: 2 }} />
+                <Box
+                    sx={{
+                        display: 'grid',
+                        gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', md: 'repeat(4, minmax(0, 1fr))' },
+                        gap: 1.5,
+                    }}
+                >
+                    {documentMetadata.map((item) => (
+                        <Box key={item.label}>
+                            <Typography variant="caption" color="text.secondary">
+                                {item.label}
+                            </Typography>
+                            <Typography variant="body2" fontWeight={600} sx={{ mt: 0.25 }}>
+                                {item.value}
+                            </Typography>
+                        </Box>
+                    ))}
+                </Box>
             </Paper>
 
-            {/* Basic Information & Service Conditions - 2 Column Layout */}
-            <Box sx={{
-                display: 'grid',
-                gridTemplateColumns: '1fr 1fr',
-                gap: 1.5,
-                mb: 2,
-                '@media print': {
-                    gridTemplateColumns: '1fr 1fr',
-                    gap: '4px',
-                }
-            }}>
-                {/* Basic Information */}
+            <Box
+                sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: 'repeat(3, minmax(0, 1fr))' },
+                    gap: 1.5,
+                    mb: 2,
+                }}
+            >
                 <Paper sx={sectionStyles}>
                     <Typography variant="h6" sx={headerStyles}>
-                        Basic Information
+                        Valve Design Data
                     </Typography>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                    <Box sx={infoGridStyles}>
                         <Box>
                             <Typography variant="caption" color="text.secondary">Tag Number</Typography>
                             <Typography variant="body2" fontWeight={500}>{selectedPsv.tag}</Typography>
                         </Box>
                         <Box>
-                            <Typography variant="caption" color="text.secondary">Status</Typography>
+                            <Typography variant="caption" color="text.secondary">Valve Type</Typography>
                             <Typography variant="body2" fontWeight={500} sx={{ textTransform: 'capitalize' }}>
-                                {getWorkflowStatusLabel(selectedPsv.status)}
+                                {selectedPsv.type.replace('_', ' ')}
                             </Typography>
                         </Box>
                         <Box>
-                            <Typography variant="caption" color="text.secondary">Type</Typography>
+                            <Typography variant="caption" color="text.secondary">Operating Type</Typography>
                             <Typography variant="body2" fontWeight={500} sx={{ textTransform: 'capitalize' }}>
-                                {selectedPsv.type.replace('_', ' ')}
+                                {selectedPsv.valveType ? selectedPsv.valveType.replace('_', ' ') : '—'}
                             </Typography>
                         </Box>
                         <Box>
@@ -246,25 +488,14 @@ export function SummaryTab() {
                             <Typography variant="caption" color="text.secondary">MAWP</Typography>
                             <Typography variant="body2" fontWeight={500}>{selectedPsv.mawp} barg</Typography>
                         </Box>
-                        <Box>
-                            <Typography variant="caption" color="text.secondary">Owner</Typography>
-                            <Typography variant="body2" fontWeight={500}>{owner?.name || 'N/A'}</Typography>
-                        </Box>
-                        <Box>
-                            <Typography variant="caption" color="text.secondary">Updated</Typography>
-                            <Typography variant="body2" fontWeight={500}>
-                                {new Date(selectedPsv.updatedAt).toLocaleDateString()}
-                            </Typography>
-                        </Box>
                     </Box>
                 </Paper>
 
-                {/* Service Conditions */}
                 <Paper sx={sectionStyles}>
                     <Typography variant="h6" sx={headerStyles}>
-                        Service Conditions
+                        Service & Governing Scenario
                     </Typography>
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1 }}>
+                    <Box sx={infoGridStyles}>
                         <Box>
                             <Typography variant="caption" color="text.secondary">Service Fluid</Typography>
                             <Typography variant="body2" fontWeight={500}>{selectedPsv.serviceFluid}</Typography>
@@ -275,23 +506,75 @@ export function SummaryTab() {
                                 {selectedPsv.fluidPhase.replace('_', ' ')}
                             </Typography>
                         </Box>
-                        <Box sx={{ gridColumn: '1 / -1' }}>
-                            <Typography variant="caption" color="text.secondary">Tags</Typography>
-                            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                                {selectedPsv.tags.length > 0 ? (
-                                    selectedPsv.tags.map((tag, idx) => (
-                                        <Chip key={idx} label={tag} size="small" sx={{ fontSize: '0.7rem' }} />
-                                    ))
-                                ) : (
-                                    <Typography variant="caption" color="text.secondary">None</Typography>
-                                )}
-                            </Box>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary">Relief Scenarios</Typography>
+                            <Typography variant="body2" fontWeight={500}>{summaryCounts.scenarios}</Typography>
                         </Box>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary">Governing Scenario</Typography>
+                            <Typography variant="body2" fontWeight={500}>{formatScenarioCause(governingScenario?.cause)}</Typography>
+                        </Box>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary">Relieving Rate</Typography>
+                            <Typography variant="body2" fontWeight={500}>
+                                {governingScenario ? `${governingScenario.relievingRate.toLocaleString()} kg/h` : '—'}
+                            </Typography>
+                        </Box>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary">Relieving Pressure</Typography>
+                            <Typography variant="body2" fontWeight={500}>
+                                {governingScenario ? `${governingScenario.relievingPressure} barg` : '—'}
+                            </Typography>
+                        </Box>
+                    </Box>
+                </Paper>
+
+                <Paper sx={sectionStyles}>
+                    <Typography variant="h6" sx={headerStyles}>
+                        Ownership & Records
+                    </Typography>
+                    <Box sx={infoGridStyles}>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary">Owner</Typography>
+                            <Typography variant="body2" fontWeight={500}>{owner?.name || 'N/A'}</Typography>
+                        </Box>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary">Updated</Typography>
+                            <Typography variant="body2" fontWeight={500}>
+                                {new Date(selectedPsv.updatedAt).toLocaleDateString()}
+                            </Typography>
+                        </Box>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary">Equipment Linked</Typography>
+                            <Typography variant="body2" fontWeight={500}>{summaryCounts.equipment}</Typography>
+                        </Box>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary">Sizing Cases</Typography>
+                            <Typography variant="body2" fontWeight={500}>{summaryCounts.sizingCases}</Typography>
+                        </Box>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary">Attachments</Typography>
+                            <Typography variant="body2" fontWeight={500}>{summaryCounts.attachments}</Typography>
+                        </Box>
+                        <Box>
+                            <Typography variant="caption" color="text.secondary">Notes</Typography>
+                            <Typography variant="body2" fontWeight={500}>{summaryCounts.notes}</Typography>
+                        </Box>
+                    </Box>
+                    <Divider sx={{ my: 1.5 }} />
+                    <Typography variant="caption" color="text.secondary">Tags</Typography>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                        {selectedPsv.tags.length > 0 ? (
+                            selectedPsv.tags.map((tag) => (
+                                <Chip key={tag} label={tag} size="small" sx={{ fontSize: '0.7rem' }} />
+                            ))
+                        ) : (
+                            <Typography variant="caption" color="text.secondary">None</Typography>
+                        )}
                     </Box>
                 </Paper>
             </Box>
 
-            {/* Protected Equipment */}
             <Paper sx={sectionStyles}>
                 <Typography variant="h6" sx={headerStyles}>
                     Protected Equipment
@@ -329,7 +612,6 @@ export function SummaryTab() {
                 )}
             </Paper>
 
-            {/* Relief Scenarios */}
             <Paper sx={sectionStyles}>
                 <Typography variant="h6" sx={headerStyles}>
                     Relief Scenarios
@@ -350,9 +632,7 @@ export function SummaryTab() {
                             <TableBody>
                                 {psvScenarios.map((scenario) => (
                                     <TableRow key={scenario.id}>
-                                        <TableCell sx={{ textTransform: 'capitalize' }}>
-                                            {scenario.cause.replace('_', ' ')}
-                                        </TableCell>
+                                        <TableCell>{formatScenarioCause(scenario.cause)}</TableCell>
                                         <TableCell>{scenario.description}</TableCell>
                                         <TableCell sx={{ textTransform: 'capitalize' }}>
                                             {scenario.phase.replace('_', ' ')}
@@ -362,7 +642,7 @@ export function SummaryTab() {
                                         <TableCell align="center">
                                             {scenario.isGoverning ? (
                                                 <Star sx={{ color: 'warning.main', fontSize: 18 }} />
-                                            ) : '-'}
+                                            ) : '–'}
                                         </TableCell>
                                     </TableRow>
                                 ))}
@@ -374,7 +654,6 @@ export function SummaryTab() {
                 )}
             </Paper>
 
-            {/* Sizing Cases */}
             <Paper sx={sectionStyles}>
                 <Typography variant="h6" sx={headerStyles}>
                     Sizing Cases
@@ -399,9 +678,7 @@ export function SummaryTab() {
                                     const scenario = psvScenarios.find(s => s.id === sizingCase.scenarioId);
                                     return (
                                         <TableRow key={sizingCase.id}>
-                                            <TableCell sx={{ textTransform: 'capitalize' }}>
-                                                {scenario?.cause.replace('_', ' ') || 'N/A'}
-                                            </TableCell>
+                                            <TableCell>{formatScenarioCause(scenario?.cause)}</TableCell>
                                             <TableCell sx={{ textTransform: 'capitalize' }}>
                                                 {sizingCase.method.replace('_', ' ')}
                                             </TableCell>
@@ -419,10 +696,10 @@ export function SummaryTab() {
                                                 {sizingCase.outputs.percentUsed.toFixed(1)}%
                                             </TableCell>
                                             <TableCell align="right">
-                                                {sizingCase.outputs.inletPressureDrop?.toFixed(1) ?? '-'}
+                                                {sizingCase.outputs.inletPressureDrop?.toFixed(1) ?? '—'}
                                             </TableCell>
                                             <TableCell align="right">
-                                                {sizingCase.inputs.backpressure?.toFixed(2) ?? '-'}
+                                                {sizingCase.inputs.backpressure?.toFixed(2) ?? '—'}
                                             </TableCell>
                                             <TableCell sx={{ textTransform: 'capitalize' }}>
                                                 <Chip
@@ -442,160 +719,198 @@ export function SummaryTab() {
                 )}
             </Paper>
 
-            {/* Pipeline Hydraulics - Inlet & Outlet */}
             <Paper sx={sectionStyles}>
                 <Typography variant="h6" sx={headerStyles}>
-                    Pipeline Hydraulics (Governing Scenario)
+                    Hydraulic Networks & Segment Details
                 </Typography>
                 {governingScenario && governingSizingCase ? (
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                        {/* Inlet Pipeline */}
-                        <Box>
-                            <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
-                                Inlet Pipeline
-                            </Typography>
-                            {selectedPsv.inletNetwork && selectedPsv.inletNetwork.pipes.length > 0 ? (
-                                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.5 }}>
-                                    <Typography variant="caption" color="text.secondary">Total Length</Typography>
-                                    <Typography variant="body2" fontWeight={500}>
-                                        {calculateTotalLength(selectedPsv.inletNetwork).toFixed(1)} m
+                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 2 }}>
+                        {[
+                            {
+                                title: 'Inlet Network',
+                                overview: inletOverview,
+                                baseLength: inletBaseLength,
+                                avgDiameter: inletAvgDiameter,
+                                segments: inletSegments,
+                            },
+                            {
+                                title: 'Outlet Network',
+                                overview: outletOverview,
+                                baseLength: outletBaseLength,
+                                avgDiameter: outletAvgDiameter,
+                                segments: outletSegments,
+                            },
+                        ].map((networkDetail) => (
+                            <Box
+                                key={networkDetail.title}
+                                sx={{
+                                    border: 1,
+                                    borderColor: 'divider',
+                                    borderRadius: 1,
+                                    p: 1.25,
+                                    bgcolor: isDark ? 'background.default' : 'white',
+                                }}
+                            >
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                    <Typography variant="subtitle2" fontWeight={600}>
+                                        {networkDetail.title}
                                     </Typography>
-                                    <Typography variant="caption" color="text.secondary">Nominal Diameter</Typography>
-                                    <Typography variant="body2" fontWeight={500}>
-                                        {calculateAvgDiameter(selectedPsv.inletNetwork).toFixed(0)} mm
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">Velocity</Typography>
-                                    <Typography variant="body2" fontWeight={500}>
-                                        {calculateVelocity(selectedPsv.inletNetwork, governingScenario).toFixed(1)} m/s
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">Pressure Drop</Typography>
-                                    <Typography variant="body2" fontWeight={500}>
-                                        {calculatePressureDrop(selectedPsv.inletNetwork, governingScenario).toFixed(1)} kPa
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">ΔP / Set Pressure</Typography>
-                                    <Typography
-                                        variant="body2"
-                                        fontWeight={600}
-                                        color={calculatePressureDropPercent(selectedPsv.inletNetwork, governingScenario, selectedPsv.setPressure) <= 3 ? 'success.main' : 'warning.main'}
-                                    >
-                                        {calculatePressureDropPercent(selectedPsv.inletNetwork, governingScenario, selectedPsv.setPressure).toFixed(1)}%
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">Status</Typography>
-                                    <Chip
-                                        label={calculatePressureDropPercent(selectedPsv.inletNetwork, governingScenario, selectedPsv.setPressure) <= 3 ? 'PASS' : 'WARNING'}
-                                        size="small"
-                                        color={calculatePressureDropPercent(selectedPsv.inletNetwork, governingScenario, selectedPsv.setPressure) <= 3 ? 'success' : 'warning'}
-                                        sx={{ height: 20, fontSize: '0.7rem' }}
-                                    />
+                                    {networkDetail.overview && (
+                                        <Chip
+                                            label={networkDetail.overview.status.label}
+                                            size="small"
+                                            color={networkDetail.overview.status.color}
+                                            sx={{ fontSize: '0.7rem' }}
+                                        />
+                                    )}
                                 </Box>
-                            ) : (
-                                <Typography variant="body2" color="text.secondary">No inlet piping defined</Typography>
-                            )}
-                        </Box>
-
-                        {/* Outlet Pipeline */}
-                        <Box>
-                            <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
-                                Outlet Pipeline
-                            </Typography>
-                            {selectedPsv.outletNetwork && selectedPsv.outletNetwork.pipes.length > 0 ? (
-                                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 0.5 }}>
-                                    <Typography variant="caption" color="text.secondary">Total Length</Typography>
-                                    <Typography variant="body2" fontWeight={500}>
-                                        {calculateTotalLength(selectedPsv.outletNetwork).toFixed(1)} m
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">Nominal Diameter</Typography>
-                                    <Typography variant="body2" fontWeight={500}>
-                                        {calculateAvgDiameter(selectedPsv.outletNetwork).toFixed(0)} mm
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">Velocity</Typography>
-                                    <Typography variant="body2" fontWeight={500}>
-                                        {calculateVelocity(selectedPsv.outletNetwork, governingScenario).toFixed(1)} m/s
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">Pressure Drop</Typography>
-                                    <Typography variant="body2" fontWeight={500}>
-                                        {calculatePressureDrop(selectedPsv.outletNetwork, governingScenario).toFixed(1)} kPa
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">ΔP / Set Pressure</Typography>
-                                    <Typography
-                                        variant="body2"
-                                        fontWeight={600}
-                                        color={calculatePressureDropPercent(selectedPsv.outletNetwork, governingScenario, selectedPsv.setPressure) <= 10 ? 'success.main' : 'warning.main'}
-                                    >
-                                        {calculatePressureDropPercent(selectedPsv.outletNetwork, governingScenario, selectedPsv.setPressure).toFixed(1)}%
-                                    </Typography>
-                                    <Typography variant="caption" color="text.secondary">Status</Typography>
-                                    <Chip
-                                        label={calculatePressureDropPercent(selectedPsv.outletNetwork, governingScenario, selectedPsv.setPressure) <= 10 ? 'PASS' : 'WARNING'}
-                                        size="small"
-                                        color={calculatePressureDropPercent(selectedPsv.outletNetwork, governingScenario, selectedPsv.setPressure) <= 10 ? 'success' : 'warning'}
-                                        sx={{ height: 20, fontSize: '0.7rem' }}
-                                    />
+                                <Box
+                                    sx={{
+                                        display: 'grid',
+                                        gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))' },
+                                        gap: 1,
+                                    }}
+                                >
+                                    {[
+                                        { label: 'Segments', value: networkDetail.segments.length || '—' },
+                                        { label: 'Total Length', value: formatNumberValue(networkDetail.overview?.totalLength ?? networkDetail.baseLength, 'm') },
+                                        { label: 'Average Diameter', value: networkDetail.overview?.avgDiameter || networkDetail.avgDiameter ? `${(networkDetail.overview?.avgDiameter ?? networkDetail.avgDiameter).toFixed(0)} mm` : '—' },
+                                        { label: 'Diameter Range', value: networkDetail.overview?.minDiameter && networkDetail.overview?.maxDiameter ? `${networkDetail.overview.minDiameter.toFixed(0)} – ${networkDetail.overview.maxDiameter.toFixed(0)} mm` : '—' },
+                                        { label: 'Velocity', value: networkDetail.overview ? formatNumberValue(networkDetail.overview.velocity, 'm/s', 2) : '—' },
+                                        { label: 'Pressure Drop', value: networkDetail.overview ? formatNumberValue(networkDetail.overview.pressureDrop, 'kPa') : '—' },
+                                        { label: 'ΔP / Set Pressure', value: networkDetail.overview ? `${networkDetail.overview.percent.toFixed(1)}%` : '—' },
+                                    ].map((metric) => (
+                                        <Box key={`${networkDetail.title}-${metric.label}`}>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {metric.label}
+                                            </Typography>
+                                            <Typography variant="body2" fontWeight={500}>
+                                                {metric.value}
+                                            </Typography>
+                                        </Box>
+                                    ))}
                                 </Box>
-                            ) : (
-                                <Typography variant="body2" color="text.secondary">No outlet piping defined</Typography>
-                            )}
-                        </Box>
+                                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                                    {networkDetail.overview ? networkDetail.overview.status.message : hydraulicMessage}
+                                </Typography>
+                            </Box>
+                        ))}
                     </Box>
                 ) : (
-                    <Typography variant="body2" color="text.secondary">
-                        {!governingScenario
-                            ? 'No governing scenario selected. Mark a scenario as governing to display hydraulics.'
-                            : 'Governing scenario has not been sized. Calculate a sizing case for the governing scenario to display hydraulics.'
-                        }
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        {hydraulicMessage}
                     </Typography>
                 )}
+                <Divider sx={{ my: 2 }} />
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr' }, gap: 2 }}>
+                    {[{ title: 'Inlet Network Segments', segments: inletSegments, hasNetwork: !!selectedPsv.inletNetwork }, { title: 'Outlet Network Segments', segments: outletSegments, hasNetwork: !!selectedPsv.outletNetwork }].map((segmentGroup) => (
+                        <Box key={segmentGroup.title}>
+                            <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
+                                {segmentGroup.title}
+                            </Typography>
+                            {segmentGroup.segments.length > 0 ? (
+                                <TableContainer>
+                                    <Table size="small">
+                                        <TableHead>
+                                            <TableRow>
+                                                <TableCell>Segment</TableCell>
+                                                <TableCell>Start</TableCell>
+                                                <TableCell>End</TableCell>
+                                                <TableCell>Fluid</TableCell>
+                                                <TableCell align="right">Length (m)</TableCell>
+                                                <TableCell align="right">Diameter (mm)</TableCell>
+                                                <TableCell>Fittings / Notes</TableCell>
+                                                <TableCell align="right">ΔP (kPa)</TableCell>
+                                            </TableRow>
+                                        </TableHead>
+                                        <TableBody>
+                                            {segmentGroup.segments.map((segment) => (
+                                                <TableRow key={segment.id}>
+                                                    <TableCell>
+                                                        <Typography variant="body2" fontWeight={500}>{segment.label}</Typography>
+                                                        <Typography variant="caption" color="text.secondary">{segment.sectionType}</Typography>
+                                                    </TableCell>
+                                                    <TableCell>{segment.start}</TableCell>
+                                                    <TableCell>{segment.end}</TableCell>
+                                                    <TableCell>{segment.fluid}</TableCell>
+                                                    <TableCell align="right">{segment.lengthMeters ? segment.lengthMeters.toFixed(2) : '—'}</TableCell>
+                                                    <TableCell align="right">{segment.diameterMm ? segment.diameterMm.toFixed(0) : '—'}</TableCell>
+                                                    <TableCell sx={{ maxWidth: 180 }}>
+                                                        {segment.fittings || '—'}
+                                                    </TableCell>
+                                                    <TableCell align="right">
+                                                        {segment.pressureDrop !== undefined ? segment.pressureDrop.toFixed(1) : '—'}
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                        </TableBody>
+                                    </Table>
+                                </TableContainer>
+                            ) : (
+                                <Typography variant="body2" color="text.secondary">
+                                    {segmentGroup.hasNetwork ? 'No segments defined for this network.' : `No ${segmentGroup.title.toLowerCase()}.`}
+                                </Typography>
+                            )}
+                        </Box>
+                    ))}
+                </Box>
             </Paper>
 
-            {/* Notes */}
-            <Paper sx={sectionStyles}>
-                <Typography variant="h6" sx={headerStyles}>
-                    Notes ({psvNotes.length})
-                </Typography>
-                {psvNotes.length > 0 ? (
-                    <List dense disablePadding>
-                        {psvNotes.map((note) => (
-                            <ListItem key={note.id} disablePadding sx={{ py: 0.5, alignItems: 'flex-start' }}>
-                                <ListItemText
-                                    primary={note.body}
-                                    secondary={`— ${getUserById(note.createdBy)?.name || 'Unknown'}, ${new Date(note.createdAt).toLocaleDateString()}`}
-                                />
-                            </ListItem>
-                        ))}
-                    </List>
-                ) : (
-                    <Typography variant="body2" color="text.secondary">No notes.</Typography>
-                )}
-            </Paper>
+            <Box
+                sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                    gap: 1.5,
+                    mb: 2,
+                }}
+            >
+                <Paper sx={sectionStyles}>
+                    <Typography variant="h6" sx={headerStyles}>
+                        Notes ({psvNotes.length})
+                    </Typography>
+                    {psvNotes.length > 0 ? (
+                        <List dense disablePadding>
+                            {psvNotes.map((note) => (
+                                <ListItem key={note.id} disablePadding sx={{ py: 0.5, alignItems: 'flex-start' }}>
+                                    <ListItemText
+                                        primary={note.body}
+                                        secondary={`— ${getUserById(note.createdBy)?.name || 'Unknown'}, ${new Date(note.createdAt).toLocaleDateString()}`}
+                                    />
+                                </ListItem>
+                            ))}
+                        </List>
+                    ) : (
+                        <Typography variant="body2" color="text.secondary">No notes.</Typography>
+                    )}
+                </Paper>
 
-            {/* Attachments */}
-            <Paper sx={sectionStyles}>
-                <Typography variant="h6" sx={headerStyles}>
-                    Attachments ({psvAttachments.length})
-                </Typography>
-                {psvAttachments.length > 0 ? (
-                    <List dense disablePadding>
-                        {psvAttachments.map((attachment) => (
-                            <ListItem key={attachment.id} disablePadding sx={{ py: 0.5 }}>
-                                <ListItemIcon sx={{ minWidth: 28 }}>
-                                    <AttachFile fontSize="small" />
-                                </ListItemIcon>
-                                <ListItemText
-                                    primary={attachment.fileName}
-                                    secondary={`${(attachment.size / 1024).toFixed(1)} KB • Uploaded ${new Date(attachment.createdAt).toLocaleDateString()}`}
-                                />
-                            </ListItem>
-                        ))}
-                    </List>
-                ) : (
-                    <Typography variant="body2" color="text.secondary">No attachments.</Typography>
-                )}
-            </Paper>
+                <Paper sx={sectionStyles}>
+                    <Typography variant="h6" sx={headerStyles}>
+                        Attachments ({psvAttachments.length})
+                    </Typography>
+                    {psvAttachments.length > 0 ? (
+                        <List dense disablePadding>
+                            {psvAttachments.map((attachment) => (
+                                <ListItem key={attachment.id} disablePadding sx={{ py: 0.5 }}>
+                                    <ListItemIcon sx={{ minWidth: 28 }}>
+                                        <AttachFile fontSize="small" />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                        primary={attachment.fileName}
+                                        secondary={`${(attachment.size / 1024).toFixed(1)} KB • Uploaded ${new Date(attachment.createdAt).toLocaleDateString()}`}
+                                    />
+                                </ListItem>
+                            ))}
+                        </List>
+                    ) : (
+                        <Typography variant="body2" color="text.secondary">No attachments.</Typography>
+                    )}
+                </Paper>
+            </Box>
 
-            {/* Footer */}
-            <Box sx={{ textAlign: 'center', mt: 4, py: 2, borderTop: 1, borderColor: 'divider' }}>
+            <Box sx={{ textAlign: 'center', mt: 3, py: 2, borderTop: 1, borderColor: 'divider' }}>
                 <Typography variant="caption" color="text.secondary">
-                    Generated on: {new Date().toLocaleString()} • PSV Summary Document
+                    Generated on: {generatedTimestamp} • PSV Summary Document
                 </Typography>
             </Box>
         </Box>
