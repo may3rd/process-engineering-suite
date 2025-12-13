@@ -56,7 +56,7 @@ import { PipeEditorDialog } from "./PipeEditorDialog";
 import { HydraulicReportTable } from "./HydraulicReportTable";
 import { HydraulicReportDialog } from "./HydraulicReportDialog";
 import { v4 as uuidv4 } from "uuid";
-import { calculateSizing } from "@/lib/psvSizing";
+import { calculateSizing } from "@eng-suite/api/psv";
 import { useUnitConversion, UnitType } from "@/hooks/useUnitConversion";
 import type { FluidProperties } from "@/lib/apiClient";
 import {

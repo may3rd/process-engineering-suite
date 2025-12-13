@@ -1,15 +1,11 @@
 /**
  * PSV Orifice Sizing Calculations per API-520/521
- * 
- * This module implements the sizing equations from API Standard 520
- * Part I - Sizing and Selection for gas, vapor, steam, and liquid service.
+ *
+ * Shared sizing utilities for PSV applications.
  */
 
-import { SizingInputs, SizingOutputs, SizingMethod, ORIFICE_SIZES } from '@/data/types';
-
-// ============================================================================
-// Constants
-// ============================================================================
+import { convertUnit } from '@eng-suite/physics/unitConversion';
+import { ORIFICE_SIZES, SizingInputs, SizingMethod, SizingOutputs } from './types';
 
 /** Default discharge coefficient for gas/vapor PRV (API-520) */
 export const DEFAULT_KD_GAS = 0.975;
@@ -28,12 +24,6 @@ export const DEFAULT_C = 315;
 
 /** Gas constant R in appropriate units */
 export const R_GAS = 8.314; // J/(mol·K)
-
-// ============================================================================
-// Unit Conversion Utilities (using @eng-suite/physics)
-// ============================================================================
-
-import { convertUnit } from '@eng-suite/physics/unitConversion';
 
 /** Convert temperature from °C to Kelvin */
 export function celsiusToKelvin(tempC: number): number {
@@ -70,16 +60,8 @@ export function sqmmToSqin(sqmm: number): number {
     return convertUnit(sqmm, 'mm2', 'in2');
 }
 
-// ============================================================================
-// Coefficient Calculations
-// ============================================================================
-
 /**
  * Calculate the C coefficient from specific heat ratio (k = Cp/Cv)
- * C = 520 × √(k × (2/(k+1))^((k+1)/(k-1)))
- * 
- * @param k - Specific heat ratio (Cp/Cv)
- * @returns C coefficient
  */
 export function calculateC(k: number): number {
     if (k <= 1) return DEFAULT_C;
@@ -88,11 +70,7 @@ export function calculateC(k: number): number {
 }
 
 /**
- * Calculate critical flow pressure ratio
- * Pcf/P1 = (2/(k+1))^(k/(k-1))
- * 
- * @param k - Specific heat ratio
- * @returns Critical pressure ratio
+ * Critical flow pressure ratio
  */
 export function calculateCriticalPressureRatio(k: number): number {
     if (k <= 1) return 0.5; // Default fallback
@@ -100,37 +78,18 @@ export function calculateCriticalPressureRatio(k: number): number {
 }
 
 /**
- * Calculate critical flow pressure
- * Pcf = P1 × (2/(k+1))^(k/(k-1))
- * 
- * @param P1 - Upstream relieving pressure (bara)
- * @param k - Specific heat ratio
- * @returns Critical flow pressure (bara)
+ * Critical flow pressure
  */
 export function calculateCriticalFlowPressure(P1: number, k: number): number {
     return P1 * calculateCriticalPressureRatio(k);
 }
 
-/**
- * Determine if flow is critical (choked)
- * Critical flow occurs when P2 ≤ Pcf
- * 
- * @param P2 - Backpressure (bara)
- * @param Pcf - Critical flow pressure (bara)
- * @returns true if critical flow
- */
 export function isCriticalFlow(P2: number, Pcf: number): boolean {
     return P2 <= Pcf;
 }
 
 /**
  * Calculate F2 factor for subcritical gas flow
- * F2 = √((k/(k-1)) × r^(2/k) × ((1-r^((k-1)/k))/(1-r)))
- * where r = P2/P1
- * 
- * @param k - Specific heat ratio
- * @param r - Pressure ratio P2/P1
- * @returns F2 factor
  */
 export function calculateF2(k: number, r: number): number {
     if (k <= 1 || r <= 0 || r >= 1) return 1;
@@ -144,33 +103,20 @@ export function calculateF2(k: number, r: number): number {
 
 /**
  * Calculate backpressure correction factor Kb for balanced bellows valves
- * Simplified approximation based on API-520 Figure 30
- * 
- * @param backpressureRatio - P2/P1 ratio
- * @param valveType - 'conventional' | 'balanced' | 'pilot'
- * @returns Kb factor
  */
 export function calculateKb(backpressureRatio: number, valveType: 'conventional' | 'balanced' | 'pilot' = 'conventional'): number {
     if (valveType === 'conventional' || valveType === 'pilot') {
-        // For conventional valves, Kb = 1.0 (no correction for backpressure on capacity)
-        // Backpressure affects set pressure, not capacity
         return 1.0;
     }
 
-    // Balanced bellows valve - approximation from API-520 Figure 30
     if (backpressureRatio <= 0.3) return 1.0;
     if (backpressureRatio >= 0.5) return 0.7;
 
-    // Linear interpolation between 0.3 and 0.5
     return 1.0 - (backpressureRatio - 0.3) * 1.5;
 }
 
 /**
  * Calculate viscosity correction factor Kv for liquid service
- * Kv = (0.9935 + 2.878/Re^0.5 + 342.75/Re^1.5)^(-1)
- * 
- * @param Re - Reynolds number
- * @returns Kv factor (1.0 if Re > 16000)
  */
 export function calculateKv(Re: number): number {
     if (Re > 16000) return 1.0;
@@ -185,22 +131,11 @@ export function calculateKv(Re: number): number {
 
 /**
  * Calculate Reynolds number for liquid flow through orifice
- * Re = (Q × G × 2800) / (A × μ)
- * 
- * @param Q - Flow rate (gpm)
- * @param G - Specific gravity
- * @param A - Orifice area (in²)
- * @param mu - Viscosity (cP)
- * @returns Reynolds number
  */
 export function calculateReynoldsNumber(Q: number, G: number, A: number, mu: number): number {
     if (A <= 0 || mu <= 0) return 100000; // Default to non-viscous
     return (Q * G * 2800) / (A * mu);
 }
-
-// ============================================================================
-// Main Sizing Functions
-// ============================================================================
 
 export interface SizingResult {
     requiredArea: number;        // mm²
@@ -216,12 +151,6 @@ export interface SizingResult {
 
 /**
  * Calculate required orifice area for gas/vapor service (API-520)
- * 
- * Critical flow: A = (W / (C × Kd × P1 × Kb × Kc)) × √(T × Z / M)
- * Subcritical:   A = (W / (735 × F2 × Kd × Kb × Kc)) × √(T × Z / (M × P1 × (P1-P2)))
- * 
- * @param inputs - Sizing inputs
- * @returns Required area in in² and mm²
  */
 export function calculateGasArea(inputs: SizingInputs): SizingResult {
     const messages: string[] = [];
@@ -274,12 +203,6 @@ export function calculateGasArea(inputs: SizingInputs): SizingResult {
 
 /**
  * Calculate required orifice area for liquid service (API-520)
- * A = Q / (38 × Kd × Kw × Kc × Kv) × √(G / (P1 - P2))
- * 
- * Note: This simplified version uses mass flow and converts internally
- * 
- * @param inputs - Sizing inputs
- * @returns Required area in in² and mm²
  */
 export function calculateLiquidArea(inputs: SizingInputs): SizingResult {
     const messages: string[] = [];
@@ -305,7 +228,7 @@ export function calculateLiquidArea(inputs: SizingInputs): SizingResult {
     }
 
     // Use density to get specific gravity (relative to water at 60°F = 999 kg/m³)
-    const density = inputs.density || 1000; // kg/m³
+    const density = inputs.density || inputs.liquidDensity || 1000; // kg/m³
     const G = density / 999;
 
     // Convert mass flow to volumetric flow (gpm)
@@ -321,11 +244,12 @@ export function calculateLiquidArea(inputs: SizingInputs): SizingResult {
     let A_in2 = (Q / (38 * Kd * Kw * Kc * Kv)) * Math.sqrt(G / deltaP);
 
     // Calculate viscosity correction if viscosity is provided
-    if (inputs.viscosity && inputs.viscosity > 0) {
+    const viscosity = inputs.viscosity ?? inputs.liquidViscosity;
+    if (viscosity && viscosity > 0) {
         // Find next larger standard orifice
         const preliminaryOrifice = ORIFICE_SIZES.find(o => o.areaIn2 >= A_in2);
         if (preliminaryOrifice) {
-            const Re = calculateReynoldsNumber(Q, G, preliminaryOrifice.areaIn2, inputs.viscosity);
+            const Re = calculateReynoldsNumber(Q, G, preliminaryOrifice.areaIn2, viscosity);
             Kv = calculateKv(Re);
 
             if (Kv < 1.0) {
@@ -355,12 +279,6 @@ export function calculateLiquidArea(inputs: SizingInputs): SizingResult {
 
 /**
  * Calculate required orifice area for steam service (API-520)
- * A = W / (51.5 × Kd × P1 × Kb × Kc × Kn × Ksh)
- * 
- * Simplified: Uses Kn = 1.0 (no Napier correction) and Ksh = 1.0 (saturated steam)
- * 
- * @param inputs - Sizing inputs
- * @returns Required area in in² and mm²
  */
 export function calculateSteamArea(inputs: SizingInputs): SizingResult {
     const messages: string[] = [];
@@ -375,8 +293,6 @@ export function calculateSteamArea(inputs: SizingInputs): SizingResult {
     const Kn = 1.0; // Napier correction (for P1 > 1500 psia)
     const Ksh = 1.0; // Superheat correction (1.0 for saturated steam)
 
-    // Check if steam is superheated (simplified: T > saturation temp approximation)
-    // For now, assume saturated steam
     messages.push('Steam sizing assuming saturated conditions (Ksh = 1.0)');
 
     const A_in2 = W / (51.5 * Kd * P1 * Kb * Kc * Kn * Ksh);
@@ -393,16 +309,8 @@ export function calculateSteamArea(inputs: SizingInputs): SizingResult {
     };
 }
 
-// ============================================================================
-// Main Entry Point
-// ============================================================================
-
 /**
  * Calculate required orifice area based on sizing method
- * 
- * @param inputs - Sizing inputs from the form
- * @param method - Sizing method (gas, liquid, steam, two_phase)
- * @returns Complete sizing outputs
  */
 export function calculateSizing(inputs: SizingInputs, method: SizingMethod): SizingOutputs {
     let result: SizingResult;
@@ -417,14 +325,13 @@ export function calculateSizing(inputs: SizingInputs, method: SizingMethod): Siz
         case 'steam':
             result = calculateSteamArea(inputs);
             break;
-        case 'two_phase':
-            // For two-phase, use the more conservative of gas and liquid
-            // (Simplified approach - full two-phase sizing is more complex)
+        case 'two_phase': {
             const gasResult = calculateGasArea(inputs);
             const liquidResult = calculateLiquidArea(inputs);
             result = gasResult.requiredArea > liquidResult.requiredArea ? gasResult : liquidResult;
             result.messages.push('Two-phase sizing: using more conservative of gas/liquid');
             break;
+        }
         default:
             result = calculateGasArea(inputs);
     }
@@ -445,7 +352,6 @@ export function calculateSizing(inputs: SizingInputs, method: SizingMethod): Siz
     // Calculate rated capacity (reverse calculation)
     const ratedCapacity = inputs.massFlowRate / (percentUsed / 100);
 
-    // Add sizing adequacy message
     if (percentUsed > 100) {
         result.messages.push(`WARNING: Required area exceeds largest standard orifice (T)`);
     } else if (percentUsed > 90) {

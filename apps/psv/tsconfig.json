@@ -28,6 +28,12 @@
             "@/*": [
                 "./src/*"
             ],
+            "@eng-suite/api": [
+                "../../packages/api/src/index.ts"
+            ],
+            "@eng-suite/api/*": [
+                "../../packages/api/src/*"
+            ],
             "@eng-suite/physics": [
                 "../../packages/physics-engine/src/index.ts"
             ],
