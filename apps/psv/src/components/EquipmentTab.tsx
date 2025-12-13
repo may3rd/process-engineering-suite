@@ -172,7 +172,7 @@ export function EquipmentTab() {
 
     const summaryCards = useMemo(() => {
         const pressureVessels = equipment.filter(e => e.type.includes('vessel')).length;
-        const inspectionDue = equipment.filter(e => e.status === 'inspection_due').length;
+        const inactiveCount = equipment.filter(e => e.status === 'inactive').length;
         return [
             {
                 label: 'Equipment Items',
@@ -187,9 +187,9 @@ export function EquipmentTab() {
                 icon: <Opacity color="secondary" />,
             },
             {
-                label: 'Inspection Due',
-                value: inspectionDue,
-                helper: 'Requires attention',
+                label: 'Inactive',
+                value: inactiveCount,
+                helper: 'Not in service',
                 icon: <ThermostatAuto color="warning" />,
             },
         ];
@@ -227,7 +227,7 @@ export function EquipmentTab() {
 
             <Grid container spacing={2} sx={{ mb: 3 }}>
                 {summaryCards.map(card => (
-                    <Grid item xs={12} md={4} key={card.label}>
+                    <Grid size={{ xs: 12, md: 4 }} key={card.label}>
                         <Paper sx={{ ...glassCardStyles, p: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                             <Stack direction="row" spacing={1} alignItems="center">
                                 {card.icon}

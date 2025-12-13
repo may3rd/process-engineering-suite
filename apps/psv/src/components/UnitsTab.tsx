@@ -229,7 +229,7 @@ export function UnitsTab() {
 
             <Grid container spacing={2} sx={{ mb: 3 }}>
                 {summaryCards.map(card => (
-                    <Grid item xs={12} md={4} key={card.label}>
+                    <Grid size={{ xs: 12, md: 4 }} key={card.label}>
                         <Paper sx={{ ...glassCardStyles, p: 2, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                             <Stack direction="row" spacing={1} alignItems="center">
                                 {card.icon}

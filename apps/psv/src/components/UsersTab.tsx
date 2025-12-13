@@ -320,7 +320,7 @@ export function UsersTab() {
             {/* Overview Cards */}
             <Grid container spacing={2} sx={{ mb: 3 }}>
                 {cards.map((card) => (
-                    <Grid item xs={12} md={4} key={card.label}>
+                    <Grid size={{ xs: 12, md: 4 }} key={card.label}>
                         <Paper
                             sx={{
                                 ...glassCardStyles,
@@ -496,8 +496,8 @@ export function UsersTab() {
                                                 user.role === "admin"
                                                     ? "primary"
                                                     : user.role === "approver"
-                                                    ? "secondary"
-                                                    : "default"
+                                                        ? "secondary"
+                                                        : "default"
                                             }
                                             variant={
                                                 user.role === "viewer" ? "outlined" : "filled"

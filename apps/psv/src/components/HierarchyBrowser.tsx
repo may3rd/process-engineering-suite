@@ -323,18 +323,21 @@ export function HierarchyBrowser() {
                                 secondary={getSubtitle(item, currentLevel.level)}
                             />
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                {'status' in item && (
-                                    <Chip
-                                        label={
-                                            isWorkflowStatus(String(item.status))
-                                                ? getWorkflowStatusLabel(String(item.status))
-                                                : String(item.status).replace('_', ' ')
-                                        }
-                                        size="small"
-                                        color={getStatusColor(String(item.status))}
-                                        sx={{ textTransform: 'capitalize' }}
-                                    />
-                                )}
+                                {'status' in item && (() => {
+                                    const statusStr = String(item.status);
+                                    return (
+                                        <Chip
+                                            label={
+                                                isWorkflowStatus(statusStr)
+                                                    ? getWorkflowStatusLabel(statusStr)
+                                                    : statusStr.replace('_', ' ')
+                                            }
+                                            size="small"
+                                            color={getStatusColor(String(item.status))}
+                                            sx={{ textTransform: 'capitalize' }}
+                                        />
+                                    );
+                                })()}
                                 <ChevronRight sx={{ color: 'text.secondary' }} />
                             </Box>
                         </ListItemButton>
