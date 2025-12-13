@@ -1,14 +1,14 @@
 {
-    "name": "@eng-suite/psv",
+    "name": "@eng-suite/api",
     "version": "0.0.1",
-    "main": "./src/index.js",
-    "types": "./src/index.d.ts",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
     "scripts": {
         "build": "tsc",
         "dev": "tsc -w"
     },
     "dependencies": {
-        "convert-units": "^3.0.0-beta.8"
+        "@eng-suite/physics": "*"
     },
     "devDependencies": {
         "typescript": "^5.0.0"

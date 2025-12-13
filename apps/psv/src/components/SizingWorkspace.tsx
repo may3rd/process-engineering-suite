@@ -224,7 +224,11 @@ function applyHydraulicSegmentsToNetwork(
         }
 
         const phase = normalizeFluidPhase(segment.fluidPhase);
-        const updatedFluid = phase ? { ...(pipe.fluid || {}), phase } : pipe.fluid;
+        const updatedFluid = phase ? {
+            ...(pipe.fluid || {}),
+            id: pipe.fluid?.id || `fluid-${pipe.id}`,
+            phase
+        } : pipe.fluid;
 
         const resultSummary = {
             ...(pipe.resultSummary || {}),

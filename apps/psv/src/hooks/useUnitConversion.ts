@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { UnitPreferences } from "@/data/types";
-import { convertUnit } from '@eng-suite/physics/unitConversion';
+import { convertUnit } from '@eng-suite/physics';
 
 // Define base units for our system
 const BASE_UNITS = {

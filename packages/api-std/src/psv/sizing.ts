@@ -4,7 +4,7 @@
  * Shared sizing utilities for PSV applications.
  */
 
-import { convertUnit } from '@eng-suite/physics/unitConversion';
+import { convertUnit } from '@eng-suite/physics';
 import { ORIFICE_SIZES, SizingInputs, SizingMethod, SizingOutputs } from './types';
 
 /** Default discharge coefficient for gas/vapor PRV (API-520) */

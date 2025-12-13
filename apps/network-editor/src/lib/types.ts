@@ -163,7 +163,7 @@ export type PipeProps = {
 // Fluid propertis
 export type Fluid = {
   id: string,
-  phase: "liquid" | "gas",
+  phase: "liquid" | "gas" | "steam" | "two_phase",
   viscosity?: number,
   viscosityUnit?: string,
   density?: number,

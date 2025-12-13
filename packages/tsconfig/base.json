@@ -15,10 +15,10 @@
         "isolatedModules": true,
         "baseUrl": ".",
         "paths": {
-            "@eng-suite/api": ["packages/api/src"],
-            "@eng-suite/api/*": ["packages/api/src/*"],
-            "@eng-suite/physics": ["packages/physics/src"],
-            "@eng-suite/physics/*": ["packages/physics/src/*"]
+            "@eng-suite/api": ["packages/api-std/src"],
+            "@eng-suite/api/*": ["packages/api-std/src/*"],
+            "@eng-suite/physics": ["packages/physics-engine/src"],
+            "@eng-suite/physics/*": ["packages/physics-engine/src/*"]
         }
     }
 }

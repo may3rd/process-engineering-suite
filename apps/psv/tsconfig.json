@@ -29,10 +29,10 @@
                 "./src/*"
             ],
             "@eng-suite/api": [
-                "../../packages/api/src/index.ts"
+                "../../packages/api-std/src/index.ts"
             ],
             "@eng-suite/api/*": [
-                "../../packages/api/src/*"
+                "../../packages/api-std/src/*"
             ],
             "@eng-suite/physics": [
                 "../../packages/physics-engine/src/index.ts"
