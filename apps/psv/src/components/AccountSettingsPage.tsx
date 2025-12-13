@@ -83,14 +83,14 @@ export function AccountSettingsPage() {
                             sx={{
                                 display: "flex",
                                 alignItems: "center",
-                                justifyContent: "space-between",
+                                gap: 1,
                                 mb: 1,
                             }}
                         >
                             <Typography variant="h6" fontWeight={600}>
                                 Profile Information
                             </Typography>
-                            <IconButton onClick={handleClose}>
+                            <IconButton onClick={handleClose} sx={{ ml: "auto" }}>
                                 <Close />
                             </IconButton>
                         </Box>

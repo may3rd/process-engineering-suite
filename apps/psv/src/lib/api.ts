@@ -394,22 +394,37 @@ class ApiClient {
 
     // --- Comments ---
 
+    private mapComment(raw: any): Comment {
+        return {
+            id: raw.id,
+            protectiveSystemId: raw.protectiveSystemId ?? raw.psvId,
+            body: raw.body,
+            createdBy: raw.createdBy,
+            createdAt: raw.createdAt,
+            updatedBy: raw.updatedBy,
+            updatedAt: raw.updatedAt,
+        };
+    }
+
     async getComments(psvId: string): Promise<Comment[]> {
-        return this.request<Comment[]>(`/psv/${psvId}/comments`);
+        const response = await this.request<any[]>(`/psv/${psvId}/comments`);
+        return response.map((item) => this.mapComment(item));
     }
 
     async createComment(data: Partial<Comment>): Promise<Comment> {
-        return this.request<Comment>('/comments', {
+        const response = await this.request<any>('/comments', {
             method: 'POST',
             body: JSON.stringify(data),
         });
+        return this.mapComment(response);
     }
 
     async updateComment(id: string, data: Partial<Comment>): Promise<Comment> {
-        return this.request<Comment>(`/comments/${id}`, {
+        const response = await this.request<any>(`/comments/${id}`, {
             method: 'PUT',
             body: JSON.stringify(data),
         });
+        return this.mapComment(response);
     }
 
     async deleteComment(id: string): Promise<void> {
@@ -418,22 +433,38 @@ class ApiClient {
 
     // --- Todos ---
 
+    private mapTodo(raw: any): TodoItem {
+        return {
+            id: raw.id,
+            protectiveSystemId: raw.protectiveSystemId ?? raw.psvId,
+            text: raw.text,
+            completed: raw.completed ?? false,
+            assignedTo: raw.assignedTo,
+            dueDate: raw.dueDate,
+            createdBy: raw.createdBy,
+            createdAt: raw.createdAt,
+        };
+    }
+
     async getTodos(psvId: string): Promise<TodoItem[]> {
-        return this.request<TodoItem[]>(`/psv/${psvId}/todos`);
+        const response = await this.request<any[]>(`/psv/${psvId}/todos`);
+        return response.map((item) => this.mapTodo(item));
     }
 
     async createTodo(data: Partial<TodoItem>): Promise<TodoItem> {
-        return this.request<TodoItem>('/todos', {
+        const response = await this.request<any>('/todos', {
             method: 'POST',
             body: JSON.stringify(data),
         });
+        return this.mapTodo(response);
     }
 
     async updateTodo(id: string, data: Partial<TodoItem>): Promise<TodoItem> {
-        return this.request<TodoItem>(`/todos/${id}`, {
+        const response = await this.request<any>(`/todos/${id}`, {
             method: 'PUT',
             body: JSON.stringify(data),
         });
+        return this.mapTodo(response);
     }
 
     async deleteTodo(id: string): Promise<void> {
