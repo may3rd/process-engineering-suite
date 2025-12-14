@@ -142,8 +142,8 @@ function formatFluidLabel(pipe: PipeProps): string {
 type PipelineSegmentRow = {
     id: string;
     label: string;
-    start: string;
-    end: string;
+    p1: string;
+    p2: string;
     lengthMeters: number;
     diameterMm: number;
     sectionType: string;
@@ -195,8 +195,8 @@ function getPipelineSegments(network: PipelineNetwork | undefined, kind: 'inlet'
         return {
             id: pipe.id,
             label: pipe.name || `Segment ${index + 1}`,
-            start: startLabel,
-            end: endLabel,
+            p1: startLabel,
+            p2: endLabel,
             lengthMeters,
             diameterMm,
             sectionType: (pipe.pipeSectionType || 'pipeline').replace('_', ' '),
@@ -807,8 +807,8 @@ export function SummaryTab() {
                                         <TableHead>
                                             <TableRow>
                                                 <TableCell>Segment</TableCell>
-                                                <TableCell>Start</TableCell>
-                                                <TableCell>End</TableCell>
+                                                <TableCell>P1</TableCell>
+                                                <TableCell>P2</TableCell>
                                                 <TableCell>Fluid</TableCell>
                                                 <TableCell align="right">Length (m)</TableCell>
                                                 <TableCell align="right">Diameter (mm)</TableCell>
@@ -823,8 +823,8 @@ export function SummaryTab() {
                                                         <Typography variant="body2" fontWeight={500}>{segment.label}</Typography>
                                                         <Typography variant="caption" color="text.secondary">{segment.sectionType}</Typography>
                                                     </TableCell>
-                                                    <TableCell>{segment.start}</TableCell>
-                                                    <TableCell>{segment.end}</TableCell>
+                                                    <TableCell>{segment.p1}</TableCell>
+                                                    <TableCell>{segment.p2}</TableCell>
                                                     <TableCell>{segment.fluid}</TableCell>
                                                     <TableCell align="right">{segment.lengthMeters ? segment.lengthMeters.toFixed(2) : '—'}</TableCell>
                                                     <TableCell align="right">{segment.diameterMm ? segment.diameterMm.toFixed(0) : '—'}</TableCell>
