@@ -72,6 +72,7 @@ import {
     type ValidationError
 } from "@/lib/inputValidation";
 import { useAuthStore } from "@/store/useAuthStore";
+import { convertUnit } from "@eng-suite/physics";
 
 interface SizingWorkspaceProps {
     sizingCase: SizingCase;
@@ -230,13 +231,29 @@ function applyHydraulicSegmentsToNetwork(
             phase
         } : pipe.fluid;
 
+        // Convert pressure from barg to Pa for storage (SI units)
+        const inletPressurePa = segment.inletPressureBarg !== undefined
+            ? convertUnit(segment.inletPressureBarg, 'barg', 'Pa')
+            : undefined;
+        const outletPressurePa = segment.outletPressureBarg !== undefined
+            ? convertUnit(segment.outletPressureBarg, 'barg', 'Pa')
+            : undefined;
+
+        // Convert temperature from C to K for storage (SI units)
+        const inletTemperatureK = segment.inletTemperatureC !== undefined
+            ? segment.inletTemperatureC + 273.15
+            : undefined;
+        const outletTemperatureK = segment.outletTemperatureC !== undefined
+            ? segment.outletTemperatureC + 273.15
+            : undefined;
+
         const resultSummary = {
             ...(pipe.resultSummary || {}),
             inletState: {
                 ...(pipe.resultSummary?.inletState ?? {}),
                 phase,
-                pressure: segment.inletPressureBarg,
-                temperature: segment.inletTemperatureC,
+                pressure: inletPressurePa,
+                temperature: inletTemperatureK,
                 density: segment.inletDensityKgM3,
                 velocity: segment.inletVelocityMs,
                 machNumber: segment.inletMachNumber,
@@ -244,8 +261,8 @@ function applyHydraulicSegmentsToNetwork(
             outletState: {
                 ...(pipe.resultSummary?.outletState ?? {}),
                 phase,
-                pressure: segment.outletPressureBarg,
-                temperature: segment.outletTemperatureC,
+                pressure: outletPressurePa,
+                temperature: outletTemperatureK,
                 density: segment.outletDensityKgM3,
                 velocity: segment.outletVelocityMs,
                 machNumber: segment.outletMachNumber,
