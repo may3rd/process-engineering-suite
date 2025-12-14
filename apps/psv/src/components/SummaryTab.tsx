@@ -135,8 +135,8 @@ function formatFluidLabel(pipe: PipeProps): string {
 type PipelineSegmentRow = {
     id: string;
     label: string;
-    p1Kpa?: number;  // Inlet pressure in kPa
-    p2Kpa?: number;  // Outlet pressure in kPa
+    p1Barg?: number;  // Inlet pressure in barg
+    p2Barg?: number;  // Outlet pressure in barg
     lengthMeters: number;
     diameterMm: number;
     sectionType: string;
@@ -160,17 +160,18 @@ function getPipelineSegments(network: PipelineNetwork | undefined, kind: 'inlet'
         const pressureDropPa = pipe.pressureDropCalculationResults?.totalSegmentPressureDrop;
         const pressureDrop = typeof pressureDropPa === 'number' ? pressureDropPa / 1000 : undefined;
 
-        // Extract inlet/outlet pressure from resultSummary (in Pa, convert to kPa)
+        // Extract inlet/outlet pressure from resultSummary (in Pa, convert to barg)
+        // barg = (Pa / 100000) - 1.01325
         const inletPressurePa = pipe.resultSummary?.inletState?.pressure;
         const outletPressurePa = pipe.resultSummary?.outletState?.pressure;
-        const p1Kpa = typeof inletPressurePa === 'number' ? inletPressurePa / 1000 : undefined;
-        const p2Kpa = typeof outletPressurePa === 'number' ? outletPressurePa / 1000 : undefined;
+        const p1Barg = typeof inletPressurePa === 'number' ? (inletPressurePa / 100000) - 1.01325 : undefined;
+        const p2Barg = typeof outletPressurePa === 'number' ? (outletPressurePa / 100000) - 1.01325 : undefined;
 
         return {
             id: pipe.id,
             label: pipe.name || `Segment ${index + 1}`,
-            p1Kpa,
-            p2Kpa,
+            p1Barg,
+            p2Barg,
             lengthMeters,
             diameterMm,
             sectionType: (pipe.pipeSectionType || 'pipeline').replace('_', ' '),
@@ -781,8 +782,8 @@ export function SummaryTab() {
                                         <TableHead>
                                             <TableRow>
                                                 <TableCell>Segment</TableCell>
-                                                <TableCell align="right">P1 (kPa)</TableCell>
-                                                <TableCell align="right">P2 (kPa)</TableCell>
+                                                <TableCell align="right">P1 (barg)</TableCell>
+                                                <TableCell align="right">P2 (barg)</TableCell>
                                                 <TableCell>Fluid</TableCell>
                                                 <TableCell align="right">Length (m)</TableCell>
                                                 <TableCell align="right">Diameter (mm)</TableCell>
@@ -797,8 +798,8 @@ export function SummaryTab() {
                                                         <Typography variant="body2" fontWeight={500}>{segment.label}</Typography>
                                                         <Typography variant="caption" color="text.secondary">{segment.sectionType}</Typography>
                                                     </TableCell>
-                                                    <TableCell align="right">{segment.p1Kpa?.toFixed(1) ?? '—'}</TableCell>
-                                                    <TableCell align="right">{segment.p2Kpa?.toFixed(1) ?? '—'}</TableCell>
+                                                    <TableCell align="right">{segment.p1Barg?.toFixed(2) ?? '—'}</TableCell>
+                                                    <TableCell align="right">{segment.p2Barg?.toFixed(2) ?? '—'}</TableCell>
                                                     <TableCell>{segment.fluid}</TableCell>
                                                     <TableCell align="right">{segment.lengthMeters ? segment.lengthMeters.toFixed(2) : '—'}</TableCell>
                                                     <TableCell align="right">{segment.diameterMm ? segment.diameterMm.toFixed(0) : '—'}</TableCell>
@@ -821,7 +822,7 @@ export function SummaryTab() {
                         </Box>
                     ))}
                 </Box>
-            </Paper>
+            </Paper >
 
             <Box
                 sx={{
@@ -880,6 +881,6 @@ export function SummaryTab() {
                     Generated on: {generatedTimestamp} • PSV Summary Document
                 </Typography>
             </Box>
-        </Box>
+        </Box >
     );
 }
