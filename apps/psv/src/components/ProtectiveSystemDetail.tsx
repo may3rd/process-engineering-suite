@@ -1916,13 +1916,13 @@ export function ProtectiveSystemDetail() {
                     <Box sx={{ display: 'flex', gap: 1 }}>
                         {canEdit && (
                             <>
-                                <Button
+                                {/* <Button
                                     variant="outlined"
                                     startIcon={<Edit />}
                                     onClick={handleEditClick}
                                 >
                                     Edit
-                                </Button>
+                                </Button> */}
                                 <Button
                                     variant="outlined"
                                     color="error"
