@@ -11,6 +11,11 @@ import {
     IconButton,
     Tooltip,
     Button,
+    Paper,
+    Stack,
+    TextField,
+    InputAdornment,
+    MenuItem,
 } from "@mui/material";
 import {
     Security,
@@ -19,12 +24,17 @@ import {
     Edit,
     Visibility,
     Add,
+    Search,
+    ArrowUpward,
+    ArrowDownward,
 } from "@mui/icons-material";
+import { useMemo, useState } from "react";
 import { usePsvStore } from "@/store/usePsvStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ProtectiveSystemType, ProtectiveSystem } from "@/data/types";
-import { v4 as uuidv4 } from 'uuid';
 import { getWorkflowStatusColor, getWorkflowStatusLabel } from "@/lib/statusColors";
+import { glassCardStyles } from "./styles";
+import { SortConfig, sortByGetter } from "@/lib/sortUtils";
 
 export function ProtectiveSystemList() {
     const theme = useTheme();
@@ -32,6 +42,13 @@ export function ProtectiveSystemList() {
     const { psvList, selectPsv, selectedProject, selectedArea, addProtectiveSystem } = usePsvStore();
     const currentUser = useAuthStore((state) => state.currentUser);
     const canEdit = useAuthStore((state) => state.canEdit());
+    const [searchText, setSearchText] = useState('');
+
+    type SortKey = 'tag' | 'name' | 'status' | 'setPressure' | 'mawp' | 'designCode' | 'fluidPhase' | 'type';
+    const [sortConfig, setSortConfig] = useState<SortConfig<SortKey>>({
+        key: 'tag',
+        direction: 'asc',
+    });
 
     const handleAddPsv = () => {
         if (!selectedArea || !selectedProject || !currentUser) return;
@@ -56,6 +73,60 @@ export function ProtectiveSystemList() {
         // Note: selectPsv would need the new ID, but addProtectiveSystem generates it internally
         // The PSV list will update and show the new item
     };
+
+    const filteredPsvs = useMemo(() => {
+        const query = searchText.trim().toLowerCase();
+        if (!query) return psvList;
+
+        return psvList.filter((psv) => {
+            const haystack = [
+                psv.tag,
+                psv.name,
+                psv.type,
+                psv.designCode,
+                psv.fluidPhase,
+                psv.status,
+                psv.serviceFluid,
+                ...(psv.tags ?? []),
+            ]
+                .filter(Boolean)
+                .join(' ')
+                .toLowerCase();
+
+            return haystack.includes(query);
+        });
+    }, [psvList, searchText]);
+
+    const getSortValue = (psv: ProtectiveSystem, key: SortKey): string | number => {
+        switch (key) {
+            case 'tag':
+                return psv.tag;
+            case 'name':
+                return psv.name;
+            case 'status':
+                return psv.status;
+            case 'type':
+                return psv.type;
+            case 'designCode':
+                return psv.designCode;
+            case 'fluidPhase':
+                return psv.fluidPhase;
+            case 'setPressure':
+                return psv.setPressure;
+            case 'mawp':
+                return psv.mawp;
+            default:
+                return '';
+        }
+    };
+
+    const sortedPsvs = useMemo(
+        () => sortByGetter(filteredPsvs, sortConfig, getSortValue),
+        [filteredPsvs, sortConfig]
+    );
+
+    const filteredCountLabel =
+        sortedPsvs.length === psvList.length ? `${psvList.length}` : `${sortedPsvs.length} of ${psvList.length}`;
 
     const getTypeIcon = (type: ProtectiveSystemType) => {
         switch (type) {
@@ -126,7 +197,7 @@ export function ProtectiveSystemList() {
                         Protective Systems
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        {psvList.length} device{psvList.length !== 1 ? 's' : ''} in {selectedProject.name}
+                        {filteredCountLabel} device{sortedPsvs.length !== 1 ? 's' : ''} in {selectedProject.name}
                     </Typography>
                 </Box>
                 {canEdit && (
@@ -141,8 +212,71 @@ export function ProtectiveSystemList() {
                 )}
             </Box>
 
+            <Paper sx={{ ...glassCardStyles, p: 2, mb: 3 }}>
+                <Stack
+                    direction={{ xs: 'column', md: 'row' }}
+                    spacing={2}
+                    alignItems={{ xs: 'stretch', md: 'center' }}
+                >
+                    <TextField
+                        placeholder="Search by tag, name, type, fluid, or status..."
+                        value={searchText}
+                        onChange={(e) => setSearchText(e.target.value)}
+                        size="small"
+                        fullWidth
+                        InputProps={{
+                            startAdornment: (
+                                <InputAdornment position="start">
+                                    <Search fontSize="small" />
+                                </InputAdornment>
+                            ),
+                        }}
+                    />
+
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', md: 360 } }}>
+                        <TextField
+                            select
+                            label="Sort"
+                            size="small"
+                            value={sortConfig.key}
+                            onChange={(e) =>
+                                setSortConfig({ key: e.target.value as SortKey, direction: 'asc' })
+                            }
+                            fullWidth
+                        >
+                            <MenuItem value="tag">Tag</MenuItem>
+                            <MenuItem value="name">Name</MenuItem>
+                            <MenuItem value="status">Status</MenuItem>
+                            <MenuItem value="type">Type</MenuItem>
+                            <MenuItem value="fluidPhase">Phase</MenuItem>
+                            <MenuItem value="designCode">Design code</MenuItem>
+                            <MenuItem value="setPressure">Set pressure</MenuItem>
+                            <MenuItem value="mawp">MAWP</MenuItem>
+                        </TextField>
+                        <Tooltip title={sortConfig.direction === 'asc' ? 'Ascending' : 'Descending'}>
+                            <IconButton
+                                size="small"
+                                onClick={() =>
+                                    setSortConfig((prev) => ({
+                                        ...prev,
+                                        direction: prev.direction === 'asc' ? 'desc' : 'asc',
+                                    }))
+                                }
+                                sx={{ flexShrink: 0 }}
+                            >
+                                {sortConfig.direction === 'asc' ? (
+                                    <ArrowUpward fontSize="small" />
+                                ) : (
+                                    <ArrowDownward fontSize="small" />
+                                )}
+                            </IconButton>
+                        </Tooltip>
+                    </Stack>
+                </Stack>
+            </Paper>
+
             <Grid container spacing={2}>
-                {psvList.map((psv) => (
+                {sortedPsvs.map((psv) => (
                     <Grid size={{ xs: 12, md: 6, lg: 4 }} key={psv.id}>
                         <Card
                             sx={{
@@ -256,15 +390,17 @@ export function ProtectiveSystemList() {
                     </Grid>
                 ))}
 
-                {psvList.length === 0 && (
+                {sortedPsvs.length === 0 && (
                     <Grid size={{ xs: 12 }}>
                         <Box sx={{ py: 8, textAlign: 'center' }}>
                             <Security sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
                             <Typography variant="h6" color="text.secondary">
-                                No protective systems found
+                                {searchText.trim() ? 'No devices match your search' : 'No protective systems found'}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                                Add a PSV or rupture disc to get started
+                                {searchText.trim()
+                                    ? 'Try a different search term'
+                                    : 'Add a PSV or rupture disc to get started'}
                             </Typography>
                         </Box>
                     </Grid>

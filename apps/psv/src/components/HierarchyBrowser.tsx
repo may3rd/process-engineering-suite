@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
     Box,
     List,
@@ -13,6 +13,10 @@ import {
     Paper,
     IconButton,
     Tooltip,
+    TextField,
+    InputAdornment,
+    Stack,
+    MenuItem,
 } from "@mui/material";
 import {
     Business,
@@ -22,6 +26,9 @@ import {
     FolderSpecial,
     ChevronRight,
     Add,
+    Search,
+    ArrowUpward,
+    ArrowDownward,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
 import { useAuthStore } from "@/store/useAuthStore";
@@ -31,6 +38,8 @@ import { UnitDialog } from "./dashboard/UnitDialog";
 import { AreaDialog } from "./dashboard/AreaDialog";
 import { ProjectDialog } from "./dashboard/ProjectDialog";
 import { getWorkflowStatusColor, getWorkflowStatusLabel, isWorkflowStatus } from "@/lib/statusColors";
+import type { Customer, Plant, Unit, Area, Project } from "@/data/types";
+import { sortByGetter, type SortConfig } from "@/lib/sortUtils";
 
 export function HierarchyBrowser() {
     const theme = useTheme();
@@ -71,6 +80,18 @@ export function HierarchyBrowser() {
     const [areaDialogOpen, setAreaDialogOpen] = useState(false);
     const [projectDialogOpen, setProjectDialogOpen] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
+    const [searchText, setSearchText] = useState('');
+
+    type Level = 'customer' | 'plant' | 'unit' | 'area' | 'project';
+    type SortKey = 'name' | 'code' | 'status' | 'createdAt';
+    type HierarchyItem = Customer | Plant | Unit | Area | Project;
+    const [sortConfigByLevel, setSortConfigByLevel] = useState<Record<Level, SortConfig<SortKey>>>({
+        customer: { key: 'name', direction: 'asc' },
+        plant: { key: 'name', direction: 'asc' },
+        unit: { key: 'name', direction: 'asc' },
+        area: { key: 'name', direction: 'asc' },
+        project: { key: 'name', direction: 'asc' },
+    });
 
     // Fix hydration mismatch - defer auth-dependent UI until client mount
     useEffect(() => {
@@ -102,6 +123,12 @@ export function HierarchyBrowser() {
     if (!currentLevel) {
         return null;
     }
+
+    const level = currentLevel.level as Level;
+
+    useEffect(() => {
+        setSearchText('');
+    }, [level]);
 
     const getIcon = (level: string) => {
         switch (level) {
@@ -250,6 +277,81 @@ export function HierarchyBrowser() {
         }
     };
 
+    const getSearchPlaceholder = (level: Level): string => {
+        switch (level) {
+            case 'customer':
+                return 'Search by name, code, or status...';
+            case 'plant':
+                return 'Search by name, code, location, or status...';
+            case 'unit':
+                return 'Search by name, code, service, or status...';
+            case 'area':
+                return 'Search by name, code, or status...';
+            case 'project':
+                return 'Search by name, code, phase, or status...';
+            default:
+                return 'Search...';
+        }
+    };
+
+    const filterItem = (item: HierarchyItem, level: Level, query: string): boolean => {
+        const q = query.trim().toLowerCase();
+        if (!q) return true;
+
+        const base = [
+            item.name,
+            'status' in item ? String(item.status) : '',
+            'code' in item ? String(item.code) : '',
+        ];
+
+        const extra =
+            level === 'plant'
+                ? ['location' in item ? String(item.location) : '']
+                : level === 'unit'
+                  ? ['service' in item ? String(item.service) : '']
+                  : level === 'project'
+                    ? ['phase' in item ? String(item.phase) : '']
+                    : [];
+
+        return [...base, ...extra]
+            .filter(Boolean)
+            .join(' ')
+            .toLowerCase()
+            .includes(q);
+    };
+
+    const filteredItems = useMemo(() => {
+        const items = currentLevel.items as HierarchyItem[];
+        return items.filter((item) => filterItem(item, level, searchText));
+    }, [currentLevel.items, level, searchText]);
+
+    const getSortValue = (item: HierarchyItem, key: SortKey): string | number => {
+        switch (key) {
+            case 'name':
+                return item.name.toLowerCase();
+            case 'code':
+                return ('code' in item ? String(item.code) : '').toLowerCase();
+            case 'status':
+                return ('status' in item ? String(item.status) : '').toLowerCase();
+            case 'createdAt': {
+                const ts = Date.parse((item as { createdAt?: string }).createdAt ?? '');
+                return Number.isFinite(ts) ? ts : 0;
+            }
+            default:
+                return '';
+        }
+    };
+
+    const sortedItems = useMemo(() => {
+        const sortConfig = sortConfigByLevel[level];
+        return sortByGetter(filteredItems, sortConfig, getSortValue);
+    }, [filteredItems, level, sortConfigByLevel]);
+
+    const filteredCountLabel =
+        sortedItems.length === currentLevel.items.length
+            ? `${currentLevel.items.length}`
+            : `${sortedItems.length} of ${currentLevel.items.length}`;
+
     return (
         <>
             <Paper
@@ -273,7 +375,7 @@ export function HierarchyBrowser() {
                             {currentLevel.title}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                            {currentLevel.items.length} item{currentLevel.items.length !== 1 ? 's' : ''}
+                            {filteredCountLabel} item{sortedItems.length !== 1 ? 's' : ''}
                         </Typography>
                     </Box>
                     {canAddItem() && (
@@ -292,8 +394,85 @@ export function HierarchyBrowser() {
                     )}
                 </Box>
 
+                <Box
+                    sx={{
+                        px: 3,
+                        py: 2,
+                        borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
+                    }}
+                >
+                    <Stack
+                        direction={{ xs: 'column', md: 'row' }}
+                        spacing={2}
+                        alignItems={{ xs: 'stretch', md: 'center' }}
+                    >
+                        <TextField
+                            placeholder={getSearchPlaceholder(level)}
+                            value={searchText}
+                            onChange={(e) => setSearchText(e.target.value)}
+                            size="small"
+                            fullWidth
+                            InputProps={{
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <Search fontSize="small" />
+                                    </InputAdornment>
+                                ),
+                            }}
+                        />
+
+                        <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', md: 320 } }}>
+                            <TextField
+                                select
+                                label="Sort"
+                                size="small"
+                                value={sortConfigByLevel[level].key}
+                                onChange={(e) =>
+                                    setSortConfigByLevel((prev) => ({
+                                        ...prev,
+                                        [level]: { key: e.target.value as SortKey, direction: 'asc' },
+                                    }))
+                                }
+                                fullWidth
+                            >
+                                <MenuItem value="name">Name</MenuItem>
+                                <MenuItem value="code">Code</MenuItem>
+                                <MenuItem value="status">Status</MenuItem>
+                                <MenuItem value="createdAt">Created</MenuItem>
+                            </TextField>
+                            <Tooltip
+                                title={
+                                    sortConfigByLevel[level].direction === 'asc'
+                                        ? 'Ascending'
+                                        : 'Descending'
+                                }
+                            >
+                                <IconButton
+                                    size="small"
+                                    onClick={() =>
+                                        setSortConfigByLevel((prev) => ({
+                                            ...prev,
+                                            [level]: {
+                                                ...prev[level],
+                                                direction: prev[level].direction === 'asc' ? 'desc' : 'asc',
+                                            },
+                                        }))
+                                    }
+                                    sx={{ flexShrink: 0 }}
+                                >
+                                    {sortConfigByLevel[level].direction === 'asc' ? (
+                                        <ArrowUpward fontSize="small" />
+                                    ) : (
+                                        <ArrowDownward fontSize="small" />
+                                    )}
+                                </IconButton>
+                            </Tooltip>
+                        </Stack>
+                    </Stack>
+                </Box>
+
                 <List disablePadding>
-                    {currentLevel.items.map((item) => (
+                    {sortedItems.map((item) => (
                         <ListItemButton
                             key={item.id}
                             onClick={() => handleSelect(item.id)}
@@ -343,10 +522,12 @@ export function HierarchyBrowser() {
                         </ListItemButton>
                     ))}
 
-                    {currentLevel.items.length === 0 && (
+                    {sortedItems.length === 0 && (
                         <Box sx={{ py: 6, textAlign: 'center' }}>
                             <Typography color="text.secondary">
-                                No {currentLevel.title.toLowerCase()} found
+                                {searchText.trim()
+                                    ? `No ${currentLevel.title.toLowerCase()} match your search`
+                                    : `No ${currentLevel.title.toLowerCase()} found`}
                             </Typography>
                         </Box>
                     )}
