@@ -174,6 +174,7 @@ export function HydraulicReportTable({
                                         {seg.machNumber !== undefined ? (
                                             <Typography
                                                 component="span"
+                                                variant="inherit"
                                                 color={seg.machNumber > 0.5 ? 'error.main' : 'inherit'}
                                                 fontWeight={seg.machNumber > 0.5 ? 'bold' : 'normal'}
                                             >
@@ -181,12 +182,12 @@ export function HydraulicReportTable({
                                             </Typography>
                                         ) : '-'}
                                     </TableCell>
-
                                     <TableCell align="right">{formatNumber(seg.inletPressureBarg, 2)}</TableCell>
                                     <TableCell align="right">{formatNumber(seg.outletPressureBarg, 2)}</TableCell>
                                     <TableCell align="right">
                                         <Typography
                                             component="span"
+                                            variant="inherit"
                                             fontWeight="bold"
                                             color="primary.main"
                                         >
@@ -210,7 +211,7 @@ export function HydraulicReportTable({
                                     TOTAL
                                 </TableCell>
                                 <TableCell align="right">
-                                    <Typography fontWeight="bold" color="primary.main">
+                                    <Typography variant="inherit" fontWeight="bold" color="primary.main">
                                         {formatNumber(totalPressureDropKPa, 2)}
                                     </Typography>
                                 </TableCell>
