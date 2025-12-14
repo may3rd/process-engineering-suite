@@ -676,23 +676,23 @@ export function SummaryTab() {
                                                 {sizingCase.method.replace('_', ' ')}
                                             </TableCell>
                                             <TableCell align="right">
-                                                {sizingCase.outputs.requiredArea.toFixed(1)}
+                                                {sizingCase.outputs?.requiredArea?.toFixed(1) ?? '—'}
                                             </TableCell>
                                             <TableCell>
-                                                {(sizingCase.outputs.numberOfValves || 1) > 1
-                                                    ? `${sizingCase.outputs.numberOfValves} x `
+                                                {(sizingCase.outputs?.numberOfValves || 1) > 1
+                                                    ? `${sizingCase.outputs?.numberOfValves} x `
                                                     : ''
                                                 }
-                                                {sizingCase.outputs.selectedOrifice} ({sizingCase.outputs.orificeArea} mm²)
+                                                {sizingCase.outputs?.selectedOrifice ?? '—'} ({sizingCase.outputs?.orificeArea ?? '—'} mm²)
                                             </TableCell>
                                             <TableCell align="right">
-                                                {sizingCase.outputs.percentUsed.toFixed(1)}%
+                                                {sizingCase.outputs?.percentUsed?.toFixed(1) ?? '—'}%
                                             </TableCell>
                                             <TableCell align="right">
-                                                {sizingCase.outputs.inletPressureDrop?.toFixed(1) ?? '—'}
+                                                {sizingCase.outputs?.inletPressureDrop?.toFixed(1) ?? '—'}
                                             </TableCell>
                                             <TableCell align="right">
-                                                {sizingCase.inputs.backpressure?.toFixed(2) ?? '—'}
+                                                {sizingCase.inputs?.backpressure?.toFixed(2) ?? '—'}
                                             </TableCell>
                                             <TableCell sx={{ textTransform: 'capitalize' }}>
                                                 <Chip
