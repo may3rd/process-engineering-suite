@@ -117,6 +117,7 @@ export interface OverpressureScenario {
     assumptions: string[];
     codeRefs: string[];
     isGoverning: boolean;
+    caseConsideration?: string; // Markdown-formatted case consideration details
     createdAt: string;
     updatedAt: string;
 }
@@ -171,7 +172,211 @@ export interface SizingCase {
 
 // Equipment and attachments
 // Equipment types
-export type EquipmentType = 'vessel' | 'tank' | 'heat_exchanger' | 'column' | 'reactor' | 'pump' | 'compressor' | 'piping' | 'other';
+export type EquipmentType = 'vessel' | 'tank' | 'heat_exchanger' | 'column' | 'reactor' | 'pump' | 'compressor' | 'piping' | 'control_valve' | 'other';
+
+// Insulation types
+export type InsulationType = 'mineral_wool' | 'calcium_silicate' | 'ceramic_fiber' | 'polyurethane' | 'fiberglass' | 'other';
+
+// Head types for vessels/columns/tanks
+export type HeadType = 'ellipsoidal' | 'hemispherical' | 'torispherical' | 'flat';
+
+// ============================================
+// Vessel Details (for wetted area calculation)
+// ============================================
+export interface VesselDetails {
+    orientation: 'horizontal' | 'vertical';
+    innerDiameter: number;          // mm
+    tangentToTangentLength: number; // mm (T-to-T)
+    headType: HeadType;
+    wallThickness?: number;         // mm
+    insulated: boolean;
+    insulationType?: InsulationType;
+    insulationThickness?: number;   // mm
+
+    // Liquid levels (% of height/diameter)
+    normalLiquidLevel?: number;     // NLL %
+    lowLiquidLevel?: number;        // LLL %
+    highLiquidLevel?: number;       // HLL %
+
+    // Calculated fields (stored after calculation)
+    wettedArea?: number;            // m² (for fire case)
+    totalSurfaceArea?: number;      // m²
+    volume?: number;                // m³
+}
+
+// ============================================
+// Column Details (for distillation/absorption)
+// ============================================
+export interface ColumnDetails {
+    innerDiameter: number;          // mm
+    tangentToTangentHeight: number; // mm
+    headType: HeadType;
+    wallThickness?: number;         // mm
+    insulated: boolean;
+    insulationType?: InsulationType;
+    insulationThickness?: number;   // mm
+
+    // Liquid levels (% of height)
+    normalLiquidLevel?: number;     // NLL %
+    lowLiquidLevel?: number;        // LLL %
+    highLiquidLevel?: number;       // HLL %
+
+    // Internals
+    numberOfTrays?: number;
+    traySpacing?: number;           // mm
+    columnType?: 'tray' | 'packed' | 'structured_packing';
+    packingHeight?: number;         // mm (for packed columns)
+
+    // Calculated
+    wettedArea?: number;            // m²
+    totalSurfaceArea?: number;      // m²
+    volume?: number;                // m³
+}
+
+// ============================================
+// Tank Details (storage tanks)
+// ============================================
+export interface TankDetails {
+    tankType: 'atmospheric' | 'low_pressure' | 'pressure';
+    orientation: 'horizontal' | 'vertical';
+    innerDiameter: number;          // mm
+    height: number;                 // mm (for vertical) or length (for horizontal)
+    roofType?: 'fixed_cone' | 'fixed_dome' | 'floating_internal' | 'floating_external' | 'none';
+    wallThickness?: number;         // mm
+    insulated: boolean;
+    insulationType?: InsulationType;
+    insulationThickness?: number;   // mm
+
+    // Liquid levels (% of height)
+    normalLiquidLevel?: number;     // NLL %
+    lowLiquidLevel?: number;        // LLL %
+    highLiquidLevel?: number;       // HLL %
+
+    // Calculated
+    wettedArea?: number;            // m²
+    volume?: number;                // m³
+    heelVolume?: number;            // m³ (unusable volume)
+}
+
+// ============================================
+// Pump Details (for blocked outlet/deadhead)
+// ============================================
+export interface PumpDetails {
+    pumpType: 'centrifugal' | 'positive_displacement' | 'reciprocating' | 'rotary';
+    ratedFlow: number;              // m³/h
+    ratedHead: number;              // m
+    maxDischargePressure: number;   // barg
+    shutoffHead?: number;           // m (for centrifugal)
+    npshRequired?: number;          // m
+    efficiency?: number;            // %
+    motorPower?: number;            // kW
+
+    // For positive displacement
+    reliefValveSetPressure?: number; // barg (internal relief)
+    maxViscosity?: number;          // cP
+
+    // Operating conditions
+    suctionPressure?: number;       // barg
+    dischargePressure?: number;     // barg
+    fluidTemperature?: number;      // °C
+    fluidDensity?: number;          // kg/m³
+}
+
+// ============================================
+// Compressor Details
+// ============================================
+export interface CompressorDetails {
+    compressorType: 'centrifugal' | 'reciprocating' | 'screw' | 'axial';
+    ratedCapacity: number;          // m³/h (actual)
+    standardCapacity?: number;      // Nm³/h (at STP)
+    suctionPressure: number;        // barg
+    dischargePressure: number;      // barg
+    compressionRatio?: number;      // P2/P1
+    suctionTemperature?: number;    // °C
+    dischargeTemperature?: number;  // °C
+    efficiency?: number;            // %
+    motorPower?: number;            // kW
+
+    // Surge protection (for centrifugal)
+    surgeFlow?: number;             // m³/h
+    antiSurgeValveSetpoint?: number; // %
+}
+
+// ============================================
+// Heat Exchanger Details
+// ============================================
+export interface HeatExchangerDetails {
+    hxType: 'shell_tube' | 'plate' | 'air_cooler' | 'double_pipe' | 'spiral';
+    shellDiameter?: number;         // mm
+    tubeLength?: number;            // mm
+    numberOfTubes?: number;
+    tubePitch?: number;             // mm
+    numberOfPasses?: number;
+    shellSidePressure?: number;     // barg
+    tubeSidePressure?: number;      // barg
+    shellSideTemperature?: number;  // °C
+    tubeSideTemperature?: number;   // °C
+    heatDuty?: number;              // kW
+    heatTransferArea?: number;      // m² (heat transfer area)
+
+    // Calculated (for fire case)
+    wettedArea?: number;            // m² (external surface)
+}
+
+// ============================================
+// Control Valve Details
+// ============================================
+export interface ControlValveDetails {
+    valveType: 'globe' | 'butterfly' | 'ball' | 'rotary' | 'eccentric';
+    bodySize: number;               // mm (nominal diameter)
+    rating: string;                 // e.g., "ANSI 300", "ANSI 600"
+    cv: number;                     // Valve coefficient
+    cg?: number;                    // Gas sizing coefficient
+    xT?: number;                    // Pressure drop ratio
+    fL?: number;                    // Liquid pressure recovery factor
+    fd?: number;                    // Valve style modifier
+
+    // Actuator
+    actuatorType?: 'pneumatic' | 'electric' | 'hydraulic';
+    failPosition?: 'open' | 'closed' | 'last';
+
+    // Operating conditions
+    upstreamPressure?: number;      // barg
+    downstreamPressure?: number;    // barg
+    normalFlow?: number;            // kg/h
+    maxFlow?: number;               // kg/h
+
+    // Trim
+    trimType?: 'linear' | 'equal_percent' | 'quick_opening';
+    rangeability?: number;          // e.g., 50:1
+}
+
+// ============================================
+// Piping Details
+// ============================================
+export interface PipingDetails {
+    nominalDiameter: number;        // mm
+    schedule: string;               // e.g., "40", "80", "STD"
+    material: string;               // e.g., "Carbon Steel", "SS316"
+    totalLength?: number;           // m
+    designPressure?: number;        // barg
+    designTemperature?: number;     // °C
+    insulated: boolean;
+    insulationType?: InsulationType;
+    insulationThickness?: number;   // mm
+}
+
+// Union type for equipment-specific details
+export type EquipmentDetails =
+    | VesselDetails
+    | TankDetails
+    | ColumnDetails
+    | PumpDetails
+    | CompressorDetails
+    | HeatExchangerDetails
+    | ControlValveDetails
+    | PipingDetails
+    | Record<string, unknown>;  // For 'reactor' and 'other' types
 
 // Equipment (physical assets in areas)
 export interface Equipment {
@@ -186,6 +391,10 @@ export interface Equipment {
     designTemperature: number; // °C
     ownerId: string;
     status: 'active' | 'inactive';
+
+    // Type-specific details
+    details?: EquipmentDetails;
+
     createdAt: string;
     updatedAt: string;
 }

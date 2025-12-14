@@ -133,6 +133,7 @@ erDiagram
 | assumptions | TEXT[] | Assumptions array |
 | code_refs | TEXT[] | Code references array |
 | is_governing | BOOLEAN | Is governing scenario |
+| case_consideration | TEXT | Markdown-formatted case consideration details (nullable). Supports LaTeX-style math via KaTeX in the frontend. |
 | created_at | TIMESTAMP | Creation time |
 | updated_at | TIMESTAMP | Last update |
 

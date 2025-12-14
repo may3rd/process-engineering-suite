@@ -1,7 +1,41 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { User } from '@/data/types';
+import { MockCredential, User } from '@/data/types';
 import { users, credentials } from '@/data/mockData';
+
+/**
+ * Demo auth storage keys (local-only).
+ *
+ * The PSV app currently runs in a demo mode where users and credentials are stored in
+ * `localStorage`. This enables "admin creates user + temporary password" without a
+ * backend identity provider.
+ */
+const USERS_STORAGE_KEY = 'psv_demo_users';
+const CREDENTIALS_STORAGE_KEY = 'psv_demo_credentials';
+
+function loadFromStorage<T>(key: string, fallback: T): T {
+    if (typeof window === 'undefined') return fallback;
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return fallback;
+    try {
+        return JSON.parse(raw) as T;
+    } catch {
+        return fallback;
+    }
+}
+
+function persistToStorage<T>(key: string, value: T) {
+    if (typeof window === 'undefined') return;
+    window.localStorage.setItem(key, JSON.stringify(value));
+}
+
+function ensureSeedData() {
+    // Seed demo data once so that newly-created users can also log in.
+    const existingUsers = loadFromStorage<User[]>(USERS_STORAGE_KEY, []);
+    const existingCreds = loadFromStorage<MockCredential[]>(CREDENTIALS_STORAGE_KEY, []);
+    if (existingUsers.length === 0) persistToStorage(USERS_STORAGE_KEY, users);
+    if (existingCreds.length === 0) persistToStorage(CREDENTIALS_STORAGE_KEY, credentials);
+}
 
 interface AuthState {
     currentUser: User | null;
@@ -9,6 +43,7 @@ interface AuthState {
     login: (username: string, password: string) => boolean;
     logout: () => void;
     updateUserProfile: (updates: Partial<Pick<User, 'name' | 'email'>>) => void;
+    changePassword: (currentPassword: string, newPassword: string) => { success: boolean; message: string };
     // Permission helpers
     canEdit: () => boolean;            // engineer+ (add/edit/delete items)
     canApprove: () => boolean;         // approver+
@@ -24,8 +59,12 @@ export const useAuthStore = create<AuthState>()(
             isAuthenticated: false,
 
             login: (username: string, password: string) => {
+                ensureSeedData();
+                const storedCredentials = loadFromStorage<MockCredential[]>(CREDENTIALS_STORAGE_KEY, credentials);
+                const storedUsers = loadFromStorage<User[]>(USERS_STORAGE_KEY, users);
+
                 // Find credential
-                const credential = credentials.find(
+                const credential = storedCredentials.find(
                     (c) => c.username === username && c.password === password
                 );
 
@@ -34,7 +73,7 @@ export const useAuthStore = create<AuthState>()(
                 }
 
                 // Find user
-                const user = users.find((u) => u.id === credential.userId);
+                const user = storedUsers.find((u) => u.id === credential.userId);
 
                 if (!user || user.status !== 'active') {
                     return false;
@@ -51,8 +90,36 @@ export const useAuthStore = create<AuthState>()(
             updateUserProfile: (updates) => {
                 const { currentUser } = get();
                 if (currentUser) {
-                    set({ currentUser: { ...currentUser, ...updates } });
+                    ensureSeedData();
+                    const storedUsers = loadFromStorage<User[]>(USERS_STORAGE_KEY, users);
+                    const updatedUser = { ...currentUser, ...updates };
+                    persistToStorage(
+                        USERS_STORAGE_KEY,
+                        storedUsers.map((u) => (u.id === currentUser.id ? updatedUser : u))
+                    );
+                    set({ currentUser: updatedUser });
                 }
+            },
+
+            changePassword: (currentPassword, newPassword) => {
+                const { currentUser } = get();
+                if (!currentUser) return { success: false, message: 'Not signed in' };
+                if (!newPassword || newPassword.length < 6) {
+                    return { success: false, message: 'Password must be at least 6 characters' };
+                }
+
+                ensureSeedData();
+                const storedCredentials = loadFromStorage<MockCredential[]>(CREDENTIALS_STORAGE_KEY, credentials);
+                const credIndex = storedCredentials.findIndex((c) => c.userId === currentUser.id);
+                if (credIndex === -1) return { success: false, message: 'Credential not found' };
+                if (storedCredentials[credIndex].password !== currentPassword) {
+                    return { success: false, message: 'Current password is incorrect' };
+                }
+
+                const nextCredentials = [...storedCredentials];
+                nextCredentials[credIndex] = { ...nextCredentials[credIndex], password: newPassword };
+                persistToStorage(CREDENTIALS_STORAGE_KEY, nextCredentials);
+                return { success: true, message: 'Password updated' };
             },
 
             // Permission helpers

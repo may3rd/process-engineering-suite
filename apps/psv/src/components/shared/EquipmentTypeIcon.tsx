@@ -8,6 +8,7 @@ import {
     Water,
     Compress,
     Category,
+    Tune,
 } from "@mui/icons-material";
 import { SvgIconProps } from "@mui/material";
 import { EquipmentType } from "@/data/types";
@@ -26,6 +27,7 @@ export function EquipmentTypeIcon({ type, ...props }: EquipmentTypeIconProps) {
         pump: Settings,
         compressor: Compress,
         piping: Category,
+        control_valve: Tune,
         other: Category,
     };
 

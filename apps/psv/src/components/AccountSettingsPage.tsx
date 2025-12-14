@@ -28,7 +28,7 @@ import { glassCardStyles } from "./styles";
 
 export function AccountSettingsPage() {
     const theme = useTheme();
-    const { currentUser, updateUserProfile } = useAuthStore();
+    const { currentUser, updateUserProfile, changePassword } = useAuthStore();
     const { setCurrentPage } = usePsvStore();
 
     const [name, setName] = useState(currentUser?.name || "");
@@ -37,6 +37,7 @@ export function AccountSettingsPage() {
     const [newPassword, setNewPassword] = useState("");
     const [confirmPassword, setConfirmPassword] = useState("");
     const [saveSuccess, setSaveSuccess] = useState(false);
+    const [passwordMessage, setPasswordMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
     const handleClose = () => {
         setCurrentPage(null);
@@ -51,14 +52,17 @@ export function AccountSettingsPage() {
     };
 
     const handleChangePassword = () => {
-        if (newPassword === confirmPassword && newPassword.length >= 6) {
-            // Mock password change
-            alert("Password changed successfully");
+        setPasswordMessage(null);
+        if (newPassword !== confirmPassword) {
+            setPasswordMessage({ type: "error", text: "New passwords do not match" });
+            return;
+        }
+        const result = changePassword(currentPassword, newPassword);
+        setPasswordMessage({ type: result.success ? "success" : "error", text: result.message });
+        if (result.success) {
             setCurrentPassword("");
             setNewPassword("");
             setConfirmPassword("");
-        } else {
-            alert("Passwords don't match or are too short (min 6 characters)");
         }
     };
 
@@ -131,7 +135,12 @@ export function AccountSettingsPage() {
                                         {currentUser?.name}
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary">
-                                        {currentUser?.role ? currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1) : 'Guest'}
+                                        {currentUser?.role
+                                            ? currentUser.role
+                                                .split("_")
+                                                .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+                                                .join(" ")
+                                            : "Guest"}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -163,7 +172,14 @@ export function AccountSettingsPage() {
                             <TextField
                                 fullWidth
                                 label="Role"
-                                value={currentUser?.role ? currentUser.role.charAt(0).toUpperCase() + currentUser.role.slice(1) : 'Guest'}
+                                value={
+                                    currentUser?.role
+                                        ? currentUser.role
+                                            .split("_")
+                                            .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+                                            .join(" ")
+                                        : "Guest"
+                                }
                                 disabled
                                 helperText="Contact admin to change your role"
                             />
@@ -187,6 +203,9 @@ export function AccountSettingsPage() {
                         <Divider sx={{ my: 2 }} />
 
                         <Stack spacing={3}>
+                            {passwordMessage && (
+                                <Alert severity={passwordMessage.type}>{passwordMessage.text}</Alert>
+                            )}
                             <TextField
                                 fullWidth
                                 label="Current Password"

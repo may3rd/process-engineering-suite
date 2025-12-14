@@ -185,10 +185,16 @@ export function LoginPage({ onSuccess, onContinueAsGuest }: LoginPageProps) {
                     }}
                 >
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
-                        Test Account:
+                        Demo Accounts:
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontFamily: 'monospace' }}>
                         engineer / engineer (Engineer)
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontFamily: 'monospace' }}>
+                        division / division (Division Manager)
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
+                        Admins can create users and set a temporary password in the Users page.
                     </Typography>
                 </Box>
             </Box>

@@ -426,6 +426,8 @@ class DatabaseService(DataAccessLayer):
             "requiredCapacity": "required_capacity",
             "codeRefs": "code_refs",
             "isGoverning": "is_governing",
+            # PSV scenario markdown notes (camelCase from frontend -> snake_case DB column)
+            "caseConsideration": "case_consideration",
             "designPressure": "design_pressure",
             "designTemperature": "design_temp",
             "locationRef": "location_ref",

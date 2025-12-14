@@ -63,14 +63,18 @@ import {
     CheckCircleOutline,
     PublishedWithChanges,
     Visibility,
+    ExpandLess,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
 import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem, ProtectiveSystem, ProjectNote } from "@/data/types";
 import { SizingWorkspace } from "./SizingWorkspace";
 import { ScenarioEditor } from "./ScenarioEditor"; // Import ScenarioEditor
 import { getUserById, users } from "@/data/mockData";
-import { useState, useEffect, MouseEvent } from "react";
+import { useState, useEffect, MouseEvent, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { SortConfig, toggleSortConfig, sortByGetter } from "@/lib/sortUtils";
+import { TableSortButton } from "@/components/shared/TableSortButton";
+import { MarkdownPreview } from "@/components/shared/MarkdownEditor";
 import { BasicInfoCard } from "./BasicInfoCard";
 import { OperatingConditionsCard } from "./OperatingConditionsCard";
 import { EquipmentCard } from "./EquipmentCard";
@@ -127,6 +131,8 @@ function OverviewTab() {
 }
 
 // Scenarios Tab Content
+type ScenarioSortKey = 'cause' | 'rate' | 'created';
+
 function ScenariosTab() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
@@ -135,6 +141,57 @@ function ScenariosTab() {
     const currentUser = useAuthStore((state) => state.currentUser);
     const [editorOpen, setEditorOpen] = useState(false);
     const [editingScenario, setEditingScenario] = useState<OverpressureScenario | undefined>(undefined);
+    const [sortConfig, setSortConfig] = useState<SortConfig<ScenarioSortKey> | null>({ key: 'cause', direction: 'asc' });
+    /**
+     * Per-scenario UI state for the inline "Case Consideration" markdown block.
+     * This allows quick reading (full expansion) without navigating away to the dedicated editor page.
+     */
+    const [expandedCaseConsiderationByScenarioId, setExpandedCaseConsiderationByScenarioId] = useState<Record<string, boolean>>({});
+
+    const handleSort = (key: ScenarioSortKey) => {
+        setSortConfig((prev) => toggleSortConfig(prev, key));
+    };
+
+    const getCauseIcon = (cause: ScenarioCause) => {
+        switch (cause) {
+            case 'blocked_outlet':
+                return <Block />;
+            case 'fire_case':
+            case 'external_fire':
+                return <LocalFireDepartment />;
+            case 'tube_rupture':
+                return <BrokenImage />;
+            case 'utility_failure':
+            case 'power_failure':
+                return <FlashOff />;
+            case 'thermal_expansion':
+                return <WaterDrop />;
+            default:
+                return <WarningIcon />;
+        }
+    };
+
+    const getCauseLabel = (cause: ScenarioCause) => {
+        return cause.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    };
+
+    const getSortValue = (scenario: OverpressureScenario, key: ScenarioSortKey): string | number => {
+        switch (key) {
+            case 'cause':
+                return getCauseLabel(scenario.cause).toLowerCase();
+            case 'rate':
+                return scenario.relievingRate;
+            case 'created':
+                return scenario.createdAt ? new Date(scenario.createdAt).getTime() : 0;
+            default:
+                return '';
+        }
+    };
+
+    const sortedScenarios = useMemo(
+        () => sortByGetter(scenarioList, sortConfig, getSortValue),
+        [scenarioList, sortConfig]
+    );
 
     const handleAddScenario = () => {
         setEditingScenario(undefined);
@@ -162,29 +219,6 @@ function ScenariosTab() {
         }
     };
 
-    const getCauseIcon = (cause: ScenarioCause) => {
-        switch (cause) {
-            case 'blocked_outlet':
-                return <Block />;
-            case 'fire_case':
-            case 'external_fire':
-                return <LocalFireDepartment />;
-            case 'tube_rupture':
-                return <BrokenImage />;
-            case 'utility_failure':
-            case 'power_failure':
-                return <FlashOff />;
-            case 'thermal_expansion':
-                return <WaterDrop />;
-            default:
-                return <WarningIcon />;
-        }
-    };
-
-    const getCauseLabel = (cause: ScenarioCause) => {
-        return cause.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-    };
-
     if (!selectedPsv) return null;
 
     // All possible scenario causes with display labels
@@ -208,9 +242,32 @@ function ScenariosTab() {
     return (
         <Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" fontWeight={600}>
-                    Overpressure Scenarios
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="h6" fontWeight={600}>
+                        Overpressure Scenarios
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>Sort:</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Typography variant="caption">Cause</Typography>
+                            <TableSortButton
+                                label="Cause"
+                                active={sortConfig?.key === 'cause'}
+                                direction={sortConfig?.direction ?? 'asc'}
+                                onClick={() => handleSort('cause')}
+                            />
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
+                            <Typography variant="caption">Rate</Typography>
+                            <TableSortButton
+                                label="Rate"
+                                active={sortConfig?.key === 'rate'}
+                                direction={sortConfig?.direction ?? 'asc'}
+                                onClick={() => handleSort('rate')}
+                            />
+                        </Box>
+                    </Box>
+                </Box>
                 {canEdit && (
                     <Button variant="contained" startIcon={<Add />} size="small" onClick={handleAddScenario}>
                         Add Scenario
@@ -305,9 +362,13 @@ function ScenariosTab() {
                 </DialogContent>
             </Dialog>
 
-            {scenarioList.length > 0 ? (
+            {sortedScenarios.length > 0 ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {scenarioList.map((scenario) => (
+                    {sortedScenarios.map((scenario) => {
+                        const isExpanded = !!expandedCaseConsiderationByScenarioId[scenario.id];
+                        const canExpand = !!scenario.caseConsideration;
+
+                        return (
                         <Card key={scenario.id}>
                             <CardContent>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
@@ -414,9 +475,99 @@ function ScenariosTab() {
                                         <Chip key={idx} label={ref} size="small" variant="outlined" />
                                     ))}
                                 </Box>
+
+                                {/* Case Consideration Preview */}
+                                <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                        <Typography variant="subtitle2">Case Consideration</Typography>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                            {canExpand && (
+                                                <Button
+                                                    size="small"
+                                                    startIcon={isExpanded ? <ExpandLess /> : <Visibility />}
+                                                    onClick={() => {
+                                                        setExpandedCaseConsiderationByScenarioId((prev) => ({
+                                                            ...prev,
+                                                            [scenario.id]: !isExpanded,
+                                                        }));
+                                                    }}
+                                                >
+                                                    {isExpanded ? 'Collapse' : 'Expand'}
+                                                </Button>
+                                            )}
+                                            {(canEdit || scenario.caseConsideration) && (
+                                                <Button
+                                                    size="small"
+                                                    onClick={() => {
+                                                        usePsvStore.setState({
+                                                            editingScenarioId: scenario.id,
+                                                            currentPage: 'scenario_consideration',
+                                                        });
+                                                    }}
+                                                >
+                                                    {/* Hide "Edit" wording when user is read-only; page still supports view mode. */}
+                                                    {canEdit
+                                                        ? (scenario.caseConsideration ? 'Edit Full Page' : 'Add Details')
+                                                        : 'View Full Page'}
+                                                </Button>
+                                            )}
+                                        </Box>
+                                    </Box>
+                                    {scenario.caseConsideration ? (
+                                        <Paper
+                                            variant="outlined"
+                                            sx={{
+                                                p: 1.5,
+                                                bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)',
+                                                ...(isExpanded
+                                                    ? { overflow: 'visible' }
+                                                    : { maxHeight: 120, overflow: 'hidden' }),
+                                                position: 'relative',
+                                                cursor: isExpanded ? 'default' : 'pointer',
+                                                ...(isExpanded
+                                                    ? {}
+                                                    : {
+                                                        '&:hover': { borderColor: 'primary.main' },
+                                                        '&::after': {
+                                                            content: '""',
+                                                            position: 'absolute',
+                                                            bottom: 0,
+                                                            left: 0,
+                                                            right: 0,
+                                                            height: 40,
+                                                            background: isDark
+                                                                ? 'linear-gradient(transparent, rgba(30,30,30,1))'
+                                                                : 'linear-gradient(transparent, rgba(255,255,255,1))',
+                                                        },
+                                                    }),
+                                            }}
+                                            onClick={
+                                                isExpanded
+                                                    // When expanded, allow selecting/scrolling content without navigating away.
+                                                    ? undefined
+                                                    : () => {
+                                                        usePsvStore.setState({
+                                                            editingScenarioId: scenario.id,
+                                                            currentPage: 'scenario_consideration',
+                                                        });
+                                                    }
+                                            }
+                                        >
+                                            <MarkdownPreview
+                                                content={scenario.caseConsideration}
+                                                maxLines={isExpanded ? undefined : 4}
+                                            />
+                                        </Paper>
+                                    ) : (
+                                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                                            No case consideration documented yet.
+                                        </Typography>
+                                    )}
+                                </Box>
                             </CardContent>
                         </Card>
-                    ))}
+                        );
+                    })}
                 </Box>
             ) : (
                 <Paper sx={{ py: 6, textAlign: 'center' }}>
@@ -437,6 +588,8 @@ function ScenariosTab() {
 }
 
 // Sizing Tab Content
+type SizingSortKey = 'scenario' | 'status' | 'created';
+
 function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCreate?: (id: string) => void }) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
@@ -447,6 +600,11 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
     const currentUser = useAuthStore((state) => state.currentUser);
     const [dialogOpen, setDialogOpen] = useState(false);
     const [statusMenu, setStatusMenu] = useState<{ anchorEl: HTMLElement; sizing: SizingCase } | null>(null);
+    const [sortConfig, setSortConfig] = useState<SortConfig<SizingSortKey> | null>({ key: 'scenario', direction: 'asc' });
+
+    const handleSort = (key: SizingSortKey) => {
+        setSortConfig((prev) => toggleSortConfig(prev, key));
+    };
 
     const getScenarioName = (scenarioId: string) => {
         const scenario = scenarioList.find(s => s.id === scenarioId);
@@ -454,14 +612,32 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
         return scenario.cause.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
     };
 
+    const getSortValue = (sizing: SizingCase, key: SizingSortKey): string | number => {
+        switch (key) {
+            case 'scenario':
+                return getScenarioName(sizing.scenarioId).toLowerCase();
+            case 'status':
+                return sizing.status;
+            case 'created':
+                return sizing.createdAt ? new Date(sizing.createdAt).getTime() : 0;
+            default:
+                return '';
+        }
+    };
+
+    const sortedSizingCases = useMemo(
+        () => sortByGetter(sizingCaseList, sortConfig, getSortValue),
+        [sizingCaseList, sortConfig, scenarioList]
+    );
+
     const sizingStatusOptions = SIZING_STATUS_SEQUENCE.map((status) => ({
         value: status,
         label: getSizingStatusLabel(status),
         icon:
             status === 'draft' ? <Drafts fontSize="small" /> :
-            status === 'calculated' ? <Calculate fontSize="small" /> :
-            status === 'verified' ? <Verified fontSize="small" /> :
-            <CheckCircleOutline fontSize="small" />,
+                status === 'calculated' ? <Calculate fontSize="small" /> :
+                    status === 'verified' ? <Verified fontSize="small" /> :
+                        <CheckCircleOutline fontSize="small" />,
     }));
 
     const sizingStatusPermission = (status: SizingCase['status']) => {
@@ -579,9 +755,32 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
     return (
         <Box>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Typography variant="h6" fontWeight={600}>
-                    Sizing Cases
-                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Typography variant="h6" fontWeight={600}>
+                        Sizing Cases
+                    </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', ml: 2 }}>
+                        <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>Sort:</Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                            <Typography variant="caption">Scenario</Typography>
+                            <TableSortButton
+                                label="Scenario"
+                                active={sortConfig?.key === 'scenario'}
+                                direction={sortConfig?.direction ?? 'asc'}
+                                onClick={() => handleSort('scenario')}
+                            />
+                        </Box>
+                        <Box sx={{ display: 'flex', alignItems: 'center', ml: 1 }}>
+                            <Typography variant="caption">Status</Typography>
+                            <TableSortButton
+                                label="Status"
+                                active={sortConfig?.key === 'status'}
+                                direction={sortConfig?.direction ?? 'asc'}
+                                onClick={() => handleSort('status')}
+                            />
+                        </Box>
+                    </Box>
+                </Box>
                 {canEdit && (
                     <Button
                         variant="contained"
@@ -668,9 +867,9 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                 </DialogActions>
             </Dialog>
 
-            {sizingCaseList.length > 0 ? (
+            {sortedSizingCases.length > 0 ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {sizingCaseList.map((sizing) => (
+                    {sortedSizingCases.map((sizing) => (
                         <Card key={sizing.id}>
                             <CardContent>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>

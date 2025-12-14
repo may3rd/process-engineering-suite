@@ -18,6 +18,7 @@ import {
     Comment,
     TodoItem,
     User,
+    MockCredential,
     ProjectNote,
 } from '@/data/types';
 import {
@@ -56,6 +57,7 @@ const STORAGE_KEYS = {
     COMMENTS: 'psv_demo_comments',
     TODOS: 'psv_demo_todos',
     USERS: 'psv_demo_users',
+    CREDENTIALS: 'psv_demo_credentials',
     CURRENT_USER: 'psv_demo_current_user',
     INITIALIZED: 'psv_demo_initialized',
 };
@@ -106,6 +108,7 @@ function initializeIfNeeded(): void {
         localStorage.setItem(STORAGE_KEYS.COMMENTS, JSON.stringify(mockComments));
         localStorage.setItem(STORAGE_KEYS.TODOS, JSON.stringify(mockTodos));
         localStorage.setItem(STORAGE_KEYS.USERS, JSON.stringify(mockUsers));
+        localStorage.setItem(STORAGE_KEYS.CREDENTIALS, JSON.stringify(mockCredentials));
         localStorage.setItem(STORAGE_KEYS.INITIALIZED, 'true');
     }
 }
@@ -120,9 +123,8 @@ class LocalStorageService {
     // --- Auth ---
 
     async login(username: string, password: string): Promise<LoginResponse> {
-        const credential = mockCredentials.find(
-            c => c.username === username && c.password === password
-        );
+        const storedCreds = getItem<MockCredential>(STORAGE_KEYS.CREDENTIALS, mockCredentials);
+        const credential = storedCreds.find((c) => c.username === username && c.password === password);
 
         if (!credential) {
             throw new Error('Invalid username or password');
@@ -158,6 +160,87 @@ class LocalStorageService {
         return JSON.parse(stored);
     }
 
+    async updateMe(data: { name?: string; email?: string }): Promise<User> {
+        const user = await this.getCurrentUser();
+        const users = getItem<User>(STORAGE_KEYS.USERS, mockUsers);
+        const updatedUser: User = {
+            ...user,
+            ...(data.name ? { name: data.name } : {}),
+            ...(data.email ? { email: data.email.toLowerCase() } : {}),
+        };
+        setItem(STORAGE_KEYS.USERS, users.map((u) => (u.id === user.id ? updatedUser : u)));
+        localStorage.setItem(STORAGE_KEYS.CURRENT_USER, JSON.stringify(updatedUser));
+        return updatedUser;
+    }
+
+    async changePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean }> {
+        const user = await this.getCurrentUser();
+
+        if (!newPassword || newPassword.length < 6) {
+            throw new Error('Password must be at least 6 characters');
+        }
+        const creds = getItem<MockCredential>(STORAGE_KEYS.CREDENTIALS, mockCredentials);
+        const index = creds.findIndex((c) => c.userId === user.id);
+
+        if (index === -1) throw new Error('Credential not found');
+        if (creds[index].password !== currentPassword) {
+            throw new Error('Current password is incorrect');
+        }
+
+        const next = [...creds];
+        next[index] = { ...next[index], password: newPassword };
+        setItem(STORAGE_KEYS.CREDENTIALS, next);
+
+        return { success: true };
+    }
+
+    // --- Admin: Users (demo mode) ---
+
+    async getUsers(): Promise<User[]> {
+        return getItem<User>(STORAGE_KEYS.USERS, mockUsers);
+    }
+
+    async createUser(data: { name: string; email: string; role: User['role']; status?: User['status']; username: string; temporaryPassword: string }): Promise<User> {
+        const users = getItem<User>(STORAGE_KEYS.USERS, mockUsers);
+        const creds = getItem<MockCredential>(STORAGE_KEYS.CREDENTIALS, mockCredentials);
+
+        if (creds.some((c) => c.username === data.username)) {
+            throw new Error('Username already exists');
+        }
+        const newUser: User = {
+            id: uuidv4(),
+            name: data.name,
+            email: data.email.toLowerCase(),
+            role: data.role,
+            status: data.status || 'active',
+        };
+        users.push(newUser);
+        setItem(STORAGE_KEYS.USERS, users);
+
+        const newCredential = { userId: newUser.id, username: data.username, password: data.temporaryPassword };
+        creds.push(newCredential);
+        setItem(STORAGE_KEYS.CREDENTIALS, creds);
+
+        return newUser;
+    }
+
+    async updateUser(id: string, data: Partial<Pick<User, 'name' | 'email' | 'role' | 'status'>>): Promise<User> {
+        const users = getItem<User>(STORAGE_KEYS.USERS, mockUsers);
+        const index = users.findIndex((u) => u.id === id);
+        if (index === -1) throw new Error('User not found');
+        const updated: User = { ...users[index], ...data, ...(data.email ? { email: data.email.toLowerCase() } : {}) };
+        users[index] = updated;
+        setItem(STORAGE_KEYS.USERS, users);
+        return updated;
+    }
+
+    async deleteUser(id: string): Promise<{ success: boolean }> {
+        const users = getItem<User>(STORAGE_KEYS.USERS, mockUsers);
+        const creds = getItem<MockCredential>(STORAGE_KEYS.CREDENTIALS, mockCredentials);
+        setItem(STORAGE_KEYS.USERS, users.filter((u) => u.id !== id));
+        setItem(STORAGE_KEYS.CREDENTIALS, creds.filter((c) => c.userId !== id));
+        return { success: true };
+    }
     // --- Hierarchy: Customers ---
 
     async getCustomers(): Promise<Customer[]> {
@@ -430,6 +513,7 @@ class LocalStorageService {
             assumptions: data.assumptions || [],
             codeRefs: data.codeRefs || [],
             isGoverning: data.isGoverning || false,
+            caseConsideration: data.caseConsideration,
             createdAt: now(),
             updatedAt: now(),
         };
@@ -439,11 +523,16 @@ class LocalStorageService {
     }
 
     async updateScenario(id: string, data: Partial<Scenario>): Promise<Scenario> {
+        console.log('[localStorage] updateScenario called with id:', id);
+        console.log('[localStorage] updateScenario data keys:', Object.keys(data));
+        console.log('[localStorage] caseConsideration value:', data.caseConsideration?.substring(0, 50));
+
         const scenarios = getItem<Scenario>(STORAGE_KEYS.SCENARIOS, mockScenarios);
         const index = scenarios.findIndex(s => s.id === id);
         if (index === -1) throw new Error('Scenario not found');
 
         scenarios[index] = { ...scenarios[index], ...data, updatedAt: now() };
+        console.log('[localStorage] Updated scenario caseConsideration:', scenarios[index].caseConsideration?.substring(0, 50));
         setItem(STORAGE_KEYS.SCENARIOS, scenarios);
         return scenarios[index];
     }
@@ -751,12 +840,6 @@ class LocalStorageService {
     async deleteAttachment(id: string): Promise<void> {
         const attachments = getItem<Attachment>(STORAGE_KEYS.ATTACHMENTS, mockAttachments);
         setItem(STORAGE_KEYS.ATTACHMENTS, attachments.filter(a => a.id !== id));
-    }
-
-    // --- Users ---
-
-    async getUsers(): Promise<User[]> {
-        return getItem<User>(STORAGE_KEYS.USERS, mockUsers);
     }
 
     // --- Utility: Reset demo data ---

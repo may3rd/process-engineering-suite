@@ -73,7 +73,8 @@ interface PsvStore {
     // UI state
     activeTab: number;
     sidebarOpen: boolean;
-    currentPage: 'hierarchy' | 'dashboard' | 'account' | null;
+    currentPage: 'hierarchy' | 'dashboard' | 'account' | 'scenario_consideration' | null;
+    editingScenarioId: string | null;
     isLoading: boolean;
     error: string | null;
 
@@ -209,6 +210,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     activeTab: 0,
     sidebarOpen: true,
     currentPage: null,
+    editingScenarioId: null,
     isLoading: false,
     error: null,
 

@@ -2174,7 +2174,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                     Sizing Summary
                                 </Typography>
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(5, 1fr)' }, gap: 3 }}>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <Box>
                                         <Typography variant="caption" color="text.secondary">Selected Orifice</Typography>
                                         <Typography variant="h3" fontWeight={700} color="primary.main">
                                             {currentCase.outputs?.selectedOrifice ?? '-'}
@@ -2202,7 +2202,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                             {(((currentCase.outputs?.ratedCapacity ?? 0) / (currentCase.outputs?.numberOfValves || 1)) * numberOfValves).toLocaleString()} kg/h
                                         </Typography>
                                     </Box>
-                                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                                    <Box>
                                         <Typography variant="caption" color="text.secondary">Number of Valves</Typography>
                                         <Typography variant="h5" fontWeight={600}>
                                             {numberOfValves}

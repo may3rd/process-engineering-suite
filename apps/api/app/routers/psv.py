@@ -83,6 +83,8 @@ class ScenarioResponse(BaseModel):
     assumptions: List[str] = []
     code_refs: List[str] = Field(default=[], serialization_alias="codeRefs")
     is_governing: bool = Field(default=False, serialization_alias="isGoverning")
+    # Markdown-formatted case consideration notes shown in PSV Detail -> Scenario Section.
+    case_consideration: Optional[str] = Field(default=None, serialization_alias="caseConsideration")
     created_at: datetime = Field(serialization_alias="createdAt")
     updated_at: datetime = Field(serialization_alias="updatedAt")
 
@@ -101,6 +103,8 @@ class ScenarioCreate(BaseModel):
     assumptions: List[str] = []
     codeRefs: List[str] = []
     isGoverning: bool = False
+    # GitHub-flavored markdown for scenario-specific analysis/justification.
+    caseConsideration: Optional[str] = None
 
 
 class ScenarioUpdate(BaseModel):
@@ -116,6 +120,8 @@ class ScenarioUpdate(BaseModel):
     assumptions: Optional[List[str]] = None
     codeRefs: Optional[List[str]] = None
     isGoverning: Optional[bool] = None
+    # Keep optional so existing clients can omit it without clearing the stored value.
+    caseConsideration: Optional[str] = None
 
 
 class SizingCaseResponse(BaseModel):

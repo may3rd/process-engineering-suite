@@ -9,6 +9,7 @@ import { ProtectiveSystemList } from "@/components/ProtectiveSystemList";
 import { ProtectiveSystemDetail } from "@/components/ProtectiveSystemDetail";
 import { DashboardPage } from "@/components/DashboardPage";
 import { AccountSettingsPage } from "@/components/AccountSettingsPage";
+import { CaseConsiderationPage } from "@/components/CaseConsiderationPage";
 import { usePsvStore } from "@/store/usePsvStore";
 
 export default function PsvApp() {
@@ -27,6 +28,9 @@ export default function PsvApp() {
         }
         if (currentPage === 'account') {
             return <AccountSettingsPage />;
+        }
+        if (currentPage === 'scenario_consideration') {
+            return <CaseConsiderationPage />;
         }
 
         // If a PSV is selected, show the detail view

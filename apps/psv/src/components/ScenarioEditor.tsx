@@ -37,6 +37,7 @@ import {
 import { OverpressureScenario, ScenarioCause, FluidPhase } from "@/data/types";
 import { v4 as uuidv4 } from "uuid";
 import { useAuthStore } from "@/store/useAuthStore";
+import { MarkdownEditor } from "@/components/shared/MarkdownEditor";
 
 interface ScenarioEditorProps {
     initialData?: OverpressureScenario;
@@ -393,6 +394,39 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                 </Box>
             </Box>
 
+            <Divider sx={{ my: 3 }} />
+
+            {/* Case Consideration - Markdown Editor */}
+            <Box>
+                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                    Case Consideration
+                </Typography>
+                <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mb: 1 }}>
+                    Document detailed analysis, calculations, and justifications. Supports GitHub-flavored markdown and math (`$...$`, `$$...$$`).
+                </Typography>
+                <MarkdownEditor
+                    value={formData.caseConsideration || ''}
+                    onChange={(value) => handleInputChange('caseConsideration', value)}
+                    placeholder={`## Relief Scenario Analysis
+
+### Background
+Describe the process conditions and operating envelope...
+
+### Design Basis
+- Design pressure: 
+- Maximum allowable working pressure (MAWP):
+- Set pressure:
+
+### Relieving Load Calculation
+Document the calculation methodology...
+
+### Conclusions
+Summary of findings and recommendations...`}
+                    disabled={!canEdit}
+                    minRows={8}
+                    maxRows={16}
+                />
+            </Box>
 
 
             {/* Footer Actions */}
