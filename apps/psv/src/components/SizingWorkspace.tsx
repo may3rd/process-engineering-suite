@@ -1342,7 +1342,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                         <TextField
                                             label="Backpressure Type"
                                             select
-                                            value={currentCase.inputs.backpressureType}
+                                            value={currentCase.inputs.backpressureType || 'superimposed'}
                                             onChange={(e) => handleInputChange('backpressureType', e.target.value)}
                                             fullWidth
                                         >
