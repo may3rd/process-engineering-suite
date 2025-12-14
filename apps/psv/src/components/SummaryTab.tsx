@@ -30,6 +30,7 @@ import { usePsvStore } from "@/store/usePsvStore";
 import { getUserById } from "@/data/mockData";
 import { PipelineNetwork, OverpressureScenario, PipeProps } from "@/data/types";
 import { getWorkflowStatusLabel } from "@/lib/statusColors";
+import { convertUnit } from "@eng-suite/physics";
 
 // Helper functions for hydraulic calculations
 function calculateTotalLength(network: PipelineNetwork): number {
@@ -161,11 +162,10 @@ function getPipelineSegments(network: PipelineNetwork | undefined, kind: 'inlet'
         const pressureDrop = typeof pressureDropPa === 'number' ? pressureDropPa / 1000 : undefined;
 
         // Extract inlet/outlet pressure from resultSummary (in Pa, convert to barg)
-        // barg = (Pa / 100000) - 1.01325
         const inletPressurePa = pipe.resultSummary?.inletState?.pressure;
         const outletPressurePa = pipe.resultSummary?.outletState?.pressure;
-        const p1Barg = typeof inletPressurePa === 'number' ? (inletPressurePa / 100000) - 1.01325 : undefined;
-        const p2Barg = typeof outletPressurePa === 'number' ? (outletPressurePa / 100000) - 1.01325 : undefined;
+        const p1Barg = typeof inletPressurePa === 'number' ? convertUnit(inletPressurePa, 'Pa', 'barg') : undefined;
+        const p2Barg = typeof outletPressurePa === 'number' ? convertUnit(outletPressurePa, 'Pa', 'barg') : undefined;
 
         return {
             id: pipe.id,
