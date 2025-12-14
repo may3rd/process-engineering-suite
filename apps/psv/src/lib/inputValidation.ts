@@ -68,7 +68,9 @@ function validateCommon(inputs: SizingInputs): ValidationError[] {
         });
     }
 
-    if (!isNonNegative(inputs.backpressure)) {
+    // Backpressure can be 0 (atmospheric) or undefined (treated as 0)
+    const backpressure = inputs.backpressure ?? 0;
+    if (isNaN(backpressure) || backpressure < 0) {
         errors.push({
             field: 'backpressure',
             message: 'Backpressure must be non-negative',
