@@ -15,48 +15,104 @@ PSV (Pressure Safety Valve) sizing application within the Process Engineering Su
 - `src/app/layout.tsx` - Root layout with fixed TopToolbar
 - `src/app/providers.tsx` - Theme provider with URL param sync
 - `src/store/usePsvStore.ts` - Zustand store for navigation state
+- `src/store/useAuthStore.ts` - Authentication and user state
 - `src/data/mockData.ts` - Mock data with query helpers
 - `src/data/types.ts` - TypeScript domain types
+- `src/lib/localStorageService.ts` - Local storage persistence for demo mode
+- `src/lib/hydraulicValidation.ts` - Hydraulic calculations using physics-engine
 
-### Components
+### Core Components
 - `TopToolbar.tsx` - Header using `TopFloatingToolbar` from ui-kit
 - `Breadcrumbs.tsx` - Navigation path with clickable segments
 - `HierarchyBrowser.tsx` - List browser for Customer/Plant/Unit/Area/Project
 - `ProtectiveSystemList.tsx` - PSV/RD cards with status chips
-- `ProtectiveSystemDetail.tsx` - Tabbed detail view (Overview/Scenarios/Sizing/Attachments)
+- `ProtectiveSystemDetail.tsx` - Tabbed detail view (Overview/Scenarios/Sizing/Notes/Attachments/Summary)
+- `SizingWorkspace.tsx` - Full-screen PSV sizing calculator
+- `SummaryTab.tsx` - Printable summary with hydraulic network details
+- `HydraulicReportTable.tsx` - Segment-by-segment hydraulic results table
+- `HydraulicReportDialog.tsx` - Detailed hydraulic report export
+
+## Unit Conventions (CRITICAL)
+
+### Storage (SI Units)
+All values are stored in SI units for consistency:
+- **Pressure**: Pascal (Pa) absolute
+- **Temperature**: Kelvin (K)
+- **Mass Flow**: kg/s or kg/h (specify unit field)
+- **Length**: meters (m)
+- **Diameter**: millimeters (mm)
+- **Density**: kg/m³
+- **Viscosity**: Pa·s
+
+### Display Units
+Converted to user-friendly units for display:
+- **Pressure**: barg (gauge pressure in bar)
+- **Temperature**: °C
+- **Mass Flow**: kg/h
+- Use `convertUnit()` from `@eng-suite/physics` for conversions
+
+### Key Conversion Points
+1. **`applyHydraulicSegmentsToNetwork()`** in `SizingWorkspace.tsx`:
+   - Converts `barg` → `Pa` when storing to `resultSummary.inletState.pressure`
+   - Converts `°C` → `K` when storing temperature
+2. **`getPipelineSegments()`** in `SummaryTab.tsx`:
+   - Converts `Pa` → `barg` for display
+3. **`HydraulicReportTable.tsx`**:
+   - Uses `segment.inletPressureBarg` directly (already in barg from calculation)
 
 ## Design System
 - **Glassmorphism**: `backdropFilter: blur`, translucent backgrounds
 - **Theme**: Dark/Light modes synced from dashboard via `?theme=` URL param
 - **Colors**: Primary sky blue (#0284c7), Secondary amber (#f59e0b)
 - **Border Radius**: 14px small, 20px large containers
+- **Typography**: Use `variant="inherit"` in Typography inside tables for consistent font size
 
-## Current State (Dec 9, 2025)
+## Data Flow Architecture
 
-### Completed
-1. App scaffolding (Next.js, MUI, Zustand)
-2. Mock data layer with realistic petrochemical examples
-3. Hierarchy navigation (Customer → Plant → Unit → Area → Project)
-4. Protective system list with status cards
-5. Detail view with 4 tabs (Overview, Scenarios, Sizing, Attachments)
-6. Theme toggle and dashboard integration
-7. TopToolbar with back button to dashboard
-8. Fixed toolbar positioning
+### PSV Sizing Calculation
+1. User opens `SizingWorkspace` for a sizing case
+2. `calculateNetworkPressureDropWithWarnings()` runs hydraulic calculations
+3. Results stored via `applyHydraulicSegmentsToNetwork()` → updates local networks
+4. On "Save & Close" → `onSaveNetworks()` persists networks to PSV via `updatePsv()`
+5. `SummaryTab` reads from `selectedPsv.inletNetwork/outletNetwork`
+
+### State Management
+- **`usePsvStore`**: Main store for PSV data, navigation, CRUD operations
+- **`useAuthStore`**: Current user, permissions, role-based access
+- **Local state**: Component-level for UI state (dialogs, tabs, form inputs)
+
+## Current State (Dec 14, 2025)
+
+### Completed Features
+1. Full hierarchy navigation (Customer → Plant → Unit → Area → PSV)
+2. Overpressure scenario management with governing case selection
+3. PSV sizing calculation (API-520 gas/liquid/steam/two-phase)
+4. Inlet/Outlet hydraulic network design and validation
+5. Hydraulic pressure drop calculations with choked flow detection
+6. Mach number warnings for high-velocity gas flow
+7. Printable summary tab with all sizing details
+8. Notes/Comments/Tasks collaboration features
+9. Workflow status management (Draft → In Review → Checked → Approved → Issued)
+10. Theme toggle and dashboard integration
+11. Local storage persistence for demo/offline mode
 
 ### Configuration Notes
-- `tsconfig.json` extends `../../packages/tsconfig/base.json` (matches network-editor)
+- `tsconfig.json` extends `../../packages/tsconfig/base.json`
 - `next.config.ts` has `basePath: "/psv"` and `transpilePackages` for shared packages
 - Path alias `@eng-suite/physics` maps to `../../packages/physics-engine/src/index.ts`
+- Path alias `@eng-suite/api` maps to `../../packages/api-std/src/index.ts`
 
 ## Development Notes
 - **State**: Uses Zustand, no prop drilling
 - **Navigation**: Store-based, not URL routing
-- **Data**: All mock, no backend yet
+- **Data**: Demo mode uses localStorage, API mode uses backend
 - **Styling**: MUI sx prop with glassmorphism patterns
+- **Validation**: `inputValidation.ts` for form validation, `hydraulicValidation.ts` for physics
 
 ## Next Tasks
-1. Implement `ScenarioEditor.tsx` for overpressure scenario CRUD
-2. Implement `SizingWorkspace.tsx` for PSV calculations
-3. Add dynamic routes (`/projects/[id]`, `/psv/[id]`)
-4. Backend API integration, python FastAPI.
-5. Database connectivity (see [docs/DATABASE_SCHEMA.md](./docs/DATABASE_SCHEMA.md))
+1. Backend API integration (Python FastAPI)
+2. Database connectivity with PostgreSQL
+3. Data migration scripts if needed (barg → Pa for existing records)
+4. PDF export for summary reports
+5. Equipment linked fire case calculations
+
