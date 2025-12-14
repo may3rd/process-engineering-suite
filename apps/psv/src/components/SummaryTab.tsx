@@ -113,13 +113,6 @@ function formatNumberValue(value: number | null | undefined, unit?: string, digi
     return `${value.toFixed(digits)}${unit ? ` ${unit}` : ''}`;
 }
 
-function getNodeLabels(network?: PipelineNetwork): Record<string, string> {
-    if (!network?.nodes?.length) return {};
-    return network.nodes.reduce<Record<string, string>>((acc, node) => {
-        acc[node.id] = node.label || node.id;
-        return acc;
-    }, {});
-}
 
 function formatFluidLabel(pipe: PipeProps): string {
     const candidate =
@@ -142,8 +135,8 @@ function formatFluidLabel(pipe: PipeProps): string {
 type PipelineSegmentRow = {
     id: string;
     label: string;
-    p1: string;
-    p2: string;
+    p1Kpa?: number;  // Inlet pressure in kPa
+    p2Kpa?: number;  // Outlet pressure in kPa
     lengthMeters: number;
     diameterMm: number;
     sectionType: string;
@@ -155,25 +148,7 @@ type PipelineSegmentRow = {
 function getPipelineSegments(network: PipelineNetwork | undefined, kind: 'inlet' | 'outlet'): PipelineSegmentRow[] {
     if (!network) return [];
 
-    const nodeLabels = getNodeLabels(network);
-    const totalSegments = network.pipes.length;
-
-    const getFallbackLabel = (index: number, position: 'start' | 'end'): string => {
-        const isFirst = index === 0;
-        const isLast = index === totalSegments - 1;
-
-        if (kind === 'inlet') {
-            if (position === 'start') {
-                return isFirst ? 'Protected Equipment' : `Inlet Node ${index + 1}`;
-            }
-            return isLast ? 'PSV Inlet' : `Inlet Node ${index + 2}`;
-        }
-
-        if (position === 'start') {
-            return isFirst ? 'PSV Outlet' : `Outlet Node ${index + 1}`;
-        }
-        return isLast ? 'Disposal/Header' : `Outlet Node ${index + 2}`;
-    };
+    void kind; // kind parameter no longer needed for labels
 
     return network.pipes.map<PipelineSegmentRow>((pipe, index) => {
         const lengthMeters = toMeters(pipe.length, pipe.lengthUnit);
@@ -185,18 +160,17 @@ function getPipelineSegments(network: PipelineNetwork | undefined, kind: 'inlet'
         const pressureDropPa = pipe.pressureDropCalculationResults?.totalSegmentPressureDrop;
         const pressureDrop = typeof pressureDropPa === 'number' ? pressureDropPa / 1000 : undefined;
 
-        const startLabel = pipe.startNodeId && pipe.startNodeId.trim().length > 0
-            ? nodeLabels[pipe.startNodeId] || pipe.startNodeId
-            : getFallbackLabel(index, 'start');
-        const endLabel = pipe.endNodeId && pipe.endNodeId.trim().length > 0
-            ? nodeLabels[pipe.endNodeId] || pipe.endNodeId
-            : getFallbackLabel(index, 'end');
+        // Extract inlet/outlet pressure from resultSummary (in Pa, convert to kPa)
+        const inletPressurePa = pipe.resultSummary?.inletState?.pressure;
+        const outletPressurePa = pipe.resultSummary?.outletState?.pressure;
+        const p1Kpa = typeof inletPressurePa === 'number' ? inletPressurePa / 1000 : undefined;
+        const p2Kpa = typeof outletPressurePa === 'number' ? outletPressurePa / 1000 : undefined;
 
         return {
             id: pipe.id,
             label: pipe.name || `Segment ${index + 1}`,
-            p1: startLabel,
-            p2: endLabel,
+            p1Kpa,
+            p2Kpa,
             lengthMeters,
             diameterMm,
             sectionType: (pipe.pipeSectionType || 'pipeline').replace('_', ' '),
@@ -807,8 +781,8 @@ export function SummaryTab() {
                                         <TableHead>
                                             <TableRow>
                                                 <TableCell>Segment</TableCell>
-                                                <TableCell>P1</TableCell>
-                                                <TableCell>P2</TableCell>
+                                                <TableCell align="right">P1 (kPa)</TableCell>
+                                                <TableCell align="right">P2 (kPa)</TableCell>
                                                 <TableCell>Fluid</TableCell>
                                                 <TableCell align="right">Length (m)</TableCell>
                                                 <TableCell align="right">Diameter (mm)</TableCell>
@@ -823,8 +797,8 @@ export function SummaryTab() {
                                                         <Typography variant="body2" fontWeight={500}>{segment.label}</Typography>
                                                         <Typography variant="caption" color="text.secondary">{segment.sectionType}</Typography>
                                                     </TableCell>
-                                                    <TableCell>{segment.p1}</TableCell>
-                                                    <TableCell>{segment.p2}</TableCell>
+                                                    <TableCell align="right">{segment.p1Kpa?.toFixed(1) ?? '—'}</TableCell>
+                                                    <TableCell align="right">{segment.p2Kpa?.toFixed(1) ?? '—'}</TableCell>
                                                     <TableCell>{segment.fluid}</TableCell>
                                                     <TableCell align="right">{segment.lengthMeters ? segment.lengthMeters.toFixed(2) : '—'}</TableCell>
                                                     <TableCell align="right">{segment.diameterMm ? segment.diameterMm.toFixed(0) : '—'}</TableCell>
