@@ -1,7 +1,7 @@
 """drop_revision_no_from_sizing_cases
 
-Revision ID: 202512150003
-Revises: 202512150002
+Revision ID: drop_revision_no_sizing
+Revises: add_revision_history
 Create Date: 2025-12-15
 
 """
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '202512150003'
-down_revision: Union[str, None] = '202512150002'
+revision: str = 'drop_revision_no_sizing'
+down_revision: Union[str, None] = 'add_revision_history'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
