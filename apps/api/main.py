@@ -61,13 +61,14 @@ app = FastAPI(
 )
 
 # Include data routers (PSV data, hierarchy, auth, etc.)
-from .app.routers import hierarchy_router, psv_router, supporting_router, admin_router, auth_router
+from .app.routers import hierarchy_router, psv_router, supporting_router, admin_router, auth_router, revisions_router
 
 app.include_router(hierarchy_router)
 app.include_router(psv_router)
 app.include_router(supporting_router)
 app.include_router(admin_router)
 app.include_router(auth_router)
+app.include_router(revisions_router)
 
 # Configure CORS for local development
 app.add_middleware(

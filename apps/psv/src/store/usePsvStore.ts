@@ -1405,11 +1405,21 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             if (sizingCase) snapshot = { ...sizingCase };
         }
 
+        // Calculate next sequence
+        const currentRevisions = get().revisionHistory.filter(
+            r => r.entityType === entityType && r.entityId === entityId
+        );
+        const nextSequence = currentRevisions.length > 0
+            ? Math.max(...currentRevisions.map(r => r.sequence)) + 1
+            : 1;
+
         const newRevision = await dataService.createRevision(entityType, entityId, {
             revisionCode,
+            sequence: nextSequence,
             description,
             snapshot,
             originatedBy: undefined, // TODO: Get from auth store
+            originatedAt: new Date().toISOString(),
         });
 
         // Update entity's currentRevisionId

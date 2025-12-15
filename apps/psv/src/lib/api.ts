@@ -500,12 +500,10 @@ class ApiClient {
         return this.request('/admin/seed-from-mock', { method: 'POST' });
     }
 
-    // --- Revision History (stub - backend not implemented yet) ---
+    // --- Revision History ---
 
     async getRevisionHistory(entityType: RevisionEntityType, entityId: string): Promise<RevisionHistory[]> {
-        // TODO: Implement when backend supports revision history
-        console.warn('Revision history API not implemented, returning empty array');
-        return [];
+        return this.request<RevisionHistory[]>(`/revisions/${entityType}/${entityId}`);
     }
 
     async createRevision(
@@ -513,23 +511,36 @@ class ApiClient {
         entityId: string,
         data: {
             revisionCode: string;
+            sequence: number;
             description?: string;
             snapshot: Record<string, unknown>;
             originatedBy?: string;
+            originatedAt?: string;
         }
     ): Promise<RevisionHistory> {
-        // TODO: Implement when backend supports revision history
-        throw new Error('Revision history API not implemented');
+        return this.request<RevisionHistory>('/revisions/', {
+            method: 'POST',
+            body: JSON.stringify({
+                entityType,
+                entityId,
+                ...data,
+            }),
+        });
     }
 
     async updateRevision(id: string, data: Partial<RevisionHistory>): Promise<RevisionHistory> {
-        // TODO: Implement when backend supports revision history
-        throw new Error('Revision history API not implemented');
+        return this.request<RevisionHistory>(`/revisions/${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+        });
     }
 
     async getRevisionById(id: string): Promise<RevisionHistory | undefined> {
-        // TODO: Implement when backend supports revision history
-        return undefined;
+        try {
+            return await this.request<RevisionHistory>(`/revisions/id/${id}`);
+        } catch {
+            return undefined;
+        }
     }
 }
 

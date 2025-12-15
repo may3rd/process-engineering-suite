@@ -316,3 +316,54 @@ class MockService(DataAccessLayer):
                 self._data["todos"][i] = {**todo, **data}
                 return self._data["todos"][i]
         raise ValueError(f"Todo not found: {todo_id}")
+
+    # --- Revision History ---
+
+    async def get_revisions_by_entity(self, entity_type: str, entity_id: str) -> List[dict]:
+        """Get revisions for an entity, ordered by sequence descending."""
+        revisions = self._data.get("revisionHistory", [])
+        filtered = [r for r in revisions if r["entityType"] == entity_type and r["entityId"] == entity_id]
+        return sorted(filtered, key=lambda x: x.get("sequence", 0), reverse=True)
+
+    async def get_revision_by_id(self, revision_id: str) -> Optional[dict]:
+        for rev in self._data.get("revisionHistory", []):
+            if rev["id"] == revision_id:
+                return rev
+        return None
+
+    async def create_revision(self, data: dict) -> dict:
+        data["id"] = str(uuid4())
+        data["createdAt"] = datetime.utcnow().isoformat()
+        self._data.setdefault("revisionHistory", []).append(data)
+        return data
+
+    async def update_revision(self, revision_id: str, data: dict) -> dict:
+        for i, rev in enumerate(self._data.get("revisionHistory", [])):
+            if rev["id"] == revision_id:
+                self._data["revisionHistory"][i] = {**rev, **data}
+                return self._data["revisionHistory"][i]
+        raise ValueError(f"Revision not found: {revision_id}")
+
+    # --- Equipment CRUD (abstract methods) ---
+
+    async def create_equipment(self, data: dict) -> dict:
+        data["id"] = str(uuid4())
+        data["createdAt"] = datetime.utcnow().isoformat()
+        self._data.setdefault("equipment", []).append(data)
+        return data
+
+    async def update_equipment(self, equipment_id: str, data: dict) -> dict:
+        for i, eq in enumerate(self._data.get("equipment", [])):
+            if eq["id"] == equipment_id:
+                self._data["equipment"][i] = {**eq, **data}
+                return self._data["equipment"][i]
+        raise ValueError(f"Equipment not found: {equipment_id}")
+
+    async def delete_equipment(self, equipment_id: str) -> bool:
+        equipment = self._data.get("equipment", [])
+        for i, eq in enumerate(equipment):
+            if eq["id"] == equipment_id:
+                del equipment[i]
+                return True
+        return False
+

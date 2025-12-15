@@ -245,3 +245,26 @@ class DataAccessLayer(ABC):
     async def update_todo(self, todo_id: str, data: dict) -> dict:
         """Update a todo."""
         pass
+    
+    # --- Revision History ---
+    
+    @abstractmethod
+    async def get_revisions_by_entity(self, entity_type: str, entity_id: str) -> List[dict]:
+        """Get revisions for an entity (PSV, scenario, sizing case)."""
+        pass
+    
+    @abstractmethod
+    async def get_revision_by_id(self, revision_id: str) -> Optional[dict]:
+        """Get a single revision by ID."""
+        pass
+    
+    @abstractmethod
+    async def create_revision(self, data: dict) -> dict:
+        """Create a new revision."""
+        pass
+    
+    @abstractmethod
+    async def update_revision(self, revision_id: str, data: dict) -> dict:
+        """Update a revision (lifecycle fields)."""
+        pass
+

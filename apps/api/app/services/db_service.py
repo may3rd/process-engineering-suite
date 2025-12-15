@@ -12,7 +12,7 @@ from ..models import (
     User, Credential, Customer, Plant, Unit, Area, Project,
     ProtectiveSystem, OverpressureScenario, SizingCase,
     Equipment, EquipmentLink, Attachment, Comment, Todo,
-    ProjectNote,
+    ProjectNote, RevisionHistory,
 )
 from .dal import DataAccessLayer
 
@@ -388,6 +388,38 @@ class DatabaseService(DataAccessLayer):
 
     async def delete_todo(self, todo_id: str) -> bool:
         return await self._delete(Todo, todo_id)
+
+    # --- Revision History ---
+
+    async def get_revisions_by_entity(self, entity_type: str, entity_id: str) -> List[dict]:
+        """Get revisions for an entity, ordered by sequence descending."""
+        stmt = select(RevisionHistory).where(
+            RevisionHistory.entity_type == entity_type,
+            RevisionHistory.entity_id == entity_id
+        ).order_by(RevisionHistory.sequence.desc())
+        result = await self.session.execute(stmt)
+        return list(result.scalars().all())
+
+    async def get_revision_by_id(self, revision_id: str) -> Optional[dict]:
+        return await self._get_by_id(RevisionHistory, revision_id)
+
+    async def create_revision(self, data: dict) -> dict:
+        converted_data = self._convert_keys(data)
+        return await self._create(RevisionHistory, converted_data)
+
+    async def update_revision(self, revision_id: str, data: dict) -> dict:
+        converted_data = self._convert_keys(data)
+        instance = await self._get_by_id(RevisionHistory, revision_id)
+        if not instance:
+            raise ValueError(f"Revision {revision_id} not found")
+        
+        for key, value in converted_data.items():
+            if hasattr(instance, key):
+                setattr(instance, key, value)
+        
+        await self.session.commit()
+        await self.session.refresh(instance)
+        return instance
 
     # --- Utils ---
     
