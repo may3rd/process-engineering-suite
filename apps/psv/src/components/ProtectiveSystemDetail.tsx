@@ -86,6 +86,9 @@ import { PipelineHydraulicsCard } from "./PipelineHydraulicsCard";
 import { WORKFLOW_STATUS_SEQUENCE, getWorkflowStatusColor, getWorkflowStatusLabel, SIZING_STATUS_SEQUENCE, getSizingStatusColor, getSizingStatusLabel } from "@/lib/statusColors";
 import { RevisionBadge } from "./RevisionBadge";
 import { NewRevisionDialog } from "./NewRevisionDialog";
+import { RevisionHistoryPanel } from "./RevisionHistoryPanel";
+import { SnapshotPreviewDialog } from "./SnapshotPreviewDialog";
+import { RevisionHistory } from "@/data/types";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -1708,6 +1711,8 @@ export function ProtectiveSystemDetail() {
 
     // Revision dialog state
     const [newRevisionDialogOpen, setNewRevisionDialogOpen] = useState(false);
+    const [revisionPanelOpen, setRevisionPanelOpen] = useState(false);
+    const [snapshotRevision, setSnapshotRevision] = useState<RevisionHistory | null>(null);
 
     // If editing a case, show the workspace
     if (editingCaseId) {
@@ -1855,7 +1860,7 @@ export function ProtectiveSystemDetail() {
                             </Typography>
                             <RevisionBadge
                                 revisionCode={getCurrentRevision('protective_system', selectedPsv.id)?.revisionCode}
-                                onClick={() => setNewRevisionDialogOpen(true)}
+                                onClick={() => setRevisionPanelOpen(true)}
                             />
                             <Chip
                                 icon={getStatusIcon(selectedPsv.status)}
@@ -2063,6 +2068,26 @@ export function ProtectiveSystemDetail() {
                 entityType="protective_system"
                 entityId={selectedPsv.id}
                 currentRevisionCode={getCurrentRevision('protective_system', selectedPsv.id)?.revisionCode}
+            />
+
+            {/* Revision History Panel */}
+            <RevisionHistoryPanel
+                open={revisionPanelOpen}
+                onClose={() => setRevisionPanelOpen(false)}
+                entityType="protective_system"
+                entityId={selectedPsv.id}
+                currentRevisionId={selectedPsv.currentRevisionId}
+                onViewSnapshot={(revision) => {
+                    setSnapshotRevision(revision);
+                    setRevisionPanelOpen(false);
+                }}
+            />
+
+            {/* Snapshot Preview Dialog */}
+            <SnapshotPreviewDialog
+                open={snapshotRevision !== null}
+                onClose={() => setSnapshotRevision(null)}
+                revision={snapshotRevision}
             />
         </Box>
     );
