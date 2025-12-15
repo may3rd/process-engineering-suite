@@ -969,7 +969,7 @@ export const revisionHistory: RevisionHistory[] = [
     {
         id: 'rev-001-a1',
         entityType: 'protective_system',
-        entityId: 'e30a2459-8e5a-45f6-8a99-5b932e1d3b43', // PSV-101A
+        entityId: '11111111-1111-1111-1111-111111111111', // PSV-101A
         revisionCode: 'A1',
         sequence: 2,
         description: 'Updated design flow based on latest process data',
@@ -985,7 +985,7 @@ export const revisionHistory: RevisionHistory[] = [
     {
         id: 'rev-001-o1',
         entityType: 'protective_system',
-        entityId: 'e30a2459-8e5a-45f6-8a99-5b932e1d3b43', // PSV-101A
+        entityId: '11111111-1111-1111-1111-111111111111', // PSV-101A
         revisionCode: 'O1',
         sequence: 1,
         description: 'Original',
@@ -1001,7 +1001,7 @@ export const revisionHistory: RevisionHistory[] = [
     {
         id: 'rev-002-o1',
         entityType: 'protective_system',
-        entityId: '8f6c49a9-3e2c-4b3e-a1c5-6d8e9f0a1b2c', // PSV-102B
+        entityId: '33333333-3333-3333-3333-333333333333', // PSV-102
         revisionCode: 'O1',
         sequence: 1,
         description: 'Original',
