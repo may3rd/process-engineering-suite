@@ -961,3 +961,58 @@ export function getHierarchyPath(psvId: string) {
 export function getProtectiveSystemsByProject(projectId: string): ProtectiveSystem[] {
     return protectiveSystems.filter(ps => ps.projectIds?.includes(projectId));
 }
+
+// Mock revision history for demo
+import { RevisionHistory } from './types';
+
+export const revisionHistory: RevisionHistory[] = [
+    {
+        id: 'rev-001-a1',
+        entityType: 'protective_system',
+        entityId: 'e30a2459-8e5a-45f6-8a99-5b932e1d3b43', // PSV-101A
+        revisionCode: 'A1',
+        sequence: 2,
+        description: 'Updated design flow based on latest process data',
+        originatedBy: '2252f300-f2f3-4911-863d-40a5baa25346', // Test Engineer
+        originatedAt: '2025-12-12T09:00:00Z',
+        checkedBy: 'c34f5c40-8193-4e39-a628-e684361c2b67', // Sarah Johnson (Lead)
+        checkedAt: '2025-12-12T14:30:00Z',
+        approvedBy: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad', // Maetee (Admin)
+        approvedAt: '2025-12-15T10:00:00Z',
+        snapshot: {},
+        createdAt: '2025-12-12T09:00:00Z',
+    },
+    {
+        id: 'rev-001-o1',
+        entityType: 'protective_system',
+        entityId: 'e30a2459-8e5a-45f6-8a99-5b932e1d3b43', // PSV-101A
+        revisionCode: 'O1',
+        sequence: 1,
+        description: 'Original',
+        originatedBy: '2252f300-f2f3-4911-863d-40a5baa25346', // Test Engineer
+        originatedAt: '2025-12-01T08:00:00Z',
+        checkedBy: 'c34f5c40-8193-4e39-a628-e684361c2b67', // Sarah Johnson (Lead)
+        checkedAt: '2025-12-02T15:00:00Z',
+        approvedBy: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad', // Maetee (Admin)
+        approvedAt: '2025-12-05T11:00:00Z',
+        snapshot: {},
+        createdAt: '2025-12-01T08:00:00Z',
+    },
+    {
+        id: 'rev-002-o1',
+        entityType: 'protective_system',
+        entityId: '8f6c49a9-3e2c-4b3e-a1c5-6d8e9f0a1b2c', // PSV-102B
+        revisionCode: 'O1',
+        sequence: 1,
+        description: 'Original',
+        originatedBy: '890a53e4-85d9-4399-85bb-68af0aa179d1', // Emily Davis
+        originatedAt: '2025-11-20T10:00:00Z',
+        checkedBy: 'c34f5c40-8193-4e39-a628-e684361c2b67',
+        checkedAt: '2025-11-21T09:00:00Z',
+        approvedBy: '22ee3f22-898a-461b-85ec-83f84d250810', // Mike Chen
+        approvedAt: '2025-11-22T16:00:00Z',
+        snapshot: {},
+        createdAt: '2025-11-20T10:00:00Z',
+    },
+];
+

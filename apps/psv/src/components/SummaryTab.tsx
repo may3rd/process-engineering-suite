@@ -31,6 +31,7 @@ import { getUserById } from "@/data/mockData";
 import { PipelineNetwork, OverpressureScenario, PipeProps } from "@/data/types";
 import { getWorkflowStatusLabel } from "@/lib/statusColors";
 import { convertUnit } from "@eng-suite/physics";
+import { RevisionHistoryCard } from "./RevisionHistoryCard";
 
 
 // Helper functions for hydraulic calculations
@@ -876,6 +877,13 @@ export function SummaryTab() {
                     )}
                 </Paper>
             </Box>
+
+            {/* Revision History */}
+            <RevisionHistoryCard
+                entityType="protective_system"
+                entityId={selectedPsv.id}
+                currentRevisionId={selectedPsv.currentRevisionId}
+            />
 
             <Box sx={{ textAlign: 'center', mt: 3, py: 2, borderTop: 1, borderColor: 'divider' }}>
                 <Typography variant="caption" color="text.secondary">

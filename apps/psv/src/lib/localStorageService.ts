@@ -40,6 +40,7 @@ import {
     todos as mockTodos,
     credentials as mockCredentials,
     notes as mockNotes,
+    revisionHistory as mockRevisionHistory,
 } from '@/data/mockData';
 
 // localStorage keys
@@ -857,7 +858,7 @@ class LocalStorageService {
     // --- Revision History ---
 
     async getRevisionHistory(entityType: RevisionEntityType, entityId: string): Promise<RevisionHistory[]> {
-        const all = getItem<RevisionHistory>(STORAGE_KEYS.REVISION_HISTORY, []);
+        const all = getItem<RevisionHistory>(STORAGE_KEYS.REVISION_HISTORY, mockRevisionHistory);
         return all
             .filter(r => r.entityType === entityType && r.entityId === entityId)
             .sort((a, b) => b.sequence - a.sequence); // newest first
