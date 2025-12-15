@@ -171,6 +171,7 @@ interface PsvStore {
     loadRevisionHistory: (entityType: RevisionEntityType, entityId: string) => Promise<void>;
     createRevision: (entityType: RevisionEntityType, entityId: string, revisionCode: string, description?: string) => Promise<RevisionHistory>;
     updateRevisionLifecycle: (revisionId: string, field: 'checkedBy' | 'approvedBy', userId: string) => Promise<void>;
+    updateRevision: (revisionId: string, updates: Partial<RevisionHistory>) => Promise<void>;
     getCurrentRevision: (entityType: RevisionEntityType, entityId: string) => RevisionHistory | undefined;
 }
 
@@ -1472,6 +1473,16 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
         const action = field === 'checkedBy' ? 'Checked' : 'Approved';
         toast.success(`Revision ${action}`);
+    },
+
+    updateRevision: async (revisionId: string, updates: Partial<RevisionHistory>) => {
+        await dataService.updateRevision(revisionId, updates);
+        set((state) => ({
+            revisionHistory: state.revisionHistory.map(r =>
+                r.id === revisionId ? { ...r, ...updates } : r
+            ),
+        }));
+        toast.success('Revision updated');
     },
 
     getCurrentRevision: (entityType, entityId) => {
