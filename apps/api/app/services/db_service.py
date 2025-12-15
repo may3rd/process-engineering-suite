@@ -421,6 +421,26 @@ class DatabaseService(DataAccessLayer):
         await self.session.refresh(instance)
         return instance
 
+    async def delete_revision(self, revision_id: str) -> bool:
+        """Delete a revision and clear any current_revision_id references."""
+        # First, clear references from entities so FK constraints don't block deletes.
+        stmt_psv = update(ProtectiveSystem).where(
+            ProtectiveSystem.current_revision_id == revision_id
+        ).values(current_revision_id=None)
+        stmt_scenario = update(OverpressureScenario).where(
+            OverpressureScenario.current_revision_id == revision_id
+        ).values(current_revision_id=None)
+        stmt_case = update(SizingCase).where(
+            SizingCase.current_revision_id == revision_id
+        ).values(current_revision_id=None)
+
+        await self.session.execute(stmt_psv)
+        await self.session.execute(stmt_scenario)
+        await self.session.execute(stmt_case)
+        await self.session.commit()
+
+        return await self._delete(RevisionHistory, revision_id)
+
     # --- Utils ---
     
     def _convert_keys(self, data: dict) -> dict:

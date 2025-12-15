@@ -535,6 +535,10 @@ class ApiClient {
         });
     }
 
+    async deleteRevision(id: string): Promise<void> {
+        await this.request(`/revisions/${id}`, { method: 'DELETE' });
+    }
+
     async getRevisionById(id: string): Promise<RevisionHistory | undefined> {
         try {
             return await this.request<RevisionHistory>(`/revisions/id/${id}`);

@@ -29,7 +29,7 @@ interface SnapshotPreviewDialogProps {
 /**
  * Format date as "DD-MMM-YYYY"
  */
-function formatDate(dateString?: string): string {
+function formatDate(dateString?: string | null): string {
     if (!dateString) return '-';
     const date = new Date(dateString);
     const day = date.getDate().toString().padStart(2, '0');

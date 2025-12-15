@@ -24,18 +24,20 @@ import { CalendarMonth, Close, Edit, Person, CheckCircle, Verified } from '@mui/
 import { usePsvStore } from '@/store/usePsvStore';
 import { RevisionHistory } from '@/data/types';
 import { users } from '@/data/mockData';
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface EditRevisionDialogProps {
     open: boolean;
     onClose: () => void;
     revision: RevisionHistory | null;
     onSuccess?: () => void;
+    elevateZIndex?: boolean;
 }
 
 /**
  * Format date as "YYYY-MM-DD" for input field
  */
-function formatDateForInput(dateString?: string): string {
+function formatDateForInput(dateString?: string | null): string {
     if (!dateString) return '';
     const date = new Date(dateString);
     return date.toISOString().split('T')[0];
@@ -49,10 +51,14 @@ export function EditRevisionDialog({
     onClose,
     revision,
     onSuccess,
+    elevateZIndex = false,
 }: EditRevisionDialogProps) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const { updateRevision, loadRevisionHistory } = usePsvStore();
+    const canManualEdit = useAuthStore(
+        (state) => state.isAuthenticated && ['lead', 'approver', 'admin'].includes(state.currentUser?.role || '')
+    );
 
     const [description, setDescription] = useState('');
     const [originatedBy, setOriginatedBy] = useState('');
@@ -81,39 +87,58 @@ export function EditRevisionDialog({
     if (!revision) return null;
 
     const handleSubmit = async () => {
+        if (!canManualEdit) return;
         setIsSubmitting(true);
         setError(null);
 
         try {
             // Build update data - only include changed fields
             const updateData: Partial<RevisionHistory> = {};
+            const originalDescription = revision.description ?? '';
+            const originalOriginatedBy = revision.originatedBy ?? '';
+            const originalOriginatedAt = formatDateForInput(revision.originatedAt);
+            const originalCheckedBy = revision.checkedBy ?? '';
+            const originalCheckedAt = formatDateForInput(revision.checkedAt);
+            const originalApprovedBy = revision.approvedBy ?? '';
+            const originalApprovedAt = formatDateForInput(revision.approvedAt);
 
-            if (description !== (revision.description || '')) {
+            if (description !== originalDescription) {
                 updateData.description = description;
             }
-            if (originatedBy !== (revision.originatedBy || '')) {
-                updateData.originatedBy = originatedBy || undefined;
-                updateData.originatedAt = originatedBy && originatedAt
-                    ? new Date(originatedAt).toISOString()
-                    : undefined;
-            } else if (originatedAt !== formatDateForInput(revision.originatedAt) && originatedBy) {
-                updateData.originatedAt = new Date(originatedAt).toISOString();
+            if (originatedBy !== originalOriginatedBy) {
+                if (!originatedBy) {
+                    updateData.originatedBy = null;
+                    updateData.originatedAt = null;
+                } else {
+                    updateData.originatedBy = originatedBy;
+                    updateData.originatedAt = originatedAt ? new Date(originatedAt).toISOString() : null;
+                }
+            } else if (originatedBy && originatedAt !== originalOriginatedAt) {
+                updateData.originatedAt = originatedAt ? new Date(originatedAt).toISOString() : null;
             }
-            if (checkedBy !== (revision.checkedBy || '')) {
-                updateData.checkedBy = checkedBy || undefined;
-                updateData.checkedAt = checkedBy && checkedAt
-                    ? new Date(checkedAt).toISOString()
-                    : undefined;
-            } else if (checkedAt !== formatDateForInput(revision.checkedAt) && checkedBy) {
-                updateData.checkedAt = new Date(checkedAt).toISOString();
+
+            if (checkedBy !== originalCheckedBy) {
+                if (!checkedBy) {
+                    updateData.checkedBy = null;
+                    updateData.checkedAt = null;
+                } else {
+                    updateData.checkedBy = checkedBy;
+                    updateData.checkedAt = checkedAt ? new Date(checkedAt).toISOString() : null;
+                }
+            } else if (checkedBy && checkedAt !== originalCheckedAt) {
+                updateData.checkedAt = checkedAt ? new Date(checkedAt).toISOString() : null;
             }
-            if (approvedBy !== (revision.approvedBy || '')) {
-                updateData.approvedBy = approvedBy || undefined;
-                updateData.approvedAt = approvedBy && approvedAt
-                    ? new Date(approvedAt).toISOString()
-                    : undefined;
-            } else if (approvedAt !== formatDateForInput(revision.approvedAt) && approvedBy) {
-                updateData.approvedAt = new Date(approvedAt).toISOString();
+
+            if (approvedBy !== originalApprovedBy) {
+                if (!approvedBy) {
+                    updateData.approvedBy = null;
+                    updateData.approvedAt = null;
+                } else {
+                    updateData.approvedBy = approvedBy;
+                    updateData.approvedAt = approvedAt ? new Date(approvedAt).toISOString() : null;
+                }
+            } else if (approvedBy && approvedAt !== originalApprovedAt) {
+                updateData.approvedAt = approvedAt ? new Date(approvedAt).toISOString() : null;
             }
 
             if (Object.keys(updateData).length === 0) {
@@ -191,7 +216,15 @@ export function EditRevisionDialog({
     } as const;
 
     return (
-        <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+        <Dialog
+            open={open}
+            onClose={handleClose}
+            maxWidth="sm"
+            fullWidth
+            sx={{
+                zIndex: elevateZIndex ? ((theme) => theme.zIndex.modal + 2) : undefined,
+            }}
+        >
             <DialogTitle>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -207,6 +240,11 @@ export function EditRevisionDialog({
             </DialogTitle>
 
             <DialogContent>
+                {!canManualEdit && (
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                        Manual revision editing is restricted to Admin / Lead / Approver roles.
+                    </Typography>
+                )}
                 {error && (
                     <Typography color="error" variant="body2" sx={{ mb: 2 }}>
                         {error}
@@ -222,6 +260,7 @@ export function EditRevisionDialog({
                     margin="normal"
                     multiline
                     rows={2}
+                    disabled={!canManualEdit}
                 />
 
                 <Divider sx={{ my: 2 }} />
@@ -243,6 +282,7 @@ export function EditRevisionDialog({
                                     setOriginatedAt(new Date().toISOString().split('T')[0]);
                                 }
                             }}
+                            disabled={!canManualEdit}
                         >
                             <MenuItem value="">
                                 <em>None</em>
@@ -268,7 +308,7 @@ export function EditRevisionDialog({
                         }}
                         id="originated-date-input"
                         sx={dateFieldSx}
-                        disabled={!originatedBy}
+                        disabled={!canManualEdit || !originatedBy}
                     />
                 </Box>
 
@@ -289,6 +329,7 @@ export function EditRevisionDialog({
                                     setCheckedAt(new Date().toISOString().split('T')[0]);
                                 }
                             }}
+                            disabled={!canManualEdit}
                         >
                             <MenuItem value="">
                                 <em>None</em>
@@ -314,7 +355,7 @@ export function EditRevisionDialog({
                         }}
                         id="checked-date-input"
                         sx={dateFieldSx}
-                        disabled={!checkedBy}
+                        disabled={!canManualEdit || !checkedBy}
                     />
                 </Box>
 
@@ -335,6 +376,7 @@ export function EditRevisionDialog({
                                     setApprovedAt(new Date().toISOString().split('T')[0]);
                                 }
                             }}
+                            disabled={!canManualEdit}
                         >
                             <MenuItem value="">
                                 <em>None</em>
@@ -360,7 +402,7 @@ export function EditRevisionDialog({
                         }}
                         id="approved-date-input"
                         sx={dateFieldSx}
-                        disabled={!approvedBy}
+                        disabled={!canManualEdit || !approvedBy}
                     />
                 </Box>
             </DialogContent>
@@ -372,7 +414,7 @@ export function EditRevisionDialog({
                 <Button
                     onClick={handleSubmit}
                     variant="contained"
-                    disabled={isSubmitting}
+                    disabled={isSubmitting || !canManualEdit}
                     startIcon={isSubmitting ? <CircularProgress size={16} /> : null}
                 >
                     {isSubmitting ? 'Saving...' : 'Save Changes'}

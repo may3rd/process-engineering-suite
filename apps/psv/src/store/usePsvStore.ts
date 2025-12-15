@@ -172,6 +172,7 @@ interface PsvStore {
     createRevision: (entityType: RevisionEntityType, entityId: string, revisionCode: string, description?: string) => Promise<RevisionHistory>;
     updateRevisionLifecycle: (revisionId: string, field: 'checkedBy' | 'approvedBy', userId: string) => Promise<void>;
     updateRevision: (revisionId: string, updates: Partial<RevisionHistory>) => Promise<void>;
+    deleteRevision: (revisionId: string) => Promise<void>;
     getCurrentRevision: (entityType: RevisionEntityType, entityId: string) => RevisionHistory | undefined;
 }
 
@@ -1483,6 +1484,14 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             ),
         }));
         toast.success('Revision updated');
+    },
+
+    deleteRevision: async (revisionId: string) => {
+        await dataService.deleteRevision(revisionId);
+        set((state) => ({
+            revisionHistory: state.revisionHistory.filter((r) => r.id !== revisionId),
+        }));
+        toast.success('Revision deleted');
     },
 
     getCurrentRevision: (entityType, entityId) => {

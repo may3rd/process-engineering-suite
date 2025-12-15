@@ -53,6 +53,8 @@ class RevisionUpdate(BaseModel):
     """Update revision lifecycle fields."""
     model_config = ConfigDict(extra='ignore')
     
+    originatedBy: Optional[str] = None
+    originatedAt: Optional[datetime] = None
     checkedBy: Optional[str] = None
     checkedAt: Optional[datetime] = None
     approvedBy: Optional[str] = None
@@ -87,7 +89,17 @@ async def create_revision(data: RevisionCreate, dal: DAL):
 @router.patch("/{revision_id}", response_model=RevisionResponse)
 async def update_revision(revision_id: str, data: RevisionUpdate, dal: DAL):
     """Update revision lifecycle fields (checked, approved, issued)."""
-    update_data = data.model_dump(exclude_none=True)
+    # Keep explicit `null` values so clients can revoke lifecycle fields.
+    update_data = data.model_dump(exclude_unset=True)
     if not update_data:
         raise HTTPException(status_code=400, detail="No update data provided")
     return await dal.update_revision(revision_id, update_data)
+
+
+@router.delete("/{revision_id}")
+async def delete_revision(revision_id: str, dal: DAL):
+    """Delete a revision history record."""
+    success = await dal.delete_revision(revision_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Revision not found")
+    return {"success": True}

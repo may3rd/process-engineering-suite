@@ -28,7 +28,7 @@ interface RevisionHistoryCardProps {
 /**
  * Format date as "DD-MMM-YYYY"
  */
-function formatDate(dateString?: string): string {
+function formatDate(dateString?: string | null): string {
     if (!dateString) return '-';
     const date = new Date(dateString);
     const day = date.getDate().toString().padStart(2, '0');
@@ -40,7 +40,7 @@ function formatDate(dateString?: string): string {
 /**
  * Get user initials and full name for display
  */
-function formatUser(userId?: string): { initials: string; fullName: string } {
+function formatUser(userId?: string | null): { initials: string; fullName: string } {
     if (!userId) return { initials: '-', fullName: '-' };
     const user = getUserById(userId);
     if (!user) return { initials: userId.slice(0, 3).toUpperCase(), fullName: userId };
@@ -58,7 +58,7 @@ function formatUser(userId?: string): { initials: string; fullName: string } {
 /**
  * Format user with date as "XX / DD-MMM-YYYY"
  */
-function formatUserDate(userId?: string, dateString?: string): React.ReactNode {
+function formatUserDate(userId?: string | null, dateString?: string | null): React.ReactNode {
     if (!userId && !dateString) return '-';
 
     const { initials, fullName } = formatUser(userId);

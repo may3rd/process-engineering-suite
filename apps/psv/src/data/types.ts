@@ -64,13 +64,13 @@ export interface RevisionHistory {
     description?: string;  // Reason for revision
 
     // Lifecycle tracking
-    originatedBy?: string;
-    originatedAt?: string;
-    checkedBy?: string;
-    checkedAt?: string;
-    approvedBy?: string;
-    approvedAt?: string;
-    issuedAt?: string;
+    originatedBy?: string | null;
+    originatedAt?: string | null;
+    checkedBy?: string | null;
+    checkedAt?: string | null;
+    approvedBy?: string | null;
+    approvedAt?: string | null;
+    issuedAt?: string | null;
 
     // Snapshot of entity state at this revision
     snapshot: Record<string, unknown>;

@@ -1694,11 +1694,12 @@ export function ProtectiveSystemDetail() {
         deleteSizingCase,
         getCurrentRevision,
         loadRevisionHistory,
-    } = usePsvStore();
-    const canEdit = useAuthStore((state) => state.canEdit());
-    const canApprove = useAuthStore((state) => state.canApprove());
-    const canCheck = useAuthStore((state) => ['lead', 'approver', 'admin'].includes(state.currentUser?.role || ''));
-    const canIssue = canCheck || canApprove;
+	    } = usePsvStore();
+	    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+	    const canEdit = useAuthStore((state) => state.canEdit());
+	    const canApprove = useAuthStore((state) => state.canApprove());
+	    const canCheck = useAuthStore((state) => ['lead', 'approver', 'admin'].includes(state.currentUser?.role || ''));
+	    const canIssue = canCheck || canApprove;
     const [activeTab, setActiveTab] = useState(0);
     const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -1768,11 +1769,12 @@ export function ProtectiveSystemDetail() {
         setRevisionMenuAnchor(null);
     };
 
-    const handleRevisionSelect = async (revisionId: string) => {
-        if (!selectedPsv) return;
-        await updatePsv({ ...selectedPsv, currentRevisionId: revisionId });
-        handleRevisionMenuClose();
-    };
+	    const handleRevisionSelect = async (revisionId: string) => {
+	        if (!selectedPsv) return;
+	        if (!isAuthenticated) return;
+	        await updatePsv({ ...selectedPsv, currentRevisionId: revisionId });
+	        handleRevisionMenuClose();
+	    };
 
     // If editing a case, show the workspace
     if (editingCaseId) {
@@ -1922,37 +1924,41 @@ export function ProtectiveSystemDetail() {
 	                                revisionCode={displayedRevisionCode}
 	                                onClick={handleRevisionMenuOpen}
 	                            />
-	                            <Menu
-	                                anchorEl={revisionMenuAnchor}
-	                                open={Boolean(revisionMenuAnchor)}
-	                                onClose={handleRevisionMenuClose}
-	                                slots={{ transition: Fade }}
-	                            >
-	                                <MenuItem
-	                                    onClick={() => {
-	                                        setRevisionPanelOpen(true);
-	                                        handleRevisionMenuClose();
-	                                    }}
-	                                >
-	                                    <ListItemText>Revision History…</ListItemText>
-	                                </MenuItem>
-	                                <Divider />
-	                                {psvRevisions.map((revision) => (
-	                                    <MenuItem
-	                                        key={revision.id}
-	                                        selected={revision.id === revisionMenuCurrentId}
-	                                        onClick={() => handleRevisionSelect(revision.id)}
-	                                    >
-	                                        <ListItemText
-	                                            primary={`Rev. ${revision.revisionCode}`}
-	                                            secondary={revision.description || undefined}
-	                                        />
-	                                    </MenuItem>
-	                                ))}
-	                            </Menu>
-	                            <Chip
-	                                icon={getStatusIcon(selectedPsv.status)}
-	                                label={getWorkflowStatusLabel(selectedPsv.status)}
+		                            <Menu
+		                                anchorEl={revisionMenuAnchor}
+		                                open={Boolean(revisionMenuAnchor)}
+		                                onClose={handleRevisionMenuClose}
+		                                slots={{ transition: Fade }}
+		                            >
+		                                <MenuItem
+		                                    onClick={() => {
+		                                        setRevisionPanelOpen(true);
+		                                        handleRevisionMenuClose();
+		                                    }}
+		                                >
+		                                    <ListItemText>Revision History…</ListItemText>
+		                                </MenuItem>
+		                                {isAuthenticated
+		                                    ? [
+		                                        <Divider key="revision-divider" />,
+		                                        ...psvRevisions.map((revision) => (
+		                                            <MenuItem
+		                                                key={revision.id}
+		                                                selected={revision.id === revisionMenuCurrentId}
+		                                                onClick={() => handleRevisionSelect(revision.id)}
+		                                            >
+		                                                <ListItemText
+		                                                    primary={`Rev. ${revision.revisionCode}`}
+		                                                    secondary={revision.description || undefined}
+		                                                />
+		                                            </MenuItem>
+		                                        )),
+		                                    ]
+		                                    : null}
+		                            </Menu>
+		                            <Chip
+		                                icon={getStatusIcon(selectedPsv.status)}
+		                                label={getWorkflowStatusLabel(selectedPsv.status)}
                                 color={getWorkflowStatusColor(selectedPsv.status) as any}
                                 onClick={canOpenStatusMenu ? handleStatusClick : undefined}
                                 deleteIcon={canOpenStatusMenu ? <KeyboardArrowDown /> : undefined}

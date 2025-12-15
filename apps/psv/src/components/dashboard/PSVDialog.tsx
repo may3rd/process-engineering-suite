@@ -23,6 +23,7 @@ import { usePsvStore } from "@/store/usePsvStore";
 import { useShallow } from "zustand/react/shallow";
 import { useAuthStore } from "@/store/useAuthStore";
 import { WORKFLOW_STATUS_SEQUENCE, getWorkflowStatusLabel } from "@/lib/statusColors";
+import { RevisionHistoryPanel } from "../RevisionHistoryPanel";
 
 const STATUS_OPTIONS: { value: ProtectiveSystem['status']; label: string }[] = WORKFLOW_STATUS_SEQUENCE.map(
     (status) => ({
@@ -58,6 +59,8 @@ export function PSVDialog({
     const currentRole = useAuthStore((state) => state.currentUser?.role);
     const canCheck = ['lead', 'approver', 'admin'].includes(currentRole || '');
     const canIssue = canCheck || canApprove;
+
+    const [revisionHistoryOpen, setRevisionHistoryOpen] = useState(false);
 
     const [name, setName] = useState('');
     const [tag, setTag] = useState('');
@@ -124,6 +127,10 @@ export function PSVDialog({
             setTags([]);
         }
     }, [psv, open]);
+
+    useEffect(() => {
+        if (!open) setRevisionHistoryOpen(false);
+    }, [open]);
 
     const handleSubmit = () => {
         // Basic validation - name, tag, areaId, ownerId always required
@@ -194,7 +201,8 @@ export function PSVDialog({
         (status === 'draft' || (serviceFluid.trim() && !isNaN(setPressureNum) && setPressureNum > 0 && !isNaN(mawpNum) && mawpNum > 0));
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+        <>
+            <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
             <DialogTitle>
                 {psv ? 'Edit PSV' : 'Add PSV'}
             </DialogTitle>
@@ -454,6 +462,11 @@ export function PSVDialog({
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose}>Cancel</Button>
+                {psv && (
+                    <Button variant="outlined" onClick={() => setRevisionHistoryOpen(true)}>
+                        Revision History
+                    </Button>
+                )}
                 <Button
                     onClick={handleSubmit}
                     variant="contained"
@@ -462,6 +475,18 @@ export function PSVDialog({
                     {psv ? 'Update' : 'Create'}
                 </Button>
             </DialogActions>
-        </Dialog>
+            </Dialog>
+
+            {psv && (
+                <RevisionHistoryPanel
+                    open={revisionHistoryOpen}
+                    onClose={() => setRevisionHistoryOpen(false)}
+                    entityType="protective_system"
+                    entityId={psv.id}
+                    currentRevisionId={psv.currentRevisionId}
+                    overlayAboveDialogs
+                />
+            )}
+        </>
     );
 }

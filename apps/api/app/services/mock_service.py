@@ -344,6 +344,14 @@ class MockService(DataAccessLayer):
                 return self._data["revisionHistory"][i]
         raise ValueError(f"Revision not found: {revision_id}")
 
+    async def delete_revision(self, revision_id: str) -> bool:
+        revisions = self._data.get("revisionHistory", [])
+        for i, rev in enumerate(revisions):
+            if rev.get("id") == revision_id:
+                del revisions[i]
+                return True
+        return False
+
     # --- Equipment CRUD (abstract methods) ---
 
     async def create_equipment(self, data: dict) -> dict:
@@ -366,4 +374,3 @@ class MockService(DataAccessLayer):
                 del equipment[i]
                 return True
         return False
-

@@ -912,6 +912,11 @@ class LocalStorageService {
         const all = getItem<RevisionHistory>(STORAGE_KEYS.REVISION_HISTORY, []);
         return all.find(r => r.id === id);
     }
+
+    async deleteRevision(id: string): Promise<void> {
+        const all = getItem<RevisionHistory>(STORAGE_KEYS.REVISION_HISTORY, []);
+        setItem(STORAGE_KEYS.REVISION_HISTORY, all.filter(r => r.id !== id));
+    }
 }
 
 // Export singleton instance

@@ -268,3 +268,7 @@ class DataAccessLayer(ABC):
         """Update a revision (lifecycle fields)."""
         pass
 
+    @abstractmethod
+    async def delete_revision(self, revision_id: str) -> bool:
+        """Delete a revision."""
+        pass

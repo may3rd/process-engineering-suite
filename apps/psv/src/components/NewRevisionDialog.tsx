@@ -22,6 +22,7 @@ interface NewRevisionDialogProps {
     entityId: string;
     currentRevisionCode?: string;
     onSuccess?: (revisionCode: string) => void;
+    elevateZIndex?: boolean;
 }
 
 /**
@@ -58,6 +59,7 @@ export function NewRevisionDialog({
     entityId,
     currentRevisionCode,
     onSuccess,
+    elevateZIndex = false,
 }: NewRevisionDialogProps) {
     const [revisionCode, setRevisionCode] = useState(
         suggestNextRevisionCode(currentRevisionCode)
@@ -105,7 +107,15 @@ export function NewRevisionDialog({
             : 'Sizing Case';
 
     return (
-        <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+        <Dialog
+            open={open}
+            onClose={handleClose}
+            maxWidth="sm"
+            fullWidth
+            sx={{
+                zIndex: elevateZIndex ? ((theme) => theme.zIndex.modal + 2) : undefined,
+            }}
+        >
             <DialogTitle>Create New Revision</DialogTitle>
             <DialogContent>
                 <Box sx={{ pt: 1 }}>
