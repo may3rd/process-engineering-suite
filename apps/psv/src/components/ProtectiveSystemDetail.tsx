@@ -84,6 +84,8 @@ import { glassCardStyles } from "./styles";
 import { useAuthStore } from "@/store/useAuthStore";
 import { PipelineHydraulicsCard } from "./PipelineHydraulicsCard";
 import { WORKFLOW_STATUS_SEQUENCE, getWorkflowStatusColor, getWorkflowStatusLabel, SIZING_STATUS_SEQUENCE, getSizingStatusColor, getSizingStatusLabel } from "@/lib/statusColors";
+import { RevisionBadge } from "./RevisionBadge";
+import { NewRevisionDialog } from "./NewRevisionDialog";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -1687,6 +1689,7 @@ export function ProtectiveSystemDetail() {
         updateSizingCase,
         sizingCaseList,
         deleteSizingCase,
+        getCurrentRevision,
     } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
@@ -1702,6 +1705,9 @@ export function ProtectiveSystemDetail() {
     const [editPsvOpen, setEditPsvOpen] = useState(false);
     const [editTag, setEditTag] = useState('');
     const [editName, setEditName] = useState('');
+
+    // Revision dialog state
+    const [newRevisionDialogOpen, setNewRevisionDialogOpen] = useState(false);
 
     // If editing a case, show the workspace
     if (editingCaseId) {
@@ -1847,6 +1853,10 @@ export function ProtectiveSystemDetail() {
                             <Typography variant="h4" fontWeight={700}>
                                 {selectedPsv.tag}
                             </Typography>
+                            <RevisionBadge
+                                revisionCode={getCurrentRevision('protective_system', selectedPsv.id)?.revisionCode}
+                                onClick={() => setNewRevisionDialogOpen(true)}
+                            />
                             <Chip
                                 icon={getStatusIcon(selectedPsv.status)}
                                 label={getWorkflowStatusLabel(selectedPsv.status)}
@@ -2045,6 +2055,15 @@ export function ProtectiveSystemDetail() {
             <TabPanel value={activeTab} index={5}>
                 <SummaryTab />
             </TabPanel>
+
+            {/* New Revision Dialog */}
+            <NewRevisionDialog
+                open={newRevisionDialogOpen}
+                onClose={() => setNewRevisionDialogOpen(false)}
+                entityType="protective_system"
+                entityId={selectedPsv.id}
+                currentRevisionCode={getCurrentRevision('protective_system', selectedPsv.id)?.revisionCode}
+            />
         </Box>
     );
 }
