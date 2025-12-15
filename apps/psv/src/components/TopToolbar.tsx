@@ -1,28 +1,313 @@
 "use client";
 
-import { Box, InputBase, useTheme } from "@mui/material";
-import { Tune, Search } from "@mui/icons-material";
+import { useMemo, useState } from "react";
+import {
+    Autocomplete,
+    Box,
+    TextField,
+    Typography,
+    useTheme,
+} from "@mui/material";
+import {
+    Apartment,
+    Business,
+    Domain,
+    FolderSpecial,
+    Search,
+    Shield,
+    Tune,
+    ArrowRightAlt,
+    Category,
+    Settings,
+} from "@mui/icons-material";
 import { useColorMode } from "@/contexts/ColorModeContext";
 import { TopFloatingToolbar } from "@eng-suite/ui-kit";
 import { useRouter } from "next/navigation";
 import { UserMenu } from "@/components/UserMenu";
+import { usePsvStore } from "@/store/usePsvStore";
 
 interface TopToolbarProps {
     title?: string;
     onBack?: () => void;
 }
 
+type GlobalSearchKind = 'customer' | 'plant' | 'unit' | 'area' | 'project' | 'psv' | 'equipment';
+type GlobalSearchOption = {
+    kind: GlobalSearchKind;
+    id: string;
+    label: string;
+    secondary: string;
+};
+
 export function TopToolbar({ title = "PSV Sizing", onBack }: TopToolbarProps) {
     const theme = useTheme();
     const { toggleColorMode } = useColorMode();
     const isDark = theme.palette.mode === 'dark';
     const router = useRouter();
+    const [searchText, setSearchText] = useState('');
+
+    const {
+        customers,
+        plants,
+        units,
+        areas,
+        projects,
+        protectiveSystems,
+        equipment,
+        selectCustomer,
+        selectPlant,
+        selectUnit,
+        selectArea,
+        selectProject,
+        selectPsv,
+        setCurrentPage,
+        setDashboardTab,
+    } = usePsvStore();
 
     const handleBack = () => {
         if (onBack) {
             onBack();
         } else {
             router.back();
+        }
+    };
+
+    const getKindLabel = (kind: GlobalSearchKind) => {
+        switch (kind) {
+            case 'customer':
+                return 'Customers';
+            case 'plant':
+                return 'Plants';
+            case 'unit':
+                return 'Units';
+            case 'area':
+                return 'Areas';
+            case 'project':
+                return 'Projects';
+            case 'psv':
+                return 'PSVs';
+            case 'equipment':
+                return 'Equipment';
+            default:
+                return 'Results';
+        }
+    };
+
+    const getKindIcon = (kind: GlobalSearchKind) => {
+        switch (kind) {
+            case 'customer':
+                return <Business fontSize="small" />;
+            case 'plant':
+                return <Apartment fontSize="small" />;
+            case 'unit':
+                return <Category fontSize="small" />;
+            case 'area':
+                return <Domain fontSize="small" />;
+            case 'project':
+                return <FolderSpecial fontSize="small" />;
+            case 'psv':
+                return <Shield fontSize="small" />;
+            case 'equipment':
+                return <Settings fontSize="small" />;
+            default:
+                return <Search fontSize="small" />;
+        }
+    };
+
+    const getHierarchyPathFromAreaId = (areaId: string): string => {
+        const area = areas.find((a) => a.id === areaId);
+        if (!area) return '';
+        const unit = units.find((u) => u.id === area.unitId);
+        const plant = unit ? plants.find((p) => p.id === unit.plantId) : undefined;
+        const customer = plant ? customers.find((c) => c.id === plant.customerId) : undefined;
+        return [customer?.name, plant?.name, unit?.name, area?.name].filter(Boolean).join(' / ');
+    };
+
+    const options = useMemo((): GlobalSearchOption[] => {
+        const query = searchText.trim().toLowerCase();
+        if (!query) return [];
+
+        const matches = (...fields: Array<string | undefined | null>) =>
+            fields.some((f) => (f ?? '').toLowerCase().includes(query));
+
+        const results: GlobalSearchOption[] = [];
+
+        for (const customer of customers) {
+            if (matches(customer.name, customer.code, customer.status)) {
+                results.push({
+                    kind: 'customer',
+                    id: customer.id,
+                    label: `${customer.name}`,
+                    secondary: customer.code,
+                });
+            }
+        }
+
+        for (const plant of plants) {
+            const customer = customers.find((c) => c.id === plant.customerId);
+            if (matches(plant.name, plant.code, plant.location, plant.status, customer?.name)) {
+                results.push({
+                    kind: 'plant',
+                    id: plant.id,
+                    label: `${plant.name}`,
+                    secondary: [plant.code, customer?.name].filter(Boolean).join(' • '),
+                });
+            }
+        }
+
+        for (const unit of units) {
+            const plant = plants.find((p) => p.id === unit.plantId);
+            const customer = plant ? customers.find((c) => c.id === plant.customerId) : undefined;
+            if (matches(unit.name, unit.code, unit.service, unit.status, plant?.name, customer?.name)) {
+                results.push({
+                    kind: 'unit',
+                    id: unit.id,
+                    label: `${unit.name}`,
+                    secondary: [unit.code, plant?.name, customer?.name].filter(Boolean).join(' • '),
+                });
+            }
+        }
+
+        for (const area of areas) {
+            const unit = units.find((u) => u.id === area.unitId);
+            const plant = unit ? plants.find((p) => p.id === unit.plantId) : undefined;
+            const customer = plant ? customers.find((c) => c.id === plant.customerId) : undefined;
+            if (matches(area.name, area.code, area.status, unit?.name, plant?.name, customer?.name)) {
+                results.push({
+                    kind: 'area',
+                    id: area.id,
+                    label: `${area.name}`,
+                    secondary: [area.code, unit?.name, plant?.name].filter(Boolean).join(' • '),
+                });
+            }
+        }
+
+        for (const project of projects) {
+            const path = getHierarchyPathFromAreaId(project.areaId);
+            if (matches(project.name, project.code, project.phase, project.status, path)) {
+                results.push({
+                    kind: 'project',
+                    id: project.id,
+                    label: `${project.name}`,
+                    secondary: [project.code, project.phase, path].filter(Boolean).join(' • '),
+                });
+            }
+        }
+
+        for (const psv of protectiveSystems) {
+            const path = getHierarchyPathFromAreaId(psv.areaId);
+            if (matches(psv.tag, psv.name, psv.type, psv.status, psv.serviceFluid, psv.designCode, psv.fluidPhase, path)) {
+                results.push({
+                    kind: 'psv',
+                    id: psv.id,
+                    label: `${psv.tag} — ${psv.name}`,
+                    secondary: [psv.status.replace('_', ' '), path].filter(Boolean).join(' • '),
+                });
+            }
+        }
+
+        for (const equip of equipment) {
+            const path = getHierarchyPathFromAreaId(equip.areaId);
+            if (matches(equip.tag, equip.name, equip.type, equip.status, path)) {
+                results.push({
+                    kind: 'equipment',
+                    id: equip.id,
+                    label: `${equip.tag} — ${equip.name}`,
+                    secondary: [equip.type, path].filter(Boolean).join(' • '),
+                });
+            }
+        }
+
+        return results.slice(0, 80);
+    }, [
+        areas,
+        customers,
+        equipment,
+        plants,
+        projects,
+        protectiveSystems,
+        searchText,
+        units,
+    ]);
+
+    const handleNavigate = async (option: GlobalSearchOption) => {
+        const safeSelect = async (fn: () => Promise<unknown> | unknown) => {
+            const out = fn();
+            if (out instanceof Promise) await out;
+        };
+
+        const selectAreaChain = async (areaId: string) => {
+            const area = areas.find((a) => a.id === areaId);
+            if (!area) return;
+            const unit = units.find((u) => u.id === area.unitId);
+            const plant = unit ? plants.find((p) => p.id === unit.plantId) : undefined;
+            const customer = plant ? customers.find((c) => c.id === plant.customerId) : undefined;
+
+            setCurrentPage(null);
+            if (customer) await safeSelect(() => selectCustomer(customer.id));
+            if (plant) await safeSelect(() => selectPlant(plant.id));
+            if (unit) await safeSelect(() => selectUnit(unit.id));
+            await safeSelect(() => selectArea(area.id));
+        };
+
+        try {
+            if (option.kind === 'customer') {
+                setCurrentPage(null);
+                await safeSelect(() => selectCustomer(option.id));
+            }
+
+            if (option.kind === 'plant') {
+                const plant = plants.find((p) => p.id === option.id);
+                if (!plant) return;
+                setCurrentPage(null);
+                await safeSelect(() => selectCustomer(plant.customerId));
+                await safeSelect(() => selectPlant(plant.id));
+            }
+
+            if (option.kind === 'unit') {
+                const unit = units.find((u) => u.id === option.id);
+                if (!unit) return;
+                const plant = plants.find((p) => p.id === unit.plantId);
+                if (!plant) return;
+                setCurrentPage(null);
+                await safeSelect(() => selectCustomer(plant.customerId));
+                await safeSelect(() => selectPlant(plant.id));
+                await safeSelect(() => selectUnit(unit.id));
+            }
+
+            if (option.kind === 'area') {
+                await selectAreaChain(option.id);
+            }
+
+            if (option.kind === 'project') {
+                const project = projects.find((p) => p.id === option.id);
+                if (!project) return;
+                await selectAreaChain(project.areaId);
+                await safeSelect(() => selectProject(project.id));
+            }
+
+            if (option.kind === 'psv') {
+                const psv = protectiveSystems.find((p) => p.id === option.id);
+                if (!psv) return;
+                await selectAreaChain(psv.areaId);
+
+                const projectId = psv.projectIds?.[0];
+                if (projectId) {
+                    const project = projects.find((p) => p.id === projectId);
+                    if (project) await safeSelect(() => selectProject(project.id));
+                }
+
+                await safeSelect(() => selectPsv(psv.id));
+            }
+
+            if (option.kind === 'equipment') {
+                setDashboardTab('Equipment');
+                setCurrentPage('dashboard');
+            }
+
+            setSearchText('');
+        } catch (err) {
+            console.error(err);
         }
     };
 
@@ -48,7 +333,7 @@ export function TopToolbar({ title = "PSV Sizing", onBack }: TopToolbarProps) {
                             borderRadius: '8px',
                             px: 2,
                             py: 0.5,
-                            width: { xs: 180, sm: 240 },
+                            width: { xs: 220, sm: 360, md: 520, lg: 640 },
                             border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
                             transition: 'all 0.2s',
                             '&:hover': {
@@ -57,13 +342,74 @@ export function TopToolbar({ title = "PSV Sizing", onBack }: TopToolbarProps) {
                             }
                         }}
                     >
-                        <Search sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />
-                        <InputBase
-                            placeholder="Search..."
+                        <Autocomplete
+                            fullWidth
+                            size="small"
+                            options={options}
+                            groupBy={(opt) => getKindLabel(opt.kind)}
+                            getOptionLabel={(opt) => opt.label}
+                            filterOptions={(x) => x}
+                            inputValue={searchText}
+                            onInputChange={(_e, value) => setSearchText(value)}
+                            onChange={(_e, value) => {
+                                if (value) void handleNavigate(value);
+                            }}
+                            renderOption={(props, option) => (
+                                <Box
+                                    component="li"
+                                    {...props}
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 1,
+                                        py: 1,
+                                    }}
+                                >
+                                    <Box sx={{ color: 'primary.main', display: 'flex', alignItems: 'center' }}>
+                                        {getKindIcon(option.kind)}
+                                    </Box>
+                                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                                        <Typography variant="body2" fontWeight={600} noWrap>
+                                            {option.label}
+                                        </Typography>
+                                        <Typography variant="caption" color="text.secondary" noWrap>
+                                            {option.secondary}
+                                        </Typography>
+                                    </Box>
+                                    <ArrowRightAlt fontSize="small" style={{ opacity: 0.5 }} />
+                                </Box>
+                            )}
+                            renderInput={(params) => (
+                                <TextField
+                                    {...params}
+                                    placeholder="Search customers, plants, units, areas, projects, PSVs, equipment..."
+                                    variant="standard"
+                                    InputProps={{
+                                        ...params.InputProps,
+                                        startAdornment: (
+                                            <Box
+                                                sx={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 1,
+                                                    pr: 1,
+                                                }}
+                                            >
+                                                <Search sx={{ color: 'text.secondary', fontSize: 20 }} />
+                                                {params.InputProps.startAdornment}
+                                            </Box>
+                                        ),
+                                        disableUnderline: true,
+                                        sx: {
+                                            color: 'text.primary',
+                                            fontSize: '0.875rem',
+                                        },
+                                    }}
+                                />
+                            )}
                             sx={{
-                                color: 'text.primary',
-                                fontSize: '0.875rem',
-                                width: '100%',
+                                '& .MuiInputBase-root': { p: 0 },
+                                '& .MuiAutocomplete-endAdornment': { right: 0 },
                             }}
                         />
                     </Box>

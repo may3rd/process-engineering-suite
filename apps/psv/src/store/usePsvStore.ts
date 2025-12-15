@@ -74,6 +74,7 @@ interface PsvStore {
     activeTab: number;
     sidebarOpen: boolean;
     currentPage: 'hierarchy' | 'dashboard' | 'account' | 'scenario_consideration' | null;
+    dashboardTab: 'Customers' | 'Plants' | 'Units' | 'Areas' | 'Projects' | 'Equipment' | 'PSVs' | 'Users' | null;
     editingScenarioId: string | null;
     isLoading: boolean;
     error: string | null;
@@ -90,6 +91,7 @@ interface PsvStore {
     selectPsv: (id: string | null) => Promise<void>;
     setActiveTab: (tab: number) => void;
     setCurrentPage: (page: 'hierarchy' | 'dashboard' | 'account' | null) => void;
+    setDashboardTab: (tab: PsvStore['dashboardTab']) => void;
     toggleSidebar: () => void;
     clearSelection: () => void;
     navigateToLevel: (level: 'customer' | 'plant' | 'unit' | 'area' | 'project' | 'psv') => void;
@@ -210,6 +212,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     activeTab: 0,
     sidebarOpen: true,
     currentPage: null,
+    dashboardTab: null,
     editingScenarioId: null,
     isLoading: false,
     error: null,
@@ -604,6 +607,8 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         currentPage: page,
         selectedPsv: page ? null : get().selectedPsv
     }),
+
+    setDashboardTab: (tab) => set({ dashboardTab: tab }),
 
     toggleSidebar: () => set((state) => ({ sidebarOpen: !state.sidebarOpen })),
 

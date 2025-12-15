@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     Box,
     Paper,
@@ -69,11 +69,11 @@ export function DashboardPage() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const { currentUser, canManageHierarchy, canManageCustomer, canManageUsers } = useAuthStore();
-    const { setCurrentPage } = usePsvStore();
+    const { setCurrentPage, dashboardTab, setDashboardTab } = usePsvStore();
     const [activeTab, setActiveTab] = useState(0);
 
     // Determine visible tabs based on role
-    const tabs = [
+    const tabs = useMemo(() => ([
         { label: "Customers", icon: <Business />, visible: canManageCustomer() },
         { label: "Plants", icon: <Apartment />, visible: canManageHierarchy() },
         { label: "Units", icon: <Category />, visible: canManageHierarchy() },
@@ -82,12 +82,19 @@ export function DashboardPage() {
         { label: "Equipment", icon: <Settings />, visible: true },
         { label: "PSVs", icon: <Shield />, visible: true },
         { label: "Users", icon: <People />, visible: canManageUsers() },
-    ];
+    ]), [canManageCustomer, canManageHierarchy, canManageUsers]);
 
-    const visibleTabs = tabs.filter(tab => tab.visible);
+    const visibleTabs = useMemo(() => tabs.filter(tab => tab.visible), [tabs]);
+
+    useEffect(() => {
+        if (!dashboardTab) return;
+        const idx = visibleTabs.findIndex((t) => t.label === dashboardTab);
+        if (idx >= 0) setActiveTab(idx);
+    }, [dashboardTab, visibleTabs]);
 
     const handleClose = () => {
         setCurrentPage(null);
+        setDashboardTab(null);
     };
 
     return (
@@ -122,7 +129,10 @@ export function DashboardPage() {
             <Paper sx={{ ...glassCardStyles, borderRadius: "12px" }}>
                 <Tabs
                     value={activeTab}
-                    onChange={(_e, newValue) => setActiveTab(newValue)}
+                    onChange={(_e, newValue) => {
+                        setActiveTab(newValue);
+                        if (dashboardTab) setDashboardTab(null);
+                    }}
                     variant="scrollable"
                     scrollButtons="auto"
                     allowScrollButtonsMobile
