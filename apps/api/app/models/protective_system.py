@@ -65,7 +65,12 @@ class ProtectiveSystem(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixi
     tags: Mapped[List[str]] = mapped_column(ARRAY(String), default=list, nullable=False)
     project_tags: Mapped[Optional[List[str]]] = mapped_column(ARRAY(UUID(as_uuid=False)), nullable=True)
 
-    revision_no: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    # Current revision reference
+    current_revision_id: Mapped[Optional[str]] = mapped_column(
+        UUID(as_uuid=False),
+        ForeignKey("revision_history.id"),
+        nullable=True,
+    )
     
     # Pipeline networks stored as JSONB
     inlet_network: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
@@ -82,6 +87,7 @@ class ProtectiveSystem(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixi
     comments = relationship("Comment", back_populates="protective_system", cascade="all, delete-orphan")
     todos = relationship("Todo", back_populates="protective_system", cascade="all, delete-orphan")
     notes = relationship("ProjectNote", back_populates="protective_system", cascade="all, delete-orphan")
+    current_revision = relationship("RevisionHistory", foreign_keys=[current_revision_id])
 
     @property
     def project_ids(self) -> list[str]:

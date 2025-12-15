@@ -1,7 +1,7 @@
 """SizingCase model."""
 from typing import Optional
 
-from sqlalchemy import String, Integer, ForeignKey, Enum as SQLEnum
+from sqlalchemy import String, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 
@@ -38,7 +38,12 @@ class SizingCase(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     outputs: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     unit_preferences: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     
-    revision_no: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
+    # Current revision reference
+    current_revision_id: Mapped[Optional[str]] = mapped_column(
+        UUID(as_uuid=False),
+        ForeignKey("revision_history.id"),
+        nullable=True,
+    )
     status: Mapped[str] = mapped_column(
         SQLEnum("draft", "calculated", "verified", "approved", name="sizing_status"),
         nullable=False,
@@ -58,3 +63,5 @@ class SizingCase(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     # Relationships
     protective_system = relationship("ProtectiveSystem", back_populates="sizing_cases")
     scenario = relationship("OverpressureScenario", back_populates="sizing_cases")
+    current_revision = relationship("RevisionHistory", foreign_keys=[current_revision_id])
+

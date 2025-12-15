@@ -1,0 +1,59 @@
+"""RevisionHistory model for tracking document revisions."""
+from datetime import datetime
+from typing import Optional, Any
+
+from sqlalchemy import ForeignKey, Integer, String, Text
+from sqlalchemy.dialects.postgresql import JSONB, UUID
+from sqlalchemy.orm import Mapped, mapped_column, relationship
+
+from .base import Base, UUIDPrimaryKeyMixin
+
+
+class RevisionHistory(Base, UUIDPrimaryKeyMixin):
+    """Tracks revision history for PSV, scenarios, and sizing cases."""
+    
+    __tablename__ = "revision_history"
+    
+    # Entity reference (polymorphic)
+    entity_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    entity_id: Mapped[str] = mapped_column(UUID(as_uuid=False), nullable=False)
+    
+    # Revision info
+    revision_code: Mapped[str] = mapped_column(String(16), nullable=False)  # 'O1', 'A1', 'B1'
+    sequence: Mapped[int] = mapped_column(Integer, nullable=False)  # For ordering
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
+    
+    # Lifecycle tracking
+    originated_by: Mapped[Optional[str]] = mapped_column(
+        UUID(as_uuid=False), ForeignKey("users.id"), nullable=True
+    )
+    originated_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    
+    checked_by: Mapped[Optional[str]] = mapped_column(
+        UUID(as_uuid=False), ForeignKey("users.id"), nullable=True
+    )
+    checked_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    
+    approved_by: Mapped[Optional[str]] = mapped_column(
+        UUID(as_uuid=False), ForeignKey("users.id"), nullable=True
+    )
+    approved_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    
+    issued_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    
+    # Snapshot of entity state
+    snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
+    
+    # Timestamps
+    created_at: Mapped[datetime] = mapped_column(
+        nullable=False,
+        server_default="NOW()"
+    )
+    
+    # Relationships
+    originator = relationship("User", foreign_keys=[originated_by])
+    checker = relationship("User", foreign_keys=[checked_by])
+    approver = relationship("User", foreign_keys=[approved_by])
+    
+    def __repr__(self) -> str:
+        return f"<RevisionHistory {self.entity_type}:{self.entity_id} Rev.{self.revision_code}>"

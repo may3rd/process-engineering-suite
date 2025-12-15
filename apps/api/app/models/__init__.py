@@ -16,6 +16,7 @@ from .attachment import Attachment
 from .comment import Comment
 from .todo import Todo
 from .project_note import ProjectNote
+from .revision_history import RevisionHistory
 
 __all__ = [
     # Base
@@ -35,6 +36,7 @@ __all__ = [
     "ProtectiveSystem",
     "OverpressureScenario",
     "SizingCase",
+    "RevisionHistory",
     # Supporting
     "Equipment",
     "EquipmentLink",
@@ -43,3 +45,4 @@ __all__ = [
     "Todo",
     "ProjectNote",
 ]
+
