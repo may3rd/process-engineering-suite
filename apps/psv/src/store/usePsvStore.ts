@@ -14,6 +14,8 @@ import type {
     Equipment,
     Comment,
     ProjectNote,
+    RevisionHistory,
+    RevisionEntityType,
 } from '@/data/types';
 import { getDataService } from '@/lib/api';
 import { toast } from '@/lib/toast';
@@ -163,6 +165,13 @@ interface PsvStore {
     updateComment: (id: string, updates: Partial<Comment>) => Promise<void>;
     deleteComment: (id: string) => Promise<void>;
     commentList: Comment[];
+
+    // Revision History Actions
+    revisionHistory: RevisionHistory[];
+    loadRevisionHistory: (entityType: RevisionEntityType, entityId: string) => Promise<void>;
+    createRevision: (entityType: RevisionEntityType, entityId: string, revisionCode: string, description?: string) => Promise<RevisionHistory>;
+    updateRevisionLifecycle: (revisionId: string, field: 'checkedBy' | 'approvedBy', userId: string) => Promise<void>;
+    getCurrentRevision: (entityType: RevisionEntityType, entityId: string) => RevisionHistory | undefined;
 }
 
 export const usePsvStore = create<PsvStore>((set, get) => ({
@@ -1365,5 +1374,110 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             toast.error('Failed to delete equipment', { description: message });
             throw error;
         }
+    },
+
+    // --- Revision History ---
+    revisionHistory: [],
+
+    loadRevisionHistory: async (entityType, entityId) => {
+        try {
+            const history = await dataService.getRevisionHistory(entityType, entityId);
+            set({ revisionHistory: history });
+        } catch (error) {
+            console.error('Failed to load revision history:', error);
+            set({ revisionHistory: [] });
+        }
+    },
+
+    createRevision: async (entityType, entityId, revisionCode, description) => {
+        const state = get();
+        let snapshot: Record<string, unknown> = {};
+
+        // Get entity snapshot based on type
+        if (entityType === 'protective_system') {
+            const psv = state.protectiveSystems.find(p => p.id === entityId);
+            if (psv) snapshot = { ...psv };
+        } else if (entityType === 'scenario') {
+            const scenario = state.scenarioList.find((s: OverpressureScenario) => s.id === entityId);
+            if (scenario) snapshot = { ...scenario };
+        } else if (entityType === 'sizing_case') {
+            const sizingCase = state.sizingCaseList.find((c: SizingCase) => c.id === entityId);
+            if (sizingCase) snapshot = { ...sizingCase };
+        }
+
+        const newRevision = await dataService.createRevision(entityType, entityId, {
+            revisionCode,
+            description,
+            snapshot,
+            originatedBy: undefined, // TODO: Get from auth store
+        });
+
+        // Update entity's currentRevisionId
+        if (entityType === 'protective_system') {
+            await dataService.updateProtectiveSystem(entityId, { currentRevisionId: newRevision.id });
+            set((state) => ({
+                protectiveSystems: state.protectiveSystems.map(p =>
+                    p.id === entityId ? { ...p, currentRevisionId: newRevision.id } : p
+                ),
+                selectedPsv: state.selectedPsv?.id === entityId
+                    ? { ...state.selectedPsv, currentRevisionId: newRevision.id }
+                    : state.selectedPsv,
+                revisionHistory: [newRevision, ...state.revisionHistory],
+            }));
+        } else if (entityType === 'scenario') {
+            await dataService.updateScenario(entityId, { currentRevisionId: newRevision.id });
+            set((state) => ({
+                scenarioList: state.scenarioList.map((s: OverpressureScenario) =>
+                    s.id === entityId ? { ...s, currentRevisionId: newRevision.id } : s
+                ),
+                revisionHistory: [newRevision, ...state.revisionHistory],
+            }));
+        } else if (entityType === 'sizing_case') {
+            await dataService.updateSizingCase(entityId, { currentRevisionId: newRevision.id });
+            set((state) => ({
+                sizingCaseList: state.sizingCaseList.map((c: SizingCase) =>
+                    c.id === entityId ? { ...c, currentRevisionId: newRevision.id } : c
+                ),
+                revisionHistory: [newRevision, ...state.revisionHistory],
+            }));
+        }
+
+        toast.success(`Created revision ${revisionCode}`);
+        return newRevision;
+    },
+
+    updateRevisionLifecycle: async (revisionId, field, userId) => {
+        const now = new Date().toISOString();
+        const updates: Partial<RevisionHistory> = {
+            [field]: userId,
+            [`${field.replace('By', 'At')}`]: now,
+        };
+
+        await dataService.updateRevision(revisionId, updates);
+        set((state) => ({
+            revisionHistory: state.revisionHistory.map(r =>
+                r.id === revisionId ? { ...r, ...updates } : r
+            ),
+        }));
+
+        const action = field === 'checkedBy' ? 'Checked' : 'Approved';
+        toast.success(`Revision ${action}`);
+    },
+
+    getCurrentRevision: (entityType, entityId) => {
+        const state = get();
+        let currentRevisionId: string | undefined;
+
+        if (entityType === 'protective_system') {
+            currentRevisionId = state.selectedPsv?.currentRevisionId;
+        } else if (entityType === 'scenario') {
+            currentRevisionId = state.scenarioList.find((s: OverpressureScenario) => s.id === entityId)?.currentRevisionId;
+        } else if (entityType === 'sizing_case') {
+            currentRevisionId = state.sizingCaseList.find((c: SizingCase) => c.id === entityId)?.currentRevisionId;
+        }
+
+        return currentRevisionId
+            ? state.revisionHistory.find(r => r.id === currentRevisionId)
+            : undefined;
     },
 }));

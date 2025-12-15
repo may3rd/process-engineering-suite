@@ -20,6 +20,8 @@ import {
     User,
     MockCredential,
     ProjectNote,
+    RevisionHistory,
+    RevisionEntityType,
 } from '@/data/types';
 import {
     users as mockUsers,
@@ -60,6 +62,7 @@ const STORAGE_KEYS = {
     CREDENTIALS: 'psv_demo_credentials',
     CURRENT_USER: 'psv_demo_current_user',
     INITIALIZED: 'psv_demo_initialized',
+    REVISION_HISTORY: 'psv_demo_revision_history',
 };
 
 export interface LoginResponse {
@@ -849,6 +852,62 @@ class LocalStorageService {
     resetDemoData(): void {
         localStorage.removeItem(STORAGE_KEYS.INITIALIZED);
         initializeIfNeeded();
+    }
+
+    // --- Revision History ---
+
+    async getRevisionHistory(entityType: RevisionEntityType, entityId: string): Promise<RevisionHistory[]> {
+        const all = getItem<RevisionHistory>(STORAGE_KEYS.REVISION_HISTORY, []);
+        return all
+            .filter(r => r.entityType === entityType && r.entityId === entityId)
+            .sort((a, b) => b.sequence - a.sequence); // newest first
+    }
+
+    async createRevision(
+        entityType: RevisionEntityType,
+        entityId: string,
+        data: {
+            revisionCode: string;
+            description?: string;
+            snapshot: Record<string, unknown>;
+            originatedBy?: string;
+        }
+    ): Promise<RevisionHistory> {
+        const all = getItem<RevisionHistory>(STORAGE_KEYS.REVISION_HISTORY, []);
+        const existing = all.filter(r => r.entityType === entityType && r.entityId === entityId);
+        const maxSequence = existing.length > 0 ? Math.max(...existing.map(r => r.sequence)) : 0;
+
+        const newRevision: RevisionHistory = {
+            id: uuidv4(),
+            entityType,
+            entityId,
+            revisionCode: data.revisionCode,
+            sequence: maxSequence + 1,
+            description: data.description,
+            originatedBy: data.originatedBy,
+            originatedAt: new Date().toISOString(),
+            snapshot: data.snapshot,
+            createdAt: new Date().toISOString(),
+        };
+
+        all.push(newRevision);
+        setItem(STORAGE_KEYS.REVISION_HISTORY, all);
+        return newRevision;
+    }
+
+    async updateRevision(id: string, data: Partial<RevisionHistory>): Promise<RevisionHistory> {
+        const all = getItem<RevisionHistory>(STORAGE_KEYS.REVISION_HISTORY, []);
+        const index = all.findIndex(r => r.id === id);
+        if (index === -1) throw new Error('Revision not found');
+
+        all[index] = { ...all[index], ...data };
+        setItem(STORAGE_KEYS.REVISION_HISTORY, all);
+        return all[index];
+    }
+
+    async getRevisionById(id: string): Promise<RevisionHistory | undefined> {
+        const all = getItem<RevisionHistory>(STORAGE_KEYS.REVISION_HISTORY, []);
+        return all.find(r => r.id === id);
     }
 }
 

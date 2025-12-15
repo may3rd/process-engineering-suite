@@ -20,6 +20,8 @@ import {
     TodoItem,
     User,
     ProjectNote,
+    RevisionHistory,
+    RevisionEntityType,
 } from '@/data/types';
 
 export interface LoginResponse {
@@ -496,6 +498,38 @@ class ApiClient {
 
     async seedFromMock(): Promise<{ message: string; counts: Record<string, number> }> {
         return this.request('/admin/seed-from-mock', { method: 'POST' });
+    }
+
+    // --- Revision History (stub - backend not implemented yet) ---
+
+    async getRevisionHistory(entityType: RevisionEntityType, entityId: string): Promise<RevisionHistory[]> {
+        // TODO: Implement when backend supports revision history
+        console.warn('Revision history API not implemented, returning empty array');
+        return [];
+    }
+
+    async createRevision(
+        entityType: RevisionEntityType,
+        entityId: string,
+        data: {
+            revisionCode: string;
+            description?: string;
+            snapshot: Record<string, unknown>;
+            originatedBy?: string;
+        }
+    ): Promise<RevisionHistory> {
+        // TODO: Implement when backend supports revision history
+        throw new Error('Revision history API not implemented');
+    }
+
+    async updateRevision(id: string, data: Partial<RevisionHistory>): Promise<RevisionHistory> {
+        // TODO: Implement when backend supports revision history
+        throw new Error('Revision history API not implemented');
+    }
+
+    async getRevisionById(id: string): Promise<RevisionHistory | undefined> {
+        // TODO: Implement when backend supports revision history
+        return undefined;
     }
 }
 
