@@ -645,7 +645,6 @@ export const sizingCases: SizingCase[] = [
             density: 'kg/m³',
             viscosity: 'cP',
         },
-        revisionNo: 1,
         status: 'verified',
         createdBy: 'c34f5c40-8193-4e39-a628-e684361c2b67',
         approvedBy: 'f7b3c4d5-e6f7-4a8b-9c0d-1e2f3a4b5c6d',
@@ -692,7 +691,6 @@ export const sizingCases: SizingCase[] = [
             density: 'kg/m³',
             viscosity: 'cP',
         },
-        revisionNo: 0,
         status: 'approved',
         createdBy: 'c34f5c40-8193-4e39-a628-e684361c2b67',
         approvedBy: '22ee3f22-898a-461b-85ec-83f84d250810',
@@ -732,7 +730,6 @@ export const sizingCases: SizingCase[] = [
                 'Balanced bellows recommended for high backpressure',
             ],
         },
-        revisionNo: 3,
         unitPreferences: {
             pressure: 'barg',
             temperature: 'C',

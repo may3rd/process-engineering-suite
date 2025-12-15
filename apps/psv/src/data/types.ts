@@ -52,6 +52,31 @@ export interface Project {
     createdAt: string;
 }
 
+// Revision history for document control
+export type RevisionEntityType = 'protective_system' | 'scenario' | 'sizing_case';
+
+export interface RevisionHistory {
+    id: string;
+    entityType: RevisionEntityType;
+    entityId: string;
+    revisionCode: string;  // 'O1', 'A1', 'B1', etc.
+    sequence: number;      // For ordering: 1, 2, 3...
+    description?: string;  // Reason for revision
+
+    // Lifecycle tracking
+    originatedBy?: string;
+    originatedAt?: string;
+    checkedBy?: string;
+    checkedAt?: string;
+    approvedBy?: string;
+    approvedAt?: string;
+    issuedAt?: string;
+
+    // Snapshot of entity state at this revision
+    snapshot: Record<string, unknown>;
+    createdAt: string;
+}
+
 // Import shared physics/network types
 import { PipeProps, NodeProps } from '@eng-suite/physics';
 import type { SizingInputs, SizingOutputs, SizingMethod, OrificeSize } from '@eng-suite/api/psv';
@@ -89,7 +114,7 @@ export interface ProtectiveSystem {
     mawp: number; // barg
     ownerId: string;
     status: 'draft' | 'in_review' | 'checked' | 'approved' | 'issued';
-    revisionNo?: number; // Document revision number
+    currentRevisionId?: string; // FK to revision_history
     valveType?: ValveOperatingType; // Conventional, Balanced Bellows, or Pilot Operated
     tags: string[];
     // Shared piping networks (one physical install per device)
@@ -116,7 +141,7 @@ export type ScenarioCause =
 export interface OverpressureScenario {
     id: string;
     protectiveSystemId: string;
-    revisionNo?: number; // Document revision number
+    currentRevisionId?: string; // FK to revision_history
     cause: ScenarioCause;
     description: string;
     relievingTemp: number; // °C
@@ -173,7 +198,7 @@ export interface SizingCase {
     inputs: SizingInputs;
     outputs: SizingOutputs;
     unitPreferences: UnitPreferences;
-    revisionNo: number;
+    currentRevisionId?: string; // FK to revision_history
     status: 'draft' | 'calculated' | 'verified' | 'approved';
     createdBy: string;
     approvedBy?: string;

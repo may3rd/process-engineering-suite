@@ -907,7 +907,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                     </IconButton>
                     <Box>
                         <Typography variant="h6" fontWeight={600}>
-                            Sizing Case: {currentCase.revisionNo}
+                            Sizing Case
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
                             {currentCase.standard} • {currentCase.method}
@@ -2522,7 +2522,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                 <DialogContent>
                     <DialogContentText sx={{ mb: 2 }}>
                         This action cannot be undone. This will permanently delete the sizing case
-                        <strong> {currentCase.scenarioId} </strong> (Rev {currentCase.revisionNo}) from <strong>{psvTag}</strong>.
+                        <strong> {currentCase.scenarioId} </strong> from <strong>{psvTag}</strong>.
                     </DialogContentText>
                     <Typography variant="body2" gutterBottom>
                         Please type <strong>delete sizing case</strong> to confirm.

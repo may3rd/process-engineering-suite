@@ -369,203 +369,203 @@ function ScenariosTab() {
                         const canExpand = !!scenario.caseConsideration;
 
                         return (
-                        <Card key={scenario.id}>
-                            <CardContent>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                                        <Box
-                                            sx={{
-                                                width: 40,
-                                                height: 40,
-                                                borderRadius: 2,
-                                                backgroundColor: scenario.cause.includes('fire')
-                                                    ? 'rgba(239, 68, 68, 0.15)'
-                                                    : isDark ? 'rgba(251, 191, 36, 0.15)' : 'rgba(245, 158, 11, 0.15)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                color: scenario.cause.includes('fire') ? 'error.main' : 'secondary.main',
-                                            }}
-                                        >
-                                            {getCauseIcon(scenario.cause)}
+                            <Card key={scenario.id}>
+                                <CardContent>
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                                            <Box
+                                                sx={{
+                                                    width: 40,
+                                                    height: 40,
+                                                    borderRadius: 2,
+                                                    backgroundColor: scenario.cause.includes('fire')
+                                                        ? 'rgba(239, 68, 68, 0.15)'
+                                                        : isDark ? 'rgba(251, 191, 36, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: scenario.cause.includes('fire') ? 'error.main' : 'secondary.main',
+                                                }}
+                                            >
+                                                {getCauseIcon(scenario.cause)}
+                                            </Box>
+                                            <Box>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                    <Typography variant="h6" fontWeight={600}>
+                                                        {getCauseLabel(scenario.cause)}
+                                                    </Typography>
+                                                    {scenario.isGoverning && (
+                                                        <Chip
+                                                            label="Governing"
+                                                            size="small"
+                                                            color="warning"
+                                                            icon={<Star sx={{ fontSize: 14 }} />}
+                                                        />
+                                                    )}
+                                                </Box>
+                                                <Typography variant="body2" color="text.secondary">
+                                                    {scenario.description}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                        {canEdit && (
+                                            <Tooltip title="Edit">
+                                                <IconButton size="small" onClick={() => handleEditScenario(scenario)}>
+                                                    <Edit fontSize="small" />
+                                                </IconButton>
+                                            </Tooltip>
+                                        )}
+                                    </Box>
+
+                                    <Box
+                                        sx={{
+                                            display: 'grid',
+                                            gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                                            gap: 2,
+                                            p: 2,
+                                            borderRadius: 2,
+                                            backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
+                                            mb: 2,
+                                        }}
+                                    >
+                                        <Box>
+                                            <Typography variant="caption" color="text.secondary">Relieving Rate</Typography>
+                                            <Typography variant="body1" fontWeight={600}>{scenario.relievingRate.toLocaleString()} kg/h</Typography>
                                         </Box>
                                         <Box>
-                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Typography variant="h6" fontWeight={600}>
-                                                    {getCauseLabel(scenario.cause)}
-                                                </Typography>
-                                                {scenario.isGoverning && (
-                                                    <Chip
-                                                        label="Governing"
-                                                        size="small"
-                                                        color="warning"
-                                                        icon={<Star sx={{ fontSize: 14 }} />}
-                                                    />
-                                                )}
-                                            </Box>
-                                            <Typography variant="body2" color="text.secondary">
-                                                {scenario.description}
+                                            <Typography variant="caption" color="text.secondary">Relieving Pressure</Typography>
+                                            <Typography variant="body1" fontWeight={600}>{scenario.relievingPressure} barg</Typography>
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="caption" color="text.secondary">Relieving Temp</Typography>
+                                            <Typography variant="body1" fontWeight={600}>{scenario.relievingTemp} °C</Typography>
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="caption" color="text.secondary">Accumulation</Typography>
+                                            <Typography variant="body1" fontWeight={600}>{scenario.accumulationPct}%</Typography>
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="caption" color="text.secondary">Phase</Typography>
+                                            <Chip label={scenario.phase} size="small" sx={{ textTransform: 'capitalize' }} />
+                                        </Box>
+                                        <Box>
+                                            <Typography variant="caption" color="text.secondary">Required Capacity</Typography>
+                                            <Typography variant="body1" fontWeight={600} color="primary.main">
+                                                {scenario.requiredCapacity.toLocaleString()} kg/h
                                             </Typography>
                                         </Box>
                                     </Box>
-                                    {canEdit && (
-                                        <Tooltip title="Edit">
-                                            <IconButton size="small" onClick={() => handleEditScenario(scenario)}>
-                                                <Edit fontSize="small" />
-                                            </IconButton>
-                                        </Tooltip>
-                                    )}
-                                </Box>
 
-                                <Box
-                                    sx={{
-                                        display: 'grid',
-                                        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                                        gap: 2,
-                                        p: 2,
-                                        borderRadius: 2,
-                                        backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
-                                        mb: 2,
-                                    }}
-                                >
-                                    <Box>
-                                        <Typography variant="caption" color="text.secondary">Relieving Rate</Typography>
-                                        <Typography variant="body1" fontWeight={600}>{scenario.relievingRate.toLocaleString()} kg/h</Typography>
+                                    <Box sx={{ mb: 2 }}>
+                                        <Typography variant="subtitle2" sx={{ mb: 1 }}>Assumptions</Typography>
+                                        <List dense disablePadding>
+                                            {scenario.assumptions.map((assumption, idx) => (
+                                                <ListItem key={idx} disablePadding sx={{ py: 0.25 }}>
+                                                    <ListItemIcon sx={{ minWidth: 28 }}>
+                                                        <CheckCircle sx={{ fontSize: 16, color: 'success.main' }} />
+                                                    </ListItemIcon>
+                                                    <ListItemText primary={assumption} primaryTypographyProps={{ variant: 'body2' }} />
+                                                </ListItem>
+                                            ))}
+                                        </List>
                                     </Box>
-                                    <Box>
-                                        <Typography variant="caption" color="text.secondary">Relieving Pressure</Typography>
-                                        <Typography variant="body1" fontWeight={600}>{scenario.relievingPressure} barg</Typography>
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="caption" color="text.secondary">Relieving Temp</Typography>
-                                        <Typography variant="body1" fontWeight={600}>{scenario.relievingTemp} °C</Typography>
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="caption" color="text.secondary">Accumulation</Typography>
-                                        <Typography variant="body1" fontWeight={600}>{scenario.accumulationPct}%</Typography>
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="caption" color="text.secondary">Phase</Typography>
-                                        <Chip label={scenario.phase} size="small" sx={{ textTransform: 'capitalize' }} />
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="caption" color="text.secondary">Required Capacity</Typography>
-                                        <Typography variant="body1" fontWeight={600} color="primary.main">
-                                            {scenario.requiredCapacity.toLocaleString()} kg/h
-                                        </Typography>
-                                    </Box>
-                                </Box>
 
-                                <Box sx={{ mb: 2 }}>
-                                    <Typography variant="subtitle2" sx={{ mb: 1 }}>Assumptions</Typography>
-                                    <List dense disablePadding>
-                                        {scenario.assumptions.map((assumption, idx) => (
-                                            <ListItem key={idx} disablePadding sx={{ py: 0.25 }}>
-                                                <ListItemIcon sx={{ minWidth: 28 }}>
-                                                    <CheckCircle sx={{ fontSize: 16, color: 'success.main' }} />
-                                                </ListItemIcon>
-                                                <ListItemText primary={assumption} primaryTypographyProps={{ variant: 'body2' }} />
-                                            </ListItem>
+                                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                                        {scenario.codeRefs.map((ref, idx) => (
+                                            <Chip key={idx} label={ref} size="small" variant="outlined" />
                                         ))}
-                                    </List>
-                                </Box>
-
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                                    {scenario.codeRefs.map((ref, idx) => (
-                                        <Chip key={idx} label={ref} size="small" variant="outlined" />
-                                    ))}
-                                </Box>
-
-                                {/* Case Consideration Preview */}
-                                <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
-                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
-                                        <Typography variant="subtitle2">Case Consideration</Typography>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            {canExpand && (
-                                                <Button
-                                                    size="small"
-                                                    startIcon={isExpanded ? <ExpandLess /> : <Visibility />}
-                                                    onClick={() => {
-                                                        setExpandedCaseConsiderationByScenarioId((prev) => ({
-                                                            ...prev,
-                                                            [scenario.id]: !isExpanded,
-                                                        }));
-                                                    }}
-                                                >
-                                                    {isExpanded ? 'Collapse' : 'Expand'}
-                                                </Button>
-                                            )}
-                                            {(canEdit || scenario.caseConsideration) && (
-                                                <Button
-                                                    size="small"
-                                                    onClick={() => {
-                                                        usePsvStore.setState({
-                                                            editingScenarioId: scenario.id,
-                                                            currentPage: 'scenario_consideration',
-                                                        });
-                                                    }}
-                                                >
-                                                    {/* Hide "Edit" wording when user is read-only; page still supports view mode. */}
-                                                    {canEdit
-                                                        ? (scenario.caseConsideration ? 'Edit Full Page' : 'Add Details')
-                                                        : 'View Full Page'}
-                                                </Button>
-                                            )}
-                                        </Box>
                                     </Box>
-                                    {scenario.caseConsideration ? (
-                                        <Paper
-                                            variant="outlined"
-                                            sx={{
-                                                p: 1.5,
-                                                bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)',
-                                                ...(isExpanded
-                                                    ? { overflow: 'visible' }
-                                                    : { maxHeight: 120, overflow: 'hidden' }),
-                                                position: 'relative',
-                                                cursor: isExpanded ? 'default' : 'pointer',
-                                                ...(isExpanded
-                                                    ? {}
-                                                    : {
-                                                        '&:hover': { borderColor: 'primary.main' },
-                                                        '&::after': {
-                                                            content: '""',
-                                                            position: 'absolute',
-                                                            bottom: 0,
-                                                            left: 0,
-                                                            right: 0,
-                                                            height: 40,
-                                                            background: isDark
-                                                                ? 'linear-gradient(transparent, rgba(30,30,30,1))'
-                                                                : 'linear-gradient(transparent, rgba(255,255,255,1))',
-                                                        },
-                                                    }),
-                                            }}
-                                            onClick={
-                                                isExpanded
-                                                    // When expanded, allow selecting/scrolling content without navigating away.
-                                                    ? undefined
-                                                    : () => {
-                                                        usePsvStore.setState({
-                                                            editingScenarioId: scenario.id,
-                                                            currentPage: 'scenario_consideration',
-                                                        });
-                                                    }
-                                            }
-                                        >
-                                            <MarkdownPreview
-                                                content={scenario.caseConsideration}
-                                                maxLines={isExpanded ? undefined : 4}
-                                            />
-                                        </Paper>
-                                    ) : (
-                                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                                            No case consideration documented yet.
-                                        </Typography>
-                                    )}
-                                </Box>
-                            </CardContent>
-                        </Card>
+
+                                    {/* Case Consideration Preview */}
+                                    <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+                                            <Typography variant="subtitle2">Case Consideration</Typography>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                {canExpand && (
+                                                    <Button
+                                                        size="small"
+                                                        startIcon={isExpanded ? <ExpandLess /> : <Visibility />}
+                                                        onClick={() => {
+                                                            setExpandedCaseConsiderationByScenarioId((prev) => ({
+                                                                ...prev,
+                                                                [scenario.id]: !isExpanded,
+                                                            }));
+                                                        }}
+                                                    >
+                                                        {isExpanded ? 'Collapse' : 'Expand'}
+                                                    </Button>
+                                                )}
+                                                {(canEdit || scenario.caseConsideration) && (
+                                                    <Button
+                                                        size="small"
+                                                        onClick={() => {
+                                                            usePsvStore.setState({
+                                                                editingScenarioId: scenario.id,
+                                                                currentPage: 'scenario_consideration',
+                                                            });
+                                                        }}
+                                                    >
+                                                        {/* Hide "Edit" wording when user is read-only; page still supports view mode. */}
+                                                        {canEdit
+                                                            ? (scenario.caseConsideration ? 'Edit Full Page' : 'Add Details')
+                                                            : 'View Full Page'}
+                                                    </Button>
+                                                )}
+                                            </Box>
+                                        </Box>
+                                        {scenario.caseConsideration ? (
+                                            <Paper
+                                                variant="outlined"
+                                                sx={{
+                                                    p: 1.5,
+                                                    bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.02)',
+                                                    ...(isExpanded
+                                                        ? { overflow: 'visible' }
+                                                        : { maxHeight: 120, overflow: 'hidden' }),
+                                                    position: 'relative',
+                                                    cursor: isExpanded ? 'default' : 'pointer',
+                                                    ...(isExpanded
+                                                        ? {}
+                                                        : {
+                                                            '&:hover': { borderColor: 'primary.main' },
+                                                            '&::after': {
+                                                                content: '""',
+                                                                position: 'absolute',
+                                                                bottom: 0,
+                                                                left: 0,
+                                                                right: 0,
+                                                                height: 40,
+                                                                background: isDark
+                                                                    ? 'linear-gradient(transparent, rgba(30,30,30,1))'
+                                                                    : 'linear-gradient(transparent, rgba(255,255,255,1))',
+                                                            },
+                                                        }),
+                                                }}
+                                                onClick={
+                                                    isExpanded
+                                                        // When expanded, allow selecting/scrolling content without navigating away.
+                                                        ? undefined
+                                                        : () => {
+                                                            usePsvStore.setState({
+                                                                editingScenarioId: scenario.id,
+                                                                currentPage: 'scenario_consideration',
+                                                            });
+                                                        }
+                                                }
+                                            >
+                                                <MarkdownPreview
+                                                    content={scenario.caseConsideration}
+                                                    maxLines={isExpanded ? undefined : 4}
+                                                />
+                                            </Paper>
+                                        ) : (
+                                            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
+                                                No case consideration documented yet.
+                                            </Typography>
+                                        )}
+                                    </Box>
+                                </CardContent>
+                            </Card>
                         );
                     })}
                 </Box>
@@ -734,7 +734,6 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                 density: 'kg/m³',
                 viscosity: 'cP',
             },
-            revisionNo: 1,
             status: 'draft',
             createdBy: selectedPsv.ownerId,
             createdAt: new Date().toISOString(),
@@ -897,7 +896,7 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                             />
                                         </Box>
                                         <Typography variant="body2" color="text.secondary">
-                                            {sizing.standard} • {sizing.method.toUpperCase()} method • Rev {sizing.revisionNo}
+                                            {sizing.standard} • {sizing.method.toUpperCase()} method
                                         </Typography>
                                     </Box>
                                     <Box sx={{ display: 'flex', gap: 1 }}>
