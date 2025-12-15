@@ -18,8 +18,9 @@ import {
     Divider,
     CircularProgress,
     useTheme,
+    InputAdornment,
 } from '@mui/material';
-import { Close, Edit, Person, CheckCircle, Verified } from '@mui/icons-material';
+import { CalendarMonth, Close, Edit, Person, CheckCircle, Verified } from '@mui/icons-material';
 import { usePsvStore } from '@/store/usePsvStore';
 import { RevisionHistory } from '@/data/types';
 import { users } from '@/data/mockData';
@@ -151,14 +152,41 @@ export function EditRevisionDialog({
             ? `${user.initials.trim().toUpperCase()} — ${user.name}`
             : user.name;
 
+    const calendarIconColor = isDark ? 'rgba(255,255,255,0.75)' : 'rgba(0,0,0,0.6)';
+
+    const openDatePicker = (elementId: string) => {
+        const input = document.getElementById(elementId) as
+            | (HTMLInputElement & { showPicker?: () => void })
+            | null;
+        input?.showPicker?.();
+        input?.focus();
+    };
+
+    const renderCalendarAdornment = (onOpen: () => void) => (
+        <InputAdornment position="end">
+            <IconButton
+                aria-label="Open calendar"
+                edge="end"
+                size="small"
+                onClick={onOpen}
+                sx={{
+                    color: calendarIconColor,
+                    '&:hover': { color: 'primary.main' },
+                }}
+            >
+                <CalendarMonth fontSize="small" />
+            </IconButton>
+        </InputAdornment>
+    );
+
     const dateFieldSx = {
         minWidth: 160,
-        '& input': {
+        '& input[type="date"]': {
             colorScheme: isDark ? 'dark' : 'light',
+            paddingRight: 0,
         },
-        '& input::-webkit-calendar-picker-indicator': {
-            filter: isDark ? 'invert(1)' : 'none',
-            opacity: isDark ? 0.9 : 0.7,
+        '& input[type="date"]::-webkit-calendar-picker-indicator': {
+            opacity: 0,
         },
     } as const;
 
@@ -233,6 +261,12 @@ export function EditRevisionDialog({
                         onChange={(e) => setOriginatedAt(e.target.value)}
                         size="small"
                         InputLabelProps={{ shrink: true }}
+                        InputProps={{
+                            endAdornment: renderCalendarAdornment(() => {
+                                openDatePicker('originated-date-input');
+                            }),
+                        }}
+                        id="originated-date-input"
                         sx={dateFieldSx}
                         disabled={!originatedBy}
                     />
@@ -273,6 +307,12 @@ export function EditRevisionDialog({
                         onChange={(e) => setCheckedAt(e.target.value)}
                         size="small"
                         InputLabelProps={{ shrink: true }}
+                        InputProps={{
+                            endAdornment: renderCalendarAdornment(() => {
+                                openDatePicker('checked-date-input');
+                            }),
+                        }}
+                        id="checked-date-input"
                         sx={dateFieldSx}
                         disabled={!checkedBy}
                     />
@@ -313,6 +353,12 @@ export function EditRevisionDialog({
                         onChange={(e) => setApprovedAt(e.target.value)}
                         size="small"
                         InputLabelProps={{ shrink: true }}
+                        InputProps={{
+                            endAdornment: renderCalendarAdornment(() => {
+                                openDatePicker('approved-date-input');
+                            }),
+                        }}
+                        id="approved-date-input"
                         sx={dateFieldSx}
                         disabled={!approvedBy}
                     />
