@@ -13,6 +13,7 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __tablename__ = "users"
     
     name: Mapped[str] = mapped_column(String(255), nullable=False)
+    initials: Mapped[Optional[str]] = mapped_column(String(16), nullable=True)
     email: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)
     role: Mapped[str] = mapped_column(
         SQLEnum("engineer", "lead", "approver", "admin", "viewer", name="user_role"),

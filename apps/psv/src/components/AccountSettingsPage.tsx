@@ -32,6 +32,7 @@ export function AccountSettingsPage() {
     const { setCurrentPage } = usePsvStore();
 
     const [name, setName] = useState(currentUser?.name || "");
+    const [initials, setInitials] = useState(currentUser?.initials || "");
     const [email, setEmail] = useState(currentUser?.email || "");
     const [currentPassword, setCurrentPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
@@ -45,7 +46,7 @@ export function AccountSettingsPage() {
 
     const handleSaveProfile = () => {
         if (currentUser) {
-            updateUserProfile({ name, email });
+            updateUserProfile({ name, initials: initials.trim() || undefined, email });
             setSaveSuccess(true);
             setTimeout(() => setSaveSuccess(false), 3000);
         }
@@ -112,7 +113,7 @@ export function AccountSettingsPage() {
                                             bgcolor: 'primary.main',
                                         }}
                                     >
-                                        {currentUser?.name.charAt(0).toUpperCase()}
+                                        {(currentUser?.initials?.trim() || currentUser?.name.charAt(0).toUpperCase()) ?? '?'}
                                     </Avatar>
                                     <IconButton
                                         sx={{
@@ -154,6 +155,16 @@ export function AccountSettingsPage() {
                                 InputProps={{
                                     startAdornment: <Person sx={{ mr: 1, color: 'text.secondary' }} />,
                                 }}
+                            />
+
+                            {/* Initials */}
+                            <TextField
+                                fullWidth
+                                label="Initials"
+                                value={initials}
+                                onChange={(e) => setInitials(e.target.value.toUpperCase())}
+                                helperText="Used in revision history (e.g. MTL, TE)"
+                                inputProps={{ maxLength: 8 }}
                             />
 
                             {/* Email */}

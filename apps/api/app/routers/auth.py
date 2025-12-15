@@ -34,6 +34,7 @@ class LoginResponse(BaseModel):
 class UserResponse(BaseModel):
     id: str
     name: str
+    initials: Optional[str] = None
     email: str
     role: str
     status: str
@@ -138,6 +139,7 @@ async def login(data: LoginRequest, dal: DAL):
         user={
             "id": user["id"],
             "name": user["name"],
+            "initials": user.get("initials"),
             "email": user["email"],
             "role": user["role"],
         }
@@ -156,6 +158,7 @@ async def get_current_user(
     return {
         "id": payload["sub"],
         "name": "Authenticated User",
+        "initials": None,
         "email": "",
         "role": payload["role"],
         "status": "active",

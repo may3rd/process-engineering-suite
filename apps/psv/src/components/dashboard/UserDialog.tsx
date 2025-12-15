@@ -40,6 +40,7 @@ const statusOptions: { value: User["status"]; label: string }[] = [
 
 export function UserDialog({ open, user, onSave, onClose }: UserDialogProps) {
     const [name, setName] = useState("");
+    const [initials, setInitials] = useState("");
     const [email, setEmail] = useState("");
     const [role, setRole] = useState<User["role"]>("engineer");
     const [status, setStatus] = useState<User["status"]>("active");
@@ -48,12 +49,14 @@ export function UserDialog({ open, user, onSave, onClose }: UserDialogProps) {
     useEffect(() => {
         if (user) {
             setName(user.name);
+            setInitials(user.initials || "");
             setEmail(user.email);
             setRole(user.role);
             setStatus(user.status);
             setAvatarUrl(user.avatarUrl || "");
         } else {
             setName("");
+            setInitials("");
             setEmail("");
             setRole("engineer");
             setStatus("active");
@@ -70,6 +73,7 @@ export function UserDialog({ open, user, onSave, onClose }: UserDialogProps) {
         if (!isValid) return;
         onSave({
             name: name.trim(),
+            initials: initials.trim().toUpperCase() || undefined,
             email: email.trim().toLowerCase(),
             role,
             status,
@@ -89,6 +93,14 @@ export function UserDialog({ open, user, onSave, onClose }: UserDialogProps) {
                         autoFocus
                         fullWidth
                         required
+                    />
+                    <TextField
+                        label="Initials"
+                        value={initials}
+                        onChange={(e) => setInitials(e.target.value.toUpperCase())}
+                        fullWidth
+                        helperText="Used in revision history (e.g. MTL, TE)"
+                        inputProps={{ maxLength: 16 }}
                     />
                     <TextField
                         label="Email"

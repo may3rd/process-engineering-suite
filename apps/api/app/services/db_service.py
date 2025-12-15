@@ -470,7 +470,6 @@ class DatabaseService(DataAccessLayer):
             "assignedTo": "assigned_to",
             "dueDate": "due_date",
             # Additional mappings
-            "revisionNo": "revision_no",
             "unitPreferences": "unit_preferences",
             "isPrimary": "is_primary",
             "createdBy": "created_by",
@@ -479,6 +478,7 @@ class DatabaseService(DataAccessLayer):
             "relationship": "relationship_type",
             "inletNetwork": "inlet_network",
             "outletNetwork": "outlet_network",
+            "currentRevisionId": "current_revision_id",
             # Revision history
             "entityType": "entity_type",
             "entityId": "entity_id",
@@ -487,6 +487,7 @@ class DatabaseService(DataAccessLayer):
             "originatedAt": "originated_at",
             "checkedBy": "checked_by",
             "checkedAt": "checked_at",
+            "approvedBy": "approved_by",
             "approvedAt": "approved_at",
             "issuedAt": "issued_at",
         }

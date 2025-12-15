@@ -29,7 +29,7 @@ class ProtectiveSystemResponse(BaseModel):
     status: str
     valve_type: Optional[str] = Field(default=None, serialization_alias="valveType")
     tags: List[str] = []
-    revision_no: int = Field(default=1, serialization_alias="revisionNo")
+    current_revision_id: Optional[str] = Field(default=None, serialization_alias="currentRevisionId")
     inlet_network: Optional[dict] = Field(default=None, serialization_alias="inletNetwork")
     outlet_network: Optional[dict] = Field(default=None, serialization_alias="outletNetwork")
     created_at: datetime = Field(serialization_alias="createdAt")
@@ -51,7 +51,7 @@ class ProtectiveSystemCreate(BaseModel):
     valveType: Optional[str] = None
     tags: List[str] = []
     projectIds: Optional[List[str]] = None
-    revisionNo: Optional[int] = 1
+    currentRevisionId: Optional[str] = None
 
 
 class ProtectiveSystemUpdate(BaseModel):
@@ -65,7 +65,7 @@ class ProtectiveSystemUpdate(BaseModel):
     status: Optional[str] = None
     valveType: Optional[str] = None
     tags: Optional[List[str]] = None
-    revisionNo: Optional[int] = None
+    currentRevisionId: Optional[str] = None
     inletNetwork: Optional[dict] = None
     outletNetwork: Optional[dict] = None
     projectIds: Optional[List[str]] = None
@@ -86,7 +86,7 @@ class ScenarioResponse(BaseModel):
     assumptions: List[str] = []
     code_refs: List[str] = Field(default=[], serialization_alias="codeRefs")
     is_governing: bool = Field(default=False, serialization_alias="isGoverning")
-    revision_no: int = Field(default=1, serialization_alias="revisionNo")
+    current_revision_id: Optional[str] = Field(default=None, serialization_alias="currentRevisionId")
     # Markdown-formatted case consideration notes shown in PSV Detail -> Scenario Section.
     case_consideration: Optional[str] = Field(default=None, serialization_alias="caseConsideration")
     created_at: datetime = Field(serialization_alias="createdAt")
@@ -107,7 +107,7 @@ class ScenarioCreate(BaseModel):
     assumptions: List[str] = []
     codeRefs: List[str] = []
     isGoverning: bool = False
-    revisionNo: Optional[int] = 1
+    currentRevisionId: Optional[str] = None
     # GitHub-flavored markdown for scenario-specific analysis/justification.
     caseConsideration: Optional[str] = None
 
@@ -125,7 +125,7 @@ class ScenarioUpdate(BaseModel):
     assumptions: Optional[List[str]] = None
     codeRefs: Optional[List[str]] = None
     isGoverning: Optional[bool] = None
-    revisionNo: Optional[int] = None
+    currentRevisionId: Optional[str] = None
     # Keep optional so existing clients can omit it without clearing the stored value.
     caseConsideration: Optional[str] = None
 
@@ -139,7 +139,7 @@ class SizingCaseResponse(BaseModel):
     method: str
     inputs: dict = {}
     outputs: dict = {}
-    revision_no: int = Field(default=1, serialization_alias="revisionNo")
+    current_revision_id: Optional[str] = Field(default=None, serialization_alias="currentRevisionId")
     status: str
     created_by: str = Field(serialization_alias="createdBy")
     approved_by: Optional[str] = Field(default=None, serialization_alias="approvedBy")
@@ -154,7 +154,7 @@ class SizingCaseCreate(BaseModel):
     standard: str = "API-520"
     method: str
     inputs: dict = {}
-    revisionNo: Optional[int] = 1
+    currentRevisionId: Optional[str] = None
     createdBy: str
 
 
@@ -164,7 +164,7 @@ class SizingCaseUpdate(BaseModel):
     outputs: Optional[dict] = None
     status: Optional[str] = None
     approvedBy: Optional[str] = None
-    revisionNo: Optional[int] = None
+    currentRevisionId: Optional[str] = None
 
 
 # --- PSV Endpoints ---

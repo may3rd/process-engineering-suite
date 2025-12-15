@@ -164,12 +164,13 @@ class LocalStorageService {
         return JSON.parse(stored);
     }
 
-    async updateMe(data: { name?: string; email?: string }): Promise<User> {
+    async updateMe(data: { name?: string; initials?: string; email?: string }): Promise<User> {
         const user = await this.getCurrentUser();
         const users = getItem<User>(STORAGE_KEYS.USERS, mockUsers);
         const updatedUser: User = {
             ...user,
             ...(data.name ? { name: data.name } : {}),
+            ...(data.initials !== undefined ? { initials: data.initials || undefined } : {}),
             ...(data.email ? { email: data.email.toLowerCase() } : {}),
         };
         setItem(STORAGE_KEYS.USERS, users.map((u) => (u.id === user.id ? updatedUser : u)));
@@ -204,7 +205,7 @@ class LocalStorageService {
         return getItem<User>(STORAGE_KEYS.USERS, mockUsers);
     }
 
-    async createUser(data: { name: string; email: string; role: User['role']; status?: User['status']; username: string; temporaryPassword: string }): Promise<User> {
+    async createUser(data: { name: string; initials?: string; email: string; role: User['role']; status?: User['status']; username: string; temporaryPassword: string }): Promise<User> {
         const users = getItem<User>(STORAGE_KEYS.USERS, mockUsers);
         const creds = getItem<MockCredential>(STORAGE_KEYS.CREDENTIALS, mockCredentials);
 
@@ -214,6 +215,7 @@ class LocalStorageService {
         const newUser: User = {
             id: uuidv4(),
             name: data.name,
+            initials: data.initials?.trim() || undefined,
             email: data.email.toLowerCase(),
             role: data.role,
             status: data.status || 'active',
@@ -228,7 +230,7 @@ class LocalStorageService {
         return newUser;
     }
 
-    async updateUser(id: string, data: Partial<Pick<User, 'name' | 'email' | 'role' | 'status'>>): Promise<User> {
+    async updateUser(id: string, data: Partial<Pick<User, 'name' | 'initials' | 'email' | 'role' | 'status'>>): Promise<User> {
         const users = getItem<User>(STORAGE_KEYS.USERS, mockUsers);
         const index = users.findIndex((u) => u.id === id);
         if (index === -1) throw new Error('User not found');

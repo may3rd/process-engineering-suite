@@ -37,8 +37,8 @@ services:
     depends_on:
       - postgres
 
-    # Run with reload for dev
-    command: uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload
+    # Run migrations then start API (dev reload)
+    command: sh -c "alembic -c /app/apps/api/alembic.ini upgrade head && uvicorn apps.api.main:app --host 0.0.0.0 --port 8000 --reload"
 
   postgres:
     image: postgres:17-alpine # Latest stable version as of 2025-12-12

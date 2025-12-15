@@ -91,10 +91,14 @@ export function UserMenu() {
         }
     };
 
-    const getInitials = (name?: string) => {
+    const getInitials = (user?: { initials?: string; name?: string }) => {
+        const raw = user?.initials?.trim();
+        if (raw) return raw.toUpperCase();
+        const name = user?.name;
         if (!name) return '?';
         return name
             .split(' ')
+            .filter(Boolean)
             .map((n) => n[0])
             .join('')
             .toUpperCase();
@@ -114,7 +118,7 @@ export function UserMenu() {
                             fontWeight: 600,
                         }}
                     >
-                        {isAuthenticated ? getInitials(currentUser?.name) : <Person />}
+                        {isAuthenticated ? getInitials(currentUser ?? undefined) : <Person />}
                     </Avatar>
                 </IconButton>
             </Tooltip>
@@ -155,7 +159,7 @@ export function UserMenu() {
                                     bgcolor: getRoleColor(currentUser.role),
                                 }}
                             >
-                                {getInitials(currentUser.name)}
+                                {getInitials(currentUser)}
                             </Avatar>
                             <Box sx={{ flex: 1 }}>
                                 <Typography variant="subtitle2" fontWeight={600}>

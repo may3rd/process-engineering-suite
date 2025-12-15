@@ -494,6 +494,7 @@ export interface TodoItem {
 export interface User {
     id: string;
     name: string;
+    initials?: string; // e.g. "MTL", "TE"
     email: string;
     role: 'engineer' | 'lead' | 'approver' | 'viewer' | 'admin';
     status: 'active' | 'inactive';

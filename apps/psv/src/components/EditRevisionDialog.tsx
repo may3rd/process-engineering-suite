@@ -17,6 +17,7 @@ import {
     IconButton,
     Divider,
     CircularProgress,
+    useTheme,
 } from '@mui/material';
 import { Close, Edit, Person, CheckCircle, Verified } from '@mui/icons-material';
 import { usePsvStore } from '@/store/usePsvStore';
@@ -48,9 +49,13 @@ export function EditRevisionDialog({
     revision,
     onSuccess,
 }: EditRevisionDialogProps) {
+    const theme = useTheme();
+    const isDark = theme.palette.mode === 'dark';
     const { updateRevision, loadRevisionHistory } = usePsvStore();
 
     const [description, setDescription] = useState('');
+    const [originatedBy, setOriginatedBy] = useState('');
+    const [originatedAt, setOriginatedAt] = useState('');
     const [checkedBy, setCheckedBy] = useState('');
     const [checkedAt, setCheckedAt] = useState('');
     const [approvedBy, setApprovedBy] = useState('');
@@ -62,6 +67,8 @@ export function EditRevisionDialog({
     useEffect(() => {
         if (revision) {
             setDescription(revision.description || '');
+            setOriginatedBy(revision.originatedBy || '');
+            setOriginatedAt(formatDateForInput(revision.originatedAt));
             setCheckedBy(revision.checkedBy || '');
             setCheckedAt(formatDateForInput(revision.checkedAt));
             setApprovedBy(revision.approvedBy || '');
@@ -82,6 +89,14 @@ export function EditRevisionDialog({
 
             if (description !== (revision.description || '')) {
                 updateData.description = description;
+            }
+            if (originatedBy !== (revision.originatedBy || '')) {
+                updateData.originatedBy = originatedBy || undefined;
+                updateData.originatedAt = originatedBy && originatedAt
+                    ? new Date(originatedAt).toISOString()
+                    : undefined;
+            } else if (originatedAt !== formatDateForInput(revision.originatedAt) && originatedBy) {
+                updateData.originatedAt = new Date(originatedAt).toISOString();
             }
             if (checkedBy !== (revision.checkedBy || '')) {
                 updateData.checkedBy = checkedBy || undefined;
@@ -130,6 +145,22 @@ export function EditRevisionDialog({
     // Get approvers and leads for select options
     const approverUsers = users.filter(u => u.role === 'approver' || u.role === 'admin');
     const checkerUsers = users.filter(u => u.role === 'lead' || u.role === 'approver' || u.role === 'admin');
+    const originatorUsers = users.filter(u => u.status === 'active');
+    const getUserLabel = (user: (typeof users)[number]) =>
+        user.initials?.trim()
+            ? `${user.initials.trim().toUpperCase()} — ${user.name}`
+            : user.name;
+
+    const dateFieldSx = {
+        minWidth: 160,
+        '& input': {
+            colorScheme: isDark ? 'dark' : 'light',
+        },
+        '& input::-webkit-calendar-picker-indicator': {
+            filter: isDark ? 'invert(1)' : 'none',
+            opacity: isDark ? 0.9 : 0.7,
+        },
+    } as const;
 
     return (
         <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
@@ -167,6 +198,46 @@ export function EditRevisionDialog({
 
                 <Divider sx={{ my: 2 }} />
 
+                {/* Originated By */}
+                <Typography variant="subtitle2" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Person fontSize="small" color="action" />
+                    Originated
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                    <FormControl fullWidth size="small">
+                        <InputLabel>Originated By</InputLabel>
+                        <Select
+                            value={originatedBy}
+                            label="Originated By"
+                            onChange={(e) => {
+                                setOriginatedBy(e.target.value);
+                                if (e.target.value && !originatedAt) {
+                                    setOriginatedAt(new Date().toISOString().split('T')[0]);
+                                }
+                            }}
+                        >
+                            <MenuItem value="">
+                                <em>None</em>
+                            </MenuItem>
+                            {originatorUsers.map((user) => (
+                                <MenuItem key={user.id} value={user.id}>
+                                    {getUserLabel(user)}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                    <TextField
+                        type="date"
+                        label="Originated Date"
+                        value={originatedAt}
+                        onChange={(e) => setOriginatedAt(e.target.value)}
+                        size="small"
+                        InputLabelProps={{ shrink: true }}
+                        sx={dateFieldSx}
+                        disabled={!originatedBy}
+                    />
+                </Box>
+
                 {/* Checked By */}
                 <Typography variant="subtitle2" sx={{ mb: 1, display: 'flex', alignItems: 'center', gap: 1 }}>
                     <CheckCircle fontSize="small" color="success" />
@@ -190,7 +261,7 @@ export function EditRevisionDialog({
                             </MenuItem>
                             {checkerUsers.map((user) => (
                                 <MenuItem key={user.id} value={user.id}>
-                                    {user.name}
+                                    {getUserLabel(user)}
                                 </MenuItem>
                             ))}
                         </Select>
@@ -202,7 +273,7 @@ export function EditRevisionDialog({
                         onChange={(e) => setCheckedAt(e.target.value)}
                         size="small"
                         InputLabelProps={{ shrink: true }}
-                        sx={{ minWidth: 160 }}
+                        sx={dateFieldSx}
                         disabled={!checkedBy}
                     />
                 </Box>
@@ -230,7 +301,7 @@ export function EditRevisionDialog({
                             </MenuItem>
                             {approverUsers.map((user) => (
                                 <MenuItem key={user.id} value={user.id}>
-                                    {user.name}
+                                    {getUserLabel(user)}
                                 </MenuItem>
                             ))}
                         </Select>
@@ -242,7 +313,7 @@ export function EditRevisionDialog({
                         onChange={(e) => setApprovedAt(e.target.value)}
                         size="small"
                         InputLabelProps={{ shrink: true }}
-                        sx={{ minWidth: 160 }}
+                        sx={dateFieldSx}
                         disabled={!approvedBy}
                     />
                 </Box>

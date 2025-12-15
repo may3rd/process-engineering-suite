@@ -43,11 +43,16 @@ function formatDate(dateString?: string): string {
 function formatUser(userId?: string): { initials: string; fullName: string } {
     if (!userId) return { initials: '-', fullName: '-' };
     const user = getUserById(userId);
-    if (!user) return { initials: userId.slice(0, 2).toUpperCase(), fullName: userId };
+    if (!user) return { initials: userId.slice(0, 3).toUpperCase(), fullName: userId };
 
-    const names = user.name.split(' ');
-    const initials = names.map(n => n[0]).join('').toUpperCase().slice(0, 2);
-    return { initials, fullName: user.name };
+    const explicitInitials = user.initials?.trim();
+    if (explicitInitials) {
+        return { initials: explicitInitials.toUpperCase(), fullName: user.name };
+    }
+
+    const names = user.name.split(' ').filter(Boolean);
+    const initials = names.map(n => n[0]).join('').toUpperCase();
+    return { initials: initials || '-', fullName: user.name };
 }
 
 /**

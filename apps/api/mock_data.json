@@ -3,6 +3,7 @@
     {
       "id": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
       "name": "John Smith",
+      "initials": "JS",
       "email": "john.smith@acme.com",
       "role": "engineer",
       "status": "active"
@@ -10,6 +11,7 @@
     {
       "id": "c34f5c40-8193-4e39-a628-e684361c2b67",
       "name": "Sarah Johnson",
+      "initials": "SJ",
       "email": "sarah.johnson@acme.com",
       "role": "lead",
       "status": "active"
@@ -17,6 +19,7 @@
     {
       "id": "22ee3f22-898a-461b-85ec-83f84d250810",
       "name": "Mike Chen",
+      "initials": "MC",
       "email": "mike.chen@acme.com",
       "role": "approver",
       "status": "active"
@@ -24,6 +27,7 @@
     {
       "id": "890a53e4-85d9-4399-85bb-68af0aa179d1",
       "name": "Emily Davis",
+      "initials": "ED",
       "email": "emily.davis@gep.com",
       "role": "engineer",
       "status": "active"
@@ -31,6 +35,7 @@
     {
       "id": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
       "name": "Maetee",
+      "initials": "MTL",
       "email": "maetee@eng-suite.com",
       "role": "admin",
       "status": "active"
@@ -38,6 +43,7 @@
     {
       "id": "1b9de640-0851-4ed5-941c-411efa30585c",
       "name": "Test Lead",
+      "initials": "TL",
       "email": "lead@eng-suite.com",
       "role": "lead",
       "status": "active"
@@ -45,6 +51,7 @@
     {
       "id": "f97ba14f-1fe6-4ad8-8c6e-241c12efcc27",
       "name": "Test Approver",
+      "initials": "TA",
       "email": "approver@eng-suite.com",
       "role": "approver",
       "status": "active"
@@ -52,6 +59,7 @@
     {
       "id": "2252f300-f2f3-4911-863d-40a5baa25346",
       "name": "Test Engineer",
+      "initials": "TE",
       "email": "engineer@eng-suite.com",
       "role": "engineer",
       "status": "active"
@@ -612,7 +620,7 @@
   ],
   "revisionHistory": [
     {
-      "id": "rev-seed-001-a1",
+      "id": "e6a86fa3-c20a-4a06-8a0a-41a8ab0c65fd",
       "entityType": "protective_system",
       "entityId": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
       "revisionCode": "A1",
@@ -628,7 +636,7 @@
       "createdAt": "2025-12-12T09:00:00Z"
     },
     {
-      "id": "rev-seed-001-o1",
+      "id": "0b266050-4bdf-4d0a-a247-f00b5894ee65",
       "entityType": "protective_system",
       "entityId": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
       "revisionCode": "O1",
@@ -644,7 +652,7 @@
       "createdAt": "2024-06-10T08:00:00Z"
     },
     {
-      "id": "rev-seed-002-o1",
+      "id": "3d284816-3b3a-4a6e-b054-5f96348fa625",
       "entityType": "protective_system",
       "entityId": "a50b3dcd-c40a-4a62-afc2-ba38566441c8",
       "revisionCode": "O1",

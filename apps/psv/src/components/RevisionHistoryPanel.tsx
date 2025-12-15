@@ -58,10 +58,19 @@ function formatDate(dateString?: string): string {
 /**
  * Get user name for display
  */
-function getUserName(userId?: string): string {
-    if (!userId) return '-';
+function getUserInitials(userId?: string): { label: string; fullName: string } {
+    if (!userId) return { label: '-', fullName: '-' };
     const user = getUserById(userId);
-    return user?.name || userId;
+    if (!user) return { label: userId.slice(0, 3).toUpperCase(), fullName: userId };
+    const explicit = user.initials?.trim();
+    if (explicit) return { label: explicit.toUpperCase(), fullName: user.name };
+    const derived = user.name
+        .split(' ')
+        .filter(Boolean)
+        .map((part) => part[0])
+        .join('')
+        .toUpperCase();
+    return { label: derived || '-', fullName: user.name };
 }
 
 /**
@@ -218,7 +227,17 @@ export function RevisionHistoryPanel({
                                                         Originated:
                                                     </Typography>
                                                     <Typography variant="body2" fontWeight={500}>
-                                                        {getUserName(revision.originatedBy)}, {formatDate(revision.originatedAt)}
+                                                        {(() => {
+                                                            const { label, fullName } = getUserInitials(revision.originatedBy);
+                                                            return (
+                                                                <>
+                                                                    <Tooltip title={fullName} placement="top">
+                                                                        <span style={{ cursor: 'pointer' }}>{label}</span>
+                                                                    </Tooltip>
+                                                                    {`, ${formatDate(revision.originatedAt)}`}
+                                                                </>
+                                                            );
+                                                        })()}
                                                     </Typography>
                                                 </Box>
 
@@ -235,7 +254,17 @@ export function RevisionHistoryPanel({
                                                     </Typography>
                                                     <Typography variant="body2" fontWeight={500}>
                                                         {revision.checkedBy
-                                                            ? `${getUserName(revision.checkedBy)}, ${formatDate(revision.checkedAt)}`
+                                                            ? (() => {
+                                                                const { label, fullName } = getUserInitials(revision.checkedBy);
+                                                                return (
+                                                                    <>
+                                                                        <Tooltip title={fullName} placement="top">
+                                                                            <span style={{ cursor: 'pointer' }}>{label}</span>
+                                                                        </Tooltip>
+                                                                        {`, ${formatDate(revision.checkedAt)}`}
+                                                                    </>
+                                                                );
+                                                            })()
                                                             : '-'
                                                         }
                                                     </Typography>
@@ -254,7 +283,17 @@ export function RevisionHistoryPanel({
                                                     </Typography>
                                                     <Typography variant="body2" fontWeight={500}>
                                                         {revision.approvedBy
-                                                            ? `${getUserName(revision.approvedBy)}, ${formatDate(revision.approvedAt)}`
+                                                            ? (() => {
+                                                                const { label, fullName } = getUserInitials(revision.approvedBy);
+                                                                return (
+                                                                    <>
+                                                                        <Tooltip title={fullName} placement="top">
+                                                                            <span style={{ cursor: 'pointer' }}>{label}</span>
+                                                                        </Tooltip>
+                                                                        {`, ${formatDate(revision.approvedAt)}`}
+                                                                    </>
+                                                                );
+                                                            })()
                                                             : '-'
                                                         }
                                                     </Typography>
