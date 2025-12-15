@@ -1,7 +1,7 @@
 """OverpressureScenario model."""
 from typing import Optional
 
-from sqlalchemy import String, Text, Numeric, Boolean, ForeignKey, Enum as SQLEnum
+from sqlalchemy import String, Text, Numeric, Boolean, ForeignKey, Enum as SQLEnum, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, ARRAY
 
@@ -40,6 +40,7 @@ class OverpressureScenario(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     assumptions: Mapped[list] = mapped_column(ARRAY(String), default=list, nullable=False)
     code_refs: Mapped[list] = mapped_column(ARRAY(String), default=list, nullable=False)
     is_governing: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
+    revision_no: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     # Free-form markdown notes used in the UI "Case Consideration" editor.
     case_consideration: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     

@@ -26,6 +26,7 @@ class EquipmentResponse(BaseModel):
     owner_id: str = Field(serialization_alias="ownerId")
     status: str
     location_ref: Optional[str] = Field(default=None, serialization_alias="locationRef")
+    details: Optional[dict] = None
     created_at: datetime = Field(serialization_alias="createdAt")
     updated_at: datetime = Field(serialization_alias="updatedAt")
 
@@ -179,6 +180,7 @@ class EquipmentCreate(BaseModel):
     designTemperature: Optional[float] = None
     ownerId: str
     status: str = "active"
+    details: Optional[dict] = None
 
 
 class EquipmentUpdate(BaseModel):
@@ -191,6 +193,7 @@ class EquipmentUpdate(BaseModel):
     mawp: Optional[float] = None
     designTemperature: Optional[float] = None
     status: Optional[str] = None
+    details: Optional[dict] = None
 
 
 @router.post("/equipment", response_model=EquipmentResponse)

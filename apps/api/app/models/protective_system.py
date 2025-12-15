@@ -1,7 +1,7 @@
 """ProtectiveSystem (PSV) model."""
 from typing import Optional, List
 
-from sqlalchemy import String, Numeric, ForeignKey, Enum as SQLEnum, Table, Column
+from sqlalchemy import String, Numeric, ForeignKey, Enum as SQLEnum, Table, Column, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
 
@@ -64,6 +64,8 @@ class ProtectiveSystem(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixi
     )
     tags: Mapped[List[str]] = mapped_column(ARRAY(String), default=list, nullable=False)
     project_tags: Mapped[Optional[List[str]]] = mapped_column(ARRAY(UUID(as_uuid=False)), nullable=True)
+
+    revision_no: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     
     # Pipeline networks stored as JSONB
     inlet_network: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)

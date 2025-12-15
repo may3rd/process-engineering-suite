@@ -3,7 +3,7 @@ from typing import Optional
 
 from sqlalchemy import String, Text, Numeric, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 
 from .base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
@@ -43,6 +43,7 @@ class Equipment(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         default="active",
     )
     location_ref: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+    details: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     
     # Relationships
     area = relationship("Area", back_populates="equipment")

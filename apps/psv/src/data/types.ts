@@ -60,6 +60,15 @@ export type { PipeProps, NodeProps };
 export type { SizingInputs, SizingOutputs, SizingMethod, OrificeSize } from '@eng-suite/api/psv';
 export { ORIFICE_SIZES } from '@eng-suite/api/psv';
 
+// Stored pipe segment metadata (P&ID / isometric references)
+export interface PipeSegmentMeta {
+    lineNumber?: string; // P&ID line number
+    isometricNumber?: string; // isometric reference number
+    revision?: string; // revision record (e.g., "A", "B", "3")
+}
+
+export type PipeSegment = PipeProps & PipeSegmentMeta;
+
 // Protective system types
 export type ProtectiveSystemType = 'psv' | 'rupture_disc' | 'breather_valve' | 'flame_arrestor' | 'tank_vent' | 'control_valve' | 'vent_system' | 'prv';
 export type DesignCode = 'API-520' | 'API-521' | 'API-2000' | 'ASME-VIII';
@@ -80,6 +89,7 @@ export interface ProtectiveSystem {
     mawp: number; // barg
     ownerId: string;
     status: 'draft' | 'in_review' | 'checked' | 'approved' | 'issued';
+    revisionNo?: number; // Document revision number
     valveType?: ValveOperatingType; // Conventional, Balanced Bellows, or Pilot Operated
     tags: string[];
     // Shared piping networks (one physical install per device)
@@ -106,6 +116,7 @@ export type ScenarioCause =
 export interface OverpressureScenario {
     id: string;
     protectiveSystemId: string;
+    revisionNo?: number; // Document revision number
     cause: ScenarioCause;
     description: string;
     relievingTemp: number; // °C
@@ -137,7 +148,7 @@ export interface UnitPreferences {
 
 export interface PipelineNetwork {
     nodes: NodeProps[];
-    pipes: PipeProps[];
+    pipes: PipeSegment[];
 }
 
 // Calculated hydraulic summary for inlet/outlet pipelines

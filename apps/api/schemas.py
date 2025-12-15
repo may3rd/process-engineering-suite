@@ -53,6 +53,11 @@ class PipeSectionRequest(BaseModel):
     startNodeId: Optional[str] = None
     endNodeId: Optional[str] = None
     direction: Optional[str] = "forward"  # "forward" | "backward"
+
+    # Stored metadata (P&ID / isometrics)
+    lineNumber: Optional[str] = None
+    isometricNumber: Optional[str] = None
+    revision: Optional[str] = None
     
     # Dimensions
     length: Optional[float] = None
@@ -284,5 +289,4 @@ class InletValidationResponse(BaseModel):
     severity: str  # "success", "warning", "error"
     totalPressureDrop: Optional[float] = None  # Pa
     results: List[CalculationResponse] = []
-
 
