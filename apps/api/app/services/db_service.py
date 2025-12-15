@@ -479,6 +479,16 @@ class DatabaseService(DataAccessLayer):
             "relationship": "relationship_type",
             "inletNetwork": "inlet_network",
             "outletNetwork": "outlet_network",
+            # Revision history
+            "entityType": "entity_type",
+            "entityId": "entity_id",
+            "revisionCode": "revision_code",
+            "originatedBy": "originated_by",
+            "originatedAt": "originated_at",
+            "checkedBy": "checked_by",
+            "checkedAt": "checked_at",
+            "approvedAt": "approved_at",
+            "issuedAt": "issued_at",
         }
         new_data = data.copy()
         
@@ -488,7 +498,11 @@ class DatabaseService(DataAccessLayer):
                 new_data[snake] = new_data.pop(camel)
         
         # Parse datetime fields (ISO string -> datetime)
-        datetime_fields = ['created_at', 'updated_at', 'deleted_at', 'last_login_at']
+        datetime_fields = [
+            'created_at', 'updated_at', 'deleted_at', 'last_login_at',
+            # Revision history
+            'originated_at', 'checked_at', 'approved_at', 'issued_at'
+        ]
         for field in datetime_fields:
             if field in new_data and isinstance(new_data[field], str):
                 try:
@@ -647,5 +661,11 @@ class DatabaseService(DataAccessLayer):
         for item in todos:
              await self._create(Todo, self._convert_keys(item))
         counts["todos"] = len(todos)
+
+        # Revision History
+        revisions = data.get("revisionHistory", [])
+        for item in revisions:
+             await self._create(RevisionHistory, self._convert_keys(item))
+        counts["revisionHistory"] = len(revisions)
 
         return counts

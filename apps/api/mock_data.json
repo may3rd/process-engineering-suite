@@ -610,5 +610,55 @@
       "createdBy": "c34f5c40-8193-4e39-a628-e684361c2b67",
       "createdAt": "2024-09-05T10:00:00Z"
     }
+  ],
+  "revisionHistory": [
+    {
+      "id": "rev-seed-001-a1",
+      "entityType": "protective_system",
+      "entityId": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
+      "revisionCode": "A1",
+      "sequence": 2,
+      "description": "Updated design flow based on latest process data",
+      "originatedBy": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "originatedAt": "2025-12-12T09:00:00Z",
+      "checkedBy": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "checkedAt": "2025-12-12T14:30:00Z",
+      "approvedBy": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "approvedAt": "2025-12-15T10:00:00Z",
+      "snapshot": {},
+      "createdAt": "2025-12-12T09:00:00Z"
+    },
+    {
+      "id": "rev-seed-001-o1",
+      "entityType": "protective_system",
+      "entityId": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
+      "revisionCode": "O1",
+      "sequence": 1,
+      "description": "Original",
+      "originatedBy": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "originatedAt": "2024-06-10T08:00:00Z",
+      "checkedBy": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "checkedAt": "2024-06-11T15:00:00Z",
+      "approvedBy": "22ee3f22-898a-461b-85ec-83f84d250810",
+      "approvedAt": "2024-06-12T11:00:00Z",
+      "snapshot": {},
+      "createdAt": "2024-06-10T08:00:00Z"
+    },
+    {
+      "id": "rev-seed-002-o1",
+      "entityType": "protective_system",
+      "entityId": "a50b3dcd-c40a-4a62-afc2-ba38566441c8",
+      "revisionCode": "O1",
+      "sequence": 1,
+      "description": "Original",
+      "originatedBy": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "originatedAt": "2024-06-10T08:00:00Z",
+      "checkedBy": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "checkedAt": "2024-06-11T09:00:00Z",
+      "approvedBy": "22ee3f22-898a-461b-85ec-83f84d250810",
+      "approvedAt": "2024-06-12T16:00:00Z",
+      "snapshot": {},
+      "createdAt": "2024-06-10T08:00:00Z"
+    }
   ]
 }
