@@ -15,8 +15,17 @@ import {
     Stack,
     Chip,
     Typography,
+    Alert,
+    Dialog as ConfirmDialog,
+    DialogTitle as ConfirmDialogTitle,
+    DialogContent as ConfirmDialogContent,
+    DialogActions as ConfirmDialogActions,
+    IconButton,
+    InputAdornment,
 } from "@mui/material";
+import { ContentCopy, LockReset } from "@mui/icons-material";
 import { User } from "@/data/types";
+import { useAuthStore } from "@/store/useAuthStore";
 
 interface UserDialogProps {
     open: boolean;
@@ -45,8 +54,15 @@ export function UserDialog({ open, user, onSave, onClose }: UserDialogProps) {
     const [role, setRole] = useState<User["role"]>("engineer");
     const [status, setStatus] = useState<User["status"]>("active");
     const [avatarUrl, setAvatarUrl] = useState("");
+    const canManageUsers = useAuthStore((state) => state.canManageUsers());
+    const resetUserPassword = useAuthStore((state) => state.resetUserPassword);
+    const [resetDialogOpen, setResetDialogOpen] = useState(false);
+    const [resetResult, setResetResult] = useState<{ username: string; temporaryPassword: string } | null>(null);
+    const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 
     useEffect(() => {
+        setResetResult(null);
+        setCopyFeedback(null);
         if (user) {
             setName(user.name);
             setInitials(user.initials || "");
@@ -81,11 +97,94 @@ export function UserDialog({ open, user, onSave, onClose }: UserDialogProps) {
         });
     };
 
+    const handleResetPassword = async () => {
+        if (!user || !canManageUsers) return;
+        const result = resetUserPassword(user.id);
+        if (!result.success || !result.username || !result.temporaryPassword) {
+            setCopyFeedback(result.message || "Failed to reset password");
+            return;
+        }
+        setResetResult({ username: result.username, temporaryPassword: result.temporaryPassword });
+        setCopyFeedback(null);
+        setResetDialogOpen(false);
+    };
+
+    const copyToClipboard = async (value: string) => {
+        try {
+            await navigator.clipboard.writeText(value);
+            setCopyFeedback("Copied to clipboard");
+            window.setTimeout(() => setCopyFeedback(null), 2000);
+        } catch {
+            setCopyFeedback("Copy failed");
+            window.setTimeout(() => setCopyFeedback(null), 2000);
+        }
+    };
+
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
+        <>
+            <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
             <DialogTitle>{user ? "Edit User" : "Invite User"}</DialogTitle>
             <DialogContent dividers>
                 <Stack spacing={2} sx={{ mt: 1 }}>
+                    {copyFeedback && (
+                        <Alert severity={copyFeedback === "Copied to clipboard" ? "success" : "info"}>
+                            {copyFeedback}
+                        </Alert>
+                    )}
+
+                    {resetResult && (
+                        <Alert
+                            severity="warning"
+                            sx={{ '& .MuiAlert-message': { width: '100%' } }}
+                        >
+                            <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                Temporary password created
+                            </Typography>
+                            <Stack spacing={1}>
+                                <TextField
+                                    size="small"
+                                    label="Username"
+                                    value={resetResult.username}
+                                    InputProps={{
+                                        readOnly: true,
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    size="small"
+                                                    aria-label="Copy username"
+                                                    onClick={() => copyToClipboard(resetResult.username)}
+                                                >
+                                                    <ContentCopy fontSize="small" />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
+                                <TextField
+                                    size="small"
+                                    label="Temporary Password"
+                                    value={resetResult.temporaryPassword}
+                                    InputProps={{
+                                        readOnly: true,
+                                        endAdornment: (
+                                            <InputAdornment position="end">
+                                                <IconButton
+                                                    size="small"
+                                                    aria-label="Copy password"
+                                                    onClick={() => copyToClipboard(resetResult.temporaryPassword)}
+                                                >
+                                                    <ContentCopy fontSize="small" />
+                                                </IconButton>
+                                            </InputAdornment>
+                                        ),
+                                    }}
+                                />
+                                <Typography variant="body2" color="text.secondary">
+                                    Share this password securely. The user should change it after signing in.
+                                </Typography>
+                            </Stack>
+                        </Alert>
+                    )}
                     <TextField
                         label="Full Name"
                         value={name}
@@ -159,6 +258,16 @@ export function UserDialog({ open, user, onSave, onClose }: UserDialogProps) {
             </DialogContent>
             <DialogActions sx={{ px: 3, py: 2 }}>
                 <Button onClick={onClose}>Cancel</Button>
+                {user && canManageUsers && (
+                    <Button
+                        variant="outlined"
+                        color="warning"
+                        startIcon={<LockReset />}
+                        onClick={() => setResetDialogOpen(true)}
+                    >
+                        Reset Password
+                    </Button>
+                )}
                 <Button
                     onClick={handleSubmit}
                     variant="contained"
@@ -167,6 +276,24 @@ export function UserDialog({ open, user, onSave, onClose }: UserDialogProps) {
                     {user ? "Save Changes" : "Send Invite"}
                 </Button>
             </DialogActions>
-        </Dialog>
+            </Dialog>
+
+            <ConfirmDialog open={resetDialogOpen} onClose={() => setResetDialogOpen(false)} maxWidth="xs" fullWidth>
+                <ConfirmDialogTitle>Reset password?</ConfirmDialogTitle>
+                <ConfirmDialogContent>
+                    <Typography variant="body2" color="text.secondary">
+                        {user
+                            ? `This generates a new temporary password for ${user.name}.`
+                            : "This generates a new temporary password."}
+                    </Typography>
+                </ConfirmDialogContent>
+                <ConfirmDialogActions>
+                    <Button onClick={() => setResetDialogOpen(false)}>Cancel</Button>
+                    <Button variant="contained" color="warning" onClick={handleResetPassword} disabled={!user || !canManageUsers}>
+                        Reset
+                    </Button>
+                </ConfirmDialogActions>
+            </ConfirmDialog>
+        </>
     );
 }

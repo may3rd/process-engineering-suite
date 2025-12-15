@@ -44,12 +44,22 @@ interface AuthState {
     logout: () => void;
     updateUserProfile: (updates: Partial<Pick<User, 'name' | 'email' | 'initials'>>) => void;
     changePassword: (currentPassword: string, newPassword: string) => { success: boolean; message: string };
+    resetUserPassword: (userId: string) => { success: boolean; message: string; username?: string; temporaryPassword?: string };
     // Permission helpers
     canEdit: () => boolean;            // engineer+ (add/edit/delete items)
     canApprove: () => boolean;         // approver+
     canManageHierarchy: () => boolean; // lead+ (project/area/unit/plant)
     canManageCustomer: () => boolean;  // approver+
     canManageUsers: () => boolean;     // admin only
+}
+
+function generateTemporaryPassword(length = 12) {
+    const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%';
+    let next = '';
+    for (let i = 0; i < length; i++) {
+        next += alphabet[Math.floor(Math.random() * alphabet.length)];
+    }
+    return next;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -120,6 +130,44 @@ export const useAuthStore = create<AuthState>()(
                 nextCredentials[credIndex] = { ...nextCredentials[credIndex], password: newPassword };
                 persistToStorage(CREDENTIALS_STORAGE_KEY, nextCredentials);
                 return { success: true, message: 'Password updated' };
+            },
+
+            resetUserPassword: (userId) => {
+                const { currentUser } = get();
+                if (!currentUser || currentUser.role !== 'admin') {
+                    return { success: false, message: 'Admin permission required' };
+                }
+
+                ensureSeedData();
+                const storedUsers = loadFromStorage<User[]>(USERS_STORAGE_KEY, users);
+                const storedCredentials = loadFromStorage<MockCredential[]>(CREDENTIALS_STORAGE_KEY, credentials);
+
+                const targetUser = storedUsers.find((u) => u.id === userId);
+                if (!targetUser) {
+                    return { success: false, message: 'User not found' };
+                }
+
+                const temporaryPassword = generateTemporaryPassword();
+                const existingIndex = storedCredentials.findIndex((c) => c.userId === userId);
+                const username =
+                    existingIndex !== -1
+                        ? storedCredentials[existingIndex].username
+                        : targetUser.email.split('@')[0] || targetUser.id.slice(0, 8);
+
+                const nextCredentials = [...storedCredentials];
+                if (existingIndex !== -1) {
+                    nextCredentials[existingIndex] = { ...nextCredentials[existingIndex], password: temporaryPassword };
+                } else {
+                    nextCredentials.push({ userId, username, password: temporaryPassword });
+                }
+
+                persistToStorage(CREDENTIALS_STORAGE_KEY, nextCredentials);
+                return {
+                    success: true,
+                    message: `Temporary password created for ${targetUser.name}`,
+                    username,
+                    temporaryPassword,
+                };
             },
 
             // Permission helpers
