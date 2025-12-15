@@ -1,5 +1,6 @@
 'use client';
 
+import type { MouseEvent } from 'react';
 import { Chip, ChipProps } from '@mui/material';
 import { History } from '@mui/icons-material';
 import { RevisionHistory } from '@/data/types';
@@ -7,7 +8,7 @@ import { RevisionHistory } from '@/data/types';
 interface RevisionBadgeProps {
     revision?: RevisionHistory;
     revisionCode?: string;  // Fallback if no full revision object
-    onClick?: () => void;
+    onClick?: (event: MouseEvent<HTMLElement>) => void;
     size?: 'small' | 'medium';
     showIcon?: boolean;
 }

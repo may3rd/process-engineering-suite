@@ -1693,6 +1693,7 @@ export function ProtectiveSystemDetail() {
         sizingCaseList,
         deleteSizingCase,
         getCurrentRevision,
+        loadRevisionHistory,
     } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
@@ -1704,6 +1705,8 @@ export function ProtectiveSystemDetail() {
     const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
 
     const [statusMenuAnchor, setStatusMenuAnchor] = useState<null | HTMLElement>(null);
+    const [revisionMenuAnchor, setRevisionMenuAnchor] = useState<null | HTMLElement>(null);
+    const [psvRevisions, setPsvRevisions] = useState<RevisionHistory[]>([]);
 
     const [editPsvOpen, setEditPsvOpen] = useState(false);
     const [editTag, setEditTag] = useState('');
@@ -1713,6 +1716,63 @@ export function ProtectiveSystemDetail() {
     const [newRevisionDialogOpen, setNewRevisionDialogOpen] = useState(false);
     const [revisionPanelOpen, setRevisionPanelOpen] = useState(false);
     const [snapshotRevision, setSnapshotRevision] = useState<RevisionHistory | null>(null);
+
+    useEffect(() => {
+        if (!selectedPsv) return;
+        let cancelled = false;
+        (async () => {
+            await loadRevisionHistory('protective_system', selectedPsv.id);
+            if (cancelled) return;
+            const history = usePsvStore
+                .getState()
+                .revisionHistory
+                .filter((r) => r.entityType === 'protective_system' && r.entityId === selectedPsv.id)
+                .sort((a, b) => b.sequence - a.sequence);
+            setPsvRevisions(history);
+        })();
+        return () => {
+            cancelled = true;
+        };
+    }, [loadRevisionHistory, selectedPsv]);
+
+    const latestPsvRevision = useMemo(
+        () => psvRevisions.slice().sort((a, b) => b.sequence - a.sequence)[0],
+        [psvRevisions]
+    );
+
+    const displayedRevision =
+        (selectedPsv?.currentRevisionId
+            ? psvRevisions.find((r) => r.id === selectedPsv.currentRevisionId)
+            : undefined) ?? latestPsvRevision;
+
+    const displayedRevisionCode =
+        displayedRevision?.revisionCode ??
+        getCurrentRevision('protective_system', selectedPsv?.id ?? '')?.revisionCode ??
+        'O1';
+
+    const revisionMenuCurrentId = selectedPsv?.currentRevisionId ?? latestPsvRevision?.id;
+
+    const handleRevisionMenuOpen = async (event: MouseEvent<HTMLElement>) => {
+        if (!selectedPsv) return;
+        setRevisionMenuAnchor(event.currentTarget);
+        await loadRevisionHistory('protective_system', selectedPsv.id);
+        const history = usePsvStore
+            .getState()
+            .revisionHistory
+            .filter((r) => r.entityType === 'protective_system' && r.entityId === selectedPsv.id)
+            .sort((a, b) => b.sequence - a.sequence);
+        setPsvRevisions(history);
+    };
+
+    const handleRevisionMenuClose = () => {
+        setRevisionMenuAnchor(null);
+    };
+
+    const handleRevisionSelect = async (revisionId: string) => {
+        if (!selectedPsv) return;
+        await updatePsv({ ...selectedPsv, currentRevisionId: revisionId });
+        handleRevisionMenuClose();
+    };
 
     // If editing a case, show the workspace
     if (editingCaseId) {
@@ -1857,14 +1917,42 @@ export function ProtectiveSystemDetail() {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
                             <Typography variant="h4" fontWeight={700}>
                                 {selectedPsv.tag}
-                            </Typography>
-                            <RevisionBadge
-                                revisionCode={getCurrentRevision('protective_system', selectedPsv.id)?.revisionCode}
-                                onClick={() => setRevisionPanelOpen(true)}
-                            />
-                            <Chip
-                                icon={getStatusIcon(selectedPsv.status)}
-                                label={getWorkflowStatusLabel(selectedPsv.status)}
+	                            </Typography>
+	                            <RevisionBadge
+	                                revisionCode={displayedRevisionCode}
+	                                onClick={handleRevisionMenuOpen}
+	                            />
+	                            <Menu
+	                                anchorEl={revisionMenuAnchor}
+	                                open={Boolean(revisionMenuAnchor)}
+	                                onClose={handleRevisionMenuClose}
+	                                slots={{ transition: Fade }}
+	                            >
+	                                <MenuItem
+	                                    onClick={() => {
+	                                        setRevisionPanelOpen(true);
+	                                        handleRevisionMenuClose();
+	                                    }}
+	                                >
+	                                    <ListItemText>Revision History…</ListItemText>
+	                                </MenuItem>
+	                                <Divider />
+	                                {psvRevisions.map((revision) => (
+	                                    <MenuItem
+	                                        key={revision.id}
+	                                        selected={revision.id === revisionMenuCurrentId}
+	                                        onClick={() => handleRevisionSelect(revision.id)}
+	                                    >
+	                                        <ListItemText
+	                                            primary={`Rev. ${revision.revisionCode}`}
+	                                            secondary={revision.description || undefined}
+	                                        />
+	                                    </MenuItem>
+	                                ))}
+	                            </Menu>
+	                            <Chip
+	                                icon={getStatusIcon(selectedPsv.status)}
+	                                label={getWorkflowStatusLabel(selectedPsv.status)}
                                 color={getWorkflowStatusColor(selectedPsv.status) as any}
                                 onClick={canOpenStatusMenu ? handleStatusClick : undefined}
                                 deleteIcon={canOpenStatusMenu ? <KeyboardArrowDown /> : undefined}
