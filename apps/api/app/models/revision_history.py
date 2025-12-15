@@ -2,7 +2,7 @@
 from datetime import datetime
 from typing import Optional, Any
 
-from sqlalchemy import ForeignKey, Integer, String, Text
+from sqlalchemy import ForeignKey, Integer, String, Text, DateTime, func
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -27,27 +27,28 @@ class RevisionHistory(Base, UUIDPrimaryKeyMixin):
     originated_by: Mapped[Optional[str]] = mapped_column(
         UUID(as_uuid=False), ForeignKey("users.id"), nullable=True
     )
-    originated_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    originated_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     
     checked_by: Mapped[Optional[str]] = mapped_column(
         UUID(as_uuid=False), ForeignKey("users.id"), nullable=True
     )
-    checked_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    checked_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     
     approved_by: Mapped[Optional[str]] = mapped_column(
         UUID(as_uuid=False), ForeignKey("users.id"), nullable=True
     )
-    approved_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    approved_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     
-    issued_at: Mapped[Optional[datetime]] = mapped_column(nullable=True)
+    issued_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     
     # Snapshot of entity state
     snapshot: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
     
     # Timestamps
     created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
         nullable=False,
-        server_default="NOW()"
+        server_default=func.now()
     )
     
     # Relationships
