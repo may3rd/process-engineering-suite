@@ -462,6 +462,13 @@ export function SummaryTab() {
                 </Box>
             </Paper>
 
+            {/* Revision History - show after PSV Summary */}
+            <RevisionHistoryCard
+                entityType="protective_system"
+                entityId={selectedPsv.id}
+                currentRevisionId={selectedPsv.currentRevisionId}
+            />
+
             <Box
                 sx={{
                     display: 'grid',
@@ -877,13 +884,6 @@ export function SummaryTab() {
                     )}
                 </Paper>
             </Box>
-
-            {/* Revision History */}
-            <RevisionHistoryCard
-                entityType="protective_system"
-                entityId={selectedPsv.id}
-                currentRevisionId={selectedPsv.currentRevisionId}
-            />
 
             <Box sx={{ textAlign: 'center', mt: 3, py: 2, borderTop: 1, borderColor: 'divider' }}>
                 <Typography variant="caption" color="text.secondary">
