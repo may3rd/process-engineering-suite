@@ -863,7 +863,12 @@ class LocalStorageService {
         const all = getItem<RevisionHistory>(STORAGE_KEYS.REVISION_HISTORY, mockRevisionHistory);
         return all
             .filter(r => r.entityType === entityType && r.entityId === entityId)
-            .sort((a, b) => b.sequence - a.sequence); // newest first
+            .sort((a, b) => {
+                const aTime = Date.parse(a.originatedAt || a.createdAt || '') || 0;
+                const bTime = Date.parse(b.originatedAt || b.createdAt || '') || 0;
+                const timeDiff = bTime - aTime;
+                return timeDiff !== 0 ? timeDiff : (b.sequence ?? 0) - (a.sequence ?? 0);
+            });
     }
 
     async createRevision(

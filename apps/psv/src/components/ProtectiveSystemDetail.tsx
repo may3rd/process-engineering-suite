@@ -87,9 +87,10 @@ import { PipelineHydraulicsCard } from "./PipelineHydraulicsCard";
 import { WORKFLOW_STATUS_SEQUENCE, getWorkflowStatusColor, getWorkflowStatusLabel, SIZING_STATUS_SEQUENCE, getSizingStatusColor, getSizingStatusLabel } from "@/lib/statusColors";
 import { RevisionBadge } from "./RevisionBadge";
 import { NewRevisionDialog } from "./NewRevisionDialog";
-import { RevisionHistoryPanel } from "./RevisionHistoryPanel";
-import { SnapshotPreviewDialog } from "./SnapshotPreviewDialog";
-import { RevisionHistory } from "@/data/types";
+	import { RevisionHistoryPanel } from "./RevisionHistoryPanel";
+	import { SnapshotPreviewDialog } from "./SnapshotPreviewDialog";
+	import { RevisionHistory } from "@/data/types";
+	import { sortRevisionsByOriginatedAtDesc } from "@/lib/revisionSort";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -1722,22 +1723,18 @@ export function ProtectiveSystemDetail() {
         (async () => {
             await loadRevisionHistory('protective_system', selectedPsv.id);
             if (cancelled) return;
-            const history = usePsvStore
-                .getState()
-                .revisionHistory
-                .filter((r) => r.entityType === 'protective_system' && r.entityId === selectedPsv.id)
-                .sort((a, b) => b.sequence - a.sequence);
-            setPsvRevisions(history);
-        })();
+	            const history = usePsvStore
+	                .getState()
+	                .revisionHistory
+	                .filter((r) => r.entityType === 'protective_system' && r.entityId === selectedPsv.id)
+	            setPsvRevisions(sortRevisionsByOriginatedAtDesc(history));
+	        })();
         return () => {
             cancelled = true;
         };
     }, [loadRevisionHistory, selectedPsv]);
 
-    const latestPsvRevision = useMemo(
-        () => psvRevisions.slice().sort((a, b) => b.sequence - a.sequence)[0],
-        [psvRevisions]
-    );
+	    const latestPsvRevision = useMemo(() => sortRevisionsByOriginatedAtDesc(psvRevisions)[0], [psvRevisions]);
 
     const displayedRevision =
         (selectedPsv?.currentRevisionId
@@ -1755,13 +1752,12 @@ export function ProtectiveSystemDetail() {
         if (!selectedPsv) return;
         setRevisionMenuAnchor(event.currentTarget);
         await loadRevisionHistory('protective_system', selectedPsv.id);
-        const history = usePsvStore
-            .getState()
-            .revisionHistory
-            .filter((r) => r.entityType === 'protective_system' && r.entityId === selectedPsv.id)
-            .sort((a, b) => b.sequence - a.sequence);
-        setPsvRevisions(history);
-    };
+	        const history = usePsvStore
+	            .getState()
+	            .revisionHistory
+	            .filter((r) => r.entityType === 'protective_system' && r.entityId === selectedPsv.id)
+	        setPsvRevisions(sortRevisionsByOriginatedAtDesc(history));
+	    };
 
     const handleRevisionMenuClose = () => {
         setRevisionMenuAnchor(null);

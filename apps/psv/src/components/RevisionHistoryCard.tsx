@@ -26,6 +26,7 @@ import { getUserById } from '@/data/mockData';
 import { RevisionEntityType, RevisionHistory } from '@/data/types';
 import { useAuthStore } from '@/store/useAuthStore';
 import { EditRevisionDialog } from './EditRevisionDialog';
+import { sortRevisionsByOriginatedAtDesc } from '@/lib/revisionSort';
 
 interface RevisionHistoryCardProps {
     entityType: RevisionEntityType;
@@ -108,7 +109,9 @@ export function RevisionHistoryCard({
     }, [entityType, entityId, loadRevisionHistory]);
 
     const revisionsForEntity = useMemo(
-        () => revisionHistory.filter((r) => r.entityType === entityType && r.entityId === entityId),
+        () => sortRevisionsByOriginatedAtDesc(
+            revisionHistory.filter((r) => r.entityType === entityType && r.entityId === entityId)
+        ),
         [entityId, entityType, revisionHistory]
     );
 

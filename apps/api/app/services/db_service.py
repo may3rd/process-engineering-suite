@@ -6,6 +6,7 @@ from dateutil import parser as dateutil_parser
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select, update, delete, case
+from sqlalchemy.sql import nullslast
 from sqlalchemy.orm import selectinload
 
 from ..models import (
@@ -413,7 +414,10 @@ class DatabaseService(DataAccessLayer):
         stmt = select(RevisionHistory).where(
             RevisionHistory.entity_type == entity_type,
             RevisionHistory.entity_id == entity_id
-        ).order_by(RevisionHistory.sequence.desc())
+        ).order_by(
+            nullslast(RevisionHistory.originated_at.desc()),
+            RevisionHistory.sequence.desc(),
+        )
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 

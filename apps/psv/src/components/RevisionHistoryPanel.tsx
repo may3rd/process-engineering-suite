@@ -39,6 +39,7 @@ import { RevisionHistory, RevisionEntityType } from '@/data/types';
 import { EditRevisionDialog } from './EditRevisionDialog';
 import { NewRevisionDialog } from './NewRevisionDialog';
 import { useAuthStore } from '@/store/useAuthStore';
+import { sortRevisionsByOriginatedAtDesc } from '@/lib/revisionSort';
 
 interface RevisionHistoryPanelProps {
     open: boolean;
@@ -263,7 +264,7 @@ export function RevisionHistoryPanel({
                         </Typography>
                     ) : (
                         <List disablePadding>
-                            {revisionHistory.map((revision, index) => {
+                            {sortRevisionsByOriginatedAtDesc(revisionHistory).map((revision, index) => {
                                 const isCurrent = revision.id === currentRevisionId;
                                 const isFirst = index === 0;
 

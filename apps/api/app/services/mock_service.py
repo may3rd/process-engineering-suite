@@ -336,10 +336,17 @@ class MockService(DataAccessLayer):
     # --- Revision History ---
 
     async def get_revisions_by_entity(self, entity_type: str, entity_id: str) -> List[dict]:
-        """Get revisions for an entity, ordered by sequence descending."""
+        """Get revisions for an entity, ordered by originator signed date descending."""
         revisions = self._data.get("revisionHistory", [])
         filtered = [r for r in revisions if r["entityType"] == entity_type and r["entityId"] == entity_id]
-        return sorted(filtered, key=lambda x: x.get("sequence", 0), reverse=True)
+        def sort_key(item: dict) -> tuple:
+            # Primary: originatedAt (originator signed date), fallback: createdAt, then sequence.
+            return (
+                item.get("originatedAt") or "",
+                item.get("createdAt") or "",
+                item.get("sequence", 0),
+            )
+        return sorted(filtered, key=sort_key, reverse=True)
 
     async def get_revision_by_id(self, revision_id: str) -> Optional[dict]:
         for rev in self._data.get("revisionHistory", []):

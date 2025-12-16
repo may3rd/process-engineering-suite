@@ -30,6 +30,7 @@ import { getUserById } from '@/data/mockData';
 import type { RevisionHistory } from '@/data/types';
 import { RevisionHistoryCard } from './RevisionHistoryCard';
 import { NewRevisionDialog } from './NewRevisionDialog';
+import { sortRevisionsByOriginatedAtDesc } from '@/lib/revisionSort';
 
 function formatDate(dateString?: string | null): string {
     if (!dateString) return '—';
@@ -89,9 +90,9 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
             .getState()
             .revisionHistory
             .filter((r) => r.entityType === 'protective_system' && r.entityId === entityId)
-            .sort((a, b) => b.sequence - a.sequence);
-        setRevisions(history);
-        return history;
+        const sorted = sortRevisionsByOriginatedAtDesc(history);
+        setRevisions(sorted);
+        return sorted;
     };
 
     useEffect(() => {
