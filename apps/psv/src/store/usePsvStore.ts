@@ -163,6 +163,7 @@ interface PsvStore {
     addTodo: (todo: TodoItem) => Promise<void>;
     deleteTodo: (id: string) => Promise<void>;
     toggleTodo: (id: string) => Promise<void>;
+    updateTodo?: (id: string, updates: Partial<TodoItem>) => Promise<void>;
     todoList: TodoItem[];
 
     // Notes Actions (async)
@@ -994,6 +995,20 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to toggle todo';
             toast.error('Failed to toggle todo', { description: message });
+            throw error;
+        }
+    },
+
+    updateTodo: async (id, updates) => {
+        try {
+            const updated = await dataService.updateTodo(id, updates);
+            set((state) => ({
+                todoList: state.todoList.map((t) => (t.id === id ? updated : t)),
+            }));
+            toast.success('Todo updated');
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to update todo';
+            toast.error('Failed to update todo', { description: message });
             throw error;
         }
     },

@@ -1194,6 +1194,7 @@ function NotesTab() {
         addTodo,
         deleteTodo,
         toggleTodo,
+        updateTodo,
         addComment,
         deleteComment,
         updateComment,
@@ -1216,8 +1217,13 @@ function NotesTab() {
     const [newNoteText, setNewNoteText] = useState('');
     const [editCommentText, setEditCommentText] = useState('');
     const [editNoteText, setEditNoteText] = useState('');
+    const [editTaskOpen, setEditTaskOpen] = useState(false);
+    const [editTaskText, setEditTaskText] = useState('');
+    const [editTaskAssignee, setEditTaskAssignee] = useState('');
+    const [editTaskDueDate, setEditTaskDueDate] = useState('');
     const [editingComment, setEditingComment] = useState<Comment | null>(null);
     const [editingNote, setEditingNote] = useState<ProjectNote | null>(null);
+    const [editingTask, setEditingTask] = useState<TodoItem | null>(null);
 
     if (!selectedPsv) return null;
 
@@ -1261,6 +1267,28 @@ function NotesTab() {
         if (window.confirm("Are you sure you want to delete this task?")) {
             deleteTodo(id);
         }
+    };
+
+    const handleStartEditTask = (todo: TodoItem) => {
+        setEditingTask(todo);
+        setEditTaskText(todo.text);
+        setEditTaskAssignee(todo.assignedTo || selectedPsv.ownerId);
+        setEditTaskDueDate(todo.dueDate || '');
+        setEditTaskOpen(true);
+    };
+
+    const handleUpdateTask = () => {
+        if (!editingTask || !editTaskText.trim() || !updateTodo) return;
+        updateTodo(editingTask.id, {
+            text: editTaskText.trim(),
+            assignedTo: editTaskAssignee,
+            dueDate: editTaskDueDate || undefined,
+        });
+        setEditTaskOpen(false);
+        setEditingTask(null);
+        setEditTaskText('');
+        setEditTaskAssignee(selectedPsv.ownerId);
+        setEditTaskDueDate('');
     };
 
     const handleAddComment = () => {
@@ -1361,10 +1389,10 @@ function NotesTab() {
                             {filteredTodos.map((todo, index) => {
                                 const assignee = todo.assignedTo ? getUserById(todo.assignedTo) : null;
                                 return (
-                                    <ListItem
-                                        key={todo.id}
-                                        divider={index < filteredTodos.length - 1}
-                                        secondaryAction={
+                                        <ListItem
+                                            key={todo.id}
+                                            divider={index < filteredTodos.length - 1}
+                                            secondaryAction={
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 {todo.dueDate && (
                                                     <Chip
@@ -1375,9 +1403,22 @@ function NotesTab() {
                                                     />
                                                 )}
                                                 {canEdit && (
-                                                    <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteTodo(todo.id)}>
-                                                        <Delete />
-                                                    </IconButton>
+                                                    <>
+                                                        <IconButton
+                                                            edge="end"
+                                                            aria-label="edit"
+                                                            onClick={() => handleStartEditTask(todo)}
+                                                        >
+                                                            <Edit />
+                                                        </IconButton>
+                                                        <IconButton
+                                                            edge="end"
+                                                            aria-label="delete"
+                                                            onClick={() => handleDeleteTodo(todo.id)}
+                                                        >
+                                                            <Delete />
+                                                        </IconButton>
+                                                    </>
                                                 )}
                                             </Box>
                                         }
@@ -1604,6 +1645,59 @@ function NotesTab() {
                     <Button onClick={() => setAddCommentOpen(false)}>Cancel</Button>
                     <Button variant="contained" onClick={handleAddComment} disabled={!newCommentText.trim()}>
                         Add
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Edit Task Dialog */}
+            <Dialog open={editTaskOpen} onClose={() => setEditTaskOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Edit Task</DialogTitle>
+                <DialogContent>
+                    <TextField
+                        autoFocus
+                        fullWidth
+                        label="Task description"
+                        value={editTaskText}
+                        onChange={(e) => setEditTaskText(e.target.value)}
+                        sx={{ mt: 2, mb: 2 }}
+                    />
+                    <TextField
+                        select
+                        fullWidth
+                        label="Assign to"
+                        value={editTaskAssignee}
+                        onChange={(e) => setEditTaskAssignee(e.target.value)}
+                        sx={{ mb: 2 }}
+                        SelectProps={{ native: true }}
+                    >
+                        {users.map((user) => (
+                            <option key={user.id} value={user.id}>
+                                {user.name}
+                            </option>
+                        ))}
+                    </TextField>
+                    <TextField
+                        fullWidth
+                        type="date"
+                        label="Due date"
+                        value={editTaskDueDate}
+                        onChange={(e) => setEditTaskDueDate(e.target.value)}
+                        slotProps={{ inputLabel: { shrink: true } }}
+                        sx={{
+                            '& input::-webkit-calendar-picker-indicator': {
+                                filter: (theme) =>
+                                    theme.palette.mode === 'dark'
+                                        ? 'invert(0.8)'
+                                        : 'invert(0.2)',
+                                opacity: 0.9,
+                            },
+                        }}
+                    />
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setEditTaskOpen(false)}>Cancel</Button>
+                    <Button variant="contained" onClick={handleUpdateTask} disabled={!editTaskText.trim()}>
+                        Save
                     </Button>
                 </DialogActions>
             </Dialog>
