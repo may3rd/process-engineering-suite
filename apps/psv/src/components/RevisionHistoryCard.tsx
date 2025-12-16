@@ -33,6 +33,16 @@ interface RevisionHistoryCardProps {
     entityId: string;
     currentRevisionId?: string;
     onRevisionDeleted?: (revisionId: string) => void;
+    /**
+     * Controls whether the edit/delete column is shown.
+     * Used to hide actions in read-only contexts like print summaries.
+     * Defaults to true.
+     */
+    showActions?: boolean;
+    /**
+     * When true, renders the card without a border or shadow (for print layouts).
+     */
+    hideBorder?: boolean;
 }
 
 /**
@@ -94,6 +104,8 @@ export function RevisionHistoryCard({
     entityId,
     currentRevisionId,
     onRevisionDeleted,
+    showActions = true,
+    hideBorder = false,
 }: RevisionHistoryCardProps) {
     const { revisionHistory, loadRevisionHistory, deleteRevision } = usePsvStore();
     const canManualEdit = useAuthStore(
@@ -140,12 +152,29 @@ export function RevisionHistoryCard({
         onRevisionDeleted?.(deletedId);
     };
 
+    const paperStyles = (hideBorder?: boolean) =>
+        hideBorder
+            ? {
+                p: 3,
+                mb: 3,
+                boxShadow: 'none',
+                border: 0,
+                '@media print': {
+                    boxShadow: 'none',
+                    border: 0,
+                },
+            }
+            : {
+                p: 3,
+                mb: 3,
+            };
+
     if (revisionsForEntity.length === 0) {
         return (
-            <Paper sx={{ p: 3, mb: 3 }}>
+            <Paper sx={paperStyles(hideBorder)}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                     <History color="primary" />
-                    <Typography variant="h6" fontWeight={600}>
+                    <Typography variant="h6" fontWeight={600} sx={{ fontSize: '1rem' }}>
                         Revision History
                     </Typography>
                 </Box>
@@ -158,10 +187,10 @@ export function RevisionHistoryCard({
 
     return (
         <>
-        <Paper sx={{ p: 3, mb: 3 }}>
+        <Paper sx={paperStyles(hideBorder)}>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                 <History color="primary" />
-                <Typography variant="h6" fontWeight={600}>
+                <Typography variant="h6" fontWeight={600} sx={{ fontSize: '1rem' }}>
                     Revision History
                 </Typography>
             </Box>
@@ -175,7 +204,11 @@ export function RevisionHistoryCard({
                             <TableCell sx={{ fontWeight: 600 }}>By</TableCell>
                             <TableCell sx={{ fontWeight: 600 }}>Checked</TableCell>
                             <TableCell sx={{ fontWeight: 600 }}>Approved</TableCell>
-                            <TableCell sx={{ fontWeight: 600, width: '96px', textAlign: 'right' }}>Actions</TableCell>
+                            {showActions !== false && (
+                                <TableCell sx={{ fontWeight: 600, width: '96px', textAlign: 'right' }}>
+                                    Actions
+                                </TableCell>
+                            )}
                         </TableRow>
                     </TableHead>
                     <TableBody>
@@ -225,39 +258,41 @@ export function RevisionHistoryCard({
                                             {formatUserDate(revision.approvedBy, revision.approvedAt)}
                                         </Typography>
                                     </TableCell>
-                                    <TableCell align="right">
-                                        <Tooltip title={canManualEdit ? 'Edit revision' : 'Admin / Lead / Approver only'}>
-                                            <span>
-                                                <IconButton
-                                                    size="small"
-                                                    onClick={() => handleEditClick(revision)}
-                                                    disabled={!canManualEdit}
-                                                >
-                                                    <Edit fontSize="small" />
-                                                </IconButton>
-                                            </span>
-                                        </Tooltip>
-                                        <Tooltip
-                                            title={
-                                                !canManualEdit
-                                                    ? 'Admin / Lead / Approver only'
-                                                    : revisionsForEntity.length <= 1
-                                                        ? 'At least one revision must remain'
-                                                        : 'Delete revision'
-                                            }
-                                        >
-                                            <span>
-                                                <IconButton
-                                                    size="small"
-                                                    color="error"
-                                                    onClick={() => handleDeleteClick(revision)}
-                                                    disabled={!canManualEdit || revisionsForEntity.length <= 1}
-                                                >
-                                                    <Delete fontSize="small" />
-                                                </IconButton>
-                                            </span>
-                                        </Tooltip>
-                                    </TableCell>
+                                    {showActions !== false && (
+                                        <TableCell align="right">
+                                            <Tooltip title={canManualEdit ? 'Edit revision' : 'Admin / Lead / Approver only'}>
+                                                <span>
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => handleEditClick(revision)}
+                                                        disabled={!canManualEdit}
+                                                    >
+                                                        <Edit fontSize="small" />
+                                                    </IconButton>
+                                                </span>
+                                            </Tooltip>
+                                            <Tooltip
+                                                title={
+                                                    !canManualEdit
+                                                        ? 'Admin / Lead / Approver only'
+                                                        : revisionsForEntity.length <= 1
+                                                            ? 'At least one revision must remain'
+                                                            : 'Delete revision'
+                                                }
+                                            >
+                                                <span>
+                                                    <IconButton
+                                                        size="small"
+                                                        color="error"
+                                                        onClick={() => handleDeleteClick(revision)}
+                                                        disabled={!canManualEdit || revisionsForEntity.length <= 1}
+                                                    >
+                                                        <Delete fontSize="small" />
+                                                    </IconButton>
+                                                </span>
+                                            </Tooltip>
+                                        </TableCell>
+                                    )}
                                 </TableRow>
                             );
                         })}

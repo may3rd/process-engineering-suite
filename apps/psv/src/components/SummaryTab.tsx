@@ -358,7 +358,7 @@ export function SummaryTab() {
 
     const headerStyles = {
         fontWeight: 600,
-        fontSize: '0.875rem',
+        fontSize: '1rem',
         mb: 1,
         pb: 0.5,
         borderBottom: 1,
@@ -416,8 +416,17 @@ export function SummaryTab() {
                     ...sectionStyles,
                     mb: 2,
                     bgcolor: isDark ? 'background.paper' : 'white',
-                    borderColor: 'primary.light',
+                    border: 0,
+                    borderColor: 'transparent',
                     p: 2,
+                    boxShadow: 'none',
+                    '@media print': {
+                        breakInside: 'avoid',
+                        boxShadow: 'none',
+                        p: 1,
+                        mb: 1,
+                        border: 0,
+                    },
                 }}
             >
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 1 }}>
@@ -467,6 +476,8 @@ export function SummaryTab() {
                 entityType="protective_system"
                 entityId={selectedPsv.id}
                 currentRevisionId={selectedPsv.currentRevisionId}
+                showActions={false}
+                hideBorder
             />
 
             <Box
@@ -488,7 +499,7 @@ export function SummaryTab() {
                         </Box>
                         <Box>
                             <Typography variant="caption" color="text.secondary">Valve Type</Typography>
-                            <Typography variant="body2" fontWeight={500} sx={{ textTransform: 'capitalize' }}>
+                            <Typography variant="body2" fontWeight={500} sx={{ textTransform: 'uppercase' }}>
                                 {selectedPsv.type.replace('_', ' ')}
                             </Typography>
                         </Box>
@@ -524,7 +535,7 @@ export function SummaryTab() {
                         </Box>
                         <Box>
                             <Typography variant="caption" color="text.secondary">Fluid Phase</Typography>
-                            <Typography variant="body2" fontWeight={500} sx={{ textTransform: 'capitalize' }}>
+                            <Typography variant="body2" fontWeight={500} sx={{ textTransform: 'uppercase' }}>
                                 {selectedPsv.fluidPhase.replace('_', ' ')}
                             </Typography>
                         </Box>
