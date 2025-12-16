@@ -1,8 +1,9 @@
 """User model."""
-from typing import Optional
+from typing import Optional, Any
 
 from sqlalchemy import String, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.dialects.postgresql import JSONB
 
 from .base import Base, TimestampMixin, UUIDPrimaryKeyMixin
 
@@ -25,6 +26,9 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         nullable=False,
         default="active",
     )
+    display_settings: Mapped[Optional[dict[str, Any]]] = mapped_column(
+        JSONB, nullable=True
+    )
     
     # Relationships
     credential = relationship("Credential", back_populates="user", uselist=False)
@@ -33,3 +37,4 @@ class User(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     owned_units = relationship("Unit", back_populates="owner")
     owned_equipment = relationship("Equipment", back_populates="owner")
     owned_psvs = relationship("ProtectiveSystem", back_populates="owner")
+
