@@ -28,6 +28,7 @@ import { TopFloatingToolbar } from "@eng-suite/ui-kit";
 import { useRouter } from "next/navigation";
 import { UserMenu } from "@/components/UserMenu";
 import { usePsvStore } from "@/store/usePsvStore";
+import { StatusIndicator } from "@/components/StatusIndicator";
 
 interface TopToolbarProps {
     title?: string;
@@ -343,7 +344,7 @@ export function TopToolbar({ title = "PSV Sizing", onBack }: TopToolbarProps) {
                                 borderRadius: '999px',
                                 px: 2,
                                 py: 0.5,
-                                width: isMobile ? '60vw' : { xs: 260, sm: 360, md: 520, lg: 640 },
+                                width: isMobile ? '55vw' : { xs: 220, sm: 300, md: 400, lg: 480 },
                                 border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
                                 transition: 'all 0.2s',
                                 '&:hover': {
@@ -456,6 +457,9 @@ export function TopToolbar({ title = "PSV Sizing", onBack }: TopToolbarProps) {
                             <Search sx={{ fontSize: 20 }} />
                         </IconButton>
                     )}
+
+                    {/* Status Indicator */}
+                    <StatusIndicator />
 
                     {/* User Menu */}
                     <UserMenu />

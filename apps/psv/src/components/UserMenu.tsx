@@ -111,8 +111,8 @@ export function UserMenu() {
                     <Avatar
                         src={currentUser?.avatarUrl}
                         sx={{
-                            width: 36,
-                            height: 36,
+                            width: 40,
+                            height: 40,
                             bgcolor: isAuthenticated ? getRoleColor(currentUser?.role) : theme.palette.grey[500],
                             fontSize: '0.875rem',
                             fontWeight: 600,
@@ -185,7 +185,15 @@ export function UserMenu() {
                     </Box>
                 )}
 
-                <Divider />
+                {/* Home Page */}
+                <MenuItem onClick={() => (window.location.href = '/')}>
+                    <ListItemIcon>
+                        <Home fontSize="small" />
+                    </ListItemIcon>
+                    <ListItemText>Home Page</ListItemText>
+                </MenuItem>
+
+                {isAuthenticated && <Divider />}
 
                 {/* Quick Links */}
                 {isAuthenticated && (
@@ -211,40 +219,6 @@ export function UserMenu() {
                     </MenuItem>
                 )}
                 {isAuthenticated && <Divider />}
-
-                {/* Theme Toggle */}
-                <Box sx={{ px: 2, py: 1.5 }}>
-                    <Typography variant="caption" color="text.secondary" sx={{ mb: 1, display: 'block' }}>
-                        Theme
-                    </Typography>
-                    <ToggleButtonGroup
-                        value={theme.palette.mode}
-                        exclusive
-                        onChange={toggleColorMode}
-                        size="small"
-                        fullWidth
-                        sx={{ '& .MuiToggleButton-root': { textTransform: 'none', fontSize: '0.75rem' } }}
-                    >
-                        <ToggleButton value="dark">
-                            <DarkMode fontSize="small" sx={{ mr: 0.5 }} />
-                            Dark
-                        </ToggleButton>
-                        <ToggleButton value="light">
-                            <LightMode fontSize="small" sx={{ mr: 0.5 }} />
-                            Light
-                        </ToggleButton>
-                    </ToggleButtonGroup>
-                </Box>
-
-                <Divider />
-
-                {/* Home Page */}
-                <MenuItem onClick={() => (window.location.href = '/')}>
-                    <ListItemIcon>
-                        <Home fontSize="small" />
-                    </ListItemIcon>
-                    <ListItemText>Home Page</ListItemText>
-                </MenuItem>
 
                 {/* Login / Logout */}
                 {!isAuthenticated ? (
