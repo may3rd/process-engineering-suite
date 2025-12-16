@@ -1,0 +1,38 @@
+{
+    "name": "@eng-suite/vessels",
+    "version": "1.0.0",
+    "description": "Vessel and tank calculation library for process engineering",
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        },
+        "./vessels": {
+            "types": "./dist/vessels/index.d.ts",
+            "default": "./dist/vessels/index.js"
+        },
+        "./math": {
+            "types": "./dist/math/integration.d.ts",
+            "default": "./dist/math/integration.js"
+        }
+    },
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc --watch",
+        "clean": "rm -rf dist"
+    },
+    "keywords": [
+        "vessels",
+        "tanks",
+        "process-engineering",
+        "wetted-area",
+        "volume"
+    ],
+    "author": "EPT Process Engineering Suite",
+    "license": "MIT",
+    "devDependencies": {
+        "typescript": "^5.3.3"
+    }
+}

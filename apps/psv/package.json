@@ -14,6 +14,7 @@
         "@emotion/styled": "^11.14.1",
         "@eng-suite/physics": "*",
         "@eng-suite/ui-kit": "*",
+        "@eng-suite/vessels": "*",
         "@mui/icons-material": "^7.3.6",
         "@mui/material": "^7.3.6",
         "@mui/material-nextjs": "^7.3.6",
