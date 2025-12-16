@@ -34,12 +34,13 @@ import {
     Save,
     Close,
 } from "@mui/icons-material";
-import { OverpressureScenario, ScenarioCause, FluidPhase } from "@/data/types";
+import { OverpressureScenario, ScenarioCause, FluidPhase, UnitPreferences } from "@/data/types";
 import { v4 as uuidv4 } from "uuid";
 import { useAuthStore } from "@/store/useAuthStore";
 import { MarkdownEditor } from "@/components/shared/MarkdownEditor";
 import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
-import { convertValue } from "@/lib/projectUnits";
+import { useUnitConversion } from "@/hooks/useUnitConversion";
+import { getDefaultUnitPreferences } from "@/lib/unitPreferences";
 
 interface ScenarioEditorProps {
     initialData?: OverpressureScenario;
@@ -70,9 +71,18 @@ const PHASE_OPTIONS: { value: FluidPhase; label: string }[] = [
     { value: 'two_phase', label: 'Two-Phase' },
 ];
 
+// Unit options (same as SizingWorkspace)
+const PRESSURE_UNITS = ['barg', 'bara', 'kPag', 'kg_cm2g', 'psig', 'psia', 'kPa'];
+const TEMPERATURE_UNITS = ['C', 'F', 'K'];
+const FLOW_UNITS = ['kg/h', 'lb/h', 'kg/s'];
+
 export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete }: ScenarioEditorProps) {
     const canEdit = useAuthStore((state) => state.canEdit());
-    const { units } = useProjectUnitSystem();
+    const { unitSystem } = useProjectUnitSystem();
+
+    // Unit conversion with selectable preferences
+    const defaultPreferences: UnitPreferences = getDefaultUnitPreferences(unitSystem);
+    const { preferences, setUnit, toDisplay, toBase } = useUnitConversion(defaultPreferences);
 
     const [formData, setFormData] = useState<Partial<OverpressureScenario>>({
         protectiveSystemId: psvId,
@@ -146,9 +156,10 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
 
-    const relievingRateDisplay = convertValue(formData.relievingRate ?? null, "kg/h", units.massFlow.unit);
-    const relievingPressureDisplay = convertValue(formData.relievingPressure ?? null, "barg", units.pressureGauge.unit);
-    const relievingTempDisplay = convertValue(formData.relievingTemp ?? null, "C", units.temperature.unit);
+    // Convert base values (kg/h, barg, °C) to display values in selected units
+    const relievingRateDisplay = toDisplay(formData.relievingRate ?? 0, 'flow');
+    const relievingPressureDisplay = toDisplay(formData.relievingPressure ?? 0, 'pressure');
+    const relievingTempDisplay = toDisplay(formData.relievingTemp ?? 0, 'temperature');
 
     const handleConfirmDelete = () => {
         if (onDelete && initialData && deleteConfirmationInput === "delete scenario") {
@@ -261,7 +272,7 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                     <TextField
                         label="Relieving Rate"
                         type="number"
-                        value={relievingRateDisplay ?? ""}
+                        value={relievingRateDisplay}
                         onChange={(e) => {
                             const raw = e.target.value;
                             if (raw === "") {
@@ -269,11 +280,26 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                                 return;
                             }
                             const parsed = parseFloat(raw);
-                            const base = convertValue(parsed, units.massFlow.unit, "kg/h");
+                            const base = toBase(parsed, 'flow');
                             handleInputChange("relievingRate", base);
                         }}
-                        InputProps={{
-                            endAdornment: <InputAdornment position="end">{units.massFlow.label}</InputAdornment>,
+                        slotProps={{
+                            input: {
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <TextField
+                                            select
+                                            variant="standard"
+                                            value={preferences.flow}
+                                            onChange={(e) => setUnit('flow', e.target.value)}
+                                            sx={{ minWidth: 55 }}
+                                            disabled={!canEdit}
+                                        >
+                                            {FLOW_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                        </TextField>
+                                    </InputAdornment>
+                                ),
+                            }
                         }}
                         error={!!errors.relievingRate}
                         fullWidth
@@ -282,7 +308,7 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                     <TextField
                         label="Relieving Pressure"
                         type="number"
-                        value={relievingPressureDisplay ?? ""}
+                        value={relievingPressureDisplay}
                         onChange={(e) => {
                             const raw = e.target.value;
                             if (raw === "") {
@@ -290,11 +316,26 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                                 return;
                             }
                             const parsed = parseFloat(raw);
-                            const base = convertValue(parsed, units.pressureGauge.unit, "barg");
+                            const base = toBase(parsed, 'pressure');
                             handleInputChange("relievingPressure", base);
                         }}
-                        InputProps={{
-                            endAdornment: <InputAdornment position="end">{units.pressureGauge.label}</InputAdornment>,
+                        slotProps={{
+                            input: {
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <TextField
+                                            select
+                                            variant="standard"
+                                            value={preferences.pressure}
+                                            onChange={(e) => setUnit('pressure', e.target.value)}
+                                            sx={{ minWidth: 60 }}
+                                            disabled={!canEdit}
+                                        >
+                                            {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                        </TextField>
+                                    </InputAdornment>
+                                ),
+                            }
                         }}
                         error={!!errors.relievingPressure}
                         fullWidth
@@ -303,7 +344,7 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                     <TextField
                         label="Relieving Temp"
                         type="number"
-                        value={relievingTempDisplay ?? ""}
+                        value={relievingTempDisplay}
                         onChange={(e) => {
                             const raw = e.target.value;
                             if (raw === "") {
@@ -311,11 +352,26 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                                 return;
                             }
                             const parsed = parseFloat(raw);
-                            const base = convertValue(parsed, units.temperature.unit, "C");
+                            const base = toBase(parsed, 'temperature');
                             handleInputChange("relievingTemp", base);
                         }}
-                        InputProps={{
-                            endAdornment: <InputAdornment position="end">{units.temperature.label}</InputAdornment>,
+                        slotProps={{
+                            input: {
+                                endAdornment: (
+                                    <InputAdornment position="end">
+                                        <TextField
+                                            select
+                                            variant="standard"
+                                            value={preferences.temperature}
+                                            onChange={(e) => setUnit('temperature', e.target.value)}
+                                            sx={{ minWidth: 45 }}
+                                            disabled={!canEdit}
+                                        >
+                                            {TEMPERATURE_UNITS.map(u => <MenuItem key={u} value={u}>{u === 'C' ? '°C' : u === 'F' ? '°F' : u}</MenuItem>)}
+                                        </TextField>
+                                    </InputAdornment>
+                                ),
+                            }
                         }}
                         error={!!errors.relievingTemp}
                         fullWidth
