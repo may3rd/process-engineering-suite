@@ -49,6 +49,7 @@ import { ProjectsTab } from './ProjectsTab';
 import { PSVsTab } from './PSVsTab';
 import { EquipmentTab } from './EquipmentTab';
 import { UsersTab } from './UsersTab';
+import { SystemTab } from './SystemTab';
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -82,6 +83,7 @@ export function DashboardPage() {
         { label: "Equipment", icon: <Settings />, visible: true },
         { label: "PSVs", icon: <Shield />, visible: true },
         { label: "Users", icon: <People />, visible: canManageUsers() },
+        { label: "System", icon: <Settings />, visible: canManageUsers() },
     ]), [canManageCustomer, canManageHierarchy, canManageUsers]);
 
     const visibleTabs = useMemo(() => tabs.filter(tab => tab.visible), [tabs]);
@@ -189,6 +191,11 @@ export function DashboardPage() {
                 {canManageUsers() && (
                     <TabPanel value={activeTab} index={visibleTabs.findIndex(t => t.label === "Users")}>
                         <UsersTab />
+                    </TabPanel>
+                )}
+                {canManageUsers() && (
+                    <TabPanel value={activeTab} index={visibleTabs.findIndex(t => t.label === "System")}>
+                        <SystemTab />
                     </TabPanel>
                 )}
             </Box>

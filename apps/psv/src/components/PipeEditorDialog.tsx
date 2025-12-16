@@ -34,6 +34,8 @@ interface ExtendedPipeProps extends PipeProps {
     diameterInputMode?: "nps" | "diameter";
     pipeNPD?: number;
     pipeSchedule?: string;
+    lineNumber?: string;
+    isometricNumber?: string;
 }
 
 // NPS Schedule data - simplified for common schedules
@@ -90,6 +92,8 @@ export function PipeEditorDialog({
 
     // Form state
     const [name, setName] = useState("");
+    const [lineNumber, setLineNumber] = useState("");
+    const [isometricNumber, setIsometricNumber] = useState("");
     const [direction, setDirection] = useState<"forward" | "backward">("forward");
     const [boundaryPressure, setBoundaryPressure] = useState<number>(0);
     const [boundaryPressureUnit, setBoundaryPressureUnit] = useState("barg");
@@ -140,6 +144,8 @@ export function PipeEditorDialog({
     useEffect(() => {
         if (extendedPipe) {
             setName(extendedPipe.name || "");
+            setLineNumber(extendedPipe.lineNumber || "");
+            setIsometricNumber(extendedPipe.isometricNumber || "");
             setDirection(extendedPipe.direction || (pipeType === 'inlet' ? 'forward' : 'backward'));
             setBoundaryPressure(extendedPipe.boundaryPressure ?? getDefaultPressure());
             setBoundaryPressureUnit(extendedPipe.boundaryPressureUnit || "barg");
@@ -180,6 +186,8 @@ export function PipeEditorDialog({
 
     const resetForm = () => {
         setName("");
+        setLineNumber("");
+        setIsometricNumber("");
         setDirection(pipeType === 'inlet' ? 'forward' : 'backward');
         setBoundaryPressure(getDefaultPressure());
         setBoundaryPressureUnit("barg");
@@ -235,6 +243,8 @@ export function PipeEditorDialog({
         const updatedPipe = {
             ...pipe,
             name,
+            lineNumber: lineNumber.trim() || undefined,
+            isometricNumber: isometricNumber.trim() || undefined,
             direction,
             boundaryPressure,
             boundaryPressureUnit,
@@ -281,6 +291,31 @@ export function PipeEditorDialog({
                         fullWidth
                         size="small"
                     />
+                    <Box
+                        sx={{
+                            display: 'grid',
+                            gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' },
+                            gap: 2,
+                            mt: 2,
+                        }}
+                    >
+                        <TextField
+                            label="Line Number"
+                            value={lineNumber}
+                            onChange={(e) => setLineNumber(e.target.value)}
+                            fullWidth
+                            size="small"
+                            helperText="P&ID line number"
+                        />
+                        <TextField
+                            label="Isometric Number"
+                            value={isometricNumber}
+                            onChange={(e) => setIsometricNumber(e.target.value)}
+                            fullWidth
+                            size="small"
+                            helperText="Isometric reference"
+                        />
+                    </Box>
                 </Box>
 
                 <Divider />

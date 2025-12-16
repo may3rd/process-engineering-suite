@@ -5,6 +5,7 @@ WORKDIR /app
 # Install system dependencies if needed (e.g. build tools)
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    postgresql-client \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements separately to cache install
