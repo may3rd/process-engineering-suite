@@ -281,20 +281,17 @@ function ScenariosTab() {
                 )}
             </Box>
 
-            {/* Scenario Status Indicator Bar */}
-            <Box
-                sx={{
-                    display: 'flex',
-                    gap: 1,
-                    mb: 3,
-                    pb: 1,
-                    overflowX: 'auto',
-                    scrollbarWidth: 'thin',
-                    '&::-webkit-scrollbar': { height: 4 },
-                    '&::-webkit-scrollbar-thumb': { borderRadius: 2, bgcolor: 'divider' },
-                    flexWrap: { xs: 'nowrap', md: 'wrap' },
-                }}
-            >
+	            {/* Scenario Status Indicator Bar */}
+	            <Box
+	                sx={{
+	                    display: 'flex',
+	                    columnGap: 1,
+	                    rowGap: 1,
+	                    mb: 3,
+	                    // Wrap on all viewports (mobile-first)
+	                    flexWrap: 'wrap',
+	                }}
+	            >
                 {ALL_SCENARIO_CAUSES.map(({ cause, label }) => {
                     const isAdded = addedCauses.has(cause);
                     return (
@@ -2113,19 +2110,24 @@ export function ProtectiveSystemDetail() {
             </Dialog>
 
             {/* Tabs */}
-            <Paper className="print-hide" sx={{ mb: 3 }}>
-                <Tabs
-                    value={activeTab}
-                    onChange={handleTabChange}
-                    indicatorColor="primary"
-                    textColor="primary"
-                    sx={{
-                        borderBottom: 1,
-                        borderColor: 'divider',
-                        '& .MuiTab-root': {
-                            minHeight: 56,
-                        },
-                    }}
+	            <Paper className="print-hide" sx={{ mb: 3 }}>
+	                <Tabs
+	                    value={activeTab}
+	                    onChange={handleTabChange}
+	                    indicatorColor="primary"
+	                    textColor="primary"
+	                    sx={{
+	                        borderBottom: 1,
+	                        borderColor: 'divider',
+	                        '& .MuiTabs-flexContainer': {
+	                            flexWrap: 'wrap',
+	                        },
+	                        '& .MuiTab-root': {
+	                            minHeight: 56,
+	                            minWidth: { xs: 120, sm: 140 },
+	                            flex: { xs: '1 1 auto', sm: '0 0 auto' },
+	                        },
+	                    }}
 	                >
 	                    <Tab label="Overview" />
 	                    <Tab label="Scenarios" />

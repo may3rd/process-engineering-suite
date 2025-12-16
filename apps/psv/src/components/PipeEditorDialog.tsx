@@ -53,6 +53,12 @@ const SCHEDULE_40_ID: Record<number, number> = {
     16: 381, 18: 428.46, 20: 477.82, 24: 575.04,
 };
 
+function getInnerDiameterMmFromNpsSchedule(nps: number, _schedule: string): number | null {
+    // Current UI uses a simplified table; schedule is accepted for persistence/UI but
+    // diameter lookup uses the schedule-40 reference values for now.
+    return SCHEDULE_40_ID[nps] ?? null;
+}
+
 // Fitting type options
 const FITTING_OPTIONS = [
     { value: "elbow_90", label: "Elbow 90°" },
@@ -212,9 +218,8 @@ export function PipeEditorDialog({
 
     const handleNpsChange = (newNps: number) => {
         setNps(newNps);
-        // Auto-calculate diameter from NPS + Schedule
-        const id = SCHEDULE_40_ID[newNps];
-        if (id) {
+        const id = getInnerDiameterMmFromNpsSchedule(newNps, schedule);
+        if (id !== null) {
             setDiameter(id);
             setDiameterUnit("mm");
         }
@@ -239,6 +244,12 @@ export function PipeEditorDialog({
     const handleSave = () => {
         if (!pipe) return;
 
+        const computedNpsDiameter = getInnerDiameterMmFromNpsSchedule(nps, schedule);
+        const effectiveDiameter =
+            diameterInputMode === 'diameter'
+                ? diameter
+                : computedNpsDiameter ?? diameter;
+
         // Use type assertion for extended properties
         const updatedPipe = {
             ...pipe,
@@ -249,8 +260,11 @@ export function PipeEditorDialog({
             boundaryPressure,
             boundaryPressureUnit,
             gasFlowModel,
-            diameter: diameterInputMode === 'diameter' ? diameter : SCHEDULE_40_ID[nps] || diameter,
-            diameterUnit,
+            diameterInputMode,
+            pipeNPD: nps,
+            pipeSchedule: schedule,
+            diameter: effectiveDiameter,
+            diameterUnit: diameterInputMode === 'diameter' ? diameterUnit : "mm",
             length,
             lengthUnit,
             elevation,
@@ -269,6 +283,10 @@ export function PipeEditorDialog({
 
     const isGasPhase = fluidPhase === 'gas' || fluidPhase === 'steam' || fluidPhase === 'two_phase';
     const pressureLabel = direction === 'forward' ? 'Inlet Pressure' : 'Outlet Pressure';
+    const npsCalculatedDiameterMm = useMemo(
+        () => getInnerDiameterMmFromNpsSchedule(nps, schedule),
+        [nps, schedule]
+    );
 
     return (
         <Dialog open={open} onClose={onCancel} maxWidth="sm" fullWidth>
@@ -390,7 +408,17 @@ export function PipeEditorDialog({
                             <RadioGroup
                                 row
                                 value={diameterInputMode}
-                                onChange={(e) => setDiameterInputMode(e.target.value as "nps" | "diameter")}
+                                onChange={(e) => {
+                                    const mode = e.target.value as "nps" | "diameter";
+                                    setDiameterInputMode(mode);
+                                    if (mode === "nps") {
+                                        const id = getInnerDiameterMmFromNpsSchedule(nps, schedule);
+                                        if (id !== null) {
+                                            setDiameter(id);
+                                            setDiameterUnit("mm");
+                                        }
+                                    }
+                                }}
                             >
                                 <FormControlLabel value="nps" control={<Radio size="small" />} label="NPS + Schedule" />
                                 <FormControlLabel value="diameter" control={<Radio size="small" />} label="Direct Input" />
@@ -406,6 +434,11 @@ export function PipeEditorDialog({
                                     onChange={(e) => handleNpsChange(parseFloat(e.target.value))}
                                     size="small"
                                     sx={{ flex: 1 }}
+                                    helperText={
+                                        npsCalculatedDiameterMm !== null
+                                            ? `Calculated ID: ${npsCalculatedDiameterMm.toFixed(2)} mm`
+                                            : 'Calculated ID unavailable'
+                                    }
                                 >
                                     {NPS_SIZES.map(size => (
                                         <MenuItem key={size} value={size}>{size}"</MenuItem>
@@ -415,7 +448,15 @@ export function PipeEditorDialog({
                                     select
                                     label="Schedule"
                                     value={schedule}
-                                    onChange={(e) => setSchedule(e.target.value)}
+                                    onChange={(e) => {
+                                        const next = e.target.value;
+                                        setSchedule(next);
+                                        const id = getInnerDiameterMmFromNpsSchedule(nps, next);
+                                        if (id !== null) {
+                                            setDiameter(id);
+                                            setDiameterUnit("mm");
+                                        }
+                                    }}
                                     size="small"
                                     sx={{ flex: 1 }}
                                 >

@@ -12,10 +12,24 @@ from fastapi import APIRouter, HTTPException, UploadFile, File
 from pydantic import BaseModel
 from starlette.background import BackgroundTask
 from starlette.responses import FileResponse
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from ..dependencies import DAL
 from ..config import get_settings
 from ..services import MockService, DatabaseService
+from ..models import (
+    User,
+    Customer,
+    Plant,
+    Unit,
+    Area,
+    Project,
+    ProtectiveSystem,
+    OverpressureScenario,
+    SizingCase,
+    RevisionHistory,
+)
 
 router = APIRouter(prefix="/admin", tags=["admin"])
 logger = logging.getLogger(__name__)
@@ -51,6 +65,47 @@ def _parse_database_url(raw_url: str) -> dict:
         "password": unquote(parsed.password or ""),
         "database": parsed.path.lstrip("/"),
     }
+
+def _snake_to_camel(key: str) -> str:
+    parts = key.split("_")
+    return parts[0] + "".join(p[:1].upper() + p[1:] for p in parts[1:])
+
+
+def _jsonify(value):
+    # Convert ORM-friendly types to JSON-friendly types.
+    try:
+        from decimal import Decimal
+    except Exception:  # pragma: no cover
+        Decimal = None  # type: ignore
+
+    if value is None:
+        return None
+    if isinstance(value, (str, int, float, bool)):
+        return value
+    if Decimal is not None and isinstance(value, Decimal):
+        return float(value)
+    if isinstance(value, datetime):
+        # Standardize to Z where possible.
+        iso = value.isoformat()
+        return iso.replace("+00:00", "Z") if iso.endswith("+00:00") else iso
+    # date (from datetime import date) comes through seed already; stringify
+    if hasattr(value, "isoformat") and callable(value.isoformat):
+        try:
+            return value.isoformat()
+        except Exception:
+            pass
+    if isinstance(value, (list, tuple)):
+        return [_jsonify(v) for v in value]
+    if isinstance(value, dict):
+        return {k: _jsonify(v) for k, v in value.items()}
+    return str(value)
+
+
+def _model_columns_to_dict(obj) -> dict:
+    data = {}
+    for col in obj.__table__.columns:
+        data[_snake_to_camel(col.name)] = _jsonify(getattr(obj, col.name))
+    return data
 
 
 @router.post("/seed-from-mock", response_model=SeedResponse)
@@ -269,3 +324,79 @@ async def restore_database(dal: DAL, file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"psql failed: {stderr.strip()}")
 
     return RestoreResponse(message="Database restore completed")
+
+
+class ExportMockResponse(BaseModel):
+    message: str
+    data: dict
+
+
+@router.get("/export-mock-data", response_model=ExportMockResponse)
+async def export_mock_data(dal: DAL, write_to_file: bool = False):
+    """Export key workspace tables as mock-data JSON.
+
+    Intended for taking the current Docker database and generating a `mock_data.json`
+    compatible payload (customers, plants, units, areas, projects, PSVs, scenarios,
+    sizing cases, revision history, plus users).
+    """
+    if isinstance(dal, MockService):
+        data = getattr(dal, "_data", {})
+        payload = {
+            "users": data.get("users", []),
+            "customers": data.get("customers", []),
+            "plants": data.get("plants", []),
+            "units": data.get("units", []),
+            "areas": data.get("areas", []),
+            "projects": data.get("projects", []),
+            "protectiveSystems": data.get("protectiveSystems", []),
+            "scenarios": data.get("scenarios", []),
+            "sizingCases": data.get("sizingCases", []),
+            "revisionHistory": data.get("revisionHistory", []),
+        }
+    elif isinstance(dal, DatabaseService):
+        session = dal.session
+
+        users = list((await session.execute(select(User))).scalars().all())
+        customers = list((await session.execute(select(Customer))).scalars().all())
+        plants = list((await session.execute(select(Plant))).scalars().all())
+        units = list((await session.execute(select(Unit))).scalars().all())
+        areas = list((await session.execute(select(Area))).scalars().all())
+        projects = list((await session.execute(select(Project))).scalars().all())
+
+        psv_stmt = select(ProtectiveSystem).options(selectinload(ProtectiveSystem.projects))
+        protective_systems = list((await session.execute(psv_stmt)).scalars().all())
+
+        scenarios = list((await session.execute(select(OverpressureScenario))).scalars().all())
+        sizing_cases = list((await session.execute(select(SizingCase))).scalars().all())
+        revisions = list((await session.execute(select(RevisionHistory))).scalars().all())
+
+        payload = {
+            "users": [_model_columns_to_dict(u) for u in users],
+            "customers": [_model_columns_to_dict(c) for c in customers],
+            "plants": [_model_columns_to_dict(p) for p in plants],
+            "units": [_model_columns_to_dict(u) for u in units],
+            "areas": [_model_columns_to_dict(a) for a in areas],
+            "projects": [_model_columns_to_dict(p) for p in projects],
+            "protectiveSystems": [],
+            "scenarios": [_model_columns_to_dict(s) for s in scenarios],
+            "sizingCases": [_model_columns_to_dict(c) for c in sizing_cases],
+            "revisionHistory": [_model_columns_to_dict(r) for r in revisions],
+        }
+
+        for psv in protective_systems:
+            p = _model_columns_to_dict(psv)
+            # Match frontend mock shape
+            p["projectIds"] = [proj.id for proj in getattr(psv, "projects", [])]
+            # Keep camelCase contract used by frontend/API
+            if "projectTags" in p:
+                p.pop("projectTags", None)
+            payload["protectiveSystems"].append(p)
+    else:
+        raise HTTPException(status_code=400, detail="Unsupported service type")
+
+    if write_to_file:
+        out_path = Path(__file__).parent.parent.parent / "mock_data.json"
+        out_path.write_text(json.dumps(payload, indent=2))
+        return ExportMockResponse(message=f"Exported mock data to {out_path}", data=payload)
+
+    return ExportMockResponse(message="Exported mock data", data=payload)

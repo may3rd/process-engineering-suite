@@ -135,16 +135,18 @@ export function DashboardPage() {
                         setActiveTab(newValue);
                         if (dashboardTab) setDashboardTab(null);
                     }}
-                    variant="scrollable"
-                    scrollButtons="auto"
-                    allowScrollButtonsMobile
                     sx={{
                         borderBottom: 1,
                         borderColor: 'divider',
                         px: { xs: 1, sm: 2 },
+                        '& .MuiTabs-flexContainer': {
+                            flexWrap: 'wrap',
+                        },
                         '& .MuiTab-root': {
                             minHeight: { xs: 48, sm: 64 },
                             fontSize: { xs: '0.875rem', sm: '1rem' },
+                            minWidth: { xs: 120, sm: 140 },
+                            flex: { xs: '1 1 auto', sm: '0 0 auto' },
                         }
                     }}
                 >
