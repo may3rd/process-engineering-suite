@@ -76,12 +76,13 @@ import { SortConfig, toggleSortConfig, sortByGetter } from "@/lib/sortUtils";
 import { TableSortButton } from "@/components/shared/TableSortButton";
 import { MarkdownPreview } from "@/components/shared/MarkdownEditor";
 import { BasicInfoCard } from "./BasicInfoCard";
-import { OperatingConditionsCard } from "./OperatingConditionsCard";
-import { EquipmentCard } from "./EquipmentCard";
-import { TagsCard } from "./TagsCard";
-import { SummaryTab } from "./SummaryTab";
-import { glassCardStyles } from "./styles";
-import { useAuthStore } from "@/store/useAuthStore";
+	import { OperatingConditionsCard } from "./OperatingConditionsCard";
+	import { EquipmentCard } from "./EquipmentCard";
+	import { TagsCard } from "./TagsCard";
+	import { SummaryTab } from "./SummaryTab";
+	import { RevisionsTab } from "./RevisionsTab";
+	import { glassCardStyles } from "./styles";
+	import { useAuthStore } from "@/store/useAuthStore";
 import { PipelineHydraulicsCard } from "./PipelineHydraulicsCard";
 import { WORKFLOW_STATUS_SEQUENCE, getWorkflowStatusColor, getWorkflowStatusLabel, SIZING_STATUS_SEQUENCE, getSizingStatusColor, getSizingStatusLabel } from "@/lib/statusColors";
 import { RevisionBadge } from "./RevisionBadge";
@@ -2125,15 +2126,16 @@ export function ProtectiveSystemDetail() {
                             minHeight: 56,
                         },
                     }}
-                >
-                    <Tab label="Overview" />
-                    <Tab label="Scenarios" />
-                    <Tab label="Sizing" />
-                    <Tab label="Notes" />
-                    <Tab label="Attachments" />
-                    <Tab label="Summary" />
-                </Tabs>
-            </Paper>
+	                >
+	                    <Tab label="Overview" />
+	                    <Tab label="Scenarios" />
+	                    <Tab label="Sizing" />
+	                    <Tab label="Notes" />
+	                    <Tab label="Attachments" />
+	                    <Tab label="Revisions" />
+	                    <Tab label="Summary" />
+	                </Tabs>
+	            </Paper>
 
             {/* Tab Panels */}
             <TabPanel value={activeTab} index={0}>
@@ -2148,12 +2150,15 @@ export function ProtectiveSystemDetail() {
             <TabPanel value={activeTab} index={3}>
                 <NotesTab />
             </TabPanel>
-            <TabPanel value={activeTab} index={4}>
-                <AttachmentsTab />
-            </TabPanel>
-            <TabPanel value={activeTab} index={5}>
-                <SummaryTab />
-            </TabPanel>
+	            <TabPanel value={activeTab} index={4}>
+	                <AttachmentsTab />
+	            </TabPanel>
+	            <TabPanel value={activeTab} index={5}>
+	                <RevisionsTab entityId={selectedPsv.id} currentRevisionId={selectedPsv.currentRevisionId} />
+	            </TabPanel>
+	            <TabPanel value={activeTab} index={6}>
+	                <SummaryTab />
+	            </TabPanel>
 
             {/* New Revision Dialog */}
             <NewRevisionDialog

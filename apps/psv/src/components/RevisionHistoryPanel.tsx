@@ -96,8 +96,9 @@ export function RevisionHistoryPanel({
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const currentUser = useAuthStore((state) => state.currentUser);
     const canEdit = useAuthStore((state) => state.canEdit());
-    const canApprove = useAuthStore((state) => state.canApprove());
-    const canCheck = useAuthStore((state) => ['lead', 'approver', 'admin'].includes(state.currentUser?.role || ''));
+    const canApproveSignature = useAuthStore(
+        (state) => state.isAuthenticated && ['lead', 'approver', 'admin'].includes(state.currentUser?.role || '')
+    );
     const canManualEdit = isAuthenticated && ['lead', 'approver', 'admin'].includes(currentUser?.role || '');
     const canCreateRevisions = isAuthenticated && canEdit;
     const canDeleteRevisions = canManualEdit;
@@ -119,6 +120,10 @@ export function RevisionHistoryPanel({
             : 'Sizing Case';
 
     const currentRevision = getCurrentRevision(entityType, entityId);
+    const revisionCountForEntity = revisionHistory.filter(
+        (r) => r.entityType === entityType && r.entityId === entityId
+    ).length;
+    const cannotDeleteLastRevision = revisionCountForEntity <= 1;
 
     const handleEditClick = (revision: RevisionHistory) => {
         setEditingRevision(revision);
@@ -138,7 +143,7 @@ export function RevisionHistoryPanel({
     };
 
     const signChecker = async (revision: RevisionHistory) => {
-        if (!currentUser || !canCheck || revision.checkedBy) return;
+        if (!currentUser || !isAuthenticated || revision.checkedBy) return;
         await updateRevision(revision.id, {
             checkedBy: currentUser.id,
             checkedAt: new Date().toISOString(),
@@ -146,7 +151,7 @@ export function RevisionHistoryPanel({
     };
 
     const signApprover = async (revision: RevisionHistory) => {
-        if (!currentUser || !canApprove || revision.approvedBy) return;
+        if (!currentUser || !canApproveSignature || revision.approvedBy) return;
         await updateRevision(revision.id, {
             approvedBy: currentUser.id,
             approvedAt: new Date().toISOString(),
@@ -187,12 +192,14 @@ export function RevisionHistoryPanel({
     };
 
     const handleDeleteClick = (revision: RevisionHistory) => {
+        if (cannotDeleteLastRevision) return;
         setRevisionToDelete(revision);
         setDeleteDialogOpen(true);
     };
 
     const handleConfirmDelete = async () => {
         if (!revisionToDelete || !canDeleteRevisions) return;
+        if (cannotDeleteLastRevision) return;
         await deleteRevision(revisionToDelete.id);
         setDeleteDialogOpen(false);
         setRevisionToDelete(null);
@@ -305,13 +312,21 @@ export function RevisionHistoryPanel({
                                                             </IconButton>
                                                         </span>
                                                     </Tooltip>
-                                                    <Tooltip title={isAuthenticated ? 'Delete Revision' : 'Sign in to edit'}>
+                                                    <Tooltip
+                                                        title={
+                                                            !canDeleteRevisions
+                                                                ? (isAuthenticated ? 'Insufficient permission' : 'Sign in to edit')
+                                                                : cannotDeleteLastRevision
+                                                                    ? 'At least one revision must remain'
+                                                                    : 'Delete Revision'
+                                                        }
+                                                    >
                                                         <span>
                                                             <IconButton
                                                                 size="small"
                                                                 color="error"
                                                                 onClick={() => handleDeleteClick(revision)}
-                                                                disabled={!canDeleteRevisions}
+                                                                disabled={!canDeleteRevisions || cannotDeleteLastRevision}
                                                             >
                                                                 <Delete fontSize="small" />
                                                             </IconButton>
@@ -398,12 +413,12 @@ export function RevisionHistoryPanel({
                                                         }
                                                     </Typography>
                                                     {!revision.checkedBy && (
-                                                        <Tooltip title={canCheck ? 'Sign as checker' : isAuthenticated ? 'Insufficient permission' : 'Sign in to sign'}>
+                                                        <Tooltip title={isAuthenticated ? 'Sign as checker' : 'Sign in to sign'}>
                                                             <span>
                                                                 <IconButton
                                                                     size="small"
                                                                     onClick={() => signChecker(revision)}
-                                                                    disabled={!canCheck || !currentUser}
+                                                                    disabled={!isAuthenticated || !currentUser}
                                                                 >
                                                                     <HowToReg fontSize="small" />
                                                                 </IconButton>
@@ -447,12 +462,12 @@ export function RevisionHistoryPanel({
                                                         }
                                                     </Typography>
                                                     {!revision.approvedBy && (
-                                                        <Tooltip title={canApprove ? 'Sign as approver' : isAuthenticated ? 'Insufficient permission' : 'Sign in to sign'}>
+                                                        <Tooltip title={canApproveSignature ? 'Sign as approver' : isAuthenticated ? 'Requires Lead/Approver/Admin role' : 'Sign in to sign'}>
                                                             <span>
                                                                 <IconButton
                                                                     size="small"
                                                                     onClick={() => signApprover(revision)}
-                                                                    disabled={!canApprove || !currentUser}
+                                                                    disabled={!canApproveSignature || !currentUser}
                                                                 >
                                                                     <HowToReg fontSize="small" />
                                                                 </IconButton>
@@ -529,6 +544,11 @@ export function RevisionHistoryPanel({
                             ? `This permanently deletes Rev. ${revisionToDelete.revisionCode}.`
                             : 'This permanently deletes the selected revision.'}
                     </Typography>
+                    {cannotDeleteLastRevision && (
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                            At least one revision must remain.
+                        </Typography>
+                    )}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
@@ -536,7 +556,7 @@ export function RevisionHistoryPanel({
                         color="error"
                         variant="contained"
                         onClick={handleConfirmDelete}
-                        disabled={!revisionToDelete || !canDeleteRevisions}
+                        disabled={!revisionToDelete || !canDeleteRevisions || cannotDeleteLastRevision}
                     >
                         Delete
                     </Button>
