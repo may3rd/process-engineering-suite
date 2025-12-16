@@ -364,31 +364,35 @@ export function TopToolbar({ title = "PSV Sizing", onBack }: TopToolbarProps) {
                                 onChange={(_e, value) => {
                                     if (value) void handleNavigate(value);
                                 }}
-                                renderOption={(props, option) => (
-                                    <Box
-                                        component="li"
-                                        {...props}
-                                        sx={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            gap: 1,
-                                            py: 1,
-                                        }}
-                                    >
-                                        <Box sx={{ color: 'primary.main', display: 'flex', alignItems: 'center' }}>
-                                            {getKindIcon(option.kind)}
+                                renderOption={(props, option) => {
+                                    const { key, ...otherProps } = props;
+                                    return (
+                                        <Box
+                                            key={key}
+                                            component="li"
+                                            {...otherProps}
+                                            sx={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 1,
+                                                py: 1,
+                                            }}
+                                        >
+                                            <Box sx={{ color: 'primary.main', display: 'flex', alignItems: 'center' }}>
+                                                {getKindIcon(option.kind)}
+                                            </Box>
+                                            <Box sx={{ minWidth: 0, flex: 1 }}>
+                                                <Typography variant="body2" fontWeight={600} noWrap>
+                                                    {option.label}
+                                                </Typography>
+                                                <Typography variant="caption" color="text.secondary" noWrap>
+                                                    {option.secondary}
+                                                </Typography>
+                                            </Box>
+                                            <ArrowRightAlt fontSize="small" style={{ opacity: 0.5 }} />
                                         </Box>
-                                        <Box sx={{ minWidth: 0, flex: 1 }}>
-                                            <Typography variant="body2" fontWeight={600} noWrap>
-                                                {option.label}
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary" noWrap>
-                                                {option.secondary}
-                                            </Typography>
-                                        </Box>
-                                        <ArrowRightAlt fontSize="small" style={{ opacity: 0.5 }} />
-                                    </Box>
-                                )}
+                                    );
+                                }}
                                 renderInput={(params) => (
                                     <TextField
                                         {...params}

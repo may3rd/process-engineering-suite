@@ -76,19 +76,19 @@ import { SortConfig, toggleSortConfig, sortByGetter } from "@/lib/sortUtils";
 import { TableSortButton } from "@/components/shared/TableSortButton";
 import { MarkdownPreview } from "@/components/shared/MarkdownEditor";
 import { BasicInfoCard } from "./BasicInfoCard";
-	import { OperatingConditionsCard } from "./OperatingConditionsCard";
-	import { EquipmentCard } from "./EquipmentCard";
-	import { TagsCard } from "./TagsCard";
-	import { SummaryTab } from "./SummaryTab";
-	import { RevisionsTab } from "./RevisionsTab";
-	import { glassCardStyles } from "./styles";
-	import { useAuthStore } from "@/store/useAuthStore";
+import { OperatingConditionsCard } from "./OperatingConditionsCard";
+import { EquipmentCard } from "./EquipmentCard";
+import { TagsCard } from "./TagsCard";
+import { SummaryTab } from "./SummaryTab";
+import { RevisionsTab } from "./RevisionsTab";
+import { glassCardStyles } from "./styles";
+import { useAuthStore } from "@/store/useAuthStore";
 import { PipelineHydraulicsCard } from "./PipelineHydraulicsCard";
 import { WORKFLOW_STATUS_SEQUENCE, getWorkflowStatusColor, getWorkflowStatusLabel, SIZING_STATUS_SEQUENCE, getSizingStatusColor, getSizingStatusLabel } from "@/lib/statusColors";
 import { RevisionBadge } from "./RevisionBadge";
 import { NewRevisionDialog } from "./NewRevisionDialog";
-	import { RevisionHistoryPanel } from "./RevisionHistoryPanel";
-	import { SnapshotPreviewDialog } from "./SnapshotPreviewDialog";
+import { RevisionHistoryPanel } from "./RevisionHistoryPanel";
+import { SnapshotPreviewDialog } from "./SnapshotPreviewDialog";
 import { RevisionHistory } from "@/data/types";
 import { sortRevisionsByOriginatedAtDesc } from "@/lib/revisionSort";
 import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
@@ -117,7 +117,6 @@ function TabPanel(props: TabPanelProps) {
     );
 }
 
-// Overview Tab Content
 function OverviewTab() {
     const { selectedPsv } = usePsvStore();
     const { unitSystem, units } = useProjectUnitSystem();
@@ -125,15 +124,24 @@ function OverviewTab() {
     if (!selectedPsv) return null;
 
     return (
-        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' }, gap: 3 }}>
+        <Box
+            sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', lg: '2fr 1fr' },
+                gap: 3,
+                maxWidth: '100%',
+                width: '100%',
+                overflow: 'hidden',
+            }}
+        >
             {/* Left Column */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
                 <BasicInfoCard psv={selectedPsv} />
                 <EquipmentCard psv={selectedPsv} />
             </Box>
 
             {/* Right Column */}
-            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
                 <OperatingConditionsCard psv={selectedPsv} />
                 <TagsCard psv={selectedPsv} />
             </Box>
@@ -287,17 +295,17 @@ function ScenariosTab() {
                 )}
             </Box>
 
-	            {/* Scenario Status Indicator Bar */}
-	            <Box
-	                sx={{
-	                    display: 'flex',
-	                    columnGap: 1,
-	                    rowGap: 1,
-	                    mb: 3,
-	                    // Wrap on all viewports (mobile-first)
-	                    flexWrap: 'wrap',
-	                }}
-	            >
+            {/* Scenario Status Indicator Bar */}
+            <Box
+                sx={{
+                    display: 'flex',
+                    columnGap: 1,
+                    rowGap: 1,
+                    mb: 3,
+                    // Wrap on all viewports (mobile-first)
+                    flexWrap: 'wrap',
+                }}
+            >
                 {ALL_SCENARIO_CAUSES.map(({ cause, label }) => {
                     const isAdded = addedCauses.has(cause);
                     return (
@@ -461,7 +469,7 @@ function ScenariosTab() {
                                         </Box>
                                         <Box>
                                             <Typography variant="caption" color="text.secondary">Phase</Typography>
-                                            <Typography variant="body1" fontWeight={600} sx={{ textTransform: 'uppercase'}}>{scenario.phase}</Typography>
+                                            <Typography variant="body1" fontWeight={600} sx={{ textTransform: 'uppercase' }}>{scenario.phase}</Typography>
                                         </Box>
                                         <Box>
                                             <Typography variant="caption" color="text.secondary">Required Capacity</Typography>
@@ -1410,10 +1418,10 @@ function NotesTab() {
                             {filteredTodos.map((todo, index) => {
                                 const assignee = todo.assignedTo ? getUserById(todo.assignedTo) : null;
                                 return (
-                                        <ListItem
-                                            key={todo.id}
-                                            divider={index < filteredTodos.length - 1}
-                                            secondaryAction={
+                                    <ListItem
+                                        key={todo.id}
+                                        divider={index < filteredTodos.length - 1}
+                                        secondaryAction={
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                                 {todo.dueDate && (
                                                     <Chip
@@ -1808,12 +1816,12 @@ export function ProtectiveSystemDetail() {
         deleteSizingCase,
         getCurrentRevision,
         loadRevisionHistory,
-	    } = usePsvStore();
-	    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-	    const canEdit = useAuthStore((state) => state.canEdit());
-	    const canApprove = useAuthStore((state) => state.canApprove());
-	    const canCheck = useAuthStore((state) => ['lead', 'approver', 'admin'].includes(state.currentUser?.role || ''));
-	    const canIssue = canCheck || canApprove;
+    } = usePsvStore();
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+    const canEdit = useAuthStore((state) => state.canEdit());
+    const canApprove = useAuthStore((state) => state.canApprove());
+    const canCheck = useAuthStore((state) => ['lead', 'approver', 'admin'].includes(state.currentUser?.role || ''));
+    const canIssue = canCheck || canApprove;
     const [activeTab, setActiveTab] = useState(0);
     const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -1838,18 +1846,18 @@ export function ProtectiveSystemDetail() {
         (async () => {
             await loadRevisionHistory('protective_system', selectedPsv.id);
             if (cancelled) return;
-	            const history = usePsvStore
-	                .getState()
-	                .revisionHistory
-	                .filter((r) => r.entityType === 'protective_system' && r.entityId === selectedPsv.id)
-	            setPsvRevisions(sortRevisionsByOriginatedAtDesc(history));
-	        })();
+            const history = usePsvStore
+                .getState()
+                .revisionHistory
+                .filter((r) => r.entityType === 'protective_system' && r.entityId === selectedPsv.id)
+            setPsvRevisions(sortRevisionsByOriginatedAtDesc(history));
+        })();
         return () => {
             cancelled = true;
         };
     }, [loadRevisionHistory, selectedPsv]);
 
-	    const latestPsvRevision = useMemo(() => sortRevisionsByOriginatedAtDesc(psvRevisions)[0], [psvRevisions]);
+    const latestPsvRevision = useMemo(() => sortRevisionsByOriginatedAtDesc(psvRevisions)[0], [psvRevisions]);
 
     const displayedRevision =
         (selectedPsv?.currentRevisionId
@@ -1867,23 +1875,23 @@ export function ProtectiveSystemDetail() {
         if (!selectedPsv) return;
         setRevisionMenuAnchor(event.currentTarget);
         await loadRevisionHistory('protective_system', selectedPsv.id);
-	        const history = usePsvStore
-	            .getState()
-	            .revisionHistory
-	            .filter((r) => r.entityType === 'protective_system' && r.entityId === selectedPsv.id)
-	        setPsvRevisions(sortRevisionsByOriginatedAtDesc(history));
-	    };
+        const history = usePsvStore
+            .getState()
+            .revisionHistory
+            .filter((r) => r.entityType === 'protective_system' && r.entityId === selectedPsv.id)
+        setPsvRevisions(sortRevisionsByOriginatedAtDesc(history));
+    };
 
     const handleRevisionMenuClose = () => {
         setRevisionMenuAnchor(null);
     };
 
-	    const handleRevisionSelect = async (revisionId: string) => {
-	        if (!selectedPsv) return;
-	        if (!isAuthenticated) return;
-	        await updatePsv({ ...selectedPsv, currentRevisionId: revisionId });
-	        handleRevisionMenuClose();
-	    };
+    const handleRevisionSelect = async (revisionId: string) => {
+        if (!selectedPsv) return;
+        if (!isAuthenticated) return;
+        await updatePsv({ ...selectedPsv, currentRevisionId: revisionId });
+        handleRevisionMenuClose();
+    };
 
     // If editing a case, show the workspace
     if (editingCaseId) {
@@ -2028,46 +2036,46 @@ export function ProtectiveSystemDetail() {
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
                             <Typography variant="h4" fontWeight={700}>
                                 {selectedPsv.tag}
-	                            </Typography>
-	                            <RevisionBadge
-	                                revisionCode={displayedRevisionCode}
-	                                onClick={handleRevisionMenuOpen}
-	                            />
-		                            <Menu
-		                                anchorEl={revisionMenuAnchor}
-		                                open={Boolean(revisionMenuAnchor)}
-		                                onClose={handleRevisionMenuClose}
-		                                slots={{ transition: Fade }}
-		                            >
-		                                <MenuItem
-		                                    onClick={() => {
-		                                        setRevisionPanelOpen(true);
-		                                        handleRevisionMenuClose();
-		                                    }}
-		                                >
-		                                    <ListItemText>Revision History…</ListItemText>
-		                                </MenuItem>
-		                                {isAuthenticated
-		                                    ? [
-		                                        <Divider key="revision-divider" />,
-		                                        ...psvRevisions.map((revision) => (
-		                                            <MenuItem
-		                                                key={revision.id}
-		                                                selected={revision.id === revisionMenuCurrentId}
-		                                                onClick={() => handleRevisionSelect(revision.id)}
-		                                            >
-		                                                <ListItemText
-		                                                    primary={`Rev. ${revision.revisionCode}`}
-		                                                    secondary={revision.description || undefined}
-		                                                />
-		                                            </MenuItem>
-		                                        )),
-		                                    ]
-		                                    : null}
-		                            </Menu>
-		                            <Chip
-		                                icon={getStatusIcon(selectedPsv.status)}
-		                                label={getWorkflowStatusLabel(selectedPsv.status)}
+                            </Typography>
+                            <RevisionBadge
+                                revisionCode={displayedRevisionCode}
+                                onClick={handleRevisionMenuOpen}
+                            />
+                            <Menu
+                                anchorEl={revisionMenuAnchor}
+                                open={Boolean(revisionMenuAnchor)}
+                                onClose={handleRevisionMenuClose}
+                                slots={{ transition: Fade }}
+                            >
+                                <MenuItem
+                                    onClick={() => {
+                                        setRevisionPanelOpen(true);
+                                        handleRevisionMenuClose();
+                                    }}
+                                >
+                                    <ListItemText>Revision History…</ListItemText>
+                                </MenuItem>
+                                {isAuthenticated
+                                    ? [
+                                        <Divider key="revision-divider" />,
+                                        ...psvRevisions.map((revision) => (
+                                            <MenuItem
+                                                key={revision.id}
+                                                selected={revision.id === revisionMenuCurrentId}
+                                                onClick={() => handleRevisionSelect(revision.id)}
+                                            >
+                                                <ListItemText
+                                                    primary={`Rev. ${revision.revisionCode}`}
+                                                    secondary={revision.description || undefined}
+                                                />
+                                            </MenuItem>
+                                        )),
+                                    ]
+                                    : null}
+                            </Menu>
+                            <Chip
+                                icon={getStatusIcon(selectedPsv.status)}
+                                label={getWorkflowStatusLabel(selectedPsv.status)}
                                 color={getWorkflowStatusColor(selectedPsv.status) as any}
                                 onClick={canOpenStatusMenu ? handleStatusClick : undefined}
                                 deleteIcon={canOpenStatusMenu ? <KeyboardArrowDown /> : undefined}
@@ -2221,34 +2229,34 @@ export function ProtectiveSystemDetail() {
             </Dialog>
 
             {/* Tabs */}
-	            <Paper className="print-hide" sx={{ mb: 3 }}>
-	                <Tabs
-	                    value={activeTab}
-	                    onChange={handleTabChange}
-	                    indicatorColor="primary"
-	                    textColor="primary"
-	                    sx={{
-	                        borderBottom: 1,
-	                        borderColor: 'divider',
-	                        '& .MuiTabs-flexContainer': {
-	                            flexWrap: 'wrap',
-	                        },
-	                        '& .MuiTab-root': {
-	                            minHeight: 56,
-	                            minWidth: { xs: 120, sm: 140 },
-	                            flex: { xs: '1 1 auto', sm: '0 0 auto' },
-	                        },
-	                    }}
-	                >
-	                    <Tab label="Overview" />
-	                    <Tab label="Scenarios" />
-	                    <Tab label="Sizing" />
-	                    <Tab label="Notes" />
-	                    <Tab label="Attachments" />
-	                    <Tab label="Revisions" />
-	                    <Tab label="Summary" />
-	                </Tabs>
-	            </Paper>
+            <Paper className="print-hide" sx={{ mb: 3 }}>
+                <Tabs
+                    value={activeTab}
+                    onChange={handleTabChange}
+                    indicatorColor="primary"
+                    textColor="primary"
+                    sx={{
+                        borderBottom: 1,
+                        borderColor: 'divider',
+                        '& .MuiTabs-flexContainer': {
+                            flexWrap: 'wrap',
+                        },
+                        '& .MuiTab-root': {
+                            minHeight: 56,
+                            minWidth: { xs: 120, sm: 140 },
+                            flex: { xs: '1 1 auto', sm: '0 0 auto' },
+                        },
+                    }}
+                >
+                    <Tab label="Overview" />
+                    <Tab label="Scenarios" />
+                    <Tab label="Sizing" />
+                    <Tab label="Notes" />
+                    <Tab label="Attachments" />
+                    <Tab label="Revisions" />
+                    <Tab label="Summary" />
+                </Tabs>
+            </Paper>
 
             {/* Tab Panels */}
             <TabPanel value={activeTab} index={0}>
@@ -2263,15 +2271,15 @@ export function ProtectiveSystemDetail() {
             <TabPanel value={activeTab} index={3}>
                 <NotesTab />
             </TabPanel>
-	            <TabPanel value={activeTab} index={4}>
-	                <AttachmentsTab />
-	            </TabPanel>
-	            <TabPanel value={activeTab} index={5}>
-	                <RevisionsTab entityId={selectedPsv.id} currentRevisionId={selectedPsv.currentRevisionId} />
-	            </TabPanel>
-	            <TabPanel value={activeTab} index={6}>
-	                <SummaryTab />
-	            </TabPanel>
+            <TabPanel value={activeTab} index={4}>
+                <AttachmentsTab />
+            </TabPanel>
+            <TabPanel value={activeTab} index={5}>
+                <RevisionsTab entityId={selectedPsv.id} currentRevisionId={selectedPsv.currentRevisionId} />
+            </TabPanel>
+            <TabPanel value={activeTab} index={6}>
+                <SummaryTab />
+            </TabPanel>
 
             {/* New Revision Dialog */}
             <NewRevisionDialog
