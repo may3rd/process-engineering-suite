@@ -10,6 +10,7 @@ import {
     DialogContent,
     DialogTitle,
     Button,
+    IconButton,
     Chip,
     Divider,
     Paper,
@@ -21,7 +22,7 @@ import {
     Tooltip,
     Typography,
 } from '@mui/material';
-import { Add, HowToReg, History, Verified, CheckCircle, Person } from '@mui/icons-material';
+import { Add, HowToReg, History, Verified, CheckCircle, Person, Undo } from '@mui/icons-material';
 
 import { usePsvStore } from '@/store/usePsvStore';
 import { useAuthStore } from '@/store/useAuthStore';
@@ -76,6 +77,11 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
     const [newRevisionOpen, setNewRevisionOpen] = useState(false);
     const [selectCurrentOpen, setSelectCurrentOpen] = useState(false);
     const [nextCurrentRevisionId, setNextCurrentRevisionId] = useState<string>('');
+
+    const canManualEdit = useMemo(() => {
+        const role = currentUser?.role;
+        return isAuthenticated && !!role && ['lead', 'approver', 'admin'].includes(role);
+    }, [currentUser?.role, isAuthenticated]);
 
     const reload = async (): Promise<RevisionHistory[]> => {
         await loadRevisionHistory('protective_system', entityId);
@@ -140,6 +146,62 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
             await updateRevision(currentRevision.id, {
                 approvedBy: currentUser.id,
                 approvedAt: new Date().toISOString(),
+            });
+            await reload();
+        } finally {
+            setIsSigning(null);
+        }
+    };
+
+    const canRevoke = (signedBy?: string | null) =>
+        !!signedBy && !!currentUser && isAuthenticated && (signedBy === currentUser.id || canManualEdit);
+
+    const revokeOriginator = async () => {
+        if (!currentRevision) return;
+        if (!canRevoke(currentRevision.originatedBy)) return;
+        setIsSigning('originator');
+        try {
+            // Cascades to keep revision progress consistent.
+            await updateRevision(currentRevision.id, {
+                originatedBy: null,
+                originatedAt: null,
+                checkedBy: null,
+                checkedAt: null,
+                approvedBy: null,
+                approvedAt: null,
+            });
+            await reload();
+        } finally {
+            setIsSigning(null);
+        }
+    };
+
+    const revokeChecker = async () => {
+        if (!currentRevision) return;
+        if (!canRevoke(currentRevision.checkedBy)) return;
+        setIsSigning('checker');
+        try {
+            // Cascades to keep revision progress consistent.
+            await updateRevision(currentRevision.id, {
+                checkedBy: null,
+                checkedAt: null,
+                approvedBy: null,
+                approvedAt: null,
+            });
+            await reload();
+        } finally {
+            setIsSigning(null);
+        }
+    };
+
+    const revokeApprover = async () => {
+        if (!currentRevision) return;
+        if (!canRevoke(currentRevision.approvedBy)) return;
+        setIsSigning('approver');
+        try {
+            await updateRevision(currentRevision.id, {
+                approvedBy: null,
+                approvedAt: null,
             });
             await reload();
         } finally {
@@ -246,6 +308,9 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
                                     signLabel="Sign for"
                                     onSign={signOriginator}
                                     loading={isSigning === 'originator'}
+                                    canRevoke={canRevoke(currentRevision.originatedBy)}
+                                    onRevoke={revokeOriginator}
+                                    revokeLabel="Revoke originator"
                                 />
                                 <SignatureRow
                                     icon={<CheckCircle sx={{ fontSize: 18, color: 'text.secondary' }} />}
@@ -268,6 +333,9 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
                                     }
                                     onSign={signChecker}
                                     loading={isSigning === 'checker'}
+                                    canRevoke={canRevoke(currentRevision.checkedBy)}
+                                    onRevoke={revokeChecker}
+                                    revokeLabel="Revoke checker"
                                 />
                                 <SignatureRow
                                     icon={<Verified sx={{ fontSize: 18, color: 'text.secondary' }} />}
@@ -296,6 +364,9 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
                                     }
                                     onSign={signApprover}
                                     loading={isSigning === 'approver'}
+                                    canRevoke={canRevoke(currentRevision.approvedBy)}
+                                    onRevoke={revokeApprover}
+                                    revokeLabel="Revoke approver"
                                 />
                             </Stack>
                         </Paper>
@@ -364,6 +435,9 @@ function SignatureRow({
     signDisabledReason,
     onSign,
     loading,
+    canRevoke,
+    onRevoke,
+    revokeLabel,
 }: {
     icon: ReactNode;
     label: string;
@@ -374,6 +448,9 @@ function SignatureRow({
     signDisabledReason?: string;
     onSign: () => void;
     loading: boolean;
+    canRevoke?: boolean;
+    onRevoke?: () => void;
+    revokeLabel?: string;
 }) {
     const signed = !!userId;
     const { label: initials, fullName } = formatUser(userId);
@@ -387,14 +464,29 @@ function SignatureRow({
                     {label}
                 </Typography>
                 {signed ? (
-                    <Tooltip title={fullName} placement="top">
-                        <Chip
-                            label={`${initials} / ${displayDate}`}
-                            size="small"
-                            variant="outlined"
-                            sx={{ cursor: 'pointer' }}
-                        />
-                    </Tooltip>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                        <Tooltip title={fullName} placement="top">
+                            <Chip
+                                label={`${initials} / ${displayDate}`}
+                                size="small"
+                                variant="outlined"
+                                sx={{ cursor: 'pointer' }}
+                            />
+                        </Tooltip>
+                        {onRevoke && (
+                            <Tooltip title={revokeLabel ?? 'Revoke signature'}>
+                                <span>
+                                    <IconButton
+                                        size="small"
+                                        onClick={onRevoke}
+                                        disabled={!canRevoke || loading}
+                                    >
+                                        <Undo fontSize="small" />
+                                    </IconButton>
+                                </span>
+                            </Tooltip>
+                        )}
+                    </Box>
                 ) : (
                     <Typography variant="body2" color="text.secondary">
                         Not signed

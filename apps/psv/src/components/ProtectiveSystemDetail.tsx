@@ -449,7 +449,7 @@ function ScenariosTab() {
                                         </Box>
                                         <Box>
                                             <Typography variant="caption" color="text.secondary">Phase</Typography>
-                                            <Chip label={scenario.phase} size="small" sx={{ textTransform: 'capitalize' }} />
+                                            <Typography variant="body1" fontWeight={600} sx={{ textTransform: 'uppercase'}}>{scenario.phase}</Typography>
                                         </Box>
                                         <Box>
                                             <Typography variant="caption" color="text.secondary">Required Capacity</Typography>
