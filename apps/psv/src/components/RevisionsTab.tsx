@@ -116,6 +116,7 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
 
     const signChecker = async () => {
         if (!currentRevision || !isAuthenticated || !currentUser) return;
+        if (!currentRevision.originatedBy) return;
         if (currentRevision.checkedBy) return;
         setIsSigning('checker');
         try {
@@ -132,6 +133,7 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
     const signApprover = async () => {
         if (!currentRevision || !isAuthenticated || !currentUser) return;
         if (!canApproveSignature) return;
+        if (!currentRevision.originatedBy || !currentRevision.checkedBy) return;
         if (currentRevision.approvedBy) return;
         setIsSigning('approver');
         try {
@@ -250,8 +252,20 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
                                     label="Checker"
                                     userId={currentRevision.checkedBy}
                                     date={currentRevision.checkedAt}
-                                    canSign={isAuthenticated && !!currentUser && !currentRevision.checkedBy}
+                                    canSign={
+                                        isAuthenticated
+                                        && !!currentUser
+                                        && !!currentRevision.originatedBy
+                                        && !currentRevision.checkedBy
+                                    }
                                     signLabel="Sign for"
+                                    signDisabledReason={
+                                        !isAuthenticated
+                                            ? 'Sign in to sign'
+                                            : !currentRevision.originatedBy
+                                                ? 'Originator must sign first'
+                                                : undefined
+                                    }
                                     onSign={signChecker}
                                     loading={isSigning === 'checker'}
                                 />
@@ -264,13 +278,19 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
                                         isAuthenticated
                                         && !!currentUser
                                         && canApproveSignature
+                                        && !!currentRevision.originatedBy
+                                        && !!currentRevision.checkedBy
                                         && !currentRevision.approvedBy
                                     }
                                     signLabel="Sign for"
                                     signDisabledReason={
                                         !isAuthenticated
                                             ? 'Sign in to sign'
-                                            : !canApproveSignature
+                                            : !currentRevision.originatedBy
+                                                ? 'Originator must sign first'
+                                                : !currentRevision.checkedBy
+                                                    ? 'Checker must sign first'
+                                                    : !canApproveSignature
                                                 ? 'Requires Lead/Approver/Admin role'
                                                 : undefined
                                     }

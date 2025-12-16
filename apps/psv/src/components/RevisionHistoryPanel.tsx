@@ -143,7 +143,7 @@ export function RevisionHistoryPanel({
     };
 
     const signChecker = async (revision: RevisionHistory) => {
-        if (!currentUser || !isAuthenticated || revision.checkedBy) return;
+        if (!currentUser || !isAuthenticated || !revision.originatedBy || revision.checkedBy) return;
         await updateRevision(revision.id, {
             checkedBy: currentUser.id,
             checkedAt: new Date().toISOString(),
@@ -151,7 +151,7 @@ export function RevisionHistoryPanel({
     };
 
     const signApprover = async (revision: RevisionHistory) => {
-        if (!currentUser || !canApproveSignature || revision.approvedBy) return;
+        if (!currentUser || !canApproveSignature || !revision.originatedBy || !revision.checkedBy || revision.approvedBy) return;
         await updateRevision(revision.id, {
             approvedBy: currentUser.id,
             approvedAt: new Date().toISOString(),
@@ -413,12 +413,20 @@ export function RevisionHistoryPanel({
                                                         }
                                                     </Typography>
                                                     {!revision.checkedBy && (
-                                                        <Tooltip title={isAuthenticated ? 'Sign as checker' : 'Sign in to sign'}>
+                                                        <Tooltip
+                                                            title={
+                                                                !isAuthenticated
+                                                                    ? 'Sign in to sign'
+                                                                    : !revision.originatedBy
+                                                                        ? 'Originator must sign first'
+                                                                        : 'Sign as checker'
+                                                            }
+                                                        >
                                                             <span>
                                                                 <IconButton
                                                                     size="small"
                                                                     onClick={() => signChecker(revision)}
-                                                                    disabled={!isAuthenticated || !currentUser}
+                                                                    disabled={!isAuthenticated || !currentUser || !revision.originatedBy}
                                                                 >
                                                                     <HowToReg fontSize="small" />
                                                                 </IconButton>
@@ -462,12 +470,24 @@ export function RevisionHistoryPanel({
                                                         }
                                                     </Typography>
                                                     {!revision.approvedBy && (
-                                                        <Tooltip title={canApproveSignature ? 'Sign as approver' : isAuthenticated ? 'Requires Lead/Approver/Admin role' : 'Sign in to sign'}>
+                                                        <Tooltip
+                                                            title={
+                                                                !isAuthenticated
+                                                                    ? 'Sign in to sign'
+                                                                    : !revision.originatedBy
+                                                                        ? 'Originator must sign first'
+                                                                        : !revision.checkedBy
+                                                                            ? 'Checker must sign first'
+                                                                            : canApproveSignature
+                                                                                ? 'Sign as approver'
+                                                                                : 'Requires Lead/Approver/Admin role'
+                                                            }
+                                                        >
                                                             <span>
                                                                 <IconButton
                                                                     size="small"
                                                                     onClick={() => signApprover(revision)}
-                                                                    disabled={!canApproveSignature || !currentUser}
+                                                                    disabled={!canApproveSignature || !currentUser || !revision.originatedBy || !revision.checkedBy}
                                                                 >
                                                                     <HowToReg fontSize="small" />
                                                                 </IconButton>

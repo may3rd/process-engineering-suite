@@ -191,10 +191,7 @@ export function LoginPage({ onSuccess, onContinueAsGuest }: LoginPageProps) {
                         engineer / engineer (Engineer)
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontFamily: 'monospace' }}>
-                        division / division (Division Manager)
-                    </Typography>
-                    <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
-                        Admins can create users and set a temporary password in the Users page.
+                        lead / leadlead (Lead Engineer)
                     </Typography>
                 </Box>
             </Box>

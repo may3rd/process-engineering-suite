@@ -5,7 +5,7 @@ from datetime import datetime, date
 from dateutil import parser as dateutil_parser
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete
+from sqlalchemy import select, update, delete, case
 from sqlalchemy.orm import selectinload
 
 from ..models import (
@@ -226,6 +226,23 @@ class DatabaseService(DataAccessLayer):
         for key, value in clean_data.items():
             if hasattr(instance, key):
                 setattr(instance, key, value)
+
+        # If current revision changes, derive PSV status from that revision's signatures.
+        if "current_revision_id" in clean_data:
+            if instance.status != "issued":
+                next_status = "draft"
+                if instance.current_revision_id:
+                    rev = await self._get_by_id(RevisionHistory, instance.current_revision_id)
+                    if rev:
+                        if rev.originated_by:
+                            next_status = "in_review"
+                            if rev.checked_by:
+                                next_status = "checked"
+                                if rev.approved_by:
+                                    next_status = "approved"
+                        else:
+                            next_status = "draft"
+                instance.status = next_status
         
         # Update project links if provided
         if project_ids is not None:
@@ -419,14 +436,37 @@ class DatabaseService(DataAccessLayer):
         
         await self.session.commit()
         await self.session.refresh(instance)
+
+        # If this revision is the current revision of a PSV, derive PSV status.
+        if instance.entity_type == "protective_system":
+            psv = await self._get_by_id(ProtectiveSystem, instance.entity_id)
+            if psv and psv.current_revision_id == revision_id and psv.status != "issued":
+                next_status = "draft"
+                if instance.originated_by:
+                    next_status = "in_review"
+                    if instance.checked_by:
+                        next_status = "checked"
+                        if instance.approved_by:
+                            next_status = "approved"
+                psv.status = next_status
+                await self.session.commit()
+                await self.session.refresh(psv)
+
         return instance
 
     async def delete_revision(self, revision_id: str) -> bool:
         """Delete a revision and clear any current_revision_id references."""
         # First, clear references from entities so FK constraints don't block deletes.
+        # Update status to draft when current revision is removed (unless already issued).
         stmt_psv = update(ProtectiveSystem).where(
             ProtectiveSystem.current_revision_id == revision_id
-        ).values(current_revision_id=None)
+        ).values(
+            current_revision_id=None,
+            status=case(
+                (ProtectiveSystem.status == "issued", "issued"),
+                else_="draft",
+            )
+        )
         stmt_scenario = update(OverpressureScenario).where(
             OverpressureScenario.current_revision_id == revision_id
         ).values(current_revision_id=None)

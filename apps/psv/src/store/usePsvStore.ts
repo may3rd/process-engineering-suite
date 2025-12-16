@@ -23,6 +23,17 @@ import { toast } from '@/lib/toast';
 // Get the appropriate data service based on environment
 const dataService = getDataService();
 
+function derivePsvStatusFromRevision(
+    revision: Pick<RevisionHistory, 'originatedBy' | 'checkedBy' | 'approvedBy'> | undefined,
+    currentStatus?: ProtectiveSystem['status']
+): ProtectiveSystem['status'] {
+    if (currentStatus === 'issued') return 'issued';
+    if (!revision?.originatedBy) return 'draft';
+    if (!revision.checkedBy) return 'in_review';
+    if (!revision.approvedBy) return 'checked';
+    return 'approved';
+}
+
 function handleOptionalFetch<T>(promise: Promise<T>, label: string, fallback: T): Promise<T> {
     return promise.catch((error) => {
         const message = error instanceof Error ? error.message : String(error);
@@ -718,7 +729,19 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     updatePsv: async (updatedPsv) => {
         try {
-            const updated = await dataService.updateProtectiveSystem(updatedPsv.id, updatedPsv);
+            const state = get();
+            const existing = state.protectiveSystems.find((p) => p.id === updatedPsv.id) ?? state.selectedPsv;
+            const currentRevisionChanged =
+                updatedPsv.currentRevisionId !== undefined
+                && updatedPsv.currentRevisionId !== existing?.currentRevisionId;
+
+            const nextPayload = { ...updatedPsv };
+            if (currentRevisionChanged && (existing?.status ?? nextPayload.status) !== 'issued') {
+                const rev = state.revisionHistory.find((r) => r.id === updatedPsv.currentRevisionId);
+                nextPayload.status = derivePsvStatusFromRevision(rev, existing?.status ?? nextPayload.status);
+            }
+
+            const updated = await dataService.updateProtectiveSystem(updatedPsv.id, nextPayload);
             set((state) => {
                 const newList = state.psvList.map(p => p.id === updated.id ? updated : p);
                 return {
@@ -1420,19 +1443,20 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             sequence: nextSequence,
             description,
             snapshot,
-            originatedBy: undefined, // TODO: Get from auth store
-            originatedAt: new Date().toISOString(),
         });
 
         // Update entity's currentRevisionId
         if (entityType === 'protective_system') {
-            await dataService.updateProtectiveSystem(entityId, { currentRevisionId: newRevision.id });
+            await dataService.updateProtectiveSystem(entityId, {
+                currentRevisionId: newRevision.id,
+                status: 'draft',
+            });
             set((state) => ({
                 protectiveSystems: state.protectiveSystems.map(p =>
-                    p.id === entityId ? { ...p, currentRevisionId: newRevision.id } : p
+                    p.id === entityId ? { ...p, currentRevisionId: newRevision.id, status: 'draft' } : p
                 ),
                 selectedPsv: state.selectedPsv?.id === entityId
-                    ? { ...state.selectedPsv, currentRevisionId: newRevision.id }
+                    ? { ...state.selectedPsv, currentRevisionId: newRevision.id, status: 'draft' }
                     : state.selectedPsv,
                 revisionHistory: [newRevision, ...state.revisionHistory],
             }));
@@ -1477,12 +1501,47 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     },
 
     updateRevision: async (revisionId: string, updates: Partial<RevisionHistory>) => {
+        const state = get();
+        const existing = state.revisionHistory.find((r) => r.id === revisionId);
         await dataService.updateRevision(revisionId, updates);
-        set((state) => ({
-            revisionHistory: state.revisionHistory.map(r =>
+        const merged = existing ? ({ ...existing, ...updates } as RevisionHistory) : undefined;
+
+        set((state) => {
+            const nextRevisionHistory = state.revisionHistory.map((r) =>
                 r.id === revisionId ? { ...r, ...updates } : r
-            ),
-        }));
+            );
+
+            if (!merged || merged.entityType !== 'protective_system') {
+                return { revisionHistory: nextRevisionHistory };
+            }
+
+            const psvId = merged.entityId;
+            const apply = (psv: ProtectiveSystem) => {
+                if (psv.id !== psvId) return psv;
+                if (psv.status === 'issued') return psv;
+                if (psv.currentRevisionId !== revisionId) return psv;
+                const nextStatus = derivePsvStatusFromRevision(merged, psv.status);
+                return nextStatus === psv.status ? psv : { ...psv, status: nextStatus };
+            };
+
+            return {
+                revisionHistory: nextRevisionHistory,
+                protectiveSystems: state.protectiveSystems.map(apply),
+                psvList: state.psvList.map(apply),
+                selectedPsv: state.selectedPsv ? apply(state.selectedPsv) : state.selectedPsv,
+            };
+        });
+
+        if (merged?.entityType === 'protective_system') {
+            const psv = get().protectiveSystems.find((p) => p.id === merged.entityId) ?? get().selectedPsv;
+            if (psv && psv.currentRevisionId === revisionId && psv.status !== 'issued') {
+                const nextStatus = derivePsvStatusFromRevision(merged, psv.status);
+                if (nextStatus !== psv.status) {
+                    await dataService.updateProtectiveSystem(merged.entityId, { status: nextStatus });
+                }
+            }
+        }
+
         toast.success('Revision updated');
     },
 

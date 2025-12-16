@@ -128,7 +128,23 @@ class MockService(DataAccessLayer):
             if psv["id"] == psv_id:
                 data["id"] = psv_id
                 data["updatedAt"] = datetime.utcnow().isoformat()
-                self._data["protectiveSystems"][i] = {**psv, **data}
+                next_psv = {**psv, **data}
+
+                # If currentRevisionId changes, derive PSV status from that revision's signatures.
+                if "currentRevisionId" in data and next_psv.get("status") != "issued":
+                    next_status = "draft"
+                    current_rev_id = next_psv.get("currentRevisionId")
+                    if current_rev_id:
+                        rev = next((r for r in self._data.get("revisionHistory", []) if r.get("id") == current_rev_id), None)
+                        if rev and rev.get("originatedBy"):
+                            next_status = "in_review"
+                            if rev.get("checkedBy"):
+                                next_status = "checked"
+                                if rev.get("approvedBy"):
+                                    next_status = "approved"
+                    next_psv["status"] = next_status
+
+                self._data["protectiveSystems"][i] = next_psv
                 return self._data["protectiveSystems"][i]
         raise ValueError(f"PSV not found: {psv_id}")
     
@@ -340,8 +356,26 @@ class MockService(DataAccessLayer):
     async def update_revision(self, revision_id: str, data: dict) -> dict:
         for i, rev in enumerate(self._data.get("revisionHistory", [])):
             if rev["id"] == revision_id:
-                self._data["revisionHistory"][i] = {**rev, **data}
-                return self._data["revisionHistory"][i]
+                next_rev = {**rev, **data}
+                self._data["revisionHistory"][i] = next_rev
+
+                # If this is the current revision of a PSV, derive PSV status.
+                if next_rev.get("entityType") == "protective_system":
+                    psv_id = next_rev.get("entityId")
+                    if psv_id:
+                        for j, psv in enumerate(self._data.get("protectiveSystems", [])):
+                            if psv.get("id") == psv_id and psv.get("currentRevisionId") == revision_id and psv.get("status") != "issued":
+                                next_status = "draft"
+                                if next_rev.get("originatedBy"):
+                                    next_status = "in_review"
+                                    if next_rev.get("checkedBy"):
+                                        next_status = "checked"
+                                        if next_rev.get("approvedBy"):
+                                            next_status = "approved"
+                                self._data["protectiveSystems"][j] = {**psv, "status": next_status}
+                                break
+
+                return next_rev
         raise ValueError(f"Revision not found: {revision_id}")
 
     async def delete_revision(self, revision_id: str) -> bool:
@@ -349,6 +383,13 @@ class MockService(DataAccessLayer):
         for i, rev in enumerate(revisions):
             if rev.get("id") == revision_id:
                 del revisions[i]
+                # Clear currentRevisionId + set status draft for affected PSVs (unless issued).
+                for j, psv in enumerate(self._data.get("protectiveSystems", [])):
+                    if psv.get("currentRevisionId") == revision_id:
+                        next = {**psv, "currentRevisionId": None}
+                        if next.get("status") != "issued":
+                            next["status"] = "draft"
+                        self._data["protectiveSystems"][j] = next
                 return True
         return False
 
