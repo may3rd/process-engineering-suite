@@ -41,6 +41,7 @@ import { MarkdownEditor } from "@/components/shared/MarkdownEditor";
 import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
 import { useUnitConversion } from "@/hooks/useUnitConversion";
 import { getDefaultUnitPreferences } from "@/lib/unitPreferences";
+import { useDisplaySettings } from "@/hooks/useDisplaySettings";
 
 interface ScenarioEditorProps {
     initialData?: OverpressureScenario;
@@ -156,10 +157,14 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
 
+    // Get decimal place settings from user preferences
+    const { decimalPlaces } = useDisplaySettings();
+
     // Convert base values (kg/h, barg, °C) to display values in selected units
-    const relievingRateDisplay = toDisplay(formData.relievingRate ?? 0, 'flow');
-    const relievingPressureDisplay = toDisplay(formData.relievingPressure ?? 0, 'pressure');
-    const relievingTempDisplay = toDisplay(formData.relievingTemp ?? 0, 'temperature');
+    // Apply user's decimal place preferences
+    const relievingRateDisplay = Number(toDisplay(formData.relievingRate ?? 0, 'flow').toFixed(decimalPlaces.flow));
+    const relievingPressureDisplay = Number(toDisplay(formData.relievingPressure ?? 0, 'pressure').toFixed(decimalPlaces.pressure));
+    const relievingTempDisplay = Number(toDisplay(formData.relievingTemp ?? 0, 'temperature').toFixed(decimalPlaces.temperature));
 
     const handleConfirmDelete = () => {
         if (onDelete && initialData && deleteConfirmationInput === "delete scenario") {

@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState } from "react";
+import { ReactNode, useState, useEffect } from "react";
 import {
     Box,
     Paper,
@@ -14,6 +14,7 @@ import {
     Alert,
     Tabs,
     Tab,
+    MenuItem,
 } from "@mui/material";
 import {
     Close,
@@ -26,6 +27,7 @@ import {
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
 import { glassCardStyles } from "./styles";
+import { DEFAULT_DISPLAY_SETTINGS } from "@/hooks/useDisplaySettings";
 
 interface TabPanelProps {
     children?: ReactNode;
@@ -39,6 +41,114 @@ function TabPanel(props: TabPanelProps) {
         <div role="tabpanel" hidden={value !== index}>
             {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
         </div>
+    );
+}
+
+const DECIMAL_OPTIONS = [0, 1, 2, 3, 4];
+
+function SystemSettingsPanel() {
+    const { currentUser, updateUserProfile } = useAuthStore();
+    const [saveSuccess, setSaveSuccess] = useState(false);
+
+    // Initialize from user settings or defaults
+    const [pressureDecimals, setPressureDecimals] = useState(
+        currentUser?.displaySettings?.decimalPlaces?.pressure ?? DEFAULT_DISPLAY_SETTINGS.decimalPlaces.pressure
+    );
+    const [temperatureDecimals, setTemperatureDecimals] = useState(
+        currentUser?.displaySettings?.decimalPlaces?.temperature ?? DEFAULT_DISPLAY_SETTINGS.decimalPlaces.temperature
+    );
+    const [flowDecimals, setFlowDecimals] = useState(
+        currentUser?.displaySettings?.decimalPlaces?.flow ?? DEFAULT_DISPLAY_SETTINGS.decimalPlaces.flow
+    );
+    const [generalDecimals, setGeneralDecimals] = useState(
+        currentUser?.displaySettings?.decimalPlaces?.general ?? DEFAULT_DISPLAY_SETTINGS.decimalPlaces.general
+    );
+
+    const handleSave = () => {
+        updateUserProfile({
+            displaySettings: {
+                decimalPlaces: {
+                    pressure: pressureDecimals,
+                    temperature: temperatureDecimals,
+                    flow: flowDecimals,
+                    length: generalDecimals,
+                    general: generalDecimals,
+                },
+            },
+        });
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+    };
+
+    return (
+        <Stack spacing={3}>
+            {saveSuccess && (
+                <Alert severity="success">Display settings saved!</Alert>
+            )}
+
+            <Typography variant="subtitle1" fontWeight={600}>
+                Display Precision
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: -2 }}>
+                Set the number of decimal places for different value types.
+            </Typography>
+
+            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                <TextField
+                    select
+                    label="Pressure"
+                    value={pressureDecimals}
+                    onChange={(e) => setPressureDecimals(Number(e.target.value))}
+                    helperText="e.g. 10.25 barg"
+                >
+                    {DECIMAL_OPTIONS.map((n) => (
+                        <MenuItem key={n} value={n}>{n} decimal{n !== 1 ? 's' : ''}</MenuItem>
+                    ))}
+                </TextField>
+
+                <TextField
+                    select
+                    label="Temperature"
+                    value={temperatureDecimals}
+                    onChange={(e) => setTemperatureDecimals(Number(e.target.value))}
+                    helperText="e.g. 120.5 °C"
+                >
+                    {DECIMAL_OPTIONS.map((n) => (
+                        <MenuItem key={n} value={n}>{n} decimal{n !== 1 ? 's' : ''}</MenuItem>
+                    ))}
+                </TextField>
+
+                <TextField
+                    select
+                    label="Flow Rate"
+                    value={flowDecimals}
+                    onChange={(e) => setFlowDecimals(Number(e.target.value))}
+                    helperText="e.g. 45,000 kg/h"
+                >
+                    {DECIMAL_OPTIONS.map((n) => (
+                        <MenuItem key={n} value={n}>{n} decimal{n !== 1 ? 's' : ''}</MenuItem>
+                    ))}
+                </TextField>
+
+                <TextField
+                    select
+                    label="General / Other"
+                    value={generalDecimals}
+                    onChange={(e) => setGeneralDecimals(Number(e.target.value))}
+                    helperText="Fallback for other values"
+                >
+                    {DECIMAL_OPTIONS.map((n) => (
+                        <MenuItem key={n} value={n}>{n} decimal{n !== 1 ? 's' : ''}</MenuItem>
+                    ))}
+                </TextField>
+            </Box>
+
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
+                <Button variant="contained" startIcon={<Save />} onClick={handleSave}>
+                    Save Settings
+                </Button>
+            </Box>
+        </Stack>
     );
 }
 
@@ -284,15 +394,15 @@ export function AccountSettingsPage() {
                                     value={
                                         currentUser?.role
                                             ? currentUser.role
-                                                  .split("_")
-                                                  .map(
-                                                      (part) =>
-                                                          part
-                                                              .charAt(0)
-                                                              .toUpperCase() +
-                                                          part.slice(1)
-                                                  )
-                                                  .join(" ")
+                                                .split("_")
+                                                .map(
+                                                    (part) =>
+                                                        part
+                                                            .charAt(0)
+                                                            .toUpperCase() +
+                                                        part.slice(1)
+                                                )
+                                                .join(" ")
                                             : "Guest"
                                     }
                                     disabled
@@ -408,10 +518,7 @@ export function AccountSettingsPage() {
 
                         {/* System Tab */}
                         <TabPanel value={activeTab} index={2}>
-                            <Typography variant="body2" color="text.secondary">
-                                System settings for your account will be
-                                available in a future update.
-                            </Typography>
+                            <SystemSettingsPanel />
                         </TabPanel>
                     </Paper>
                 </Box>

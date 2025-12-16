@@ -42,7 +42,7 @@ interface AuthState {
     isAuthenticated: boolean;
     login: (username: string, password: string) => boolean;
     logout: () => void;
-    updateUserProfile: (updates: Partial<Pick<User, 'name' | 'email' | 'initials'>>) => void;
+    updateUserProfile: (updates: Partial<Pick<User, 'name' | 'email' | 'initials' | 'displaySettings'>>) => void;
     changePassword: (currentPassword: string, newPassword: string) => { success: boolean; message: string };
     resetUserPassword: (userId: string) => { success: boolean; message: string; username?: string; temporaryPassword?: string };
     // Permission helpers

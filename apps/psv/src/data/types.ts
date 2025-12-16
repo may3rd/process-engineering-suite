@@ -494,6 +494,17 @@ export interface TodoItem {
     createdAt: string;
 }
 
+// User display preferences
+export interface DisplaySettings {
+    decimalPlaces: {
+        pressure: number;      // default: 2
+        temperature: number;   // default: 1
+        flow: number;          // default: 0
+        length: number;        // default: 2
+        general: number;       // default: 2 (fallback for other values)
+    };
+}
+
 // User types
 export interface User {
     id: string;
@@ -503,6 +514,7 @@ export interface User {
     role: 'engineer' | 'lead' | 'approver' | 'viewer' | 'admin';
     status: 'active' | 'inactive';
     avatarUrl?: string; // Optional mock avatar URL
+    displaySettings?: DisplaySettings; // User display preferences
 }
 
 // Mock authentication credentials
