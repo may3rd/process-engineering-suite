@@ -200,42 +200,8 @@ export function AccountSettingsPage() {
 
     return (
         <Box sx={{ height: "100vh", display: "flex", flexDirection: "column" }}>
-            {/* Header */}
-            <Paper
-                sx={{
-                    ...glassCardStyles,
-                    p: { xs: 2, sm: 3 },
-                    borderRadius: "12px",
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    mb: 2,
-                    flexWrap: { xs: "wrap", sm: "nowrap" },
-                }}
-            >
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                    <Typography
-                        variant="h4"
-                        fontWeight={700}
-                        sx={{ fontSize: { xs: "1.5rem", sm: "2rem" } }}
-                    >
-                        Account Settings
-                    </Typography>
-                    <Typography
-                        variant="body2"
-                        color="text.secondary"
-                        sx={{ display: { xs: "none", sm: "block" } }}
-                    >
-                        Manage your profile and security
-                    </Typography>
-                </Box>
-                <IconButton onClick={handleClose}>
-                    <Close />
-                </IconButton>
-            </Paper>
-
             {/* Content */}
-            <Box sx={{ flex: 1, overflow: "auto", p: { xs: 2, sm: 3 }, pt: 0 }}>
+            <Box sx={{ flex: 1, overflow: "auto", p: { xs: 2, sm: 3 } }}>
                 <Box sx={{ maxWidth: 900, mx: "auto" }}>
                     <Paper
                         sx={{
@@ -244,27 +210,44 @@ export function AccountSettingsPage() {
                             p: { xs: 2, sm: 3 },
                         }}
                     >
-                        <Tabs
-                            value={activeTab}
-                            onChange={(_e, newValue) => setActiveTab(newValue)}
-                            sx={{
-                                borderBottom: 1,
-                                borderColor: "divider",
-                                "& .MuiTabs-flexContainer": {
-                                    flexWrap: "wrap",
-                                },
-                                "& .MuiTab-root": {
-                                    minHeight: { xs: 44, sm: 56 },
-                                    fontSize: { xs: "0.9rem", sm: "1rem" },
-                                    minWidth: { xs: 120, sm: 140 },
-                                    flex: { xs: "1 1 auto", sm: "0 0 auto" },
-                                },
-                            }}
-                        >
-                            <Tab label="Profile" />
-                            <Tab label="Security" />
-                            <Tab label="System" />
-                        </Tabs>
+                        {/* Header row with title, tabs, and close button */}
+                        <Box sx={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            borderBottom: 1,
+                            borderColor: 'divider',
+                            gap: 2,
+                        }}>
+                            <Typography
+                                variant="h6"
+                                fontWeight={600}
+                                sx={{ whiteSpace: 'nowrap' }}
+                            >
+                                Account Settings
+                            </Typography>
+                            <Tabs
+                                value={activeTab}
+                                onChange={(_e, newValue) => setActiveTab(newValue)}
+                                sx={{
+                                    flex: 1,
+                                    "& .MuiTabs-flexContainer": {
+                                        flexWrap: "wrap",
+                                    },
+                                    "& .MuiTab-root": {
+                                        minHeight: { xs: 44, sm: 56 },
+                                        fontSize: { xs: "0.9rem", sm: "1rem" },
+                                        minWidth: { xs: 100, sm: 120 },
+                                    },
+                                }}
+                            >
+                                <Tab label="Profile" />
+                                <Tab label="Security" />
+                                <Tab label="System" />
+                            </Tabs>
+                            <IconButton onClick={handleClose} sx={{ ml: 'auto' }}>
+                                <Close />
+                            </IconButton>
+                        </Box>
 
                         {/* Profile Tab */}
                         <TabPanel value={activeTab} index={0}>
