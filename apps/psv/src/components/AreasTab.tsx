@@ -44,6 +44,7 @@ export function AreasTab() {
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const { addArea, updateArea, deleteArea } = usePsvStore();
+    const selectedUnit = usePsvStore((state) => state.selectedUnit);
     const areas = usePsvStore((state) => state.areas);
     const projects = usePsvStore((state) => state.projects);
     const protectiveSystems = usePsvStore((state) => state.protectiveSystems);
@@ -134,6 +135,8 @@ export function AreasTab() {
         setSortConfig((prev) => toggleSortConfig(prev, key));
     };
 
+    const headingTitle = selectedUnit ? `${selectedUnit.name} - Areas` : 'Areas';
+
     const getSortValue = (area: Area, key: SortKey): string | number => {
         const counts = getAssetCounts(area.id);
         switch (key) {
@@ -217,7 +220,7 @@ export function AreasTab() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Map color="primary" sx={{ fontSize: 28 }} />
                     <Typography variant="h5" fontWeight={600}>
-                        Areas
+                        {headingTitle}
                     </Typography>
                 </Box>
                 {canEdit && (

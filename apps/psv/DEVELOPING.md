@@ -39,6 +39,16 @@ src/store/usePsvStore.ts
 └── actions          # selectCustomer, selectPlant, selectProject, etc.
 ```
 
+Auth (demo mode) uses Zustand with `localStorage` persistence:
+
+```
+src/store/useAuthStore.ts
+├── login/logout
+├── updateUserProfile (name/email/initials)
+├── changePassword
+└── permission helpers (canEdit/canApprove/canManageUsers, etc.)
+```
+
 ### Component Structure
 
 ```
@@ -50,23 +60,24 @@ TopToolbar          # Fixed header with back button, search, theme toggle
     ├── Overview Tab
     ├── Scenarios Tab
     ├── Sizing Tab
+    ├── Revisions Tab
     └── Attachments Tab
+    └── Summary Tab
 ```
 
 ### Data Layer
 
-Currently using **mock data** in `src/data/`:
+The PSV frontend can run against either:
+- **Backend API** (`NEXT_PUBLIC_API_URL`) for Postgres-backed data, or
+- **Local storage demo mode** (fallback) for offline/demo operation.
+
+Core types and demo seed data:
 
 - `types.ts` - TypeScript interfaces for domain model
 - `mockData.ts` - Sample data with petrochemical examples
 
-Helper functions in `mockData.ts`:
-- `getCustomers()` - All customers
-- `getPlants(customerId)` - Plants for customer
-- `getUnits(plantId)` - Units for plant
-- `getAreas(unitId)` - Areas for unit
-- `getProjects(areaId)` - Projects for area
-- `getProtectiveSystems(projectId)` - PSVs for project
+Service selection is centralized:
+- `src/lib/api.ts` exports an API client and `getDataService()` which chooses API vs local storage.
 
 ## Key Patterns
 
@@ -91,22 +102,42 @@ Uses Zustand store for navigation (not URL routing):
 - Breadcrumbs read from store and allow navigation back
 - Main page conditionally renders based on selection state
 
+## Revision Control
+
+Revision records are stored in `revision_history` and referenced by entities via `currentRevisionId`.
+
+- Signing sequence:
+  - Originator → Checker → Approver (approver requires Lead/Approver/Admin).
+  - Revoke is supported (clears fields; higher roles can revoke others).
+- PSV status progression (derived from current revision signatures; Issued stays Issued):
+  - no originator → Draft
+  - originator only → In Review
+  - originator + checker → Checked
+  - originator + checker + approver → Approved
+
+UI surfaces:
+- `Revisions` tab (PSV detail)
+- `RevisionHistoryPanel` (drawer)
+- `RevisionHistoryCard` (Summary)
+
+## Admin Dashboard
+
+The PSV app includes an admin-style dashboard (role-gated) for managing:
+- Customers / Plants / Units / Areas / Projects / PSVs / Equipment
+- Users (admin-only)
+- System (admin-only): Backup / Restore
+
+## Backup / Restore (Dev)
+
+- UI: Dashboard → `System` tab
+- API:
+  - `GET /admin/backup` (DB mode -> `.sql`, mock mode -> JSON export)
+  - `POST /admin/restore` (DB mode expects `.sql`, mock mode expects `.json`)
+  - `GET /admin/export-mock-data?write_to_file=true` writes `apps/api/mock_data.json` from the running database
+
 ## Next Steps for Development
 
-### Phase 1: Editors
-- [ ] Create `ScenarioEditor.tsx` for overpressure scenarios
-- [ ] Create `SizingWorkspace.tsx` for calculations
-- [ ] Add CRUD operations to mock data
-
-### Phase 2: Backend Integration
-- [ ] Set up API routes in Next.js
-- [ ] Connect to database (see [docs/DATABASE_SCHEMA.md](./docs/DATABASE_SCHEMA.md))
-- [ ] Implement authentication
-
-### Phase 3: Calculations
-- [ ] Integrate PSV sizing formulas (API 520)
-- [ ] Add validation per design codes
-- [ ] Generate calculation reports
+This project is active; treat this section as a scratchpad for future work.
 
 ## Code Conventions
 

@@ -42,6 +42,7 @@ export function ProjectsTab() {
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const { addProject, updateProject, deleteProject } = usePsvStore();
+    const selectedArea = usePsvStore((state) => state.selectedArea);
     const projects = usePsvStore((state) => state.projects);
     const protectiveSystems = usePsvStore((state) => state.protectiveSystems);
 
@@ -118,6 +119,8 @@ export function ProjectsTab() {
     const handleSort = (key: SortKey) => {
         setSortConfig((prev) => toggleSortConfig(prev, key));
     };
+
+    const headingTitle = selectedArea ? `${selectedArea.name} - Projects` : 'Projects';
 
     const getSortValue = (project: Project, key: SortKey): string | number => {
         switch (key) {
@@ -214,7 +217,7 @@ export function ProjectsTab() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Folder color="primary" sx={{ fontSize: 28 }} />
                     <Typography variant="h5" fontWeight={600}>
-                        Projects
+                        {headingTitle}
                     </Typography>
                 </Box>
                 {canEdit && (

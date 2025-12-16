@@ -10,6 +10,8 @@ A unified platform for process design, hydraulic analysis, and equipment sizing.
   - Hydraulic calculations for incompressible flow.
   - Pipe and node property management.
   - Excel import/export capabilities.
+- **PSV Sizing** (`apps/psv`): Pressure Safety Valve / protective device sizing workflow with hierarchy browsing (Customer → Plant → Unit → Area → Project → PSV), scenario management, sizing cases, equipment linking, and revision control.
+- **API** (`apps/api`): FastAPI backend for hierarchy/PSV data, authentication, revisions, admin utilities, and hydraulics calculation endpoints.
 
 ## Packages
 
@@ -81,6 +83,7 @@ docker-compose -f infra/docker-compose.yml up --build
   - Network Editor: http://localhost:3002
   - PSV: http://localhost:3003
 - **Python API**: http://localhost:8000/docs
+- **PostgreSQL**: exposed on `localhost:5432` (dev only)
 
 Volume mounts ensure code changes are reflected immediately for hot reload.
 
@@ -158,14 +161,12 @@ The API supports both **PostgreSQL** (production) and **mock data** (fallback).
    docker-compose up -d postgres api
    ```
 
-2. Run Database Migrations:
-   ```bash
-   # Create initial migration (if needed)
-   docker-compose exec -w /app/apps/api api alembic revision --autogenerate -m "initial_schema"
-
-   # Apply migrations
-   docker-compose exec -w /app/apps/api api alembic upgrade head
-   ```
+2. Database migrations:
+   - In `infra/docker-compose.yml`, the API container runs `alembic upgrade head` automatically on startup.
+   - To generate a new migration:
+     ```bash
+     docker-compose exec -w /app/apps/api api alembic revision --autogenerate -m "your_message"
+     ```
 
 3. Seed Data (Optional):
    ```bash
@@ -173,6 +174,15 @@ The API supports both **PostgreSQL** (production) and **mock data** (fallback).
    curl -X POST http://localhost:8000/admin/seed-from-mock
    ```
 
+4. Export database back to `apps/api/mock_data.json` (optional):
+   - From the running API:
+     ```bash
+     curl "http://localhost:8000/admin/export-mock-data?write_to_file=true"
+     ```
+   - Or inside Docker:
+     ```bash
+     docker compose -f infra/docker-compose.yml exec api python /app/apps/api/scripts/export_db_to_mock.py
+     ```
 
 **Testing API Endpoints:**
 
@@ -192,15 +202,12 @@ curl -X POST http://localhost:8000/auth/login \
   -d '{"username":"maetee","password":"linkinpark"}'
 ```
 
-**Database Backup:**
+**Backup / Restore (Admin):**
 
-```bash
-# Create backup
-docker exec infra-postgres-1 pg_dump -U postgres engsuite > backup_$(date +%Y%m%d).sql
-
-# Restore backup
-docker exec -i infra-postgres-1 psql -U postgres engsuite < backup_20241212.sql
-```
+- UI: PSV Dashboard → `System` tab (admin-only) provides Backup/Restore buttons.
+- API:
+  - `GET /admin/backup` downloads a backup (`.sql` in DB mode, JSON export in mock mode).
+  - `POST /admin/restore` restores from an uploaded `.sql` (DB mode) or `.json` (mock mode).
 
 ## Key Features
 
@@ -208,3 +215,5 @@ docker exec -i infra-postgres-1 psql -U postgres engsuite < backup_20241212.sql
 - **Glassmorphism Design**: A modern, consistent UI aesthetic across all tools.
 - **Real-time Calculations**: Instant feedback on hydraulic network performance.
 - **Bi-Directional Flow Simulation**: Supports both forward and backward flow calculations, ensuring correct pressure drop and elevation handling regardless of flow direction.
+- **Hierarchy-first Workflow**: Customer → Plant → Unit → Area → Project → PSV navigation with global search.
+- **Revision Control**: Revision history, signing (originator/checker/approver), revoke/delete, and revision-based PSV status progression.

@@ -41,6 +41,7 @@ export function UnitsTab() {
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const { addUnit, updateUnit, deleteUnit } = usePsvStore();
+    const selectedPlant = usePsvStore((state) => state.selectedPlant);
     const units = usePsvStore((state) => state.units);
     const areas = usePsvStore((state) => state.areas);
     const projects = usePsvStore((state) => state.projects);
@@ -134,6 +135,8 @@ export function UnitsTab() {
         setSortConfig((prev) => toggleSortConfig(prev, key));
     };
 
+    const headingTitle = selectedPlant ? `${selectedPlant.name} - Units` : 'Units';
+
     const getSortValue = (unit: Unit, key: SortKey): string | number => {
         switch (key) {
             case 'code':
@@ -213,7 +216,7 @@ export function UnitsTab() {
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Category color="primary" sx={{ fontSize: 28 }} />
                     <Typography variant="h5" fontWeight={600}>
-                        Units
+                        {headingTitle}
                     </Typography>
                 </Box>
                 {canEdit && (
