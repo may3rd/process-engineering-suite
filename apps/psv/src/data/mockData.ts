@@ -265,6 +265,13 @@ export const equipment: Equipment[] = [
         designTemperature: 400,
         ownerId: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad',
         status: 'active',
+        details: {
+            innerDiameter: 4000, // mm
+            tangentToTangentLength: 45000, // mm
+            orientation: 'vertical',
+            headType: 'elliptical',
+            insulated: false,
+        },
         createdAt: '2024-06-05T10:00:00Z',
         updatedAt: '2024-06-05T10:00:00Z',
     },
@@ -280,6 +287,13 @@ export const equipment: Equipment[] = [
         designTemperature: 150,
         ownerId: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad',
         status: 'active',
+        details: {
+            innerDiameter: 3000, // mm
+            tangentToTangentLength: 8000, // mm
+            orientation: 'horizontal',
+            headType: 'torispherical',
+            insulated: true,
+        },
         createdAt: '2024-06-05T10:00:00Z',
         updatedAt: '2024-06-05T10:00:00Z',
     },

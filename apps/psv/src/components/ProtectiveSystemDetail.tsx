@@ -69,7 +69,9 @@ import { usePsvStore } from "@/store/usePsvStore";
 import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem, ProtectiveSystem, ProjectNote } from "@/data/types";
 import { SizingWorkspace } from "./SizingWorkspace";
 import { ScenarioEditor } from "./ScenarioEditor"; // Import ScenarioEditor
+import { FireCaseScenarioDialog } from "./FireCaseScenarioDialog";
 import { getUserById, users } from "@/data/mockData";
+import { useAuthStore } from "@/store/useAuthStore";
 import { useState, useEffect, MouseEvent, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { SortConfig, toggleSortConfig, sortByGetter } from "@/lib/sortUtils";
@@ -82,7 +84,6 @@ import { TagsCard } from "./TagsCard";
 import { SummaryTab } from "./SummaryTab";
 import { RevisionsTab } from "./RevisionsTab";
 import { glassCardStyles } from "./styles";
-import { useAuthStore } from "@/store/useAuthStore";
 import { PipelineHydraulicsCard } from "./PipelineHydraulicsCard";
 import { WORKFLOW_STATUS_SEQUENCE, getWorkflowStatusColor, getWorkflowStatusLabel, SIZING_STATUS_SEQUENCE, getSizingStatusColor, getSizingStatusLabel } from "@/lib/statusColors";
 import { RevisionBadge } from "./RevisionBadge";
@@ -161,6 +162,7 @@ function ScenariosTab() {
     const currentUser = useAuthStore((state) => state.currentUser);
     const [editorOpen, setEditorOpen] = useState(false);
     const [editingScenario, setEditingScenario] = useState<OverpressureScenario | undefined>(undefined);
+    const [fireDialogOpen, setFireDialogOpen] = useState(false);
     const [sortConfig, setSortConfig] = useState<SortConfig<ScenarioSortKey> | null>({ key: 'cause', direction: 'asc' });
     /**
      * Per-scenario UI state for the inline "Case Consideration" markdown block.
@@ -239,6 +241,34 @@ function ScenariosTab() {
         }
     };
 
+    const handleFireCaseSave = (fireScenario: Partial<OverpressureScenario>) => {
+        if (!selectedPsv) return;
+
+        const now = new Date().toISOString();
+        const completeScenario: OverpressureScenario = {
+            id: uuidv4(),
+            protectiveSystemId: selectedPsv.id,
+            cause: 'fire_case',
+            description: fireScenario.description || 'External fire exposure',
+            relievingTemp: fireScenario.relievingTemp || 50,
+            relievingPressure: fireScenario.relievingPressure || selectedPsv.setPressure * 1.1,
+            phase: fireScenario.phase || 'gas',
+            relievingRate: fireScenario.relievingRate || 0,
+            accumulationPct: 10,
+            requiredCapacity: fireScenario.relievingRate || 0,
+            assumptions: fireScenario.assumptions || [],
+            codeRefs: fireScenario.codeRefs || ['API-521 Section 4.4'],
+            isGoverning: false,
+            caseConsideration: fireScenario.caseConsideration,
+            fireCalculation: fireScenario.fireCalculation,
+            createdAt: now,
+            updatedAt: now,
+        };
+
+        addScenario(completeScenario);
+        setFireDialogOpen(false);
+    };
+
     if (!selectedPsv) return null;
 
     // All possible scenario causes with display labels
@@ -289,9 +319,30 @@ function ScenariosTab() {
                     </Box>
                 </Box>
                 {canEdit && (
-                    <Button variant="contained" startIcon={<Add />} size="small" onClick={handleAddScenario}>
-                        Add Scenario
-                    </Button>
+                    <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                            variant="outlined"
+                            startIcon={<LocalFireDepartment />}
+                            size="small"
+                            onClick={() => setFireDialogOpen(true)}
+                            sx={{
+                                borderColor: 'error.main',
+                                color: 'error.main',
+                                '&:hover': {
+                                    borderColor: 'error.dark',
+                                    bgcolor: (theme) =>
+                                        theme.palette.mode === 'dark'
+                                            ? 'rgba(211, 47, 47, 0.1)'
+                                            : 'rgba(211, 47, 47, 0.05)',
+                                },
+                            }}
+                        >
+                            Fire Case
+                        </Button>
+                        <Button variant="contained" startIcon={<Add />} size="small" onClick={handleAddScenario}>
+                            Add Scenario
+                        </Button>
+                    </Box>
                 )}
             </Box>
 
@@ -378,6 +429,15 @@ function ScenariosTab() {
                     )}
                 </DialogContent>
             </Dialog>
+
+            {/* Fire Case Scenario Dialog */}
+            <FireCaseScenarioDialog
+                open={fireDialogOpen}
+                onClose={() => setFireDialogOpen(false)}
+                psvId={selectedPsv?.id || ''}
+                areaId={selectedPsv?.areaId || ''}
+                onSave={handleFireCaseSave}
+            />
 
             {sortedScenarios.length > 0 ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>

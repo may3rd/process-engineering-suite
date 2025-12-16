@@ -158,6 +158,24 @@ export interface OverpressureScenario {
     codeRefs: string[];
     isGoverning: boolean;
     caseConsideration?: string; // Markdown-formatted case consideration details
+
+    // Fire case specific metadata
+    fireCalculation?: {
+        calculationMethod: 'api521' | 'manual';
+        environmentalFactor?: number;  // API-521 F factor (0.075-1.0)
+        heightAboveGrade?: number;  // meters
+        latentHeat?: number;  // kJ/kg
+        totalWettedArea?: number;  // m² (aggregated)
+        heatAbsorption?: number;  // kW
+        // Per-equipment details
+        equipmentWettedAreas?: Array<{
+            equipmentId: string;
+            equipmentTag: string;
+            wettedArea: number;  // m²
+            liquidLevel: number;  // m
+        }>;
+    };
+
     createdAt: string;
     updatedAt: string;
 }

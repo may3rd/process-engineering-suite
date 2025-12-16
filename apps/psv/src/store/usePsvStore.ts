@@ -186,6 +186,9 @@ interface PsvStore {
     updateRevision: (revisionId: string, updates: Partial<RevisionHistory>) => Promise<void>;
     deleteRevision: (revisionId: string) => Promise<void>;
     getCurrentRevision: (entityType: RevisionEntityType, entityId: string) => RevisionHistory | undefined;
+
+    // Equipment query
+    getEquipmentByArea: (areaId: string) => Equipment[];
 }
 
 export const usePsvStore = create<PsvStore>((set, get) => ({
@@ -1583,5 +1586,10 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         return currentRevisionId
             ? state.revisionHistory.find(r => r.id === currentRevisionId)
             : undefined;
+    },
+
+    // Equipment query
+    getEquipmentByArea: (areaId) => {
+        return get().equipment.filter((eq) => eq.areaId === areaId);
     },
 }));
