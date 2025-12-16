@@ -106,11 +106,11 @@ export function DashboardPage() {
                 sx={{
                     ...glassCardStyles,
                     p: { xs: 2, sm: 3 },
-                    borderRadius: '12px',
+                    borderRadius: '12px 12px 0 0',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    mb: 2,
+                    mb: 0,
                     flexWrap: { xs: 'wrap', sm: 'nowrap' },
                 }}
             >
@@ -128,7 +128,7 @@ export function DashboardPage() {
             </Paper>
 
             {/* Tabs */}
-            <Paper sx={{ ...glassCardStyles, borderRadius: "12px" }}>
+            <Paper sx={{ ...glassCardStyles, borderRadius: "0 0 12px 12px" }}>
                 <Tabs
                     value={activeTab}
                     onChange={(_e, newValue) => {
@@ -136,7 +136,7 @@ export function DashboardPage() {
                         if (dashboardTab) setDashboardTab(null);
                     }}
                     sx={{
-                        borderBottom: 1,
+                        borderBottom: 0,
                         borderColor: 'divider',
                         px: { xs: 1, sm: 2 },
                         '& .MuiTabs-flexContainer': {
