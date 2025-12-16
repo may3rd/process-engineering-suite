@@ -4,9 +4,11 @@ import { useMemo, useState } from "react";
 import {
     Autocomplete,
     Box,
+    IconButton,
     TextField,
     Typography,
     useTheme,
+    useMediaQuery,
 } from "@mui/material";
 import {
     Apartment,
@@ -19,6 +21,7 @@ import {
     ArrowRightAlt,
     Category,
     Settings,
+    Close,
 } from "@mui/icons-material";
 import { useColorMode } from "@/contexts/ColorModeContext";
 import { TopFloatingToolbar } from "@eng-suite/ui-kit";
@@ -43,8 +46,11 @@ export function TopToolbar({ title = "PSV Sizing", onBack }: TopToolbarProps) {
     const theme = useTheme();
     const { toggleColorMode } = useColorMode();
     const isDark = theme.palette.mode === 'dark';
+    // Treat tablet and below as "mobile" for the compact search UX.
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const router = useRouter();
     const [searchText, setSearchText] = useState('');
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
 
     const {
         customers,
@@ -306,6 +312,9 @@ export function TopToolbar({ title = "PSV Sizing", onBack }: TopToolbarProps) {
             }
 
             setSearchText('');
+            if (isMobile) {
+                setIsSearchOpen(false);
+            }
         } catch (err) {
             console.error(err);
         }
@@ -324,95 +333,125 @@ export function TopToolbar({ title = "PSV Sizing", onBack }: TopToolbarProps) {
                         gap: 1,
                     }}
                 >
-                    {/* Search Bar */}
-                    <Box
-                        sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)',
-                            borderRadius: '8px',
-                            px: 2,
-                            py: 0.5,
-                            width: { xs: 220, sm: 360, md: 520, lg: 640 },
-                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
-                            transition: 'all 0.2s',
-                            '&:hover': {
-                                bgcolor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)',
-                                borderColor: theme.palette.primary.main,
-                            }
-                        }}
-                    >
-                        <Autocomplete
-                            fullWidth
-                            size="small"
-                            options={options}
-                            groupBy={(opt) => getKindLabel(opt.kind)}
-                            getOptionLabel={(opt) => opt.label}
-                            filterOptions={(x) => x}
-                            inputValue={searchText}
-                            onInputChange={(_e, value) => setSearchText(value)}
-                            onChange={(_e, value) => {
-                                if (value) void handleNavigate(value);
-                            }}
-                            renderOption={(props, option) => (
-                                <Box
-                                    component="li"
-                                    {...props}
-                                    sx={{
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        gap: 1,
-                                        py: 1,
-                                    }}
-                                >
-                                    <Box sx={{ color: 'primary.main', display: 'flex', alignItems: 'center' }}>
-                                        {getKindIcon(option.kind)}
-                                    </Box>
-                                    <Box sx={{ minWidth: 0, flex: 1 }}>
-                                        <Typography variant="body2" fontWeight={600} noWrap>
-                                            {option.label}
-                                        </Typography>
-                                        <Typography variant="caption" color="text.secondary" noWrap>
-                                            {option.secondary}
-                                        </Typography>
-                                    </Box>
-                                    <ArrowRightAlt fontSize="small" style={{ opacity: 0.5 }} />
-                                </Box>
-                            )}
-                            renderInput={(params) => (
-                                <TextField
-                                    {...params}
-                                    placeholder="Search customers, plants, units, areas, projects, PSVs, equipment..."
-                                    variant="standard"
-                                    InputProps={{
-                                        ...params.InputProps,
-                                        startAdornment: (
-                                            <Box
-                                                sx={{
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    gap: 1,
-                                                    pr: 1,
-                                                }}
-                                            >
-                                                <Search sx={{ color: 'text.secondary', fontSize: 20 }} />
-                                                {params.InputProps.startAdornment}
-                                            </Box>
-                                        ),
-                                        disableUnderline: true,
-                                        sx: {
-                                            color: 'text.primary',
-                                            fontSize: '0.875rem',
-                                        },
-                                    }}
-                                />
-                            )}
+                    {/* Search */}
+                    {(!isMobile || isSearchOpen) && (
+                        <Box
                             sx={{
-                                '& .MuiInputBase-root': { p: 0 },
-                                '& .MuiAutocomplete-endAdornment': { right: 0 },
+                                display: 'flex',
+                                alignItems: 'center',
+                                bgcolor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.05)',
+                                borderRadius: '999px',
+                                px: 2,
+                                py: 0.5,
+                                width: isMobile ? '60vw' : { xs: 260, sm: 360, md: 520, lg: 640 },
+                                border: `1px solid ${isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)'}`,
+                                transition: 'all 0.2s',
+                                '&:hover': {
+                                    bgcolor: isDark ? 'rgba(0,0,0,0.3)' : 'rgba(0,0,0,0.08)',
+                                    borderColor: theme.palette.primary.main,
+                                },
                             }}
-                        />
-                    </Box>
+                        >
+                            <Autocomplete
+                                fullWidth
+                                size="small"
+                                options={options}
+                                groupBy={(opt) => getKindLabel(opt.kind)}
+                                getOptionLabel={(opt) => opt.label}
+                                filterOptions={(x) => x}
+                                inputValue={searchText}
+                                onInputChange={(_e, value) => setSearchText(value)}
+                                onChange={(_e, value) => {
+                                    if (value) void handleNavigate(value);
+                                }}
+                                renderOption={(props, option) => (
+                                    <Box
+                                        component="li"
+                                        {...props}
+                                        sx={{
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 1,
+                                            py: 1,
+                                        }}
+                                    >
+                                        <Box sx={{ color: 'primary.main', display: 'flex', alignItems: 'center' }}>
+                                            {getKindIcon(option.kind)}
+                                        </Box>
+                                        <Box sx={{ minWidth: 0, flex: 1 }}>
+                                            <Typography variant="body2" fontWeight={600} noWrap>
+                                                {option.label}
+                                            </Typography>
+                                            <Typography variant="caption" color="text.secondary" noWrap>
+                                                {option.secondary}
+                                            </Typography>
+                                        </Box>
+                                        <ArrowRightAlt fontSize="small" style={{ opacity: 0.5 }} />
+                                    </Box>
+                                )}
+                                renderInput={(params) => (
+                                    <TextField
+                                        {...params}
+                                        placeholder="Search customers, plants, units, areas, projects, PSVs, equipment..."
+                                        variant="standard"
+                                        InputProps={{
+                                            ...params.InputProps,
+                                            startAdornment: (
+                                                <Box
+                                                    sx={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: 1,
+                                                        pr: 1,
+                                                    }}
+                                                >
+                                                    <Search sx={{ color: 'text.secondary', fontSize: 20 }} />
+                                                    {params.InputProps.startAdornment}
+                                                </Box>
+                                            ),
+                                            disableUnderline: true,
+                                            sx: {
+                                                color: 'text.primary',
+                                                fontSize: '0.875rem',
+                                            },
+                                        }}
+                                    />
+                                )}
+                                sx={{
+                                    '& .MuiInputBase-root': { p: 0 },
+                                    '& .MuiAutocomplete-endAdornment': { right: 0 },
+                                }}
+                            />
+                            {isMobile && (
+                                <IconButton
+                                    size="small"
+                                    onClick={() => {
+                                        setIsSearchOpen(false);
+                                        setSearchText('');
+                                    }}
+                                    sx={{ ml: 0.5 }}
+                                >
+                                    <Close fontSize="small" />
+                                </IconButton>
+                            )}
+                        </Box>
+                    )}
+
+                    {isMobile && !isSearchOpen && (
+                        <IconButton
+                            size="small"
+                            onClick={() => setIsSearchOpen(true)}
+                            sx={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: '999px',
+                                border: `1px solid ${isDark ? 'rgba(255,255,255,0.24)' : 'rgba(0,0,0,0.12)'}`,
+                                bgcolor: isDark ? 'rgba(0,0,0,0.35)' : 'rgba(255,255,255,0.9)',
+                            }}
+                        >
+                            <Search sx={{ fontSize: 20 }} />
+                        </IconButton>
+                    )}
 
                     {/* User Menu */}
                     <UserMenu />
