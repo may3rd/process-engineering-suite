@@ -1,6 +1,6 @@
 "use client";
 
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode, useState } from "react";
 import {
     Box,
     Paper,
@@ -9,11 +9,8 @@ import {
     Button,
     Avatar,
     IconButton,
-    Divider,
     Stack,
     Alert,
-    Tabs,
-    Tab,
     MenuItem,
 } from "@mui/material";
 import {
@@ -23,6 +20,7 @@ import {
     Person,
     Email,
     Lock,
+    Settings,
 } from "@mui/icons-material";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
@@ -198,315 +196,343 @@ export function AccountSettingsPage() {
         alert("Avatar upload feature - Coming soon");
     };
 
+    // Menu items for sidebar
+    const menuItems = [
+        { label: 'Profile', icon: <Person /> },
+        { label: 'Security', icon: <Lock /> },
+        { label: 'System', icon: <Settings /> },
+    ];
+
     return (
         <Box sx={{ height: "100vh", display: "flex", flexDirection: "column" }}>
             {/* Content */}
             <Box sx={{ flex: 1, overflow: "auto", p: { xs: 2, sm: 3 } }}>
-                <Box sx={{ maxWidth: 900, mx: "auto" }}>
-                    <Paper
-                        sx={{
-                            ...glassCardStyles,
-                            borderRadius: "12px",
-                            p: { xs: 2, sm: 3 },
-                        }}
-                    >
-                        {/* Header row with title, tabs, and close button */}
-                        <Box sx={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            borderBottom: 1,
-                            borderColor: 'divider',
-                            gap: 2,
-                        }}>
-                            <Typography
-                                variant="h6"
-                                fontWeight={600}
-                                sx={{ whiteSpace: 'nowrap' }}
-                            >
-                                Account Settings
-                            </Typography>
-                            <Tabs
-                                value={activeTab}
-                                onChange={(_e, newValue) => setActiveTab(newValue)}
-                                sx={{
-                                    flex: 1,
-                                    "& .MuiTabs-flexContainer": {
-                                        flexWrap: "wrap",
-                                    },
-                                    "& .MuiTab-root": {
-                                        minHeight: { xs: 44, sm: 56 },
-                                        fontSize: { xs: "0.9rem", sm: "1rem" },
-                                        minWidth: { xs: 100, sm: 120 },
-                                    },
-                                }}
-                            >
-                                <Tab label="Profile" />
-                                <Tab label="Security" />
-                                <Tab label="System" />
-                            </Tabs>
-                            <IconButton onClick={handleClose} sx={{ ml: 'auto' }}>
-                                <Close />
-                            </IconButton>
-                        </Box>
+                <Box sx={{ maxWidth: 1000, mx: "auto" }}>
+                    {/* Header */}
+                    <Box sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        mb: 3,
+                    }}>
+                        <Typography variant="h5" fontWeight={700}>
+                            Account Settings
+                        </Typography>
+                        <IconButton onClick={handleClose}>
+                            <Close />
+                        </IconButton>
+                    </Box>
 
-                        {/* Profile Tab */}
-                        <TabPanel value={activeTab} index={0}>
-                            <Stack spacing={3}>
-                                {saveSuccess && (
-                                    <Alert severity="success">
-                                        Profile updated successfully!
-                                    </Alert>
-                                )}
+                    {/* Sidebar + Content Layout */}
+                    <Box sx={{ display: 'flex', gap: 3, flexDirection: { xs: 'column', md: 'row' } }}>
+                        {/* Left Sidebar */}
+                        <Paper
+                            sx={{
+                                ...glassCardStyles,
+                                borderRadius: "12px",
+                                p: 1,
+                                width: { xs: '100%', md: 200 },
+                                flexShrink: 0,
+                                alignSelf: 'flex-start',
+                            }}
+                        >
+                            <Stack spacing={0.5}>
+                                {menuItems.map((item, index) => (
+                                    <Button
+                                        key={item.label}
+                                        variant={activeTab === index ? 'contained' : 'text'}
+                                        onClick={() => setActiveTab(index)}
+                                        startIcon={item.icon}
+                                        sx={{
+                                            justifyContent: 'flex-start',
+                                            px: 2,
+                                            py: 1,
+                                            borderRadius: 2,
+                                            textTransform: 'none',
+                                            fontWeight: activeTab === index ? 600 : 400,
+                                            color: activeTab === index ? undefined : 'text.primary',
+                                            bgcolor: activeTab === index ? 'primary.main' : 'transparent',
+                                            '&:hover': {
+                                                bgcolor: activeTab === index ? 'primary.dark' : 'action.hover',
+                                            },
+                                        }}
+                                    >
+                                        {item.label}
+                                    </Button>
+                                ))}
+                            </Stack>
+                        </Paper>
 
-                                {/* Avatar */}
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        alignItems: "center",
-                                        gap: 2,
-                                    }}
-                                >
-                                    <Box sx={{ position: "relative" }}>
-                                        <Avatar
-                                            sx={{
-                                                width: 80,
-                                                height: 80,
-                                                fontSize: 32,
-                                                bgcolor: "primary.main",
-                                            }}
-                                        >
-                                            {(
-                                                currentUser?.initials?.trim() ||
-                                                currentUser?.name
-                                                    ?.charAt(0)
-                                                    .toUpperCase()
-                                            ) ?? "?"}
-                                        </Avatar>
-                                        <IconButton
-                                            sx={{
-                                                position: "absolute",
-                                                bottom: -8,
-                                                right: -8,
-                                                bgcolor: "background.paper",
-                                                border: 2,
-                                                borderColor: "divider",
-                                                "&:hover": {
+                        {/* Right Content Area */}
+                        <Paper
+                            sx={{
+                                ...glassCardStyles,
+                                borderRadius: "12px",
+                                p: { xs: 2, sm: 3 },
+                                flex: 1,
+                                minWidth: 0,
+                            }}
+                        >
+                            {/* Profile Tab */}
+                            <TabPanel value={activeTab} index={0}>
+                                <Stack spacing={3}>
+                                    <Typography variant="h6" fontWeight={600}>Profile</Typography>
+                                    {saveSuccess && (
+                                        <Alert severity="success">
+                                            Profile updated successfully!
+                                        </Alert>
+                                    )}
+
+                                    {/* Avatar */}
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            alignItems: "center",
+                                            gap: 2,
+                                        }}
+                                    >
+                                        <Box sx={{ position: "relative" }}>
+                                            <Avatar
+                                                sx={{
+                                                    width: 80,
+                                                    height: 80,
+                                                    fontSize: 32,
+                                                    bgcolor: "primary.main",
+                                                }}
+                                            >
+                                                {(
+                                                    currentUser?.initials?.trim() ||
+                                                    currentUser?.name
+                                                        ?.charAt(0)
+                                                        .toUpperCase()
+                                                ) ?? "?"}
+                                            </Avatar>
+                                            <IconButton
+                                                sx={{
+                                                    position: "absolute",
+                                                    bottom: -8,
+                                                    right: -8,
                                                     bgcolor: "background.paper",
-                                                },
-                                            }}
-                                            size="small"
-                                            onClick={handleAvatarClick}
-                                        >
-                                            <PhotoCamera fontSize="small" />
-                                        </IconButton>
+                                                    border: 2,
+                                                    borderColor: "divider",
+                                                    "&:hover": {
+                                                        bgcolor: "background.paper",
+                                                    },
+                                                }}
+                                                size="small"
+                                                onClick={handleAvatarClick}
+                                            >
+                                                <PhotoCamera fontSize="small" />
+                                            </IconButton>
+                                        </Box>
+                                        <Box>
+                                            <Typography
+                                                variant="subtitle1"
+                                                fontWeight={600}
+                                            >
+                                                {currentUser?.name || "User"}
+                                            </Typography>
+                                            <Typography
+                                                variant="body2"
+                                                color="text.secondary"
+                                            >
+                                                Update your profile information
+                                            </Typography>
+                                        </Box>
                                     </Box>
-                                    <Box>
-                                        <Typography
-                                            variant="subtitle1"
-                                            fontWeight={600}
-                                        >
-                                            {currentUser?.name || "User"}
-                                        </Typography>
-                                        <Typography
-                                            variant="body2"
-                                            color="text.secondary"
-                                        >
-                                            Update your profile information and
-                                            initials
-                                        </Typography>
-                                    </Box>
-                                </Box>
 
-                                {/* Name */}
-                                <TextField
-                                    fullWidth
-                                    label="Full Name"
-                                    value={name}
-                                    onChange={(e) => setName(e.target.value)}
-                                    InputProps={{
-                                        startAdornment: (
-                                            <Person
-                                                sx={{
-                                                    mr: 1,
-                                                    color: "text.secondary",
-                                                }}
-                                            />
-                                        ),
-                                    }}
-                                />
+                                    {/* Name */}
+                                    <TextField
+                                        fullWidth
+                                        label="Full Name"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        InputProps={{
+                                            startAdornment: (
+                                                <Person
+                                                    sx={{
+                                                        mr: 1,
+                                                        color: "text.secondary",
+                                                    }}
+                                                />
+                                            ),
+                                        }}
+                                    />
 
-                                {/* Initials */}
-                                <TextField
-                                    fullWidth
-                                    label="Initials"
-                                    value={initials}
-                                    onChange={(e) =>
-                                        setInitials(
-                                            e.target.value.toUpperCase()
-                                        )
-                                    }
-                                    helperText="Used in revision history (e.g. MTL, TE)"
-                                    inputProps={{ maxLength: 8 }}
-                                />
-
-                                {/* Email */}
-                                <TextField
-                                    fullWidth
-                                    label="Email Address"
-                                    type="email"
-                                    value={email}
-                                    onChange={(e) =>
-                                        setEmail(e.target.value)
-                                    }
-                                    InputProps={{
-                                        startAdornment: (
-                                            <Email
-                                                sx={{
-                                                    mr: 1,
-                                                    color: "text.secondary",
-                                                }}
-                                            />
-                                        ),
-                                    }}
-                                />
-
-                                {/* Role (Read-only) */}
-                                <TextField
-                                    fullWidth
-                                    label="Role"
-                                    value={
-                                        currentUser?.role
-                                            ? currentUser.role
-                                                .split("_")
-                                                .map(
-                                                    (part) =>
-                                                        part
-                                                            .charAt(0)
-                                                            .toUpperCase() +
-                                                        part.slice(1)
-                                                )
-                                                .join(" ")
-                                            : "Guest"
-                                    }
-                                    disabled
-                                    helperText="Contact admin to change your role"
-                                />
-
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        justifyContent: "flex-end",
-                                    }}
-                                >
-                                    <Button
-                                        variant="contained"
-                                        startIcon={<Save />}
-                                        onClick={handleSaveProfile}
-                                    >
-                                        Save Profile
-                                    </Button>
-                                </Box>
-                            </Stack>
-                        </TabPanel>
-
-                        {/* Security Tab */}
-                        <TabPanel value={activeTab} index={1}>
-                            <Stack spacing={3}>
-                                {passwordMessage && (
-                                    <Alert severity={passwordMessage.type}>
-                                        {passwordMessage.text}
-                                    </Alert>
-                                )}
-                                <TextField
-                                    fullWidth
-                                    label="Current Password"
-                                    type="password"
-                                    value={currentPassword}
-                                    onChange={(e) =>
-                                        setCurrentPassword(e.target.value)
-                                    }
-                                    InputProps={{
-                                        startAdornment: (
-                                            <Lock
-                                                sx={{
-                                                    mr: 1,
-                                                    color: "text.secondary",
-                                                }}
-                                            />
-                                        ),
-                                    }}
-                                />
-
-                                <TextField
-                                    fullWidth
-                                    label="New Password"
-                                    type="password"
-                                    value={newPassword}
-                                    onChange={(e) =>
-                                        setNewPassword(e.target.value)
-                                    }
-                                    InputProps={{
-                                        startAdornment: (
-                                            <Lock
-                                                sx={{
-                                                    mr: 1,
-                                                    color: "text.secondary",
-                                                }}
-                                            />
-                                        ),
-                                    }}
-                                    helperText="Minimum 6 characters"
-                                />
-
-                                <TextField
-                                    fullWidth
-                                    label="Confirm New Password"
-                                    type="password"
-                                    value={confirmPassword}
-                                    onChange={(e) =>
-                                        setConfirmPassword(e.target.value)
-                                    }
-                                    InputProps={{
-                                        startAdornment: (
-                                            <Lock
-                                                sx={{
-                                                    mr: 1,
-                                                    color: "text.secondary",
-                                                }}
-                                            />
-                                        ),
-                                    }}
-                                />
-
-                                <Box
-                                    sx={{
-                                        display: "flex",
-                                        justifyContent: "flex-start",
-                                    }}
-                                >
-                                    <Button
-                                        variant="contained"
-                                        onClick={handleChangePassword}
-                                        disabled={
-                                            !currentPassword ||
-                                            !newPassword ||
-                                            !confirmPassword
+                                    {/* Initials */}
+                                    <TextField
+                                        fullWidth
+                                        label="Initials"
+                                        value={initials}
+                                        onChange={(e) =>
+                                            setInitials(
+                                                e.target.value.toUpperCase()
+                                            )
                                         }
-                                    >
-                                        Change Password
-                                    </Button>
-                                </Box>
-                            </Stack>
-                        </TabPanel>
+                                        helperText="Used in revision history (e.g. MTL, TE)"
+                                        inputProps={{ maxLength: 8 }}
+                                    />
 
-                        {/* System Tab */}
-                        <TabPanel value={activeTab} index={2}>
-                            <SystemSettingsPanel />
-                        </TabPanel>
-                    </Paper>
+                                    {/* Email */}
+                                    <TextField
+                                        fullWidth
+                                        label="Email Address"
+                                        type="email"
+                                        value={email}
+                                        onChange={(e) =>
+                                            setEmail(e.target.value)
+                                        }
+                                        InputProps={{
+                                            startAdornment: (
+                                                <Email
+                                                    sx={{
+                                                        mr: 1,
+                                                        color: "text.secondary",
+                                                    }}
+                                                />
+                                            ),
+                                        }}
+                                    />
+
+                                    {/* Role (Read-only) */}
+                                    <TextField
+                                        fullWidth
+                                        label="Role"
+                                        value={
+                                            currentUser?.role
+                                                ? currentUser.role
+                                                    .split("_")
+                                                    .map(
+                                                        (part) =>
+                                                            part
+                                                                .charAt(0)
+                                                                .toUpperCase() +
+                                                            part.slice(1)
+                                                    )
+                                                    .join(" ")
+                                                : "Guest"
+                                        }
+                                        disabled
+                                        helperText="Contact admin to change your role"
+                                    />
+
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            justifyContent: "flex-end",
+                                        }}
+                                    >
+                                        <Button
+                                            variant="contained"
+                                            startIcon={<Save />}
+                                            onClick={handleSaveProfile}
+                                        >
+                                            Save Profile
+                                        </Button>
+                                    </Box>
+                                </Stack>
+                            </TabPanel>
+
+                            {/* Security Tab */}
+                            <TabPanel value={activeTab} index={1}>
+                                <Stack spacing={3}>
+                                    <Typography variant="h6" fontWeight={600}>Security</Typography>
+                                    {passwordMessage && (
+                                        <Alert severity={passwordMessage.type}>
+                                            {passwordMessage.text}
+                                        </Alert>
+                                    )}
+                                    <TextField
+                                        fullWidth
+                                        label="Current Password"
+                                        type="password"
+                                        value={currentPassword}
+                                        onChange={(e) =>
+                                            setCurrentPassword(e.target.value)
+                                        }
+                                        InputProps={{
+                                            startAdornment: (
+                                                <Lock
+                                                    sx={{
+                                                        mr: 1,
+                                                        color: "text.secondary",
+                                                    }}
+                                                />
+                                            ),
+                                        }}
+                                    />
+
+                                    <TextField
+                                        fullWidth
+                                        label="New Password"
+                                        type="password"
+                                        value={newPassword}
+                                        onChange={(e) =>
+                                            setNewPassword(e.target.value)
+                                        }
+                                        InputProps={{
+                                            startAdornment: (
+                                                <Lock
+                                                    sx={{
+                                                        mr: 1,
+                                                        color: "text.secondary",
+                                                    }}
+                                                />
+                                            ),
+                                        }}
+                                        helperText="Minimum 6 characters"
+                                    />
+
+                                    <TextField
+                                        fullWidth
+                                        label="Confirm New Password"
+                                        type="password"
+                                        value={confirmPassword}
+                                        onChange={(e) =>
+                                            setConfirmPassword(e.target.value)
+                                        }
+                                        InputProps={{
+                                            startAdornment: (
+                                                <Lock
+                                                    sx={{
+                                                        mr: 1,
+                                                        color: "text.secondary",
+                                                    }}
+                                                />
+                                            ),
+                                        }}
+                                    />
+
+                                    <Box
+                                        sx={{
+                                            display: "flex",
+                                            justifyContent: "flex-start",
+                                        }}
+                                    >
+                                        <Button
+                                            variant="contained"
+                                            onClick={handleChangePassword}
+                                            disabled={
+                                                !currentPassword ||
+                                                !newPassword ||
+                                                !confirmPassword
+                                            }
+                                        >
+                                            Change Password
+                                        </Button>
+                                    </Box>
+                                </Stack>
+                            </TabPanel>
+
+                            {/* System Tab */}
+                            <TabPanel value={activeTab} index={2}>
+                                <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>System</Typography>
+                                <SystemSettingsPanel />
+                            </TabPanel>
+                        </Paper>
+                    </Box>
                 </Box>
             </Box>
         </Box>
     );
 }
-
