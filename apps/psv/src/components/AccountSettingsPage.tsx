@@ -347,15 +347,17 @@ export function AccountSettingsPage() {
                                         label="Full Name"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
-                                        InputProps={{
-                                            startAdornment: (
-                                                <Person
-                                                    sx={{
-                                                        mr: 1,
-                                                        color: "text.secondary",
-                                                    }}
-                                                />
-                                            ),
+                                        slotProps={{
+                                            input: {
+                                                startAdornment: (
+                                                    <Person
+                                                        sx={{
+                                                            mr: 1,
+                                                            color: "text.secondary",
+                                                        }}
+                                                    />
+                                                ),
+                                            }
                                         }}
                                     />
 
@@ -369,8 +371,12 @@ export function AccountSettingsPage() {
                                                 e.target.value.toUpperCase()
                                             )
                                         }
-                                        helperText="Used in revision history (e.g. MTL, TE)"
-                                        inputProps={{ maxLength: 8 }}
+                                        helperText="Used in revision history, maximum 8 characters (e.g. JS, JSR, JSR2)"
+                                        slotProps={{
+                                            htmlInput: {
+                                                maxLength: 8,
+                                            },
+                                        }}
                                     />
 
                                     {/* Email */}
@@ -382,15 +388,17 @@ export function AccountSettingsPage() {
                                         onChange={(e) =>
                                             setEmail(e.target.value)
                                         }
-                                        InputProps={{
-                                            startAdornment: (
-                                                <Email
-                                                    sx={{
-                                                        mr: 1,
-                                                        color: "text.secondary",
-                                                    }}
-                                                />
-                                            ),
+                                        slotProps={{
+                                            input: {
+                                                startAdornment: (
+                                                    <Email
+                                                        sx={{
+                                                            mr: 1,
+                                                            color: "text.secondary",
+                                                        }}
+                                                    />
+                                                ),
+                                            }
                                         }}
                                     />
 
@@ -450,15 +458,17 @@ export function AccountSettingsPage() {
                                         onChange={(e) =>
                                             setCurrentPassword(e.target.value)
                                         }
-                                        InputProps={{
-                                            startAdornment: (
-                                                <Lock
-                                                    sx={{
-                                                        mr: 1,
-                                                        color: "text.secondary",
-                                                    }}
-                                                />
-                                            ),
+                                        slotProps={{
+                                            input: {
+                                                startAdornment: (
+                                                    <Lock
+                                                        sx={{
+                                                            mr: 1,
+                                                            color: "text.secondary",
+                                                        }}
+                                                    />
+                                                ),
+                                            }
                                         }}
                                     />
 
@@ -470,15 +480,17 @@ export function AccountSettingsPage() {
                                         onChange={(e) =>
                                             setNewPassword(e.target.value)
                                         }
-                                        InputProps={{
-                                            startAdornment: (
-                                                <Lock
-                                                    sx={{
-                                                        mr: 1,
-                                                        color: "text.secondary",
-                                                    }}
-                                                />
-                                            ),
+                                        slotProps={{
+                                            input: {
+                                                startAdornment: (
+                                                    <Lock
+                                                        sx={{
+                                                            mr: 1,
+                                                            color: "text.secondary",
+                                                        }}
+                                                    />
+                                                ),
+                                            }
                                         }}
                                         helperText="Minimum 6 characters"
                                     />
@@ -491,15 +503,17 @@ export function AccountSettingsPage() {
                                         onChange={(e) =>
                                             setConfirmPassword(e.target.value)
                                         }
-                                        InputProps={{
-                                            startAdornment: (
-                                                <Lock
-                                                    sx={{
-                                                        mr: 1,
-                                                        color: "text.secondary",
-                                                    }}
-                                                />
-                                            ),
+                                        slotProps={{
+                                            input: {
+                                                startAdornment: (
+                                                    <Lock
+                                                        sx={{
+                                                            mr: 1,
+                                                            color: "text.secondary",
+                                                        }}
+                                                    />
+                                                ),
+                                            }
                                         }}
                                     />
 
