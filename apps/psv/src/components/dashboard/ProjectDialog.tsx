@@ -16,7 +16,7 @@ import {
     useTheme,
     FormHelperText,
 } from "@mui/material";
-import { Project } from "@/data/types";
+import { Project, UnitSystem } from "@/data/types";
 import { usePsvStore } from "@/store/usePsvStore";
 import { useShallow } from "zustand/react/shallow";
 import { OwnerSelector } from "../shared";
@@ -29,6 +29,13 @@ const PROJECT_STATUS_OPTIONS: { value: Project['status']; label: string }[] = WO
         label: getWorkflowStatusLabel(status),
     })
 );
+
+const UNIT_SYSTEM_OPTIONS: { value: UnitSystem; label: string; helper: string }[] = [
+    { value: 'metric', label: 'Metric (SI)', helper: 'barg, °C, kg/h, m, mm' },
+    { value: 'fieldSI', label: 'Field SI', helper: 'bar(g), °C, kg/h, m, mm' },
+    { value: 'metric_kgcm2', label: 'Metric (kg/cm²)', helper: 'kg/cm²(g), °C, kg/h, m, mm' },
+    { value: 'imperial', label: 'Imperial (US)', helper: 'psig, °F, lb/h, ft, in' },
+];
 
 interface ProjectDialogProps {
     open: boolean;
@@ -68,6 +75,7 @@ export function ProjectDialog({
     const [areaId, setAreaId] = useState<string>('');
     const [phase, setPhase] = useState<'design' | 'construction' | 'commissioning' | 'operation'>('design');
     const [status, setStatus] = useState<'draft' | 'in_review' | 'checked' | 'approved' | 'issued'>('draft');
+    const [unitSystem, setUnitSystem] = useState<UnitSystem>('metric');
     const [startDate, setStartDate] = useState('');
     const [endDate, setEndDate] = useState('');
     const [leadId, setLeadId] = useState<string | null>(null);
@@ -79,6 +87,7 @@ export function ProjectDialog({
             setAreaId(project.areaId);
             setPhase(project.phase);
             setStatus(project.status);
+            setUnitSystem(project.unitSystem || 'metric');
             setStartDate(project.startDate);
             setEndDate(project.endDate || '');
             setLeadId(project.leadId);
@@ -116,6 +125,7 @@ export function ProjectDialog({
             setCode('');
             setPhase('design');
             setStatus('draft');
+            setUnitSystem('metric');
             setStartDate('');
             setEndDate('');
             setLeadId(null);
@@ -128,6 +138,7 @@ export function ProjectDialog({
             setAreaId('');
             setPhase('design');
             setStatus('draft');
+            setUnitSystem('metric');
             setStartDate('');
             setEndDate('');
             setLeadId(null);
@@ -143,6 +154,7 @@ export function ProjectDialog({
             areaId,
             phase,
             status,
+            unitSystem,
             startDate,
             endDate: endDate || undefined,
             leadId,
@@ -304,6 +316,25 @@ export function ProjectDialog({
                             <MenuItem value="commissioning">Commissioning</MenuItem>
                             <MenuItem value="operation">Operation</MenuItem>
                         </Select>
+                    </FormControl>
+
+                    {/* Unit System (display) */}
+                    <FormControl fullWidth size="small">
+                        <InputLabel>Unit System</InputLabel>
+                        <Select
+                            value={unitSystem}
+                            onChange={(e) => setUnitSystem(e.target.value as UnitSystem)}
+                            label="Unit System"
+                        >
+                            {UNIT_SYSTEM_OPTIONS.map(option => (
+                                <MenuItem key={option.value} value={option.value}>
+                                    {option.label}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                        <FormHelperText sx={{ color: 'text.secondary' }}>
+                            Display preference for PSV details & reports: {UNIT_SYSTEM_OPTIONS.find(o => o.value === unitSystem)?.helper}
+                        </FormHelperText>
                     </FormControl>
 
                     {/* Status Selector */}

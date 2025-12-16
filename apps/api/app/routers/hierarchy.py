@@ -1,5 +1,5 @@
 """Hierarchy API router - Customers, Plants, Units, Areas, Projects."""
-from typing import List
+from typing import List, Literal
 from datetime import datetime, date
 
 from fastapi import APIRouter
@@ -64,6 +64,7 @@ class ProjectResponse(BaseModel):
     code: str
     phase: str
     status: str
+    unit_system: str = Field(default="metric", serialization_alias="unitSystem")
     start_date: date = Field(serialization_alias="startDate")
     end_date: date | None = Field(default=None, serialization_alias="endDate")
     lead_id: str = Field(serialization_alias="leadId")
@@ -140,7 +141,8 @@ class ProjectCreate(BaseModel):
     name: str
     code: str
     phase: str
-    status: str = "active"
+    status: str = "draft"
+    unitSystem: Literal["metric", "fieldSI", "metric_kgcm2", "imperial"] = "metric"
     startDate: date
     endDate: date | None = None
     leadId: str
@@ -151,6 +153,7 @@ class ProjectUpdate(BaseModel):
     code: str | None = None
     phase: str | None = None
     status: str | None = None
+    unitSystem: Literal["metric", "fieldSI", "metric_kgcm2", "imperial"] | None = None
     startDate: date | None = None
     endDate: date | None = None
     leadId: str | None = None

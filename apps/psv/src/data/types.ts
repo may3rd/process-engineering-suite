@@ -39,6 +39,9 @@ export interface Area {
     createdAt: string;
 }
 
+// Unit system preferences (display only; stored engineering data remains in base units)
+export type UnitSystem = 'metric' | 'fieldSI' | 'metric_kgcm2' | 'imperial';
+
 export interface Project {
     id: string;
     areaId: string;
@@ -46,6 +49,7 @@ export interface Project {
     code: string;
     phase: 'design' | 'construction' | 'commissioning' | 'operation';
     status: 'draft' | 'in_review' | 'checked' | 'approved' | 'issued';
+    unitSystem?: UnitSystem;
     startDate: string;
     endDate?: string;
     leadId: string;

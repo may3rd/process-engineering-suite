@@ -58,6 +58,8 @@ import { HydraulicReportDialog } from "./HydraulicReportDialog";
 import { v4 as uuidv4 } from "uuid";
 import { calculateSizing } from "@eng-suite/api/psv";
 import { useUnitConversion, UnitType } from "@/hooks/useUnitConversion";
+import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
+import { getDefaultUnitPreferences } from "@/lib/unitPreferences";
 import type { FluidProperties } from "@/lib/apiClient";
 import {
     validateInletPressureDrop,
@@ -320,16 +322,9 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
     const [networkDirty, setNetworkDirty] = useState(false);
 
     // Unit state
+    const { unitSystem } = useProjectUnitSystem();
     // Unit Conversion Hook
-    const defaultPreferences: UnitPreferences = {
-        pressure: 'barg',
-        temperature: 'C',  // No ° symbol for convertUnit compatibility
-        flow: 'kg/h',
-        length: 'm',
-        area: 'mm²',
-        density: 'kg/m³',
-        viscosity: 'cP',
-    };
+    const defaultPreferences: UnitPreferences = getDefaultUnitPreferences(unitSystem);
 
     const { preferences, setUnit, toDisplay, toDisplayDelta, getDeltaUnit, toBase } = useUnitConversion(sizingCase.unitPreferences || defaultPreferences);
 

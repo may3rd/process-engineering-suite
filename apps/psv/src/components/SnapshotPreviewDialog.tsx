@@ -19,6 +19,8 @@ import {
 import { Close, History } from '@mui/icons-material';
 import { RevisionHistory } from '@/data/types';
 import { getUserById } from '@/data/mockData';
+import { useProjectUnitSystem } from '@/lib/useProjectUnitSystem';
+import { formatPressureGauge } from '@/lib/projectUnits';
 
 interface SnapshotPreviewDialogProps {
     open: boolean;
@@ -48,6 +50,7 @@ export function SnapshotPreviewDialog({
 }: SnapshotPreviewDialogProps) {
     if (!revision) return null;
 
+    const { unitSystem } = useProjectUnitSystem();
     const snapshot = revision.snapshot as Record<string, unknown>;
 
     // Extract key PSV fields from snapshot
@@ -56,8 +59,14 @@ export function SnapshotPreviewDialog({
         { label: 'Name', value: snapshot.name },
         { label: 'Type', value: snapshot.type },
         { label: 'Design Code', value: snapshot.designCode },
-        { label: 'Set Pressure', value: snapshot.setPressure ? `${snapshot.setPressure} barg` : '-' },
-        { label: 'MAWP', value: snapshot.mawp ? `${snapshot.mawp} barg` : '-' },
+        {
+            label: 'Set Pressure',
+            value: typeof snapshot.setPressure === 'number' ? formatPressureGauge(snapshot.setPressure, unitSystem, 2) : '-'
+        },
+        {
+            label: 'MAWP',
+            value: typeof snapshot.mawp === 'number' ? formatPressureGauge(snapshot.mawp, unitSystem, 2) : '-'
+        },
         { label: 'Service Fluid', value: snapshot.serviceFluid },
         { label: 'Fluid Phase', value: snapshot.fluidPhase },
         { label: 'Status', value: snapshot.status },

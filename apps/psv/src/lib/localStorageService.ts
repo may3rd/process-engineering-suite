@@ -414,6 +414,7 @@ class LocalStorageService {
             code: data.code || '',
             phase: data.phase || 'design',
             status: data.status || 'draft',
+            unitSystem: data.unitSystem || 'metric',
             leadId: data.leadId || '',
             startDate: data.startDate || now().split('T')[0],
             endDate: data.endDate,

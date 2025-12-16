@@ -69,14 +69,31 @@ class ApiClient {
             headers['Authorization'] = `Bearer ${this.token}`;
         }
 
-        const response = await fetch(url, {
-            ...options,
-            headers,
-        });
+        let response: Response;
+        try {
+            response = await fetch(url, {
+                ...options,
+                headers,
+            });
+        } catch (err) {
+            const hint = `Failed to fetch ${url}. Check NEXT_PUBLIC_API_URL and that the API is reachable.`;
+            const message = err instanceof Error ? `${hint} (${err.message})` : hint;
+            throw new Error(message);
+        }
 
         if (!response.ok) {
-            const error = await response.json().catch(() => ({ detail: 'Unknown error' }));
-            throw new Error(error.detail || `HTTP ${response.status}`);
+            const contentType = response.headers.get('content-type') || '';
+            const errorBody =
+                contentType.includes('application/json')
+                    ? await response.json().catch(() => null)
+                    : await response.text().catch(() => null);
+
+            const detail =
+                typeof errorBody === 'string'
+                    ? errorBody
+                    : (errorBody && typeof errorBody === 'object' && 'detail' in errorBody ? (errorBody as any).detail : null);
+
+            throw new Error(detail || `HTTP ${response.status}`);
         }
 
         return response.json();

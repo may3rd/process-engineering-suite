@@ -38,6 +38,8 @@ import { OverpressureScenario, ScenarioCause, FluidPhase } from "@/data/types";
 import { v4 as uuidv4 } from "uuid";
 import { useAuthStore } from "@/store/useAuthStore";
 import { MarkdownEditor } from "@/components/shared/MarkdownEditor";
+import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
+import { convertValue } from "@/lib/projectUnits";
 
 interface ScenarioEditorProps {
     initialData?: OverpressureScenario;
@@ -70,6 +72,7 @@ const PHASE_OPTIONS: { value: FluidPhase; label: string }[] = [
 
 export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete }: ScenarioEditorProps) {
     const canEdit = useAuthStore((state) => state.canEdit());
+    const { units } = useProjectUnitSystem();
 
     const [formData, setFormData] = useState<Partial<OverpressureScenario>>({
         protectiveSystemId: psvId,
@@ -142,6 +145,10 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
     const isDark = theme.palette.mode === 'dark';
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
+
+    const relievingRateDisplay = convertValue(formData.relievingRate ?? null, "kg/h", units.massFlow.unit);
+    const relievingPressureDisplay = convertValue(formData.relievingPressure ?? null, "barg", units.pressureGauge.unit);
+    const relievingTempDisplay = convertValue(formData.relievingTemp ?? null, "C", units.temperature.unit);
 
     const handleConfirmDelete = () => {
         if (onDelete && initialData && deleteConfirmationInput === "delete scenario") {
@@ -254,10 +261,19 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                     <TextField
                         label="Relieving Rate"
                         type="number"
-                        value={formData.relievingRate}
-                        onChange={(e) => handleInputChange('relievingRate', parseFloat(e.target.value))}
+                        value={relievingRateDisplay ?? ""}
+                        onChange={(e) => {
+                            const raw = e.target.value;
+                            if (raw === "") {
+                                handleInputChange("relievingRate", undefined);
+                                return;
+                            }
+                            const parsed = parseFloat(raw);
+                            const base = convertValue(parsed, units.massFlow.unit, "kg/h");
+                            handleInputChange("relievingRate", base);
+                        }}
                         InputProps={{
-                            endAdornment: <InputAdornment position="end">kg/h</InputAdornment>,
+                            endAdornment: <InputAdornment position="end">{units.massFlow.label}</InputAdornment>,
                         }}
                         error={!!errors.relievingRate}
                         fullWidth
@@ -266,10 +282,19 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                     <TextField
                         label="Relieving Pressure"
                         type="number"
-                        value={formData.relievingPressure}
-                        onChange={(e) => handleInputChange('relievingPressure', parseFloat(e.target.value))}
+                        value={relievingPressureDisplay ?? ""}
+                        onChange={(e) => {
+                            const raw = e.target.value;
+                            if (raw === "") {
+                                handleInputChange("relievingPressure", undefined);
+                                return;
+                            }
+                            const parsed = parseFloat(raw);
+                            const base = convertValue(parsed, units.pressureGauge.unit, "barg");
+                            handleInputChange("relievingPressure", base);
+                        }}
                         InputProps={{
-                            endAdornment: <InputAdornment position="end">barg</InputAdornment>,
+                            endAdornment: <InputAdornment position="end">{units.pressureGauge.label}</InputAdornment>,
                         }}
                         error={!!errors.relievingPressure}
                         fullWidth
@@ -278,10 +303,19 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                     <TextField
                         label="Relieving Temp"
                         type="number"
-                        value={formData.relievingTemp}
-                        onChange={(e) => handleInputChange('relievingTemp', parseFloat(e.target.value))}
+                        value={relievingTempDisplay ?? ""}
+                        onChange={(e) => {
+                            const raw = e.target.value;
+                            if (raw === "") {
+                                handleInputChange("relievingTemp", undefined);
+                                return;
+                            }
+                            const parsed = parseFloat(raw);
+                            const base = convertValue(parsed, units.temperature.unit, "C");
+                            handleInputChange("relievingTemp", base);
+                        }}
                         InputProps={{
-                            endAdornment: <InputAdornment position="end">°C</InputAdornment>,
+                            endAdornment: <InputAdornment position="end">{units.temperature.label}</InputAdornment>,
                         }}
                         error={!!errors.relievingTemp}
                         fullWidth

@@ -25,6 +25,8 @@ import {
     OpenInNew,
 } from "@mui/icons-material";
 import { ProtectiveSystem, OverpressureScenario, PipelineHydraulicSummary, PipelineNetwork } from "@/data/types";
+import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
+import { convertValue, formatNumber, formatWithUnit } from "@/lib/projectUnits";
 
 interface PipelineHydraulicsCardProps {
     type: 'inlet' | 'outlet';
@@ -144,6 +146,7 @@ export function PipelineHydraulicsCard({
 }: PipelineHydraulicsCardProps) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
+    const { unitSystem, units } = useProjectUnitSystem();
 
     const network = type === 'inlet' ? psv.inletNetwork : psv.outletNetwork;
     const summary = calculateHydraulicSummary(network, governingScenario, psv.setPressure, type);
@@ -232,7 +235,7 @@ export function PipelineHydraulicsCard({
                                         </Box>
                                     </TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 500 }}>
-                                        {summary.totalLength.toFixed(1)} m
+                                        {formatWithUnit(convertValue(summary.totalLength, 'm', units.length.unit), units.length.label, 1)}
                                     </TableCell>
                                 </TableRow>
                                 <TableRow>
@@ -240,7 +243,7 @@ export function PipelineHydraulicsCard({
                                         Nominal Diameter
                                     </TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 500 }}>
-                                        {summary.nominalDiameter.toFixed(0)} mm
+                                        {formatWithUnit(convertValue(summary.nominalDiameter, 'mm', units.diameter.unit), units.diameter.label, 0)}
                                     </TableCell>
                                 </TableRow>
                                 <TableRow>
@@ -251,7 +254,9 @@ export function PipelineHydraulicsCard({
                                         </Box>
                                     </TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 500 }}>
-                                        {summary.velocity.toFixed(1)} m/s
+                                        {unitSystem === 'imperial'
+                                            ? formatWithUnit(convertValue(summary.velocity, 'm/s', 'ft/s'), 'ft/s', 1)
+                                            : formatWithUnit(summary.velocity, 'm/s', 1)}
                                     </TableCell>
                                 </TableRow>
                                 <TableRow>
@@ -259,7 +264,7 @@ export function PipelineHydraulicsCard({
                                         Pressure Drop
                                     </TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 500 }}>
-                                        {summary.pressureDrop.toFixed(1)} kPa
+                                        {formatWithUnit(convertValue(summary.pressureDrop, 'kPa', units.pressureDrop.unit), units.pressureDrop.label, 2)}
                                     </TableCell>
                                 </TableRow>
                                 <TableRow>

@@ -89,8 +89,11 @@ import { RevisionBadge } from "./RevisionBadge";
 import { NewRevisionDialog } from "./NewRevisionDialog";
 	import { RevisionHistoryPanel } from "./RevisionHistoryPanel";
 	import { SnapshotPreviewDialog } from "./SnapshotPreviewDialog";
-	import { RevisionHistory } from "@/data/types";
-	import { sortRevisionsByOriginatedAtDesc } from "@/lib/revisionSort";
+import { RevisionHistory } from "@/data/types";
+import { sortRevisionsByOriginatedAtDesc } from "@/lib/revisionSort";
+import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
+import { convertValue, formatLocaleNumber, formatNumber, formatPressureGauge, formatTemperatureC, formatMassFlowKgH } from "@/lib/projectUnits";
+import { getDefaultUnitPreferences } from "@/lib/unitPreferences";
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -117,6 +120,7 @@ function TabPanel(props: TabPanelProps) {
 // Overview Tab Content
 function OverviewTab() {
     const { selectedPsv } = usePsvStore();
+    const { unitSystem, units } = useProjectUnitSystem();
 
     if (!selectedPsv) return null;
 
@@ -143,6 +147,7 @@ type ScenarioSortKey = 'cause' | 'rate' | 'created';
 function ScenariosTab() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
+    const { unitSystem } = useProjectUnitSystem();
     const { scenarioList, selectedPsv, addScenario, updateScenario, deleteScenario } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
     const currentUser = useAuthStore((state) => state.currentUser);
@@ -434,15 +439,21 @@ function ScenariosTab() {
                                     >
                                         <Box>
                                             <Typography variant="caption" color="text.secondary">Relieving Rate</Typography>
-                                            <Typography variant="body1" fontWeight={600}>{scenario.relievingRate.toLocaleString()} kg/h</Typography>
+                                            <Typography variant="body1" fontWeight={600}>
+                                                {formatMassFlowKgH(scenario.relievingRate, unitSystem, 0)}
+                                            </Typography>
                                         </Box>
                                         <Box>
                                             <Typography variant="caption" color="text.secondary">Relieving Pressure</Typography>
-                                            <Typography variant="body1" fontWeight={600}>{scenario.relievingPressure} barg</Typography>
+                                            <Typography variant="body1" fontWeight={600}>
+                                                {formatPressureGauge(scenario.relievingPressure, unitSystem, 2)}
+                                            </Typography>
                                         </Box>
                                         <Box>
                                             <Typography variant="caption" color="text.secondary">Relieving Temp</Typography>
-                                            <Typography variant="body1" fontWeight={600}>{scenario.relievingTemp} °C</Typography>
+                                            <Typography variant="body1" fontWeight={600}>
+                                                {formatTemperatureC(scenario.relievingTemp, unitSystem, 1)}
+                                            </Typography>
                                         </Box>
                                         <Box>
                                             <Typography variant="caption" color="text.secondary">Accumulation</Typography>
@@ -455,7 +466,7 @@ function ScenariosTab() {
                                         <Box>
                                             <Typography variant="caption" color="text.secondary">Required Capacity</Typography>
                                             <Typography variant="body1" fontWeight={600} color="primary.main">
-                                                {scenario.requiredCapacity.toLocaleString()} kg/h
+                                                {formatMassFlowKgH(scenario.requiredCapacity, unitSystem, 0)}
                                             </Typography>
                                         </Box>
                                     </Box>
@@ -597,6 +608,7 @@ type SizingSortKey = 'scenario' | 'status' | 'created';
 function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCreate?: (id: string) => void }) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
+    const { unitSystem, units } = useProjectUnitSystem();
     const { sizingCaseList, scenarioList, selectedPsv, addSizingCase, updateSizingCase } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
@@ -729,15 +741,7 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                 messages: [],
                 requiredAreaIn2: 0,
             },
-            unitPreferences: {
-                pressure: 'barg',
-                temperature: '°C',
-                flow: 'kg/h',
-                length: 'm',
-                area: 'mm²',
-                density: 'kg/m³',
-                viscosity: 'cP',
-            },
+            unitPreferences: getDefaultUnitPreferences(unitSystem),
             status: 'draft',
             createdBy: selectedPsv.ownerId,
             createdAt: new Date().toISOString(),
@@ -854,7 +858,7 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                                 )}
                                             </Box>
                                         }
-                                        secondary={`${scenario.relievingRate.toLocaleString()} kg/h @ ${scenario.relievingPressure} barg, ${scenario.relievingTemp}°C`}
+                                        secondary={`${formatMassFlowKgH(scenario.relievingRate, unitSystem, 0)} @ ${formatPressureGauge(scenario.relievingPressure, unitSystem, 2)}, ${formatTemperatureC(scenario.relievingTemp, unitSystem, 1)}`}
                                     />
                                 </ListItemButton>
                             ))}
@@ -939,7 +943,9 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                         <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Mass Flow</Typography>
-                                                <Typography variant="body2" fontWeight={500}>{sizing.inputs.massFlowRate.toLocaleString()} kg/h</Typography>
+                                                <Typography variant="body2" fontWeight={500}>
+                                                    {formatMassFlowKgH(sizing.inputs.massFlowRate, unitSystem, 0)}
+                                                </Typography>
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">MW</Typography>
@@ -947,11 +953,15 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Temperature</Typography>
-                                                <Typography variant="body2" fontWeight={500}>{sizing.inputs.temperature} °C</Typography>
+                                                <Typography variant="body2" fontWeight={500}>
+                                                    {formatTemperatureC(sizing.inputs.temperature, unitSystem, 1)}
+                                                </Typography>
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Pressure</Typography>
-                                                <Typography variant="body2" fontWeight={500}>{sizing.inputs.pressure} barg</Typography>
+                                                <Typography variant="body2" fontWeight={500}>
+                                                    {formatPressureGauge(sizing.inputs.pressure, unitSystem, 2)}
+                                                </Typography>
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Z Factor</Typography>
@@ -964,7 +974,9 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Backpressure</Typography>
                                                 <Typography variant="body2" fontWeight={500}>
-                                                    {typeof sizing.inputs?.backpressure === 'number' ? sizing.inputs.backpressure.toFixed(3) : (sizing.inputs?.backpressure ?? '-')} barg
+                                                    {typeof sizing.inputs?.backpressure === 'number'
+                                                        ? formatPressureGauge(sizing.inputs.backpressure, unitSystem, 3)
+                                                        : (sizing.inputs?.backpressure ?? '-')}
                                                 </Typography>
                                             </Box>
                                             <Box>
@@ -990,7 +1002,9 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Required Area</Typography>
                                                 <Typography variant="body2" fontWeight={600} color="primary.main">
-                                                    {sizing.outputs?.requiredArea?.toLocaleString() ?? '-'} mm²
+                                                    {sizing.outputs?.requiredArea !== undefined && sizing.outputs?.requiredArea !== null
+                                                        ? `${formatLocaleNumber(convertValue(sizing.outputs.requiredArea, 'mm2', units.area.unit), 1)} ${units.area.label}`
+                                                        : '-'}
                                                 </Typography>
                                             </Box>
                                             <Box>
@@ -1004,7 +1018,10 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                                     {(sizing.outputs?.numberOfValves || 1) > 1 ? 'Total Orifice Area' : 'Orifice Area'}
                                                 </Typography>
                                                 <Typography variant="body2" fontWeight={500}>
-                                                    {((sizing.outputs?.orificeArea ?? 0) * (sizing.outputs?.numberOfValves || 1)).toLocaleString()} mm²
+                                                    {(() => {
+                                                        const areaMm2 = (sizing.outputs?.orificeArea ?? 0) * (sizing.outputs?.numberOfValves || 1);
+                                                        return `${formatLocaleNumber(convertValue(areaMm2, 'mm2', units.area.unit), 1)} ${units.area.label}`;
+                                                    })()}
                                                 </Typography>
                                             </Box>
                                             <Box>
@@ -1023,7 +1040,11 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary">Rated Capacity</Typography>
-                                                <Typography variant="body2" fontWeight={500}>{sizing.outputs?.ratedCapacity?.toLocaleString() ?? '-'} kg/h</Typography>
+                                                <Typography variant="body2" fontWeight={500}>
+                                                    {sizing.outputs?.ratedCapacity !== undefined && sizing.outputs?.ratedCapacity !== null
+                                                        ? formatMassFlowKgH(sizing.outputs.ratedCapacity, unitSystem, 0)
+                                                        : '-'}
+                                                </Typography>
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>Flow Type</Typography>

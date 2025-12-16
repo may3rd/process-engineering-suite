@@ -533,6 +533,7 @@ class DatabaseService(DataAccessLayer):
             "uploadedBy": "uploaded_by",
             "assignedTo": "assigned_to",
             "dueDate": "due_date",
+            "unitSystem": "unit_system",
             # Additional mappings
             "unitPreferences": "unit_preferences",
             "isPrimary": "is_primary",

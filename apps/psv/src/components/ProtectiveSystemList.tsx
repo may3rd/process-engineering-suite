@@ -35,10 +35,13 @@ import { ProtectiveSystemType, ProtectiveSystem } from "@/data/types";
 import { getWorkflowStatusColor, getWorkflowStatusLabel } from "@/lib/statusColors";
 import { glassCardStyles } from "./styles";
 import { SortConfig, sortByGetter } from "@/lib/sortUtils";
+import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
+import { formatPressureGauge } from "@/lib/projectUnits";
 
 export function ProtectiveSystemList() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
+    const { unitSystem } = useProjectUnitSystem();
     const { psvList, selectPsv, selectedProject, selectedArea, addProtectiveSystem } = usePsvStore();
     const currentUser = useAuthStore((state) => state.currentUser);
     const canEdit = useAuthStore((state) => state.canEdit());
@@ -357,7 +360,7 @@ export function ProtectiveSystemList() {
                                             Set Pressure
                                         </Typography>
                                         <Typography variant="body2" fontWeight={600}>
-                                            {psv.setPressure} barg
+                                            {formatPressureGauge(psv.setPressure, unitSystem, 2)}
                                         </Typography>
                                     </Box>
                                     <Box>
@@ -365,7 +368,7 @@ export function ProtectiveSystemList() {
                                             MAWP
                                         </Typography>
                                         <Typography variant="body2" fontWeight={600}>
-                                            {psv.mawp} barg
+                                            {formatPressureGauge(psv.mawp, unitSystem, 2)}
                                         </Typography>
                                     </Box>
                                 </Box>

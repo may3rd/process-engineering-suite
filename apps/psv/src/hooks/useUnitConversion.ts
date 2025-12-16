@@ -19,6 +19,7 @@ const UNIT_ALIASES: Record<string, string> = {
     'lb/ft³': 'lb/ft3',
     'mm²': 'mm2',
     'm²': 'm2',
+    'in²': 'in2',
     'Pa·s': 'Pa.s',
 };
 
@@ -28,6 +29,7 @@ const PRESSURE_GAUGE_TO_DIFF: Record<string, string> = {
     'psig': 'psi',
     'kPag': 'kPa',
     'MPag': 'MPa',
+    'kg/cm2g': 'kg/cm2',
     // Absolute units stay the same for differential
     'bar': 'bar',
     'psi': 'psi',

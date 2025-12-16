@@ -21,10 +21,11 @@ import {
     ToggleButton,
 } from "@mui/material";
 import { Edit, Settings as SettingsIcon } from "@mui/icons-material";
-import { ProtectiveSystem, FluidPhase, ValveOperatingType } from "@/data/types";
+import { ProtectiveSystem, FluidPhase, ValveOperatingType, UnitSystem } from "@/data/types";
 import { usePsvStore } from "../store/usePsvStore";
 import { glassCardStyles } from "./styles";
 import { useAuthStore } from "@/store/useAuthStore";
+import { formatPressureGauge } from "@/lib/projectUnits";
 
 interface OperatingConditionsCardProps {
     psv: ProtectiveSystem;
@@ -44,9 +45,10 @@ const VALVE_TYPE_OPTIONS: { value: ValveOperatingType; label: string; short: str
 ];
 
 export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
-    const { updatePsv } = usePsvStore();
+    const { updatePsv, selectedProject } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
     const [open, setOpen] = useState(false);
+    const unitSystem: UnitSystem = selectedProject?.unitSystem || 'metric';
     const [formData, setFormData] = useState({
         serviceFluid: psv.serviceFluid || '',
         fluidPhase: psv.fluidPhase || 'gas',
@@ -158,11 +160,15 @@ export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid', borderColor: 'divider', pb: 1 }}>
                     <Typography variant="body2" color="text.secondary">Set Pressure</Typography>
-                    <Typography variant="body2" fontWeight={700} color="primary.main">{psv.setPressure} barg</Typography>
+                    <Typography variant="body2" fontWeight={700} color="primary.main">
+                        {formatPressureGauge(psv.setPressure, unitSystem, 2)}
+                    </Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid', borderColor: 'divider', pb: 1 }}>
                     <Typography variant="body2" color="text.secondary">MAWP</Typography>
-                    <Typography variant="body2" fontWeight={700}>{psv.mawp} barg</Typography>
+                    <Typography variant="body2" fontWeight={700}>
+                        {formatPressureGauge(psv.mawp, unitSystem, 2)}
+                    </Typography>
                 </Box>
                 <Box sx={{ pt: 1 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 0.5 }}>
@@ -243,4 +249,3 @@ export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
         </Paper>
     );
 }
-

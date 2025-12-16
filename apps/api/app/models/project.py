@@ -38,6 +38,13 @@ class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         ForeignKey("users.id"),
         nullable=False,
     )
+
+    # Display preferences for PSV details/reports (engineering data stays in base units)
+    unit_system: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="metric",
+    )
     
     # Relationships
     area = relationship("Area", back_populates="projects")

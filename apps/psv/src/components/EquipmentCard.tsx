@@ -31,6 +31,8 @@ import { ProtectiveSystem } from "@/data/types";
 import { usePsvStore } from "../store/usePsvStore";
 import { glassCardStyles } from "./styles";
 import { useAuthStore } from "@/store/useAuthStore";
+import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
+import { formatPressureGauge } from "@/lib/projectUnits";
 
 interface EquipmentCardProps {
     psv: ProtectiveSystem;
@@ -39,6 +41,7 @@ interface EquipmentCardProps {
 export function EquipmentCard({ psv }: EquipmentCardProps) {
     const { equipmentLinkList, linkEquipment, unlinkEquipment, equipment: allEquipment, areas } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
+    const { unitSystem, units } = useProjectUnitSystem();
     const [open, setOpen] = useState(false);
     const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]);
 
@@ -132,7 +135,11 @@ export function EquipmentCard({ psv }: EquipmentCardProps) {
                                     </TableCell>
                                     <TableCell>{eq.description}</TableCell>
                                     <TableCell>{eq.type}</TableCell>
-                                    <TableCell>{eq.designPressure} barg</TableCell>
+                                    <TableCell>
+                                        {eq.designPressure !== undefined && eq.designPressure !== null
+                                            ? formatPressureGauge(eq.designPressure, unitSystem, 2)
+                                            : "—"}
+                                    </TableCell>
                                     <TableCell align="right">
                                         {canEdit && (
                                             <Tooltip title="Unlink">
@@ -187,7 +194,9 @@ export function EquipmentCard({ psv }: EquipmentCardProps) {
                                     </ListItemIcon>
                                     <ListItemText
                                         primary={`${eq.tag} - ${eq.description}`}
-                                        secondary={`${eq.type} | Design P: ${eq.designPressure} barg`}
+                                        secondary={`${eq.type} | Design P: ${eq.designPressure !== undefined && eq.designPressure !== null
+                                            ? formatPressureGauge(eq.designPressure, unitSystem, 2)
+                                            : "—"}`}
                                     />
                                 </ListItemButton>
                             </ListItem>

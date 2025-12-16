@@ -35,12 +35,15 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
 import { SortConfig, sortByGetter, toggleSortConfig } from "@/lib/sortUtils";
 import { getWorkflowStatusColor, getWorkflowStatusLabel } from "@/lib/statusColors";
+import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
+import { formatPressureGauge } from "@/lib/projectUnits";
 
 export function PSVsTab() {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
+    const { unitSystem } = useProjectUnitSystem();
     const { addProtectiveSystem, updateProtectiveSystem, deleteProtectiveSystem } = usePsvStore();
     const protectiveSystems = usePsvStore((state) => state.protectiveSystems);
 
@@ -302,7 +305,7 @@ export function PSVsTab() {
                                                 Set Pressure
                                             </Typography>
                                             <Typography variant="body2" fontWeight={500}>
-                                                {psv.setPressure.toFixed(1)} barg
+                                                {formatPressureGauge(psv.setPressure, unitSystem, 1)}
                                             </Typography>
                                         </Box>
                                         <Box>
@@ -438,7 +441,7 @@ export function PSVsTab() {
                                             </TableCell>
                                             <TableCell>
                                                 <Typography variant="body2">
-                                                    {psv.setPressure.toFixed(1)} barg
+                                                    {formatPressureGauge(psv.setPressure, unitSystem, 1)}
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>

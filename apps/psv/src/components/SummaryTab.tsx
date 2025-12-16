@@ -32,6 +32,8 @@ import { PipelineNetwork, OverpressureScenario, PipeProps } from "@/data/types";
 import { getWorkflowStatusLabel } from "@/lib/statusColors";
 import { convertUnit } from "@eng-suite/physics";
 import { RevisionHistoryCard } from "./RevisionHistoryCard";
+import { getProjectUnits, convertValue, formatWithUnit, formatNumber, formatLocaleNumber, formatPressureGauge, formatPressureDrop, formatMassFlowKgH } from "@/lib/projectUnits";
+import { UnitSystem } from "@/data/types";
 
 
 // Helper functions for hydraulic calculations
@@ -274,6 +276,9 @@ export function SummaryTab() {
 
     if (!selectedPsv) return null;
 
+    const unitSystem: UnitSystem = selectedProject?.unitSystem || 'metric';
+    const projectUnits = getProjectUnits(unitSystem);
+
     const linkedEquipment = equipmentLinkList.filter(link => link.psvId === selectedPsv.id);
     const owner = getUserById(selectedPsv.ownerId);
     const psvScenarios = scenarioList.filter(s => s.protectiveSystemId === selectedPsv.id);
@@ -329,6 +334,21 @@ export function SummaryTab() {
     const formatScenarioCause = (cause?: string) => {
         if (!cause) return '—';
         return cause.split('_').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    };
+
+    const formatLength = (valueMeters: number | null | undefined, digits = 2) => {
+        const converted = convertValue(valueMeters, 'm', projectUnits.length.unit);
+        return formatWithUnit(converted, projectUnits.length.label, digits);
+    };
+
+    const formatDiameter = (valueMm: number | null | undefined, digits = 0) => {
+        const converted = convertValue(valueMm, 'mm', projectUnits.diameter.unit);
+        return formatWithUnit(converted, projectUnits.diameter.label, digits);
+    };
+
+    const formatVelocity = (valueMs: number | null | undefined, digits = 2) => {
+        const converted = convertValue(valueMs, 'm/s', unitSystem === 'imperial' ? 'ft/s' : 'm/s');
+        return formatWithUnit(converted, unitSystem === 'imperial' ? 'ft/s' : 'm/s', digits);
     };
 
     const generatedTimestamp = new Date().toLocaleString();
@@ -515,11 +535,15 @@ export function SummaryTab() {
                         </Box>
                         <Box>
                             <Typography variant="caption" color="text.secondary">Set Pressure</Typography>
-                            <Typography variant="body2" fontWeight={500}>{selectedPsv.setPressure} barg</Typography>
+                            <Typography variant="body2" fontWeight={500}>
+                                {formatPressureGauge(selectedPsv.setPressure, unitSystem, 2)}
+                            </Typography>
                         </Box>
                         <Box>
                             <Typography variant="caption" color="text.secondary">MAWP</Typography>
-                            <Typography variant="body2" fontWeight={500}>{selectedPsv.mawp} barg</Typography>
+                            <Typography variant="body2" fontWeight={500}>
+                                {formatPressureGauge(selectedPsv.mawp, unitSystem, 2)}
+                            </Typography>
                         </Box>
                     </Box>
                 </Paper>
@@ -550,13 +574,13 @@ export function SummaryTab() {
                         <Box>
                             <Typography variant="caption" color="text.secondary">Relieving Rate</Typography>
                             <Typography variant="body2" fontWeight={500}>
-                                {governingScenario ? `${governingScenario.relievingRate.toLocaleString()} kg/h` : '—'}
+                                {governingScenario ? formatMassFlowKgH(governingScenario.relievingRate, unitSystem, 0) : '—'}
                             </Typography>
                         </Box>
                         <Box>
                             <Typography variant="caption" color="text.secondary">Relieving Pressure</Typography>
                             <Typography variant="body2" fontWeight={500}>
-                                {governingScenario ? `${governingScenario.relievingPressure} barg` : '—'}
+                                {governingScenario ? formatPressureGauge(governingScenario.relievingPressure, unitSystem, 2) : '—'}
                             </Typography>
                         </Box>
                     </Box>
@@ -587,8 +611,18 @@ export function SummaryTab() {
                                             <TableCell>{eq.tag}</TableCell>
                                             <TableCell sx={{ textTransform: 'capitalize' }}>{eq.type.replace('_', ' ')}</TableCell>
                                             <TableCell>{link.isPrimary ? 'Primary' : 'Secondary'}</TableCell>
-                                            <TableCell>{eq.designPressure} barg</TableCell>
-                                            <TableCell>{eq.designTemperature} °C</TableCell>
+                                            <TableCell>
+                                                {eq.designPressure !== undefined && eq.designPressure !== null
+                                                    ? formatNumber(convertValue(eq.designPressure, 'barg', projectUnits.pressureGauge.unit), 2)
+                                                    : '—'}
+                                                {eq.designPressure !== undefined && eq.designPressure !== null ? ` ${projectUnits.pressureGauge.label}` : ''}
+                                            </TableCell>
+                                            <TableCell>
+                                                {eq.designTemperature !== undefined && eq.designTemperature !== null
+                                                    ? formatNumber(convertValue(eq.designTemperature, 'C', projectUnits.temperature.unit), 0)
+                                                    : '—'}
+                                                {eq.designTemperature !== undefined && eq.designTemperature !== null ? ` ${projectUnits.temperature.label}` : ''}
+                                            </TableCell>
                                         </TableRow>
                                     ) : null;
                                 })}
@@ -612,8 +646,8 @@ export function SummaryTab() {
                                     <TableCell>Cause</TableCell>
                                     <TableCell>Description</TableCell>
                                     <TableCell>Phase</TableCell>
-                                    <TableCell align="right">Relieving Rate (kg/h)</TableCell>
-                                    <TableCell align="right">Pressure (barg)</TableCell>
+                                    <TableCell align="right">{`Relieving Rate (${projectUnits.massFlow.label})`}</TableCell>
+                                    <TableCell align="right">{`Pressure (${projectUnits.pressureGauge.label})`}</TableCell>
                                     <TableCell align="center">Governing</TableCell>
                                 </TableRow>
                             </TableHead>
@@ -625,8 +659,12 @@ export function SummaryTab() {
                                         <TableCell sx={{ textTransform: 'capitalize' }}>
                                             {scenario.phase.replace('_', ' ')}
                                         </TableCell>
-                                        <TableCell align="right">{scenario.relievingRate.toLocaleString()}</TableCell>
-                                        <TableCell align="right">{scenario.relievingPressure}</TableCell>
+                                        <TableCell align="right">
+                                            {formatLocaleNumber(convertValue(scenario.relievingRate, 'kg/h', projectUnits.massFlow.unit), 0)}
+                                        </TableCell>
+                                        <TableCell align="right">
+                                            {formatNumber(convertValue(scenario.relievingPressure, 'barg', projectUnits.pressureGauge.unit), 2)}
+                                        </TableCell>
                                         <TableCell align="center">
                                             {scenario.isGoverning ? (
                                                 <Star sx={{ color: 'warning.main', fontSize: 18 }} />
@@ -656,8 +694,8 @@ export function SummaryTab() {
                                     <TableCell align="right">Required Area (mm²)</TableCell>
                                     <TableCell>Selected Orifice</TableCell>
                                     <TableCell align="right">% Used</TableCell>
-                                    <TableCell align="right">Inlet ΔP (kPa)</TableCell>
-                                    <TableCell align="right">Backpressure (barg)</TableCell>
+                                    <TableCell align="right">{`Inlet ΔP (${projectUnits.pressureDrop.label})`}</TableCell>
+                                    <TableCell align="right">{`Backpressure (${projectUnits.pressureGauge.label})`}</TableCell>
                                     <TableCell>Status</TableCell>
                                 </TableRow>
                             </TableHead>
@@ -684,10 +722,14 @@ export function SummaryTab() {
                                                 {sizingCase.outputs?.percentUsed?.toFixed(1) ?? '—'}%
                                             </TableCell>
                                             <TableCell align="right">
-                                                {sizingCase.outputs?.inletPressureDrop?.toFixed(1) ?? '—'}
+                                                {sizingCase.outputs?.inletPressureDrop !== undefined
+                                                    ? formatNumber(convertValue(sizingCase.outputs.inletPressureDrop, 'kPa', projectUnits.pressureDrop.unit), 2)
+                                                    : '—'}
                                             </TableCell>
                                             <TableCell align="right">
-                                                {sizingCase.inputs?.backpressure?.toFixed(2) ?? '—'}
+                                                {sizingCase.inputs?.backpressure !== undefined
+                                                    ? formatNumber(convertValue(sizingCase.inputs.backpressure, 'barg', projectUnits.pressureGauge.unit), 2)
+                                                    : '—'}
                                             </TableCell>
                                             <TableCell sx={{ textTransform: 'capitalize' }}>
                                                 <Chip
@@ -761,11 +803,16 @@ export function SummaryTab() {
                                 >
                                     {[
                                         { label: 'Segments', value: networkDetail.segments.length || '—' },
-                                        { label: 'Total Length', value: formatNumberValue(networkDetail.overview?.totalLength ?? networkDetail.baseLength, 'm') },
-                                        { label: 'Average Diameter', value: networkDetail.overview?.avgDiameter || networkDetail.avgDiameter ? `${(networkDetail.overview?.avgDiameter ?? networkDetail.avgDiameter).toFixed(0)} mm` : '—' },
-                                        { label: 'Diameter Range', value: networkDetail.overview?.minDiameter && networkDetail.overview?.maxDiameter ? `${networkDetail.overview.minDiameter.toFixed(0)} – ${networkDetail.overview.maxDiameter.toFixed(0)} mm` : '—' },
-                                        { label: 'Velocity', value: networkDetail.overview ? formatNumberValue(networkDetail.overview.velocity, 'm/s', 2) : '—' },
-                                        { label: 'Pressure Drop', value: networkDetail.overview ? formatNumberValue(networkDetail.overview.pressureDrop, 'kPa') : '—' },
+                                        { label: 'Total Length', value: formatLength(networkDetail.overview?.totalLength ?? networkDetail.baseLength, 2) },
+                                        { label: 'Average Diameter', value: networkDetail.overview?.avgDiameter || networkDetail.avgDiameter ? formatDiameter(networkDetail.overview?.avgDiameter ?? networkDetail.avgDiameter, 0) : '—' },
+                                        {
+                                            label: 'Diameter Range',
+                                            value: networkDetail.overview?.minDiameter && networkDetail.overview?.maxDiameter
+                                                ? `${formatNumber(convertValue(networkDetail.overview.minDiameter, 'mm', projectUnits.diameter.unit), 0)} – ${formatNumber(convertValue(networkDetail.overview.maxDiameter, 'mm', projectUnits.diameter.unit), 0)} ${projectUnits.diameter.label}`
+                                                : '—'
+                                        },
+                                        { label: 'Velocity', value: networkDetail.overview ? formatVelocity(networkDetail.overview.velocity, 2) : '—' },
+                                        { label: 'Pressure Drop', value: networkDetail.overview ? formatPressureDrop(networkDetail.overview.pressureDrop, unitSystem, 3) : '—' },
                                         { label: 'ΔP / Set Pressure', value: networkDetail.overview ? `${networkDetail.overview.percent.toFixed(1)}%` : '—' },
                                     ].map((metric) => (
                                         <Box key={`${networkDetail.title}-${metric.label}`}>
@@ -802,13 +849,13 @@ export function SummaryTab() {
                                         <TableHead>
                                             <TableRow>
                                                 <TableCell>Segment</TableCell>
-                                                <TableCell align="right">P1 (barg)</TableCell>
-                                                <TableCell align="right">P2 (barg)</TableCell>
+                                                <TableCell align="right">{`P1 (${projectUnits.pressureGauge.label})`}</TableCell>
+                                                <TableCell align="right">{`P2 (${projectUnits.pressureGauge.label})`}</TableCell>
                                                 <TableCell>Fluid</TableCell>
-                                                <TableCell align="right">Length (m)</TableCell>
-                                                <TableCell align="right">Diameter (mm)</TableCell>
+                                                <TableCell align="right">{`Length (${projectUnits.length.label})`}</TableCell>
+                                                <TableCell align="right">{`Diameter (${projectUnits.diameter.label})`}</TableCell>
                                                 <TableCell>Fittings / Notes</TableCell>
-                                                <TableCell align="right">ΔP (kPa)</TableCell>
+                                                <TableCell align="right">{`ΔP (${projectUnits.pressureDrop.label})`}</TableCell>
                                             </TableRow>
                                         </TableHead>
                                         <TableBody>
@@ -818,16 +865,34 @@ export function SummaryTab() {
                                                         <Typography variant="body2" fontWeight={500}>{segment.label}</Typography>
                                                         <Typography variant="caption" color="text.secondary">{segment.sectionType}</Typography>
                                                     </TableCell>
-                                                    <TableCell align="right">{segment.p1Barg?.toFixed(2) ?? '—'}</TableCell>
-                                                    <TableCell align="right">{segment.p2Barg?.toFixed(2) ?? '—'}</TableCell>
+                                                    <TableCell align="right">
+                                                        {segment.p1Barg !== undefined
+                                                            ? formatNumber(convertValue(segment.p1Barg, 'barg', projectUnits.pressureGauge.unit), 2)
+                                                            : '—'}
+                                                    </TableCell>
+                                                    <TableCell align="right">
+                                                        {segment.p2Barg !== undefined
+                                                            ? formatNumber(convertValue(segment.p2Barg, 'barg', projectUnits.pressureGauge.unit), 2)
+                                                            : '—'}
+                                                    </TableCell>
                                                     <TableCell>{segment.fluid}</TableCell>
-                                                    <TableCell align="right">{segment.lengthMeters ? segment.lengthMeters.toFixed(2) : '—'}</TableCell>
-                                                    <TableCell align="right">{segment.diameterMm ? segment.diameterMm.toFixed(0) : '—'}</TableCell>
+                                                    <TableCell align="right">
+                                                        {segment.lengthMeters
+                                                            ? formatNumber(convertValue(segment.lengthMeters, 'm', projectUnits.length.unit), 2)
+                                                            : '—'}
+                                                    </TableCell>
+                                                    <TableCell align="right">
+                                                        {segment.diameterMm
+                                                            ? formatNumber(convertValue(segment.diameterMm, 'mm', projectUnits.diameter.unit), 0)
+                                                            : '—'}
+                                                    </TableCell>
                                                     <TableCell sx={{ maxWidth: 180 }}>
                                                         {segment.fittings || '—'}
                                                     </TableCell>
                                                     <TableCell align="right">
-                                                        {segment.pressureDrop !== undefined ? segment.pressureDrop.toFixed(1) : '—'}
+                                                        {segment.pressureDrop !== undefined
+                                                            ? formatNumber(convertValue(segment.pressureDrop, 'kPa', projectUnits.pressureDrop.unit), 3)
+                                                            : '—'}
                                                     </TableCell>
                                                 </TableRow>
                                             ))}
