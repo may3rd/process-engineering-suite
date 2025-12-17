@@ -6,7 +6,6 @@ import {
     Paper,
     Typography,
     IconButton,
-    Chip,
     Dialog,
     DialogTitle,
     DialogContent,
@@ -88,7 +87,7 @@ export function BasicInfoCard({ psv }: BasicInfoCardProps) {
                 position: 'relative',
                 transition: 'transform 0.2s, box-shadow 0.2s',
                 '&:hover': {
-                    transform: 'translateY(-2px)',
+                    // transform: 'translateY(-2px)',
                     boxShadow: 6,
                     '& .edit-button': { opacity: 1 },
                 },
@@ -121,11 +120,11 @@ export function BasicInfoCard({ psv }: BasicInfoCardProps) {
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid', borderColor: 'divider', pb: 1 }}>
                     <Typography variant="body2" color="text.secondary">Type</Typography>
-                    <Chip size="small" label={psv.type} variant="outlined" />
+                    <Typography variant="body2" fontWeight={500} align="right" sx={{ textTransform: 'uppercase' }}>{psv.type}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid', borderColor: 'divider', pb: 1 }}>
                     <Typography variant="body2" color="text.secondary">Design Code</Typography>
-                    <Chip size="small" label={psv.designCode || 'API-520'} color="info" variant="outlined" />
+                    <Typography variant="body2" fontWeight={500} align="right">{psv.designCode || 'API-520'}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', pb: 1 }}>
                     <Typography variant="body2" color="text.secondary">Owner</Typography>

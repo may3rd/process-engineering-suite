@@ -24,6 +24,7 @@ interface UnitSelectorProps {
     required?: boolean;
     helperText?: string;
     disabled?: boolean;
+    error?: boolean;
 }
 
 export function UnitSelector({
@@ -35,6 +36,7 @@ export function UnitSelector({
     required = false,
     helperText,
     disabled = false,
+    error = false,
 }: UnitSelectorProps) {
     const [displayValue, setDisplayValue] = useState<string>(value?.toString() || '');
 
@@ -86,6 +88,7 @@ export function UnitSelector({
             helperText={helperText}
             fullWidth
             disabled={disabled}
+            error={error}
             slotProps={{
                 input: {
                     endAdornment: (

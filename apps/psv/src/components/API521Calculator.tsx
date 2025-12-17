@@ -36,6 +36,7 @@ import {
     Calculate as CalculateIcon,
     Warning as WarningIcon,
 } from '@mui/icons-material';
+import { UnitSelector } from '@/components/shared';
 import { Equipment, VesselDetails, TankDetails } from '@/data/types';
 import { convertUnit } from '@eng-suite/physics';
 import { calculateFireExposureArea, type VesselCalculationInput } from '@/lib/vesselCalculations';
@@ -194,6 +195,8 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
                 per API-521 Section 4.4
             </Alert>
 
+
+
             {/* Fluid Properties */}
             <Card sx={{ mb: 3, borderRadius: 2 }}>
                 <CardContent>
@@ -202,66 +205,34 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
                     </Typography>
 
                     <Stack spacing={3}>
-                        <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                                Latent Heat of Vaporization
-                            </Typography>
-                            <Stack direction="row" spacing={1} alignItems="flex-start">
-                                <TextField
-                                    required
-                                    type="number"
-                                    value={localConfig.latentHeat}
-                                    onChange={(e) =>
-                                        updateConfig({ latentHeat: parseFloat(e.target.value) })
-                                    }
-                                    helperText="Typical: Water 2260, Propane 420, LPG 350-450"
-                                    sx={{ flex: 1 }}
-                                    size="small"
-                                />
-                                <Select
-                                    value={localConfig.latentHeatUnit}
-                                    onChange={(e) =>
-                                        updateConfig({ latentHeatUnit: e.target.value })
-                                    }
-                                    size="small"
-                                    sx={{ minWidth: 100 }}
-                                >
-                                    <MenuItem value="kJ/kg">kJ/kg</MenuItem>
-                                    <MenuItem value="Btu/lb">Btu/lb</MenuItem>
-                                    <MenuItem value="kcal/kg">kcal/kg</MenuItem>
-                                </Select>
-                            </Stack>
-                        </Box>
+                        <UnitSelector
+                            label="Latent Heat of Vaporization"
+                            value={localConfig.latentHeat}
+                            unit={localConfig.latentHeatUnit}
+                            availableUnits={['kJ/kg', 'Btu/lb', 'kcal/kg']}
+                            onChange={(val, unit) =>
+                                updateConfig({
+                                    latentHeat: val || 0,
+                                    latentHeatUnit: unit,
+                                })
+                            }
+                            required
+                            helperText="Typical: Water 2260, Propane 420, LPG 350-450"
+                        />
 
-                        <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                                Relieving Temperature
-                            </Typography>
-                            <Stack direction="row" spacing={1} alignItems="center">
-                                <TextField
-                                    required
-                                    type="number"
-                                    value={localConfig.relievingTemp}
-                                    onChange={(e) =>
-                                        updateConfig({ relievingTemp: parseFloat(e.target.value) })
-                                    }
-                                    sx={{ flex: 1 }}
-                                    size="small"
-                                />
-                                <Select
-                                    value={localConfig.relievingTempUnit}
-                                    onChange={(e) =>
-                                        updateConfig({ relievingTempUnit: e.target.value })
-                                    }
-                                    size="small"
-                                    sx={{ minWidth: 80 }}
-                                >
-                                    <MenuItem value="°C">°C</MenuItem>
-                                    <MenuItem value="°F">°F</MenuItem>
-                                    <MenuItem value="K">K</MenuItem>
-                                </Select>
-                            </Stack>
-                        </Box>
+                        <UnitSelector
+                            label="Relieving Temperature"
+                            value={localConfig.relievingTemp}
+                            unit={localConfig.relievingTempUnit}
+                            availableUnits={['°C', '°F', 'K']}
+                            onChange={(val, unit) =>
+                                updateConfig({
+                                    relievingTemp: val || 0,
+                                    relievingTempUnit: unit,
+                                })
+                            }
+                            required
+                        />
                     </Stack>
                 </CardContent>
             </Card>
@@ -306,31 +277,20 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
                     </FormControl>
 
                     <Box sx={{ mt: 2 }}>
-                        <Typography variant="body2" color="text.secondary" gutterBottom>
-                            Height Above Grade
-                        </Typography>
-                        <Stack direction="row" spacing={1} alignItems="flex-start">
-                            <TextField
-                                required
-                                type="number"
-                                value={localConfig.heightAboveGrade}
-                                onChange={(e) =>
-                                    updateConfig({ heightAboveGrade: parseFloat(e.target.value) })
-                                }
-                                helperText="API-521 limits wetted area to 7.6m (25 ft) above grade"
-                                sx={{ flex: 1 }}
-                                size="small"
-                            />
-                            <Select
-                                value={localConfig.heightUnit}
-                                onChange={(e) => updateConfig({ heightUnit: e.target.value })}
-                                size="small"
-                                sx={{ minWidth: 80 }}
-                            >
-                                <MenuItem value="m">m</MenuItem>
-                                <MenuItem value="ft">ft</MenuItem>
-                            </Select>
-                        </Stack>
+                        <UnitSelector
+                            label="Height Above Grade"
+                            value={localConfig.heightAboveGrade}
+                            unit={localConfig.heightUnit}
+                            availableUnits={['m', 'ft']}
+                            onChange={(val, unit) =>
+                                updateConfig({
+                                    heightAboveGrade: val || 0,
+                                    heightUnit: unit,
+                                })
+                            }
+                            required
+                            helperText="API-521 limits wetted area to 7.6m (25 ft) above grade"
+                        />
                     </Box>
                 </CardContent>
             </Card>
@@ -398,51 +358,22 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
                                 </AccordionSummary>
                                 <AccordionDetails>
                                     <Stack spacing={2}>
-                                        <Box>
-                                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                                                Normal Liquid Level
-                                            </Typography>
-                                            <Stack direction="row" spacing={1} alignItems="flex-start">
-                                                <TextField
-                                                    required
-                                                    type="number"
-                                                    value={liquidLevel.value === 0 ? '' : liquidLevel.value}
-                                                    onChange={(e) => {
-                                                        const newLevels = new Map(localConfig.liquidLevels);
-                                                        // Allow empty string, otherwise parse as float
-                                                        const newValue = e.target.value === ''
-                                                            ? ''
-                                                            : e.target.value;
-                                                        newLevels.set(eq.id, {
-                                                            ...liquidLevel,
-                                                            value: newValue,
-                                                        });
-                                                        updateConfig({ liquidLevels: newLevels });
-                                                    }}
-                                                    helperText="Height from bottom of vessel"
-                                                    sx={{ flex: 1 }}
-                                                    size="small"
-                                                />
-                                                <Select
-                                                    value={liquidLevel.unit}
-                                                    onChange={(e) => {
-                                                        const newLevels = new Map(localConfig.liquidLevels);
-                                                        newLevels.set(eq.id, {
-                                                            ...liquidLevel,
-                                                            unit: e.target.value,
-                                                        });
-                                                        updateConfig({ liquidLevels: newLevels });
-                                                    }}
-                                                    size="small"
-                                                    sx={{ minWidth: 80 }}
-                                                >
-                                                    <MenuItem value="m">m</MenuItem>
-                                                    <MenuItem value="ft">ft</MenuItem>
-                                                    <MenuItem value="mm">mm</MenuItem>
-                                                    <MenuItem value="in">in</MenuItem>
-                                                </Select>
-                                            </Stack>
-                                        </Box>
+                                        <UnitSelector
+                                            label="Normal Liquid Level"
+                                            value={typeof liquidLevel.value === 'string' ? parseFloat(liquidLevel.value) || 0 : liquidLevel.value}
+                                            unit={liquidLevel.unit}
+                                            availableUnits={['m', 'ft', 'mm', 'in']}
+                                            onChange={(val, unit) => {
+                                                const newLevels = new Map(localConfig.liquidLevels);
+                                                newLevels.set(eq.id, {
+                                                    value: val || 0,
+                                                    unit: unit,
+                                                });
+                                                updateConfig({ liquidLevels: newLevels });
+                                            }}
+                                            required
+                                            helperText="Height from bottom of vessel"
+                                        />
 
                                         {/* Real-time wetted area display */}
                                         {quickWettedArea !== null && (

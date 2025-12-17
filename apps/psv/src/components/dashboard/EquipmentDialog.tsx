@@ -61,7 +61,10 @@ export function EquipmentDialog({
     const [designTempUnit, setDesignTempUnit] = useState('C');
     const [status, setStatus] = useState<'active' | 'inactive'>('active');
     const [ownerId, setOwnerId] = useState<string | null>(null);
-    const [details, setDetails] = useState<EquipmentDetails | null>(null); // Added details state
+    const [details, setDetails] = useState<EquipmentDetails | null>(null);
+    const [errors, setErrors] = useState<Record<string, string>>({});
+    const [isSaving, setIsSaving] = useState(false);
+
     const currentUser = useAuthStore((state) => state.currentUser);
     const canEdit = useAuthStore((state) => state.canEdit());
     const canDeactivate = useAuthStore((state) => ['lead', 'approver', 'admin'].includes(state.currentUser?.role || ''));
@@ -81,18 +84,18 @@ export function EquipmentDialog({
             setDesignTempUnit(equipment.designTempUnit || 'C');
             setStatus(equipment.status);
             setOwnerId(equipment.ownerId);
-            setDetails(equipment.details || null); // Load details
+            setDetails(equipment.details || null);
 
             // Find and set hierarchy
             const area = areas.find(a => a.id === equipment.areaId);
             if (area) {
-                setUnitId(area.unitId);
+                setUnitId(area.unitId || '');
                 const unit = units.find(u => u.id === area.unitId);
                 if (unit) {
-                    setPlantId(unit.plantId);
+                    setPlantId(unit.plantId || '');
                     const plant = plants.find(p => p.id === unit.plantId);
                     if (plant) {
-                        setCustomerId(plant.customerId);
+                        setCustomerId(plant.customerId || '');
                     }
                 }
             }
@@ -114,33 +117,63 @@ export function EquipmentDialog({
             setStatus('active');
             setOwnerId(currentUser?.id || null);
             setDetails(null);
-            // Apply defaults logic if needed
-            if (currentUser?.displaySettings?.decimalPlaces) {
-                // Apply defaults logic if needed
+        }
+        setErrors({});
+    }, [equipment, open, currentUser]);
+
+    const validate = () => {
+        const newErrors: Record<string, string> = {};
+        if (!tag.trim()) newErrors.tag = 'Tag is required';
+        if (!name.trim()) newErrors.name = 'Name is required';
+        if (!areaId) newErrors.areaId = 'Area is required';
+        if (!ownerId) newErrors.ownerId = 'Owner is required';
+
+        if (designPressure !== null && designPressure <= 0) {
+            newErrors.designPressure = 'Design Pressure must be > 0';
+        }
+
+        if (mawp !== null && designPressure !== null && designPressureUnit === mawpUnit) {
+            if (mawp < designPressure) {
+                newErrors.mawp = 'MAWP must be ≥ Design Pressure';
             }
         }
-    }, [equipment, open, currentUser]); // Added currentUser to dependency array
 
-    const handleSubmit = () => {
-        if (!tag.trim() || !name.trim() || !areaId || !ownerId) return;
+        if (designTemperature !== null && designTemperature < -273.15) {
+            newErrors.designTemperature = 'Temperature cannot be below absolute zero';
+        }
 
-        onSave({
-            type,
-            tag: tag.trim().toUpperCase(),
-            name: name.trim(),
-            description: description.trim() || undefined,
-            areaId,
-            designPressure,
-            designPressureUnit,
-            mawp,
-            mawpUnit,
-            designTemperature,
-            designTempUnit,
-            status,
-            ownerId,
-            details: details || undefined, // Added details to onSave payload
-        });
-        onClose();
+        setErrors(newErrors);
+        return Object.keys(newErrors).length === 0;
+    };
+
+    const handleSubmit = async () => {
+        if (!validate()) return;
+        if (!ownerId) return; // Should be caught by validate, but needed for TS narrowing
+
+        setIsSaving(true);
+        try {
+            await onSave({
+                type,
+                tag: tag.trim().toUpperCase(),
+                name: name.trim(),
+                description: description.trim() || undefined,
+                areaId,
+                designPressure,
+                designPressureUnit,
+                mawp,
+                mawpUnit,
+                designTemperature,
+                designTempUnit,
+                status,
+                ownerId,
+                details: details || undefined,
+            });
+            onClose();
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const filteredPlants = customerId ? plants.filter(p => p.customerId === customerId) : [];
@@ -153,8 +186,6 @@ export function EquipmentDialog({
     const handleOwnerChange = (newOwnerId: string) => {
         setOwnerId(newOwnerId);
     };
-
-    const isValid = tag.trim() && name.trim() && areaId && ownerId;
 
     const renderDetailsForm = () => {
         switch (type) {
@@ -182,7 +213,7 @@ export function EquipmentDialog({
     };
 
     return (
-        <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+        <Dialog open={open} onClose={isSaving ? undefined : onClose} maxWidth="md" fullWidth>
             <DialogTitle>
                 {equipment ? 'Edit Equipment' : 'Add Equipment'}
             </DialogTitle>
@@ -197,7 +228,7 @@ export function EquipmentDialog({
 
                     {/* Hierarchy Selectors */}
                     <Grid size={{ xs: 12, sm: 6 }}>
-                        <FormControl fullWidth size="small" required>
+                        <FormControl fullWidth size="small" required error={!!errors.customerId}>
                             <InputLabel>Customer</InputLabel>
                             <Select
                                 value={customerId}
@@ -217,7 +248,7 @@ export function EquipmentDialog({
                             </Select>
                         </FormControl>
 
-                        <FormControl fullWidth size="small" required disabled={!customerId} sx={{ mt: 2 }}>
+                        <FormControl fullWidth size="small" required disabled={!customerId} sx={{ mt: 2 }} error={!!errors.plantId}>
                             <InputLabel>Plant</InputLabel>
                             <Select
                                 value={plantId}
@@ -236,7 +267,7 @@ export function EquipmentDialog({
                             </Select>
                         </FormControl>
 
-                        <FormControl fullWidth size="small" required disabled={!plantId} sx={{ mt: 2 }}>
+                        <FormControl fullWidth size="small" required disabled={!plantId} sx={{ mt: 2 }} error={!!errors.unitId}>
                             <InputLabel>Unit</InputLabel>
                             <Select
                                 value={unitId}
@@ -254,7 +285,7 @@ export function EquipmentDialog({
                             </Select>
                         </FormControl>
 
-                        <FormControl fullWidth size="small" required disabled={!unitId} sx={{ mt: 2 }}>
+                        <FormControl fullWidth size="small" required disabled={!unitId} sx={{ mt: 2 }} error={!!errors.areaId}>
                             <InputLabel>Area</InputLabel>
                             <Select
                                 value={areaId}
@@ -267,6 +298,7 @@ export function EquipmentDialog({
                                     </MenuItem>
                                 ))}
                             </Select>
+                            {errors.areaId && <FormHelperText>{errors.areaId}</FormHelperText>}
                         </FormControl>
                     </Grid>
 
@@ -299,7 +331,8 @@ export function EquipmentDialog({
                                 fullWidth
                                 size="small"
                                 required
-                                helperText="e.g., V-101"
+                                helperText={errors.tag || "e.g., V-101"}
+                                error={!!errors.tag}
                                 inputProps={{ style: { textTransform: 'uppercase' } }}
                             />
                         </Box>
@@ -312,6 +345,8 @@ export function EquipmentDialog({
                             size="small"
                             required
                             sx={{ mt: 2 }}
+                            error={!!errors.name}
+                            helperText={errors.name}
                         />
 
                         <TextField
@@ -337,6 +372,8 @@ export function EquipmentDialog({
                                     setDesignPressure(val);
                                     setDesignPressureUnit(unit);
                                 }}
+                                error={!!errors.designPressure}
+                                helperText={errors.designPressure}
                             />
 
                             <UnitSelector
@@ -348,6 +385,8 @@ export function EquipmentDialog({
                                     setMawp(val);
                                     setMawpUnit(unit);
                                 }}
+                                error={!!errors.mawp}
+                                helperText={errors.mawp}
                             />
 
                             <UnitSelector
@@ -359,6 +398,8 @@ export function EquipmentDialog({
                                     setDesignTemperature(val);
                                     setDesignTempUnit(unit);
                                 }}
+                                error={!!errors.designTemperature}
+                                helperText={errors.designTemperature}
                             />
                         </Box>
                     </Grid>
@@ -407,19 +448,21 @@ export function EquipmentDialog({
                                 onChange={setOwnerId}
                                 required
                                 label="Owner"
+                                error={!!errors.ownerId}
+                                helperText={errors.ownerId}
                             />
                         </Box>
                     </Grid>
                 </Grid>
             </DialogContent>
             <DialogActions>
-                <Button onClick={onClose}>Cancel</Button>
+                <Button onClick={onClose} disabled={isSaving}>Cancel</Button>
                 <Button
                     onClick={handleSubmit}
                     variant="contained"
-                    disabled={!isValid}
+                    disabled={isSaving}
                 >
-                    {equipment ? 'Update' : 'Create'}
+                    {isSaving ? 'Saving...' : (equipment ? 'Update' : 'Create')}
                 </Button>
             </DialogActions>
         </Dialog>

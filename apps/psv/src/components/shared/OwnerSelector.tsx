@@ -9,6 +9,7 @@ import {
     ListItemAvatar,
     ListItemText,
     Chip,
+    FormHelperText,
 } from "@mui/material";
 import { users } from "@/data/mockData";
 import { User } from "@/data/types";
@@ -20,6 +21,8 @@ interface OwnerSelectorProps {
     required?: boolean;
     disabled?: boolean;
     filterRole?: User['role'][];
+    error?: boolean;
+    helperText?: string;
 }
 
 export function OwnerSelector({
@@ -29,6 +32,8 @@ export function OwnerSelector({
     required = false,
     disabled = false,
     filterRole,
+    error = false,
+    helperText,
 }: OwnerSelectorProps) {
     // Show all users in dropdown for testing
     const filteredUsers = filterRole
@@ -38,7 +43,7 @@ export function OwnerSelector({
     const selectedUser = value ? users.find(u => u.id === value) : null;
 
     return (
-        <FormControl fullWidth size="small" required={required} disabled={disabled}>
+        <FormControl fullWidth size="small" required={required} disabled={disabled} error={error}>
             <InputLabel>{label}</InputLabel>
             <Select
                 value={value || ''}
@@ -91,6 +96,7 @@ export function OwnerSelector({
                     </MenuItem>
                 ))}
             </Select>
+            {helperText && <FormHelperText>{helperText}</FormHelperText>}
         </FormControl>
     );
 }

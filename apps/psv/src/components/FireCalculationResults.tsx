@@ -151,7 +151,7 @@ export function FireCalculationResults({ equipment, results }: FireCalculationRe
 
                     <Box sx={{ py: 2 }}>
                         <Typography variant="caption" color="text.secondary" gutterBottom display="block">
-                            Formula: Q = 21,000 × F × A^0.82
+                            Formula: Q = 43,200 × F × A^0.82
                         </Typography>
 
                         <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap" }}>

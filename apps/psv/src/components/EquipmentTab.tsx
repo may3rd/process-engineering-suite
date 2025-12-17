@@ -94,13 +94,18 @@ export function EquipmentTab() {
         }
     };
 
-    const handleSave = (data: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>) => {
-        if (selectedEquipment) {
-            updateEquipment(selectedEquipment.id, data);
-        } else {
-            addEquipment(data);
+    const handleSave = async (data: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>): Promise<void> => {
+        try {
+            if (selectedEquipment) {
+                await updateEquipment(selectedEquipment.id, data);
+            } else {
+                await addEquipment(data);
+            }
+            // Dialog closing is handled by EquipmentDialog on success
+        } catch (error) {
+            console.error('Failed to save equipment:', error);
+            throw error; // Re-throw to let EquipmentDialog know it failed
         }
-        setDialogOpen(false);
     };
 
     // Filter equipment based on search text

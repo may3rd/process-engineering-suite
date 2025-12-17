@@ -91,7 +91,7 @@ export function EquipmentCard({ psv }: EquipmentCardProps) {
                 p: 3,
                 transition: 'transform 0.2s, box-shadow 0.2s',
                 '&:hover': {
-                    transform: 'translateY(-2px)',
+                    // transform: 'translateY(-2px)',
                     boxShadow: 6,
                 },
             }}

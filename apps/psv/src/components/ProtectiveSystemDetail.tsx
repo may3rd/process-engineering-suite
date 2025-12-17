@@ -790,7 +790,9 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                 massFlowRate: scenario.relievingRate,
                 molecularWeight: 28, // Default for gases
                 temperature: scenario.relievingTemp,
-                pressure: scenario.relievingPressure,
+                // Always calculate relieving pressure from PSV set pressure + accumulation
+                // This overrides the scenario.relievingPressure which might be manually entered/outdated
+                pressure: selectedPsv.setPressure * (1 + (scenario.accumulationPct / 100)),
                 compressibilityZ: 1.0,
                 specificHeatRatio: 1.4,
                 backpressure: 0,
@@ -2310,10 +2312,10 @@ export function ProtectiveSystemDetail() {
                 >
                     <Tab label="Overview" />
                     <Tab label="Scenarios" />
-                    <Tab label="Sizing" />
+                    <Tab label="Sizing Cases" />
                     <Tab label="Notes" />
                     <Tab label="Attachments" />
-                    <Tab label="Revisions" />
+                    <Tab label="Revisions Control" />
                     <Tab label="Summary" />
                 </Tabs>
             </Paper>

@@ -26,6 +26,7 @@ import {
     Chip,
 } from "@mui/material";
 import { Delete, Add } from "@mui/icons-material";
+import { UnitSelector } from "@/components/shared";
 import { PipeProps } from "@/data/types";
 import type { FittingType } from "@eng-suite/physics";
 
@@ -356,27 +357,16 @@ export function PipeEditorDialog({
                             </RadioGroup>
                         </FormControl>
 
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                            <TextField
-                                label={pressureLabel}
-                                type="number"
-                                value={boundaryPressure}
-                                onChange={(e) => setBoundaryPressure(parseFloat(e.target.value) || 0)}
-                                size="small"
-                                sx={{ flex: 1 }}
-                            />
-                            <TextField
-                                select
-                                value={boundaryPressureUnit}
-                                onChange={(e) => setBoundaryPressureUnit(e.target.value)}
-                                size="small"
-                                sx={{ width: 100 }}
-                            >
-                                {['barg', 'bara', 'kPag', 'psig'].map(u => (
-                                    <MenuItem key={u} value={u}>{u}</MenuItem>
-                                ))}
-                            </TextField>
-                        </Box>
+                        <UnitSelector
+                            label={pressureLabel}
+                            value={boundaryPressure}
+                            unit={boundaryPressureUnit}
+                            availableUnits={['barg', 'bara', 'kPag', 'psig']}
+                            onChange={(val, unit) => {
+                                setBoundaryPressure(val || 0);
+                                setBoundaryPressureUnit(unit);
+                            }}
+                        />
 
                         {isGasPhase && (
                             <FormControl size="small">
@@ -466,90 +456,56 @@ export function PipeEditorDialog({
                                 </TextField>
                             </Box>
                         ) : (
-                            <Box sx={{ display: 'flex', gap: 1 }}>
-                                <TextField
-                                    label="Diameter"
-                                    type="number"
-                                    value={diameter}
-                                    onChange={(e) => setDiameter(parseFloat(e.target.value) || 0)}
-                                    size="small"
-                                    sx={{ flex: 1 }}
-                                />
-                                <TextField
-                                    select
-                                    value={diameterUnit}
-                                    onChange={(e) => setDiameterUnit(e.target.value)}
-                                    size="small"
-                                    sx={{ width: 80 }}
-                                >
-                                    {['mm', 'in'].map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                </TextField>
-                            </Box>
+                            <UnitSelector
+                                label="Diameter"
+                                value={diameter}
+                                unit={diameterUnit}
+                                availableUnits={['mm', 'in']}
+                                onChange={(val, unit) => {
+                                    setDiameter(val || 0);
+                                    setDiameterUnit(unit);
+                                }}
+                            />
                         )}
 
                         {/* Length */}
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                            <TextField
-                                label="Length"
-                                type="number"
-                                value={length}
-                                onChange={(e) => setLength(parseFloat(e.target.value) || 0)}
-                                size="small"
-                                sx={{ flex: 1 }}
-                            />
-                            <TextField
-                                select
-                                value={lengthUnit}
-                                onChange={(e) => setLengthUnit(e.target.value)}
-                                size="small"
-                                sx={{ width: 80 }}
-                            >
-                                {['m', 'ft'].map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                            </TextField>
-                        </Box>
+                        {/* Length */}
+                        <UnitSelector
+                            label="Length"
+                            value={length}
+                            unit={lengthUnit}
+                            availableUnits={['m', 'ft']}
+                            onChange={(val, unit) => {
+                                setLength(val || 0);
+                                setLengthUnit(unit);
+                            }}
+                        />
 
                         {/* Elevation */}
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                            <TextField
-                                label="Elevation Change"
-                                type="number"
-                                value={elevation}
-                                onChange={(e) => setElevation(parseFloat(e.target.value) || 0)}
-                                size="small"
-                                sx={{ flex: 1 }}
-                            />
-                            <TextField
-                                select
-                                value={elevationUnit}
-                                onChange={(e) => setElevationUnit(e.target.value)}
-                                size="small"
-                                sx={{ width: 80 }}
-                            >
-                                {['m', 'ft'].map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                            </TextField>
-                        </Box>
+                        {/* Elevation */}
+                        <UnitSelector
+                            label="Elevation Change"
+                            value={elevation}
+                            unit={elevationUnit}
+                            availableUnits={['m', 'ft']}
+                            onChange={(val, unit) => {
+                                setElevation(val || 0);
+                                setElevationUnit(unit);
+                            }}
+                        />
 
                         {/* Roughness */}
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                            <TextField
-                                label="Roughness"
-                                type="number"
-                                value={roughness}
-                                onChange={(e) => setRoughness(parseFloat(e.target.value) || 0)}
-                                size="small"
-                                slotProps={{ htmlInput: { step: 0.001 } }}
-                                sx={{ flex: 1 }}
-                            />
-                            <TextField
-                                select
-                                value={roughnessUnit}
-                                onChange={(e) => setRoughnessUnit(e.target.value)}
-                                size="small"
-                                sx={{ width: 80 }}
-                            >
-                                {['mm', 'μm'].map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                            </TextField>
-                        </Box>
+                        {/* Roughness */}
+                        <UnitSelector
+                            label="Roughness"
+                            value={roughness}
+                            unit={roughnessUnit}
+                            availableUnits={['mm', 'μm']}
+                            onChange={(val, unit) => {
+                                setRoughness(val || 0);
+                                setRoughnessUnit(unit);
+                            }}
+                        />
 
                         {/* K-Safety Factor */}
                         <TextField
@@ -564,25 +520,17 @@ export function PipeEditorDialog({
                         />
 
                         {/* User Specified Loss */}
-                        <Box sx={{ display: 'flex', gap: 1 }}>
-                            <TextField
-                                label="User Specified Loss"
-                                type="number"
-                                value={userSpecifiedLoss}
-                                onChange={(e) => setUserSpecifiedLoss(parseFloat(e.target.value) || 0)}
-                                size="small"
-                                sx={{ flex: 1 }}
-                            />
-                            <TextField
-                                select
-                                value={userSpecifiedLossUnit}
-                                onChange={(e) => setUserSpecifiedLossUnit(e.target.value)}
-                                size="small"
-                                sx={{ width: 80 }}
-                            >
-                                {['kPa', 'bar', 'psi'].map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                            </TextField>
-                        </Box>
+                        {/* User Specified Loss */}
+                        <UnitSelector
+                            label="User Specified Loss"
+                            value={userSpecifiedLoss}
+                            unit={userSpecifiedLossUnit}
+                            availableUnits={['kPa', 'bar', 'psi']}
+                            onChange={(val, unit) => {
+                                setUserSpecifiedLoss(val || 0);
+                                setUserSpecifiedLossUnit(unit);
+                            }}
+                        />
                     </Box>
                 </Box>
 

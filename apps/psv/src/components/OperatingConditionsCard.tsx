@@ -106,7 +106,7 @@ export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
                 position: 'relative',
                 transition: 'transform 0.2s, box-shadow 0.2s',
                 '&:hover': {
-                    transform: 'translateY(-2px)',
+                    // transform: 'translateY(-2px)',
                     boxShadow: 6,
                     '& .edit-button': { opacity: 1 },
                 },
@@ -156,7 +156,7 @@ export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid', borderColor: 'divider', pb: 1 }}>
                     <Typography variant="body2" color="text.secondary">Fluid Phase</Typography>
-                    <Chip size="small" label={psv.fluidPhase} color="info" variant="outlined" />
+                    <Typography variant="body2" fontWeight={500} sx={{ textTransform: 'uppercase' }}>{psv.fluidPhase}</Typography>
                 </Box>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid', borderColor: 'divider', pb: 1 }}>
                     <Typography variant="body2" color="text.secondary">Set Pressure</Typography>
