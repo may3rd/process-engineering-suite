@@ -31,6 +31,7 @@ import {
 import { Close, ArrowBack, ArrowForward, Check } from '@mui/icons-material';
 import { DesignCode, FluidPhase, ValveOperatingType, ProtectiveSystemType } from '@/data/types';
 import { usePsvStore } from '@/store/usePsvStore';
+import { useAuthStore } from '@/store/useAuthStore';
 import { useProjectUnitSystem } from '@/lib/useProjectUnitSystem';
 import { v4 as uuidv4 } from 'uuid';
 import { UnitSelector } from './shared/UnitSelector';
@@ -86,6 +87,7 @@ const STEPS = [
 export function PsvCreationWizard({ open, onClose, projectId }: PsvCreationWizardProps) {
     const { unitSystem } = useProjectUnitSystem();
     const { addProtectiveSystem, selectPsv, protectiveSystems, selectedArea, selectedProject } = usePsvStore();
+    const { currentUser } = useAuthStore();
 
     const [activeStep, setActiveStep] = useState(0);
     const [formData, setFormData] = useState<WizardFormData>({
@@ -190,7 +192,7 @@ export function PsvCreationWizard({ open, onClose, projectId }: PsvCreationWizar
         if (!validateStep(activeStep)) return;
 
         if (!selectedArea) {
-            setValidationErrors({ submit: 'No area  selected. Please select an area first.' });
+            setValidationErrors({ submit: 'No area selected. Please select an area first.' });
             return;
         }
 
@@ -205,7 +207,7 @@ export function PsvCreationWizard({ open, onClose, projectId }: PsvCreationWizar
             fluidPhase: formData.fluidPhase,
             setPressure: formData.setPressure,
             mawp: formData.designPressure, // Use design pressure as MAWP
-            ownerId: '', // Will be set by the store
+            ownerId: currentUser?.id || '00000000-0000-0000-0000-000000000000', // Fallback for dev/demo if auth fails
             status: 'draft' as const,
             valveType: formData.valveType,
             tags: [],
