@@ -446,6 +446,82 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
                 </Alert>
             )}
 
+            {/* Quick Result Summary */}
+            {results && (
+                <Card
+                    sx={{
+                        mb: 3,
+                        borderRadius: 2,
+                        background: (theme) => theme.palette.mode === 'dark'
+                            ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, rgba(2, 132, 199, 0.05) 100%)'
+                            : 'linear-gradient(135deg, rgba(2, 132, 199, 0.05) 0%, rgba(56, 189, 248, 0.02) 100%)',
+                        border: (theme) => `1px solid ${theme.palette.mode === 'dark' ? 'rgba(56, 189, 248, 0.2)' : 'rgba(2, 132, 199, 0.2)'}`,
+                    }}
+                >
+                    <CardContent>
+                        <Typography variant="subtitle1" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            ⚡ Quick Result Summary
+                        </Typography>
+
+                        <Stack spacing={2} sx={{ mt: 2 }}>
+                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                                <Box>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Total Wetted Area
+                                    </Typography>
+                                    <Typography variant="h6" fontWeight={700} color="primary.main">
+                                        {results.totalWettedArea.toFixed(2)} m²
+                                    </Typography>
+                                </Box>
+                                <Box>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Limited Wetted Area
+                                    </Typography>
+                                    <Typography variant="h6" fontWeight={700} color="primary.main">
+                                        {results.limitedWettedArea.toFixed(2)} m²
+                                    </Typography>
+                                </Box>
+                            </Box>
+
+                            <Divider />
+
+                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+                                <Box>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Heat Absorption
+                                    </Typography>
+                                    <Typography variant="h6" fontWeight={700}>
+                                        {results.heatAbsorption.toFixed(0)} kW
+                                    </Typography>
+                                </Box>
+                                <Box>
+                                    <Typography variant="caption" color="text.secondary">
+                                        Fire Relief Rate
+                                    </Typography>
+                                    <Typography
+                                        variant="h6"
+                                        fontWeight={700}
+                                        sx={{
+                                            color: (theme) => theme.palette.mode === 'dark' ? '#fbbf24' : '#f59e0b'
+                                        }}
+                                    >
+                                        {results.reliefRate.toFixed(0)} kg/h
+                                    </Typography>
+                                </Box>
+                            </Box>
+
+                            {results.warnings && results.warnings.length > 0 && (
+                                <Alert severity="warning" sx={{ mt: 1 }}>
+                                    <Typography variant="caption">
+                                        {results.warnings.join(', ')}
+                                    </Typography>
+                                </Alert>
+                            )}
+                        </Stack>
+                    </CardContent>
+                </Card>
+            )}
+
             {/* Calculate Button */}
             <Button
                 variant="contained"
