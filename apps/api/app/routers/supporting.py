@@ -21,8 +21,11 @@ class EquipmentResponse(BaseModel):
     name: str
     description: Optional[str] = None
     design_pressure: Optional[float] = Field(default=None, serialization_alias="designPressure")
+    design_pressure_unit: Optional[str] = Field(default="barg", serialization_alias="designPressureUnit")
     mawp: Optional[float] = None
+    mawp_unit: Optional[str] = Field(default="barg", serialization_alias="mawpUnit")
     design_temp: Optional[float] = Field(default=None, serialization_alias="designTemperature")
+    design_temp_unit: Optional[str] = Field(default="C", serialization_alias="designTempUnit")
     owner_id: str = Field(serialization_alias="ownerId")
     status: str
     location_ref: Optional[str] = Field(default=None, serialization_alias="locationRef")
@@ -178,7 +181,7 @@ class EquipmentCreate(BaseModel):
     designPressure: Optional[float] = None
     mawp: Optional[float] = None
     designTemperature: Optional[float] = None
-    ownerId: str
+    ownerId: Optional[str] = None  # Optional - will use default user if not provided
     status: str = "active"
     details: Optional[dict] = None
 
@@ -189,9 +192,14 @@ class EquipmentUpdate(BaseModel):
     tag: Optional[str] = None
     name: Optional[str] = None
     description: Optional[str] = None
+    areaId: Optional[str] = None
     designPressure: Optional[float] = None
+    designPressureUnit: Optional[str] = None
     mawp: Optional[float] = None
+    mawpUnit: Optional[str] = None
     designTemperature: Optional[float] = None
+    designTempUnit: Optional[str] = None
+    ownerId: Optional[str] = None  # THIS WAS MISSING!
     status: Optional[str] = None
     details: Optional[dict] = None
 
@@ -199,7 +207,18 @@ class EquipmentUpdate(BaseModel):
 @router.post("/equipment", response_model=EquipmentResponse)
 async def create_equipment(data: EquipmentCreate, dal: DAL):
     """Create a new equipment."""
-    return await dal.create_equipment(data.model_dump())
+    equipment_data = data.model_dump()
+    
+    # If ownerId is not provided or is empty, use the first user as default
+    if not equipment_data.get('ownerId'):
+        # Get first user as default owner
+        users = await dal.get_users()
+        if users:
+            equipment_data['ownerId'] = users[0].id
+        else:
+            raise HTTPException(status_code=400, detail="No users found - cannot create equipment without owner")
+    
+    return await dal.create_equipment(equipment_data)
 
 
 @router.put("/equipment/{equipment_id}", response_model=EquipmentResponse)

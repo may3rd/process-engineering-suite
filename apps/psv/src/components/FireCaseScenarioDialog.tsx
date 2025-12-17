@@ -56,8 +56,8 @@ interface FireCaseFormData {
         environmentalFactor: number;
         heightAboveGrade: number;
         heightUnit: string;
-        // Per-equipment liquid levels
-        liquidLevels: Map<string, { value: number; unit: string }>;
+        // Per-equipment liquid levels - allow empty string for empty inputs
+        liquidLevels: Map<string, { value: number | string; unit: string }>;
     };
 
     // Calculation results

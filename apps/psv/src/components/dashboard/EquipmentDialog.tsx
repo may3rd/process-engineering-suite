@@ -17,7 +17,7 @@ import {
 } from "@mui/material";
 import { Equipment, EquipmentType } from "@/data/types";
 import { areas, units, plants, customers } from "@/data/mockData";
-import { OwnerSelector } from "../shared";
+import { OwnerSelector, UnitSelector } from "../shared";
 import { useAuthStore } from "@/store/useAuthStore";
 
 interface EquipmentDialogProps {
@@ -41,9 +41,12 @@ export function EquipmentDialog({
     const [plantId, setPlantId] = useState<string>('');
     const [unitId, setUnitId] = useState<string>('');
     const [areaId, setAreaId] = useState<string>('');
-    const [designPressure, setDesignPressure] = useState<number>(0);
-    const [mawp, setMawp] = useState<number>(0);
-    const [designTemperature, setDesignTemperature] = useState<number>(0);
+    const [designPressure, setDesignPressure] = useState<number | null>(null);
+    const [designPressureUnit, setDesignPressureUnit] = useState('barg');
+    const [mawp, setMawp] = useState<number | null>(null);
+    const [mawpUnit, setMawpUnit] = useState('barg');
+    const [designTemperature, setDesignTemperature] = useState<number | null>(null);
+    const [designTempUnit, setDesignTempUnit] = useState('C');
     const [status, setStatus] = useState<'active' | 'inactive'>('active');
     const [ownerId, setOwnerId] = useState<string | null>(null);
     const canEdit = useAuthStore((state) => state.canEdit());
@@ -56,9 +59,12 @@ export function EquipmentDialog({
             setName(equipment.name);
             setDescription(equipment.description || '');
             setAreaId(equipment.areaId);
-            setDesignPressure(equipment.designPressure);
-            setMawp(equipment.mawp);
-            setDesignTemperature(equipment.designTemperature);
+            setDesignPressure(equipment.designPressure ?? null);
+            setDesignPressureUnit(equipment.designPressureUnit || 'barg');
+            setMawp(equipment.mawp ?? null);
+            setMawpUnit(equipment.mawpUnit || 'barg');
+            setDesignTemperature(equipment.designTemperature ?? null);
+            setDesignTempUnit(equipment.designTempUnit || 'C');
             setStatus(equipment.status);
             setOwnerId(equipment.ownerId);
 
@@ -84,9 +90,12 @@ export function EquipmentDialog({
             setPlantId('');
             setUnitId('');
             setAreaId('');
-            setDesignPressure(0);
-            setMawp(0);
-            setDesignTemperature(0);
+            setDesignPressure(null);
+            setDesignPressureUnit('barg');
+            setMawp(null);
+            setMawpUnit('barg');
+            setDesignTemperature(null);
+            setDesignTempUnit('C');
             setStatus('active');
             setOwnerId(null);
         }
@@ -102,11 +111,15 @@ export function EquipmentDialog({
             description: description.trim() || undefined,
             areaId,
             designPressure,
+            designPressureUnit,
             mawp,
+            mawpUnit,
             designTemperature,
+            designTempUnit,
             status,
             ownerId,
         });
+        onClose();
     };
 
     const filteredPlants = customerId ? plants.filter(p => p.customerId === customerId) : [];
@@ -116,7 +129,7 @@ export function EquipmentDialog({
         value === 'inactive' ? canDeactivate : canEdit;
     const statusLocked = !statusEnabledForUser(status);
 
-    const isValid = tag.trim() && name.trim() && areaId && ownerId && designPressure > 0 && mawp > 0;
+    const isValid = tag.trim() && name.trim() && areaId && ownerId;
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
@@ -251,31 +264,37 @@ export function EquipmentDialog({
 
                     {/* Design Parameters */}
                     <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
-                        <TextField
-                            label="Design Pressure (barg)"
-                            type="number"
+                        <UnitSelector
+                            label="Design Pressure"
                             value={designPressure}
-                            onChange={(e) => setDesignPressure(parseFloat(e.target.value) || 0)}
-                            fullWidth
-                            required
+                            unit={designPressureUnit}
+                            availableUnits={['barg', 'psig', 'kPag', 'MPag', 'bara', 'psia']}
+                            onChange={(val, unit) => {
+                                setDesignPressure(val);
+                                setDesignPressureUnit(unit);
+                            }}
                         />
 
-                        <TextField
-                            label="MAWP (barg)"
-                            type="number"
+                        <UnitSelector
+                            label="MAWP"
                             value={mawp}
-                            onChange={(e) => setMawp(parseFloat(e.target.value) || 0)}
-                            fullWidth
-                            required
+                            unit={mawpUnit}
+                            availableUnits={['barg', 'psig', 'kPag', 'MPag', 'bara', 'psia']}
+                            onChange={(val, unit) => {
+                                setMawp(val);
+                                setMawpUnit(unit);
+                            }}
                         />
 
-                        <TextField
-                            label="Design Temp (°C)"
-                            type="number"
+                        <UnitSelector
+                            label="Design Temp"
                             value={designTemperature}
-                            onChange={(e) => setDesignTemperature(parseFloat(e.target.value) || 0)}
-                            fullWidth
-                            required
+                            unit={designTempUnit}
+                            availableUnits={['C', 'F', 'K']}
+                            onChange={(val, unit) => {
+                                setDesignTemperature(val);
+                                setDesignTempUnit(unit);
+                            }}
                         />
                     </Box>
 

@@ -444,9 +444,15 @@ export interface Equipment {
     tag: string;
     name: string;
     description?: string;
-    designPressure: number;   // barg
-    mawp: number;             // barg
-    designTemperature: number; // °C
+
+    // Design parameters with per-field units
+    designPressure: number | null;       // Stored in database as Pa (absolute)
+    designPressureUnit?: string;         // Display unit (barg, psig, etc.) - defaults to barg
+    mawp: number | null;                 // Stored in database as Pa (absolute)
+    mawpUnit?: string;                   // Display unit - defaults to barg
+    designTemperature: number | null;    // Stored in database as K
+    designTempUnit?: string;             // Display unit (C, F, K) - defaults to C
+
     ownerId: string;
     status: 'active' | 'inactive';
 

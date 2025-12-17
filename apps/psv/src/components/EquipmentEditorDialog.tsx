@@ -25,6 +25,7 @@ import {
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { Equipment, VesselDetails } from '@/data/types';
+import { useAuthStore } from '@/store/useAuthStore';
 
 interface EquipmentEditorDialogProps {
     open: boolean;
@@ -41,6 +42,7 @@ export function EquipmentEditorDialog({
     areaId,
     onSave,
 }: EquipmentEditorDialogProps) {
+    const currentUser = useAuthStore((state) => state.currentUser);
     const [formData, setFormData] = useState({
         tag: '',
         name: '',
@@ -91,7 +93,7 @@ export function EquipmentEditorDialog({
             designPressure: equipment?.designPressure || 10,
             mawp: equipment?.mawp || 12,
             designTemperature: equipment?.designTemperature || 150,
-            ownerId: equipment?.ownerId || '',
+            ownerId: equipment?.ownerId || currentUser?.id || '',
             status: 'active',
             details: {
                 innerDiameter: formData.innerDiameter,

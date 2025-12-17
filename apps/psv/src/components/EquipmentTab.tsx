@@ -133,11 +133,11 @@ export function EquipmentTab() {
                 return (area?.name || '').toLowerCase();
             }
             case 'designPressure':
-                return equip.designPressure;
+                return equip.designPressure ?? 0;  // Handle null
             case 'mawp':
-                return equip.mawp;
+                return equip.mawp ?? 0;  // Handle null
             case 'designTemp':
-                return equip.designTemperature;
+                return equip.designTemperature ?? 0;  // Handle null
             case 'status':
                 return equip.status;
             case 'owner': {
@@ -307,7 +307,7 @@ export function EquipmentTab() {
                                                 Design Pressure
                                             </Typography>
                                             <Typography variant="body2" fontWeight={500}>
-                                                {equip.designPressure.toFixed(1)} barg
+                                                {equip.designPressure != null ? `${equip.designPressure.toFixed(1)} barg` : 'N/A'}
                                             </Typography>
                                         </Box>
                                         <Box>
@@ -315,7 +315,7 @@ export function EquipmentTab() {
                                                 MAWP
                                             </Typography>
                                             <Typography variant="body2" fontWeight={500}>
-                                                {equip.mawp.toFixed(1)} barg
+                                                {equip.mawp != null ? `${equip.mawp.toFixed(1)} barg` : 'N/A'}
                                             </Typography>
                                         </Box>
                                         <Box>
@@ -323,7 +323,7 @@ export function EquipmentTab() {
                                                 Design Temp
                                             </Typography>
                                             <Typography variant="body2" fontWeight={500}>
-                                                {equip.designTemperature.toFixed(0)} °C
+                                                {equip.designTemperature != null ? `${equip.designTemperature.toFixed(0)} °C` : 'N/A'}
                                             </Typography>
                                         </Box>
                                         <Box>
@@ -451,17 +451,17 @@ export function EquipmentTab() {
                                             </TableCell>
                                             <TableCell>
                                                 <Typography variant="body2">
-                                                    {equip.designPressure.toFixed(1)} barg
+                                                    {equip.designPressure != null ? `${equip.designPressure.toFixed(1)} barg` : 'N/A'}
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>
                                                 <Typography variant="body2">
-                                                    {equip.mawp.toFixed(1)} barg
+                                                    {equip.mawp != null ? `${equip.mawp.toFixed(1)} barg` : 'N/A'}
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>
                                                 <Typography variant="body2">
-                                                    {equip.designTemperature.toFixed(0)} °C
+                                                    {equip.designTemperature != null ? `${equip.designTemperature.toFixed(0)} °C` : 'N/A'}
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>
@@ -479,7 +479,7 @@ export function EquipmentTab() {
                                             </TableCell>
                                             <TableCell align="right">
                                                 {canEdit && (
-                                                    <>
+                                                    <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
                                                         <Tooltip title="Edit">
                                                             <IconButton
                                                                 size="small"
@@ -497,7 +497,7 @@ export function EquipmentTab() {
                                                                 <Delete fontSize="small" />
                                                             </IconButton>
                                                         </Tooltip>
-                                                    </>
+                                                    </Box>
                                                 )}
                                             </TableCell>
                                         </TableRow>

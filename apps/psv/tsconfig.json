@@ -39,6 +39,12 @@
             ],
             "@eng-suite/physics/*": [
                 "../../packages/physics-engine/src/*"
+            ],
+            "@eng-suite/vessels": [
+                "../../packages/vessels-calc/src/index.ts"
+            ],
+            "@eng-suite/vessels/*": [
+                "../../packages/vessels-calc/src/*"
             ]
         }
     },

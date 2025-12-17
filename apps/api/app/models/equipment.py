@@ -30,8 +30,11 @@ class Equipment(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     design_pressure: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
+    design_pressure_unit: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, default="barg")
     mawp: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
+    mawp_unit: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, default="barg")
     design_temp: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
+    design_temp_unit: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, default="C")
     owner_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False),
         ForeignKey("users.id"),

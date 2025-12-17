@@ -456,11 +456,20 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
         }
 
         // Handle numeric values
-        const numValue = typeof displayValue === 'string' ? parseFloat(displayValue) : displayValue;
-        const safeValue = isNaN(numValue) ? 0 : numValue;
+        let safeValue: number | undefined;
+        if (typeof displayValue === 'string') {
+            if (displayValue === '') {
+                safeValue = undefined;
+            } else {
+                const numValue = parseFloat(displayValue);
+                safeValue = isNaN(numValue) ? undefined : numValue;
+            }
+        } else {
+            safeValue = displayValue;
+        }
 
         // Convert to base unit if type is provided
-        const baseValue = unitType ? toBase(safeValue, unitType) : safeValue;
+        const baseValue = unitType && safeValue !== undefined ? toBase(safeValue, unitType) : safeValue;
 
         setCurrentCase({
             ...currentCase,
@@ -1023,7 +1032,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                     <TextField
                                         label="Mass Flow Rate"
                                         type="number"
-                                        value={toDisplay(currentCase.inputs.massFlowRate, 'flow')}
+                                        value={currentCase.inputs.massFlowRate !== undefined ? toDisplay(currentCase.inputs.massFlowRate, 'flow') : ''}
                                         onChange={(e) => handleInputChange('massFlowRate', e.target.value, 'flow')}
                                         slotProps={{
                                             input: {

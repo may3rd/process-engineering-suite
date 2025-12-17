@@ -525,7 +525,10 @@ class DatabaseService(DataAccessLayer):
             # PSV scenario markdown notes (camelCase from frontend -> snake_case DB column)
             "caseConsideration": "case_consideration",
             "designPressure": "design_pressure",
+            "designPressureUnit": "design_pressure_unit",
+            "mawpUnit": "mawp_unit",
             "designTemperature": "design_temp",
+            "designTempUnit": "design_temp_unit",
             "locationRef": "location_ref",
             "fileUri": "file_uri",
             "fileName": "file_name",
@@ -602,6 +605,7 @@ class DatabaseService(DataAccessLayer):
         await self.session.execute(delete(Comment))
         await self.session.execute(delete(Attachment))
         await self.session.execute(delete(EquipmentLink))
+        await self.session.execute(delete(RevisionHistory))  # Added: Delete revisions before their entities
         await self.session.execute(delete(SizingCase))
         await self.session.execute(delete(OverpressureScenario))
         await self.session.execute(delete(protective_system_projects)) # Association table

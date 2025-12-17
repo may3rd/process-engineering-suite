@@ -10,8 +10,8 @@
 /**
  * Calculate heat absorption from fire exposure (API-521)
  * 
- * For unwetted surfaces (above liquid level):
- * Q = 21,000 * F * A^0.82  (Watts)
+ * Heat absorption Equations for Vessels Containing Liquids
+ * Q = 43,200 * F * A^0.82  (Watts)
  * 
  * Where:
  * - Q = Heat absorption rate (W)
@@ -24,7 +24,8 @@
  */
 export function calculateFireHeatAbsorption(
     wettedArea: number,
-    environmentalFactor: number = 1.0
+    environmentalFactor: number = 1.0,
+    drainageAndFireFighting: boolean = true
 ): number {
     if (wettedArea <= 0) {
         throw new Error('Wetted area must be positive');
@@ -35,8 +36,12 @@ export function calculateFireHeatAbsorption(
     }
 
     // API-521 formula for unwetted surfaces
-    // Q = 21,000 * F * A^0.82 (Watts)
-    return 21000 * environmentalFactor * Math.pow(wettedArea, 0.82);
+    // Q = 43,200 * F * A^0.82 (Watts)
+    if (drainageAndFireFighting) {
+        return 43200 * environmentalFactor * Math.pow(wettedArea, 0.82);
+    } else {
+        return 70900 * environmentalFactor * Math.pow(wettedArea, 0.82);
+    }
 }
 
 /**

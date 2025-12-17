@@ -23,7 +23,6 @@ import {
     InputLabel,
     Select,
     RadioGroup,
-    FormControlRadio,
     Radio,
     FormControlLabel,
     Slider,
@@ -39,7 +38,7 @@ import {
 } from '@mui/icons-material';
 import { Equipment, VesselDetails, TankDetails } from '@/data/types';
 import { convertUnit } from '@eng-suite/physics';
-import { calculateFireExposureArea } from '@/lib/vesselCalculations';
+import { calculateFireExposureArea, type VesselCalculationInput } from '@/lib/vesselCalculations';
 import {
     calculateAPI521FireLoad,
     ENVIRONMENTAL_FACTORS,
@@ -56,7 +55,8 @@ interface API521CalculatorProps {
         environmentalFactor: number;
         heightAboveGrade: number;
         heightUnit: string;
-        liquidLevels: Map<string, { value: number; unit: string }>;
+        // Per-equipment liquid levels - allow empty string for empty inputs
+        liquidLevels: Map<string, { value: number | string; unit: string }>;
     };
     onChange: (config: any, results?: any) => void;
 }
@@ -102,9 +102,13 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
                     unit: 'm',
                 };
 
-                // Convert liquid level to meters
+                // Convert liquid level to meters (treat empty/invalid as 0)
+                const liquidLevelValue = typeof liquidLevelConfig.value === 'string'
+                    ? parseFloat(liquidLevelConfig.value) || 0
+                    : liquidLevelConfig.value || 0;
+
                 const liquidLevelM = convertUnit(
-                    liquidLevelConfig.value,
+                    liquidLevelValue,
                     liquidLevelConfig.unit,
                     'm'
                 );
@@ -115,7 +119,7 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
                 // Calculate wetted area
                 const wettedArea = calculateFireExposureArea(
                     {
-                        vesselType,
+                        vesselType: vesselType as VesselCalculationInput['vesselType'],
                         diameter: details.innerDiameter / 1000, // mm to m
                         length: 'tangentToTangentLength' in details
                             ? details.tangentToTangentLength / 1000
@@ -167,7 +171,8 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
             setResults(calculationResults);
             onChange(localConfig, calculationResults);
         } catch (error) {
-            setErrors([`Calculation error: ${error.message}`]);
+            const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
+            setErrors([`Calculation error: ${errorMessage}`]);
         }
     };
 
@@ -343,53 +348,152 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
                             unit: 'm',
                         };
 
+                        // Calculate quick wetted area for real-time display
+                        const calculateQuickWettedArea = (): number | null => {
+                            try {
+                                const details = eq.details as VesselDetails | TankDetails;
+
+                                // Convert liquid level to number (treat empty/invalid as 0)
+                                const liquidLevelValue = typeof liquidLevel.value === 'string'
+                                    ? parseFloat(liquidLevel.value) || 0
+                                    : liquidLevel.value || 0;
+
+                                if (!details || liquidLevelValue <= 0) return null;
+
+                                // Convert liquid level to meters
+                                const liquidLevelM = convertUnit(
+                                    liquidLevelValue,
+                                    liquidLevel.unit,
+                                    'm'
+                                );
+
+                                // Determine vessel type
+                                const vesselType = getVesselType(eq, details);
+
+                                // Calculate wetted area
+                                const wettedArea = calculateFireExposureArea(
+                                    {
+                                        vesselType: vesselType as VesselCalculationInput['vesselType'],
+                                        diameter: details.innerDiameter / 1000, // mm to m
+                                        length: 'tangentToTangentLength' in details
+                                            ? details.tangentToTangentLength / 1000
+                                            : details.height / 1000,
+                                        liquidLevel: liquidLevelM,
+                                    },
+                                    details.insulated || false
+                                );
+
+                                return wettedArea;
+                            } catch (error) {
+                                return null;
+                            }
+                        };
+
+                        const quickWettedArea = calculateQuickWettedArea();
+
                         return (
                             <Accordion key={eq.id} sx={{ mb: 1 }}>
                                 <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                                     <Typography>{eq.tag} - {eq.name}</Typography>
                                 </AccordionSummary>
                                 <AccordionDetails>
-                                    <Box>
-                                        <Typography variant="body2" color="text.secondary" gutterBottom>
-                                            Normal Liquid Level
-                                        </Typography>
-                                        <Stack direction="row" spacing={1} alignItems="flex-start">
-                                            <TextField
-                                                required
-                                                type="number"
-                                                value={liquidLevel.value}
-                                                onChange={(e) => {
-                                                    const newLevels = new Map(localConfig.liquidLevels);
-                                                    newLevels.set(eq.id, {
-                                                        ...liquidLevel,
-                                                        value: parseFloat(e.target.value),
-                                                    });
-                                                    updateConfig({ liquidLevels: newLevels });
+                                    <Stack spacing={2}>
+                                        <Box>
+                                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                                                Normal Liquid Level
+                                            </Typography>
+                                            <Stack direction="row" spacing={1} alignItems="flex-start">
+                                                <TextField
+                                                    required
+                                                    type="number"
+                                                    value={liquidLevel.value === 0 ? '' : liquidLevel.value}
+                                                    onChange={(e) => {
+                                                        const newLevels = new Map(localConfig.liquidLevels);
+                                                        // Allow empty string, otherwise parse as float
+                                                        const newValue = e.target.value === ''
+                                                            ? ''
+                                                            : e.target.value;
+                                                        newLevels.set(eq.id, {
+                                                            ...liquidLevel,
+                                                            value: newValue,
+                                                        });
+                                                        updateConfig({ liquidLevels: newLevels });
+                                                    }}
+                                                    helperText="Height from bottom of vessel"
+                                                    sx={{ flex: 1 }}
+                                                    size="small"
+                                                />
+                                                <Select
+                                                    value={liquidLevel.unit}
+                                                    onChange={(e) => {
+                                                        const newLevels = new Map(localConfig.liquidLevels);
+                                                        newLevels.set(eq.id, {
+                                                            ...liquidLevel,
+                                                            unit: e.target.value,
+                                                        });
+                                                        updateConfig({ liquidLevels: newLevels });
+                                                    }}
+                                                    size="small"
+                                                    sx={{ minWidth: 80 }}
+                                                >
+                                                    <MenuItem value="m">m</MenuItem>
+                                                    <MenuItem value="ft">ft</MenuItem>
+                                                    <MenuItem value="mm">mm</MenuItem>
+                                                    <MenuItem value="in">in</MenuItem>
+                                                </Select>
+                                            </Stack>
+                                        </Box>
+
+                                        {/* Real-time wetted area display */}
+                                        {quickWettedArea !== null && (
+                                            <Box
+                                                sx={{
+                                                    p: 1.5,
+                                                    borderRadius: 2,
+                                                    bgcolor: (theme) =>
+                                                        theme.palette.mode === 'dark'
+                                                            ? 'rgba(56, 189, 248, 0.1)'
+                                                            : 'rgba(56, 189, 248, 0.05)',
+                                                    border: 1,
+                                                    borderColor: (theme) =>
+                                                        theme.palette.mode === 'dark'
+                                                            ? 'rgba(56, 189, 248, 0.3)'
+                                                            : 'rgba(56, 189, 248, 0.2)',
                                                 }}
-                                                helperText="Height from bottom of vessel"
-                                                sx={{ flex: 1 }}
-                                                size="small"
-                                            />
-                                            <Select
-                                                value={liquidLevel.unit}
-                                                onChange={(e) => {
-                                                    const newLevels = new Map(localConfig.liquidLevels);
-                                                    newLevels.set(eq.id, {
-                                                        ...liquidLevel,
-                                                        unit: e.target.value,
-                                                    });
-                                                    updateConfig({ liquidLevels: newLevels });
-                                                }}
-                                                size="small"
-                                                sx={{ minWidth: 80 }}
                                             >
-                                                <MenuItem value="m">m</MenuItem>
-                                                <MenuItem value="ft">ft</MenuItem>
-                                                <MenuItem value="mm">mm</MenuItem>
-                                                <MenuItem value="in">in</MenuItem>
-                                            </Select>
-                                        </Stack>
-                                    </Box>
+                                                <Stack direction="row" spacing={1} alignItems="center">
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        💧 Wetted Area:
+                                                    </Typography>
+                                                    <Typography
+                                                        variant="body2"
+                                                        fontWeight={600}
+                                                        sx={{
+                                                            color: (theme) =>
+                                                                theme.palette.mode === 'dark'
+                                                                    ? '#38bdf8'
+                                                                    : '#0284c7',
+                                                        }}
+                                                    >
+                                                        {quickWettedArea.toFixed(2)} m²
+                                                    </Typography>
+                                                    {quickWettedArea > 2800 && (
+                                                        <Typography
+                                                            variant="caption"
+                                                            sx={{
+                                                                color: 'warning.main',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: 0.5,
+                                                            }}
+                                                        >
+                                                            ⚠️ Exceeds API-521 limit
+                                                        </Typography>
+                                                    )}
+                                                </Stack>
+                                            </Box>
+                                        )}
+                                    </Stack>
                                 </AccordionDetails>
                             </Accordion>
                         );

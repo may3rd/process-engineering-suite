@@ -60,7 +60,7 @@ export function MultiEquipmentSelector({
     selectedEquipment,
     onChange,
 }: MultiEquipmentSelectorProps) {
-    const { getEquipmentByArea, addEquipment, updateEquipment } = usePsvStore();
+    const { getEquipmentByArea, addEquipment, updateEquipment, equipment: storeEquipment } = usePsvStore();
     const [availableEquipment, setAvailableEquipment] = useState<Equipment[]>([]);
     const [searchValue, setSearchValue] = useState<Equipment | null>(null);
     const [editorOpen, setEditorOpen] = useState(false);
@@ -74,7 +74,8 @@ export function MultiEquipmentSelector({
             ['vessel', 'tank', 'column'].includes(eq.type)
         );
         setAvailableEquipment(fireEquipment);
-    }, [areaId, getEquipmentByArea]);
+    }, [areaId, getEquipmentByArea, storeEquipment]); // Added storeEquipment to refresh when equipment changes
+
 
     const handleAdd = (equipment: Equipment) => {
         // Check if this is the special "Add New" option
@@ -91,12 +92,12 @@ export function MultiEquipmentSelector({
         setSearchValue(null);
     };
 
-    const handleEquipmentSave = (equipment: Equipment) => {
+    const handleEquipmentSave = async (equipment: Equipment) => {
         if (equipment.id.startsWith('temp-')) {
             // New equipment - pass data without id/timestamps
             const { id, createdAt, updatedAt, ...equipmentData } = equipment;
-            addEquipment(equipmentData);
-            // Reload equipment list
+            await addEquipment(equipmentData);
+            // Reload equipment list after store is updated
             const updated = getEquipmentByArea(areaId).filter((eq) =>
                 ['vessel', 'tank', 'column'].includes(eq.type)
             );
@@ -105,11 +106,13 @@ export function MultiEquipmentSelector({
         } else {
             // Update existing
             const { id: equipId, createdAt, updatedAt, ...updates } = equipment;
-            updateEquipment(equipId, updates);
-            // Update local state
-            setAvailableEquipment(
-                availableEquipment.map((eq) => (eq.id === equipment.id ? equipment : eq))
+            await updateEquipment(equipId, updates);
+            // Reload equipment list after store is updated
+            const updated = getEquipmentByArea(areaId).filter((eq) =>
+                ['vessel', 'tank', 'column'].includes(eq.type)
             );
+            setAvailableEquipment(updated);
+            // Update selected equipment list
             onChange(
                 selectedEquipment.map((eq) => (eq.id === equipment.id ? equipment : eq))
             );

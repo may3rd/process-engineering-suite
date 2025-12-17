@@ -57,6 +57,8 @@ class ProtectiveSystemCreate(BaseModel):
 class ProtectiveSystemUpdate(BaseModel):
     model_config = ConfigDict(extra='ignore')
     name: Optional[str] = None
+    tag: Optional[str] = None
+    type: Optional[str] = None
     designCode: Optional[str] = None
     serviceFluid: Optional[str] = None
     fluidPhase: Optional[str] = None
