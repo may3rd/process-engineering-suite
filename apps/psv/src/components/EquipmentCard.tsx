@@ -26,13 +26,14 @@ import {
     ListItemButton,
     ListItemIcon,
 } from "@mui/material";
-import { Add, Link as LinkIcon, Delete } from "@mui/icons-material";
-import { ProtectiveSystem } from "@/data/types";
+import { Add, Link as LinkIcon, Delete, Edit } from "@mui/icons-material";
+import { ProtectiveSystem, Equipment } from "@/data/types";
 import { usePsvStore } from "../store/usePsvStore";
 import { glassCardStyles } from "./styles";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
 import { formatPressureGauge } from "@/lib/projectUnits";
+import { EquipmentDialog } from "./dashboard/EquipmentDialog";
 
 interface EquipmentCardProps {
     psv: ProtectiveSystem;
@@ -44,6 +45,8 @@ export function EquipmentCard({ psv }: EquipmentCardProps) {
     const { unitSystem, units } = useProjectUnitSystem();
     const [open, setOpen] = useState(false);
     const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]);
+    const [editDialogOpen, setEditDialogOpen] = useState(false);
+    const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
 
     // Determine currently linked equipment IDs to exclude/disable them in list
     const linksForPsv = equipmentLinkList.filter(link => link.psvId === psv.id);
@@ -142,7 +145,24 @@ export function EquipmentCard({ psv }: EquipmentCardProps) {
                                     </TableCell>
                                     <TableCell align="right">
                                         {canEdit && (
-                                            <Tooltip title="Unlink">
+                                            <>
+                                                <Tooltip title="Edit">
+                                                    <IconButton
+                                                        size="small"
+                                                        onClick={() => {
+                                                            setEditingEquipment(eq);
+                                                            setEditDialogOpen(true);
+                                                        }}
+                                                        sx={{
+                                                            opacity: 0.5,
+                                                            transition: 'opacity 0.2s',
+                                                            '&:hover': { opacity: 1 }
+                                                        }}
+                                                    >
+                                                        <Edit fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Unlink">
                                                     <IconButton
                                                         size="small"
                                                         color="error"
@@ -153,10 +173,16 @@ export function EquipmentCard({ psv }: EquipmentCardProps) {
                                                                 console.error(error);
                                                             }
                                                         }}
+                                                        sx={{
+                                                            opacity: 0.5,
+                                                            transition: 'opacity 0.2s',
+                                                            '&:hover': { opacity: 1 }
+                                                        }}
                                                     >
                                                         <Delete fontSize="small" />
                                                     </IconButton>
-                                            </Tooltip>
+                                                </Tooltip>
+                                            </>
                                         )}
                                     </TableCell>
                                 </TableRow>
@@ -219,6 +245,23 @@ export function EquipmentCard({ psv }: EquipmentCardProps) {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            {/* Edit Equipment Dialog */}
+            {editingEquipment && (
+                <EquipmentDialog
+                    open={editDialogOpen}
+                    onClose={() => {
+                        setEditDialogOpen(false);
+                        setEditingEquipment(null);
+                    }}
+                    onSave={async (updatedEquipment) => {
+                        // Equipment will be updated via the store
+                        setEditDialogOpen(false);
+                        setEditingEquipment(null);
+                    }}
+                    equipment={editingEquipment}
+                />
+            )}
         </Paper>
     );
 }

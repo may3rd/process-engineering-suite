@@ -18,6 +18,9 @@
             "default": "./dist/math/integration.js"
         }
     },
+    "files": [
+        "dist/**/*"
+    ],
     "scripts": {
         "build": "tsc",
         "dev": "tsc --watch",
