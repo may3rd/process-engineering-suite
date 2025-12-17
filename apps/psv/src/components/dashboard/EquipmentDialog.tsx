@@ -1,6 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { Equipment, EquipmentType, EquipmentDetails } from "@/data/types";
+import { areas, units, plants, customers } from "@/data/mockData";
+import { OwnerSelector, UnitSelector } from "../shared";
+import { useAuthStore } from "@/store/useAuthStore";
+import {
+    VesselDetailsForm,
+    TankDetailsForm,
+    PumpDetailsForm,
+    HeatExchangerDetailsForm,
+    CompressorDetailsForm,
+    PipingDetailsForm,
+    OtherDetailsForm,
+    ColumnDetailsForm,
+    ReactorDetailsForm
+} from "../equipment-details";
 import {
     Dialog,
     DialogTitle,
@@ -14,11 +29,8 @@ import {
     MenuItem,
     Box,
     FormHelperText,
+    Grid,
 } from "@mui/material";
-import { Equipment, EquipmentType } from "@/data/types";
-import { areas, units, plants, customers } from "@/data/mockData";
-import { OwnerSelector, UnitSelector } from "../shared";
-import { useAuthStore } from "@/store/useAuthStore";
 
 interface EquipmentDialogProps {
     open: boolean;
@@ -49,6 +61,8 @@ export function EquipmentDialog({
     const [designTempUnit, setDesignTempUnit] = useState('C');
     const [status, setStatus] = useState<'active' | 'inactive'>('active');
     const [ownerId, setOwnerId] = useState<string | null>(null);
+    const [details, setDetails] = useState<EquipmentDetails | null>(null); // Added details state
+    const currentUser = useAuthStore((state) => state.currentUser);
     const canEdit = useAuthStore((state) => state.canEdit());
     const canDeactivate = useAuthStore((state) => ['lead', 'approver', 'admin'].includes(state.currentUser?.role || ''));
 
@@ -67,6 +81,7 @@ export function EquipmentDialog({
             setDesignTempUnit(equipment.designTempUnit || 'C');
             setStatus(equipment.status);
             setOwnerId(equipment.ownerId);
+            setDetails(equipment.details || null); // Load details
 
             // Find and set hierarchy
             const area = areas.find(a => a.id === equipment.areaId);
@@ -97,9 +112,14 @@ export function EquipmentDialog({
             setDesignTemperature(null);
             setDesignTempUnit('C');
             setStatus('active');
-            setOwnerId(null);
+            setOwnerId(currentUser?.id || null);
+            setDetails(null);
+            // Apply defaults logic if needed
+            if (currentUser?.displaySettings?.decimalPlaces) {
+                // Apply defaults logic if needed
+            }
         }
-    }, [equipment, open]);
+    }, [equipment, open, currentUser]); // Added currentUser to dependency array
 
     const handleSubmit = () => {
         if (!tag.trim() || !name.trim() || !areaId || !ownerId) return;
@@ -118,6 +138,7 @@ export function EquipmentDialog({
             designTempUnit,
             status,
             ownerId,
+            details: details || undefined, // Added details to onSave payload
         });
         onClose();
     };
@@ -129,17 +150,53 @@ export function EquipmentDialog({
         value === 'inactive' ? canDeactivate : canEdit;
     const statusLocked = !statusEnabledForUser(status);
 
+    const handleOwnerChange = (newOwnerId: string) => {
+        setOwnerId(newOwnerId);
+    };
+
     const isValid = tag.trim() && name.trim() && areaId && ownerId;
+
+    const renderDetailsForm = () => {
+        switch (type) {
+            case 'vessel':
+                return <VesselDetailsForm details={details as any} onChange={setDetails} />;
+            case 'tank':
+                return <TankDetailsForm details={details as any} onChange={setDetails} />;
+            case 'heat_exchanger':
+                return <HeatExchangerDetailsForm details={details as any} onChange={setDetails} />;
+            case 'column':
+                return <ColumnDetailsForm details={details as any} onChange={setDetails} />;
+            case 'reactor':
+                return <ReactorDetailsForm details={details as any} onChange={setDetails} />;
+            case 'pump':
+                return <PumpDetailsForm details={details as any} onChange={setDetails} />;
+            case 'compressor':
+                return <CompressorDetailsForm details={details as any} onChange={setDetails} />;
+            case 'piping':
+                return <PipingDetailsForm details={details as any} onChange={setDetails} />;
+            case 'other':
+                return <OtherDetailsForm details={details as any} onChange={setDetails} />;
+            default:
+                return null;
+        }
+    };
 
     return (
         <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
             <DialogTitle>
                 {equipment ? 'Edit Equipment' : 'Add Equipment'}
             </DialogTitle>
-            <DialogContent>
-                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
+            <DialogContent dividers>
+                <Grid container spacing={2} sx={{ mt: 0.5 }}>
+                    {/* General Information Section */}
+                    <Grid size={{ xs: 12 }}>
+                        <Box sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}>
+                            <strong style={{ color: '#0284c7' }}>General Information</strong>
+                        </Box>
+                    </Grid>
+
                     {/* Hierarchy Selectors */}
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                    <Grid size={{ xs: 12, sm: 6 }}>
                         <FormControl fullWidth size="small" required>
                             <InputLabel>Customer</InputLabel>
                             <Select
@@ -160,7 +217,7 @@ export function EquipmentDialog({
                             </Select>
                         </FormControl>
 
-                        <FormControl fullWidth size="small" required disabled={!customerId}>
+                        <FormControl fullWidth size="small" required disabled={!customerId} sx={{ mt: 2 }}>
                             <InputLabel>Plant</InputLabel>
                             <Select
                                 value={plantId}
@@ -179,7 +236,7 @@ export function EquipmentDialog({
                             </Select>
                         </FormControl>
 
-                        <FormControl fullWidth size="small" required disabled={!plantId}>
+                        <FormControl fullWidth size="small" required disabled={!plantId} sx={{ mt: 2 }}>
                             <InputLabel>Unit</InputLabel>
                             <Select
                                 value={unitId}
@@ -197,7 +254,7 @@ export function EquipmentDialog({
                             </Select>
                         </FormControl>
 
-                        <FormControl fullWidth size="small" required disabled={!unitId}>
+                        <FormControl fullWidth size="small" required disabled={!unitId} sx={{ mt: 2 }}>
                             <InputLabel>Area</InputLabel>
                             <Select
                                 value={areaId}
@@ -211,129 +268,149 @@ export function EquipmentDialog({
                                 ))}
                             </Select>
                         </FormControl>
-                    </Box>
+                    </Grid>
 
                     {/* Basic Info */}
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                        <FormControl fullWidth size="small">
-                            <InputLabel>Equipment Type</InputLabel>
-                            <Select
-                                value={type}
-                                onChange={(e) => setType(e.target.value as EquipmentType)}
-                                label="Equipment Type"
-                            >
-                                <MenuItem value="vessel">Vessel</MenuItem>
-                                <MenuItem value="tank">Tank</MenuItem>
-                                <MenuItem value="heat_exchanger">Heat Exchanger</MenuItem>
-                                <MenuItem value="column">Column</MenuItem>
-                                <MenuItem value="reactor">Reactor</MenuItem>
-                                <MenuItem value="pump">Pump</MenuItem>
-                                <MenuItem value="compressor">Compressor</MenuItem>
-                                <MenuItem value="piping">Piping</MenuItem>
-                                <MenuItem value="other">Other</MenuItem>
-                            </Select>
-                        </FormControl>
+                    <Grid size={{ xs: 12, sm: 6 }}>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Equipment Type</InputLabel>
+                                <Select
+                                    value={type}
+                                    onChange={(e) => setType(e.target.value as EquipmentType)}
+                                    label="Equipment Type"
+                                >
+                                    <MenuItem value="vessel">Vessel</MenuItem>
+                                    <MenuItem value="tank">Tank</MenuItem>
+                                    <MenuItem value="heat_exchanger">Heat Exchanger</MenuItem>
+                                    <MenuItem value="column">Column</MenuItem>
+                                    <MenuItem value="reactor">Reactor</MenuItem>
+                                    <MenuItem value="pump">Pump</MenuItem>
+                                    <MenuItem value="compressor">Compressor</MenuItem>
+                                    <MenuItem value="piping">Piping</MenuItem>
+                                    <MenuItem value="other">Other</MenuItem>
+                                </Select>
+                            </FormControl>
+
+                            <TextField
+                                label="Equipment Tag"
+                                value={tag}
+                                onChange={(e) => setTag(e.target.value.toUpperCase())}
+                                fullWidth
+                                size="small"
+                                required
+                                helperText="e.g., V-101"
+                                inputProps={{ style: { textTransform: 'uppercase' } }}
+                            />
+                        </Box>
 
                         <TextField
-                            label="Equipment Tag"
-                            value={tag}
-                            onChange={(e) => setTag(e.target.value.toUpperCase())}
+                            label="Equipment Name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
                             fullWidth
+                            size="small"
                             required
-                            helperText="e.g., V-101"
-                            inputProps={{ style: { textTransform: 'uppercase' } }}
+                            sx={{ mt: 2 }}
                         />
-                    </Box>
 
-                    <TextField
-                        label="Equipment Name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        fullWidth
-                        required
-                    />
-
-                    <TextField
-                        label="Description"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
-                        fullWidth
-                        multiline
-                        rows={2}
-                    />
+                        <TextField
+                            label="Description"
+                            value={description}
+                            onChange={(e) => setDescription(e.target.value)}
+                            fullWidth
+                            multiline
+                            rows={3}
+                            sx={{ mt: 2 }}
+                        />
+                    </Grid>
 
                     {/* Design Parameters */}
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
-                        <UnitSelector
-                            label="Design Pressure"
-                            value={designPressure}
-                            unit={designPressureUnit}
-                            availableUnits={['barg', 'psig', 'kPag', 'MPag', 'bara', 'psia']}
-                            onChange={(val, unit) => {
-                                setDesignPressure(val);
-                                setDesignPressureUnit(unit);
-                            }}
-                        />
+                    <Grid size={{ xs: 12 }}>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 2 }}>
+                            <UnitSelector
+                                label="Design Pressure"
+                                value={designPressure}
+                                unit={designPressureUnit}
+                                availableUnits={['barg', 'psig', 'kPag', 'MPag', 'bara', 'psia']}
+                                onChange={(val, unit) => {
+                                    setDesignPressure(val);
+                                    setDesignPressureUnit(unit);
+                                }}
+                            />
 
-                        <UnitSelector
-                            label="MAWP"
-                            value={mawp}
-                            unit={mawpUnit}
-                            availableUnits={['barg', 'psig', 'kPag', 'MPag', 'bara', 'psia']}
-                            onChange={(val, unit) => {
-                                setMawp(val);
-                                setMawpUnit(unit);
-                            }}
-                        />
+                            <UnitSelector
+                                label="MAWP"
+                                value={mawp}
+                                unit={mawpUnit}
+                                availableUnits={['barg', 'psig', 'kPag', 'MPag', 'bara', 'psia']}
+                                onChange={(val, unit) => {
+                                    setMawp(val);
+                                    setMawpUnit(unit);
+                                }}
+                            />
 
-                        <UnitSelector
-                            label="Design Temp"
-                            value={designTemperature}
-                            unit={designTempUnit}
-                            availableUnits={['C', 'F', 'K']}
-                            onChange={(val, unit) => {
-                                setDesignTemperature(val);
-                                setDesignTempUnit(unit);
-                            }}
-                        />
-                    </Box>
+                            <UnitSelector
+                                label="Design Temp"
+                                value={designTemperature}
+                                unit={designTempUnit}
+                                availableUnits={['C', 'F', 'K']}
+                                onChange={(val, unit) => {
+                                    setDesignTemperature(val);
+                                    setDesignTempUnit(unit);
+                                }}
+                            />
+                        </Box>
+                    </Grid>
+
+                    {/* Equipment Details Section */}
+                    {type && (
+                        <Grid size={{ xs: 12 }}>
+                            <Box sx={{ mt: 2, mb: 1, borderBottom: 1, borderColor: 'divider' }}>
+                                <strong style={{ color: '#0284c7' }}>Equipment Details</strong>
+                            </Box>
+                            {renderDetailsForm()}
+                        </Grid>
+                    )}
 
                     {/* Status and Owner */}
-                    <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2 }}>
-                        <FormControl fullWidth size="small">
-                            <InputLabel>Status</InputLabel>
-                            <Select
-                                value={status}
-                                onChange={(e) => setStatus(e.target.value as typeof status)}
-                                label="Status"
-                                disabled={statusLocked}
-                            >
-                                <MenuItem value="active" disabled={!statusEnabledForUser('active')}>
-                                    Active
-                                </MenuItem>
-                                <MenuItem value="inactive" disabled={!statusEnabledForUser('inactive')}>
-                                    Inactive
-                                </MenuItem>
-                            </Select>
-                            {statusLocked ? (
-                                <FormHelperText sx={{ color: 'text.secondary' }}>
-                                    You don&apos;t have permission to set this status.
-                                </FormHelperText>
-                            ) : !statusEnabledForUser('inactive') ? (
-                                <FormHelperText sx={{ color: 'text.secondary' }}>
-                                    Only leads or approvers can deactivate equipment.
-                                </FormHelperText>
-                            ) : null}
-                        </FormControl>
+                    <Grid size={{ xs: 12 }}>
+                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 2, mt: 2 }}>
+                            <FormControl fullWidth size="small">
+                                <InputLabel>Status</InputLabel>
+                                <Select
+                                    value={status}
+                                    onChange={(e) => setStatus(e.target.value as typeof status)}
+                                    label="Status"
+                                    disabled={statusLocked}
+                                >
+                                    <MenuItem value="active" disabled={!statusEnabledForUser('active')}>
+                                        Active
+                                    </MenuItem>
+                                    <MenuItem value="inactive" disabled={!statusEnabledForUser('inactive')}>
+                                        Inactive
+                                    </MenuItem>
+                                </Select>
+                                {statusLocked ? (
+                                    <FormHelperText sx={{ color: 'text.secondary' }}>
+                                        You don&apos;t have permission to set this status.
+                                    </FormHelperText>
+                                ) : !statusEnabledForUser('inactive') ? (
+                                    <FormHelperText sx={{ color: 'text.secondary' }}>
+                                        Only leads or approvers can deactivate equipment.
+                                    </FormHelperText>
+                                ) : null}
+                            </FormControl>
 
-                        <OwnerSelector
-                            value={ownerId}
-                            onChange={setOwnerId}
-                            required
-                            label="Owner"
-                        />
-                    </Box>
-                </Box>
+                            <OwnerSelector
+                                value={ownerId}
+                                onChange={setOwnerId}
+                                required
+                                label="Owner"
+                            />
+                        </Box>
+                    </Grid>
+                </Grid>
             </DialogContent>
             <DialogActions>
                 <Button onClick={onClose}>Cancel</Button>
