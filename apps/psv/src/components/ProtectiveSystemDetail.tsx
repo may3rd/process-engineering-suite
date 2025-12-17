@@ -1,5 +1,7 @@
 "use client";
 
+import React from 'react';
+
 import {
     Box,
     Tabs,
@@ -66,7 +68,7 @@ import {
     ExpandLess,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
-import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem, ProtectiveSystem, ProjectNote } from "@/data/types";
+import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem, ProtectiveSystem, ProjectNote, Attachment } from "@/data/types";
 import { SizingWorkspace } from "./SizingWorkspace";
 import { ScenarioEditor } from "./ScenarioEditor"; // Import ScenarioEditor
 import { FireCaseScenarioDialog } from "./FireCaseScenarioDialog";
@@ -1190,8 +1192,10 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
 
 // Attachments Tab Content
 function AttachmentsTab() {
-    const { selectedPsv, attachmentList, deleteAttachment } = usePsvStore();
+    const { selectedPsv, attachmentList, deleteAttachment, addAttachment } = usePsvStore();
+    const { currentUser } = useAuthStore();
     const canEdit = useAuthStore((state) => state.canEdit());
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     if (!selectedPsv) return null;
 
@@ -1219,8 +1223,53 @@ function AttachmentsTab() {
         }
     };
 
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        const file = files[0];
+
+        // Create attachment object
+        const attachment: Attachment = {
+            id: `att-${Date.now()}`,
+            protectiveSystemId: selectedPsv.id,
+            fileUri: `/uploads/${selectedPsv.id}/${file.name}`, // This would be updated by backend
+            fileName: file.name,
+            mimeType: file.type,
+            size: file.size,
+            uploadedBy: currentUser?.id || '',
+            createdAt: new Date().toISOString(),
+        };
+
+        try {
+            await addAttachment(attachment);
+            // In a real implementation, you would also upload the actual file to a server
+            // For now, this just adds the metadata to the store
+        } catch (error) {
+            console.error('Failed to upload file:', error);
+        }
+
+        // Reset input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     return (
         <Box>
+            {/* Hidden file input */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                style={{ display: 'none' }}
+                onChange={handleFileSelect}
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt"
+            />
+
             {/* Attachments Section */}
             <Box sx={{ mb: 4 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -1228,7 +1277,12 @@ function AttachmentsTab() {
                         Attachments
                     </Typography>
                     {canEdit && (
-                        <Button variant="contained" startIcon={<AttachFile />} size="small">
+                        <Button
+                            variant="contained"
+                            startIcon={<AttachFile />}
+                            size="small"
+                            onClick={handleUploadClick}
+                        >
                             Upload File
                         </Button>
                     )}
