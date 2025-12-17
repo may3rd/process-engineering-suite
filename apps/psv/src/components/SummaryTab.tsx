@@ -56,30 +56,7 @@ function calculateAvgDiameter(network: PipelineNetwork): number {
     }, 0) / network.pipes.length;
 }
 
-function calculateVelocity(network: PipelineNetwork, scenario: OverpressureScenario): number {
-    const avgDiameter = calculateAvgDiameter(network);
-    if (avgDiameter === 0) return 0;
-    const massFlowRate = scenario.relievingRate; // kg/h
-    const density = scenario.phase === 'gas' || scenario.phase === 'steam' ? 10 : 800;
-    const volumetricFlow = (massFlowRate / density) / 3600; // m³/s
-    const area = Math.PI * Math.pow(avgDiameter / 1000, 2) / 4; // m²
-    return volumetricFlow / area;
-}
 
-function calculatePressureDrop(network: PipelineNetwork, scenario: OverpressureScenario): number {
-    const totalLength = calculateTotalLength(network);
-    const avgDiameter = calculateAvgDiameter(network);
-    if (avgDiameter === 0) return 0;
-    const velocity = calculateVelocity(network, scenario);
-    const density = scenario.phase === 'gas' || scenario.phase === 'steam' ? 10 : 800;
-    const frictionFactor = 0.02; // Simplified
-    return frictionFactor * (totalLength / (avgDiameter / 1000)) * (density * Math.pow(velocity, 2) / 2) / 1000;
-}
-
-function calculatePressureDropPercent(network: PipelineNetwork, scenario: OverpressureScenario, setPressure: number): number {
-    const pressureDrop = calculatePressureDrop(network, scenario);
-    return (pressureDrop / (setPressure * 100)) * 100;
-}
 
 function toMeters(length?: number, unit?: string): number {
     if (!length) return 0;
@@ -233,9 +210,20 @@ function summarizePipeline(
 
     const totalLength = calculateTotalLength(network);
     const avgDiameter = calculateAvgDiameter(network);
-    const velocity = calculateVelocity(network, scenario);
-    const pressureDrop = calculatePressureDrop(network, scenario);
-    const percent = calculatePressureDropPercent(network, scenario, setPressure);
+
+    // Use actual calculated results stored in pipes
+    const pressureDropPa = network.pipes.reduce((sum, pipe) => {
+        return sum + (pipe.pressureDropCalculationResults?.totalSegmentPressureDrop ?? 0);
+    }, 0);
+    const pressureDrop = pressureDropPa / 1000; // Pa -> kPa
+
+    // Use max velocity from pipes
+    const velocity = Math.max(...network.pipes.map(p => p.velocity ?? 0));
+
+    // Percent of set pressure (assuming setPressure is in barg)
+    // 1 bar = 100 kPa
+    const percent = setPressure > 0 ? (pressureDrop / (setPressure * 100)) * 100 : 0;
+
     const segments = getPipelineSegments(network, kind);
     const diameterValues = segments
         .map(segment => segment.diameterMm)
@@ -274,6 +262,7 @@ export function SummaryTab() {
         equipmentLinkList,
         equipment: equipmentList,
         noteList,
+        revisionHistory,
     } = usePsvStore();
 
     if (!selectedPsv) return null;
@@ -291,6 +280,9 @@ export function SummaryTab() {
     const psvSizingCases = sizingCaseList.filter(c => c.protectiveSystemId === selectedPsv.id);
     const psvAttachments = attachmentList.filter(a => a.protectiveSystemId === selectedPsv.id);
     const psvNotes = noteList.filter(n => n.protectiveSystemId === selectedPsv.id);
+    const psvRevisions = revisionHistory
+        .filter(r => r.entityType === 'protective_system' && r.entityId === selectedPsv.id)
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // Find the governing scenario for this PSV
     const governingScenario = psvScenarios.find(s => s.isGoverning) || null;
@@ -371,6 +363,38 @@ export function SummaryTab() {
     };
 
     const handleExportPdf = () => {
+        // Format revisions for export
+        const formatDate = (dateStr?: string | null) => {
+            if (!dateStr) return '-';
+            try {
+                // e.g., 12-Dec-2025
+                return new Date(dateStr).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }).replace(/ /g, '-');
+            } catch (e) {
+                return '-';
+            }
+        };
+
+        const getInitials = (userId?: string | null) => {
+            if (!userId) return '-';
+            const user = getUserById(userId);
+            if (user) {
+                return user.name.split(' ').map(n => n[0]).join('').toUpperCase();
+            }
+            // Fallback if UUID
+            return userId.length > 5 ? 'USR' : userId.toUpperCase();
+        };
+
+        const exportRevisions = psvRevisions.map(r => ({
+            rev: r.revisionCode,
+            desc: r.description || '-',
+            by: getInitials(r.originatedBy),
+            date: formatDate(r.originatedAt),
+            chk: getInitials(r.checkedBy),
+            chkDate: formatDate(r.checkedAt),
+            app: getInitials(r.approvedBy),
+            appDate: formatDate(r.approvedAt)
+        }));
+
         generatePsvSummaryPdf({
             psv: selectedPsv,
             project: selectedProject || undefined,
@@ -387,6 +411,9 @@ export function SummaryTab() {
             attachments: psvAttachments,
             inletSegments,
             outletSegments,
+            revisions: exportRevisions,
+            inletSummary: inletOverview,
+            outletSummary: outletOverview,
         });
     };
 
