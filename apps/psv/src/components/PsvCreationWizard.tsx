@@ -85,7 +85,7 @@ const STEPS = [
 
 export function PsvCreationWizard({ open, onClose, projectId }: PsvCreationWizardProps) {
     const { unitSystem } = useProjectUnitSystem();
-    const { addProtectiveSystem, selectPsv, protectiveSystems } = usePsvStore();
+    const { addProtectiveSystem, selectPsv, protectiveSystems, selectedArea, selectedProject } = usePsvStore();
 
     const [activeStep, setActiveStep] = useState(0);
     const [formData, setFormData] = useState<WizardFormData>({
@@ -189,32 +189,25 @@ export function PsvCreationWizard({ open, onClose, projectId }: PsvCreationWizar
     const handleCreate = async () => {
         if (!validateStep(activeStep)) return;
 
+        if (!selectedArea) {
+            setValidationErrors({ submit: 'No area  selected. Please select an area first.' });
+            return;
+        }
+
         const newPsv: Omit<any, 'id' | 'createdAt' | 'updatedAt'> = {
-            projectId,
+            areaId: selectedArea.id,
+            projectIds: [projectId],
             tag: formData.tag,
             type: formData.type,
-            name: `${formData.type}-${formData.tag}`,
-            service: formData.fluidDescription || formData.fluidName,
-            fluidName: formData.fluidName,
+            name: formData.fluidDescription || formData.fluidName,
+            designCode: formData.designCode,
+            serviceFluid: formData.fluidName,
             fluidPhase: formData.fluidPhase,
             setPressure: formData.setPressure,
-            setPressureUnit: formData.setPressureUnit,
-            designPressure: formData.designPressure,
-            designPressureUnit: formData.designPressureUnit,
-            designTemperature: formData.designTemperature,
-            designTemperatureUnit: formData.designTemperatureUnit,
-            operatingPressure: formData.operatingPressure,
-            operatingPressureUnit: formData.operatingPressureUnit,
-            operatingTemperature: formData.operatingTemperature,
-            operatingTemperatureUnit: formData.operatingTemperatureUnit,
-            inletSize: formData.inletSize || undefined,
-            inletSizeUnit: formData.inletSizeUnit || undefined,
-            outletSize: formData.outletSize || undefined,
-            outletSizeUnit: formData.outletSizeUnit || undefined,
-            designCode: formData.designCode,
-            designStandard: formData.designStandard,
-            valveType: formData.valveType,
+            mawp: formData.designPressure, // Use design pressure as MAWP
+            ownerId: '', // Will be set by the store
             status: 'draft' as const,
+            valveType: formData.valveType,
             tags: [],
         };
 
