@@ -10,14 +10,33 @@ import {
     User,
     OverpressureScenario,
     SizingCase,
-    UnitSystem
+    UnitSystem,
+    Equipment,
+    ProjectNote,
+    Attachment
 } from '@/data/types';
 import {
     formatPressureGauge,
     formatTemperatureC,
     formatMassFlowKgH,
-    formatPressureDrop
+    formatPressureDrop,
+    formatNumber,
+    convertValue,
+    getProjectUnits
 } from '../projectUnits';
+
+export interface PipelineSegmentRow {
+    id: string;
+    label: string;
+    p1Barg?: number;
+    p2Barg?: number;
+    lengthMeters: number;
+    diameterMm: number;
+    sectionType: string;
+    fluid: string;
+    fittings?: string;
+    pressureDrop?: number;
+}
 
 // Define the interface for the PDF generator input
 export interface PsvSummaryData {
@@ -31,11 +50,26 @@ export interface PsvSummaryData {
     scenarios: OverpressureScenario[];
     sizingCases: SizingCase[];
     unitSystem?: UnitSystem; // Optional, defaults to 'metric'
+    linkedEquipment?: Equipment[];
+    projectNotes?: ProjectNote[];
+    attachments?: Attachment[];
+    inletSegments?: PipelineSegmentRow[];
+    outletSegments?: PipelineSegmentRow[];
 }
 
 export function generatePsvSummaryPdf(data: PsvSummaryData) {
-    const { psv, project, customer, plant, unit, area, owner, scenarios, sizingCases, unitSystem = 'metric' } = data;
+    const {
+        psv, project, customer, plant, unit, area, owner,
+        scenarios, sizingCases,
+        unitSystem = 'metric',
+        linkedEquipment = [],
+        projectNotes = [],
+        attachments = [],
+        inletSegments = [],
+        outletSegments = []
+    } = data;
     const doc = new jsPDF();
+    const units = getProjectUnits(unitSystem);
 
     // -- Header --
     doc.setFontSize(18);
@@ -96,8 +130,38 @@ export function generatePsvSummaryPdf(data: PsvSummaryData) {
         bodyStyles: { fontSize: 9 },
     });
 
+    // -- Protected Equipment --
+    if (linkedEquipment.length > 0) {
+        finalY = (doc as any).lastAutoTable.finalY + 10;
+        doc.setFontSize(12);
+        doc.text('Protected Equipment', 14, finalY);
+
+        const equipmentRows = linkedEquipment.map(eq => [
+            eq.tag || '-',
+            eq.description || '-',
+            eq.type || '-',
+            eq.designPressure !== undefined && eq.designPressure !== null ? formatPressureGauge(eq.designPressure, unitSystem) : '-'
+        ]);
+
+        autoTable(doc, {
+            startY: finalY + 4,
+            head: [['Tag', 'Description', 'Type', 'Design Pressure']],
+            body: equipmentRows,
+            theme: 'striped',
+            headStyles: { fillColor: [52, 73, 94], fontSize: 9 },
+            bodyStyles: { fontSize: 9 },
+        });
+    }
+
     // -- Scenarios --
     finalY = (doc as any).lastAutoTable.finalY + 10;
+
+    // Check page break
+    if (finalY > 250) {
+        doc.addPage();
+        finalY = 20;
+    }
+
     doc.setFontSize(12);
     doc.text('Relief Scenarios', 14, finalY);
 
@@ -121,6 +185,7 @@ export function generatePsvSummaryPdf(data: PsvSummaryData) {
 
     // -- Sizing Cases --
     finalY = (doc as any).lastAutoTable.finalY + 10;
+
     // Check page break
     if (finalY > 250) {
         doc.addPage();
@@ -150,6 +215,138 @@ export function generatePsvSummaryPdf(data: PsvSummaryData) {
         headStyles: { fillColor: [52, 73, 94], fontSize: 9 },
         bodyStyles: { fontSize: 9 },
     });
+
+    // -- Hydraulic Results (Inlet) --
+    if (inletSegments.length > 0) {
+        finalY = (doc as any).lastAutoTable.finalY + 10;
+
+        if (finalY > 250) {
+            doc.addPage();
+            finalY = 20;
+        }
+
+        doc.setFontSize(12);
+        doc.text('Inlet Hydraulic Network', 14, finalY);
+
+        const inletRows = inletSegments.map(seg => [
+            seg.label,
+            seg.p1Barg !== undefined ? formatNumber(seg.p1Barg, 2) : '-',
+            seg.p2Barg !== undefined ? formatNumber(seg.p2Barg, 2) : '-',
+            seg.lengthMeters ? formatNumber(convertValue(seg.lengthMeters, 'm', units.length.unit), 2) : '-',
+            seg.diameterMm ? formatNumber(convertValue(seg.diameterMm, 'mm', units.diameter.unit), 0) : '-',
+            seg.pressureDrop !== undefined ? formatNumber(convertValue(seg.pressureDrop, 'kPa', units.pressureDrop.unit), 3) : '-'
+        ]);
+
+        autoTable(doc, {
+            startY: finalY + 4,
+            head: [[
+                'Segment',
+                `P1 (${units.pressureGauge.label})`,
+                `P2 (${units.pressureGauge.label})`,
+                `Len (${units.length.label})`,
+                `Dia (${units.diameter.label})`,
+                `dP (${units.pressureDrop.label})`
+            ]],
+            body: inletRows,
+            theme: 'grid',
+            headStyles: { fillColor: [142, 68, 173], fontSize: 8 },
+            bodyStyles: { fontSize: 8 },
+        });
+    }
+
+    // -- Hydraulic Results (Outlet) --
+    if (outletSegments.length > 0) {
+        finalY = (doc as any).lastAutoTable.finalY + 10;
+
+        if (finalY > 250) {
+            doc.addPage();
+            finalY = 20;
+        }
+
+        doc.setFontSize(12);
+        doc.text('Outlet Hydraulic Network', 14, finalY);
+
+        const outletRows = outletSegments.map(seg => [
+            seg.label,
+            seg.p1Barg !== undefined ? formatNumber(seg.p1Barg, 2) : '-',
+            seg.p2Barg !== undefined ? formatNumber(seg.p2Barg, 2) : '-',
+            seg.lengthMeters ? formatNumber(convertValue(seg.lengthMeters, 'm', units.length.unit), 2) : '-',
+            seg.diameterMm ? formatNumber(convertValue(seg.diameterMm, 'mm', units.diameter.unit), 0) : '-',
+            seg.pressureDrop !== undefined ? formatNumber(convertValue(seg.pressureDrop, 'kPa', units.pressureDrop.unit), 3) : '-'
+        ]);
+
+        autoTable(doc, {
+            startY: finalY + 4,
+            head: [[
+                'Segment',
+                `P1 (${units.pressureGauge.label})`,
+                `P2 (${units.pressureGauge.label})`,
+                `Len (${units.length.label})`,
+                `Dia (${units.diameter.label})`,
+                `dP (${units.pressureDrop.label})`
+            ]],
+            body: outletRows,
+            theme: 'grid',
+            headStyles: { fillColor: [142, 68, 173], fontSize: 8 },
+            bodyStyles: { fontSize: 8 },
+        });
+    }
+
+    // -- Notes --
+    if (projectNotes.length > 0) {
+        finalY = (doc as any).lastAutoTable.finalY + 10;
+
+        if (finalY > 240) {
+            doc.addPage();
+            finalY = 20;
+        }
+
+        doc.setFontSize(12);
+        doc.text('Notes', 14, finalY);
+
+        const noteRows = projectNotes.map(n => [
+            new Date(n.createdAt).toISOString().split('T')[0],
+            n.body
+        ]);
+
+        autoTable(doc, {
+            startY: finalY + 4,
+            head: [['Date', 'Note']],
+            body: noteRows,
+            theme: 'plain',
+            headStyles: { fillColor: [200, 200, 200], textColor: 0, fontSize: 9 },
+            bodyStyles: { fontSize: 9 },
+            columnStyles: { 0: { cellWidth: 30 } } // Fixed width for date
+        });
+    }
+
+    // -- Attachments --
+    if (attachments.length > 0) {
+        finalY = (doc as any).lastAutoTable.finalY + 10;
+
+        if (finalY > 240) {
+            doc.addPage();
+            finalY = 20;
+        }
+
+        doc.setFontSize(12);
+        doc.text('Attachments', 14, finalY);
+
+        const attRows = attachments.map(a => [
+            a.fileName,
+            (a.size / 1024).toFixed(1) + ' KB',
+            new Date(a.createdAt).toISOString().split('T')[0]
+        ]);
+
+        autoTable(doc, {
+            startY: finalY + 4,
+            head: [['Filename', 'Size', 'Uploaded']],
+            body: attRows,
+            theme: 'plain',
+            headStyles: { fillColor: [200, 200, 200], textColor: 0, fontSize: 9 },
+            bodyStyles: { fontSize: 9 },
+        });
+    }
 
     // Save
     const filename = `${psv.tag}_Summary_${dateStr.replace(/-/g, '')}.pdf`;
