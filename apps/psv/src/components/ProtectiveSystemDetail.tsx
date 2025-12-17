@@ -416,7 +416,25 @@ function ScenariosTab() {
                         >
                             Fire Case
                         </Button> */}
-                        <Button variant="contained" startIcon={<Add />} size="small" onClick={handleAddScenario}>
+                        <IconButton
+                            size="small"
+                            onClick={handleAddScenario}
+                            sx={{
+                                display: { xs: 'inline-flex', sm: 'none' },
+                                bgcolor: 'primary.main',
+                                color: 'primary.contrastText',
+                                '&:hover': { bgcolor: 'primary.dark' },
+                            }}
+                        >
+                            <Add />
+                        </IconButton>
+                        <Button
+                            variant="contained"
+                            startIcon={<Add />}
+                            size="small"
+                            onClick={handleAddScenario}
+                            sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+                        >
                             Add Scenario
                         </Button>
                     </Box>
