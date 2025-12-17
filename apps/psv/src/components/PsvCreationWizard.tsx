@@ -33,6 +33,7 @@ import { DesignCode, FluidPhase, ValveOperatingType, ProtectiveSystemType } from
 import { usePsvStore } from '@/store/usePsvStore';
 import { useProjectUnitSystem } from '@/lib/useProjectUnitSystem';
 import { v4 as uuidv4 } from 'uuid';
+import { UnitSelector } from './shared/UnitSelector';
 
 interface PsvCreationWizardProps {
     open: boolean;
@@ -90,7 +91,7 @@ export function PsvCreationWizard({ open, onClose, projectId }: PsvCreationWizar
     const [formData, setFormData] = useState<WizardFormData>({
         // Step 1 defaults
         tag: '',
-        type: 'PSV',
+        type: 'psv',
         setPressure: 0,
         setPressureUnit: unitSystem === 'imperial' ? 'psig' : 'barg',
         designCode: 'API-520',
@@ -289,31 +290,16 @@ export function PsvCreationWizard({ open, onClose, projectId }: PsvCreationWizar
                     </RadioGroup>
                 </FormControl>
 
-                <Box>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Set Pressure *
-                    </Typography>
-                    <Stack direction="row" spacing={1}>
-                        <TextField
-                            type="number"
-                            value={formData.setPressure}
-                            onChange={(e) => updateFormData({ setPressure: parseFloat(e.target.value) || 0 })}
-                            error={!!validationErrors.setPressure}
-                            helperText={validationErrors.setPressure}
-                            sx={{ flex: 1 }}
-                        />
-                        <TextField
-                            select
-                            value={formData.setPressureUnit}
-                            onChange={(e) => updateFormData({ setPressureUnit: e.target.value })}
-                            sx={{ minWidth: 100 }}
-                        >
-                            <MenuItem value="barg">barg</MenuItem>
-                            <MenuItem value="psig">psig</MenuItem>
-                            <MenuItem value="kPag">kPag</MenuItem>
-                        </TextField>
-                    </Stack>
-                </Box>
+                <UnitSelector
+                    label="Set Pressure"
+                    value={formData.setPressure}
+                    unit={formData.setPressureUnit}
+                    availableUnits={['barg', 'psig', 'kPag', 'MPag', 'bara', 'psia'] as const}
+                    onChange={(val, unit) => updateFormData({ setPressure: val || 0, setPressureUnit: unit })}
+                    required
+                    error={!!validationErrors.setPressure}
+                    helperText={validationErrors.setPressure}
+                />
 
                 <TextField
                     label="Design Code"
@@ -342,58 +328,28 @@ export function PsvCreationWizard({ open, onClose, projectId }: PsvCreationWizar
 
             <Stack spacing={3}>
                 {/* Operating Pressure */}
-                <Box>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Normal Operating Pressure *
-                    </Typography>
-                    <Stack direction="row" spacing={1}>
-                        <TextField
-                            type="number"
-                            value={formData.operatingPressure}
-                            onChange={(e) => updateFormData({ operatingPressure: parseFloat(e.target.value) || 0 })}
-                            error={!!validationErrors.operatingPressure}
-                            helperText={validationErrors.operatingPressure}
-                            sx={{ flex: 1 }}
-                        />
-                        <TextField
-                            select
-                            value={formData.operatingPressureUnit}
-                            onChange={(e) => updateFormData({ operatingPressureUnit: e.target.value })}
-                            sx={{ minWidth: 100 }}
-                        >
-                            <MenuItem value="barg">barg</MenuItem>
-                            <MenuItem value="psig">psig</MenuItem>
-                            <MenuItem value="kPag">kPag</MenuItem>
-                        </TextField>
-                    </Stack>
-                </Box>
+                <UnitSelector
+                    label="Normal Operating Pressure"
+                    value={formData.operatingPressure}
+                    unit={formData.operatingPressureUnit}
+                    availableUnits={['barg', 'psig', 'kPag', 'MPag', 'bara', 'psia'] as const}
+                    onChange={(val, unit) => updateFormData({ operatingPressure: val || 0, operatingPressureUnit: unit })}
+                    required
+                    error={!!validationErrors.operatingPressure}
+                    helperText={validationErrors.operatingPressure}
+                />
 
                 {/* Operating Temperature */}
-                <Box>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Normal Operating Temperature *
-                    </Typography>
-                    <Stack direction="row" spacing={1}>
-                        <TextField
-                            type="number"
-                            value={formData.operatingTemperature}
-                            onChange={(e) => updateFormData({ operatingTemperature: parseFloat(e.target.value) || 0 })}
-                            error={!!validationErrors.operatingTemperature}
-                            helperText={validationErrors.operatingTemperature}
-                            sx={{ flex: 1 }}
-                        />
-                        <TextField
-                            select
-                            value={formData.operatingTemperatureUnit}
-                            onChange={(e) => updateFormData({ operatingTemperatureUnit: e.target.value })}
-                            sx={{ minWidth: 100 }}
-                        >
-                            <MenuItem value="C">°C</MenuItem>
-                            <MenuItem value="F">°F</MenuItem>
-                            <MenuItem value="K">K</MenuItem>
-                        </TextField>
-                    </Stack>
-                </Box>
+                <UnitSelector
+                    label="Normal Operating Temperature"
+                    value={formData.operatingTemperature}
+                    unit={formData.operatingTemperatureUnit}
+                    availableUnits={['C', 'F', 'K'] as const}
+                    onChange={(val, unit) => updateFormData({ operatingTemperature: val || 0, operatingTemperatureUnit: unit })}
+                    required
+                    error={!!validationErrors.operatingTemperature}
+                    helperText={validationErrors.operatingTemperature}
+                />
 
                 {/* Fluid Name */}
                 <TextField
@@ -443,58 +399,28 @@ export function PsvCreationWizard({ open, onClose, projectId }: PsvCreationWizar
 
             <Stack spacing={3}>
                 {/* Design Pressure */}
-                <Box>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Design Pressure (MAWP) *
-                    </Typography>
-                    <Stack direction="row" spacing={1}>
-                        <TextField
-                            type="number"
-                            value={formData.designPressure}
-                            onChange={(e) => updateFormData({ designPressure: parseFloat(e.target.value) || 0 })}
-                            error={!!validationErrors.designPressure}
-                            helperText={validationErrors.designPressure}
-                            sx={{ flex: 1 }}
-                        />
-                        <TextField
-                            select
-                            value={formData.designPressureUnit}
-                            onChange={(e) => updateFormData({ designPressureUnit: e.target.value })}
-                            sx={{ minWidth: 100 }}
-                        >
-                            <MenuItem value="barg">barg</MenuItem>
-                            <MenuItem value="psig">psig</MenuItem>
-                            <MenuItem value="kPag">kPag</MenuItem>
-                        </TextField>
-                    </Stack>
-                </Box>
+                <UnitSelector
+                    label="Design Pressure (MAWP)"
+                    value={formData.designPressure}
+                    unit={formData.designPressureUnit}
+                    availableUnits={['barg', 'psig', 'kPag', 'MPag', 'bara', 'psia'] as const}
+                    onChange={(val, unit) => updateFormData({ designPressure: val || 0, designPressureUnit: unit })}
+                    required
+                    error={!!validationErrors.designPressure}
+                    helperText={validationErrors.designPressure}
+                />
 
                 {/* Design Temperature */}
-                <Box>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Design Temperature *
-                    </Typography>
-                    <Stack direction="row" spacing={1}>
-                        <TextField
-                            type="number"
-                            value={formData.designTemperature}
-                            onChange={(e) => updateFormData({ designTemperature: parseFloat(e.target.value) || 0 })}
-                            error={!!validationErrors.designTemperature}
-                            helperText={validationErrors.designTemperature}
-                            sx={{ flex: 1 }}
-                        />
-                        <TextField
-                            select
-                            value={formData.designTemperatureUnit}
-                            onChange={(e) => updateFormData({ designTemperatureUnit: e.target.value })}
-                            sx={{ minWidth: 100 }}
-                        >
-                            <MenuItem value="C">°C</MenuItem>
-                            <MenuItem value="F">°F</MenuItem>
-                            <MenuItem value="K">K</MenuItem>
-                        </TextField>
-                    </Stack>
-                </Box>
+                <UnitSelector
+                    label="Design Temperature"
+                    value={formData.designTemperature}
+                    unit={formData.designTemperatureUnit}
+                    availableUnits={['C', 'F', 'K'] as const}
+                    onChange={(val, unit) => updateFormData({ designTemperature: val || 0, designTemperatureUnit: unit })}
+                    required
+                    error={!!validationErrors.designTemperature}
+                    helperText={validationErrors.designTemperature}
+                />
 
                 {/* Design Standard */}
                 <TextField
@@ -512,52 +438,22 @@ export function PsvCreationWizard({ open, onClose, projectId }: PsvCreationWizar
                 </TextField>
 
                 {/* Optional: Inlet Size */}
-                <Box>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Inlet Size (Optional)
-                    </Typography>
-                    <Stack direction="row" spacing={1}>
-                        <TextField
-                            type="number"
-                            value={formData.inletSize}
-                            onChange={(e) => updateFormData({ inletSize: parseFloat(e.target.value) || 0 })}
-                            sx={{ flex: 1 }}
-                        />
-                        <TextField
-                            select
-                            value={formData.inletSizeUnit}
-                            onChange={(e) => updateFormData({ inletSizeUnit: e.target.value })}
-                            sx={{ minWidth: 100 }}
-                        >
-                            <MenuItem value="mm">mm</MenuItem>
-                            <MenuItem value="in">in</MenuItem>
-                        </TextField>
-                    </Stack>
-                </Box>
+                <UnitSelector
+                    label="Inlet Size (Optional)"
+                    value={formData.inletSize}
+                    unit={formData.inletSizeUnit}
+                    availableUnits={['mm', 'in'] as const}
+                    onChange={(val, unit) => updateFormData({ inletSize: val || 0, inletSizeUnit: unit })}
+                />
 
                 {/* Optional: Outlet Size */}
-                <Box>
-                    <Typography variant="body2" color="text.secondary" gutterBottom>
-                        Outlet Size (Optional)
-                    </Typography>
-                    <Stack direction="row" spacing={1}>
-                        <TextField
-                            type="number"
-                            value={formData.outletSize}
-                            onChange={(e) => updateFormData({ outletSize: parseFloat(e.target.value) || 0 })}
-                            sx={{ flex: 1 }}
-                        />
-                        <TextField
-                            select
-                            value={formData.outletSizeUnit}
-                            onChange={(e) => updateFormData({ outletSizeUnit: e.target.value })}
-                            sx={{ minWidth: 100 }}
-                        >
-                            <MenuItem value="mm">mm</MenuItem>
-                            <MenuItem value="in">in</MenuItem>
-                        </TextField>
-                    </Stack>
-                </Box>
+                <UnitSelector
+                    label="Outlet Size (Optional)"
+                    value={formData.outletSize}
+                    unit={formData.outletSizeUnit}
+                    availableUnits={['mm', 'in'] as const}
+                    onChange={(val, unit) => updateFormData({ outletSize: val || 0, outletSizeUnit: unit })}
+                />
 
                 {/* Valve Type */}
                 <TextField
