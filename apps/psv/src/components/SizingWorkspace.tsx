@@ -2222,6 +2222,21 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                 {/* ==================== TAB 4: RESULTS ==================== */}
                 <TabPanel value={activeTab} index={4}>
                     <Box sx={{ maxWidth: 900, mx: 'auto' }}>
+                        {/* Warnings Dashboard */}
+                        {isCalculated && (
+                            <WarningsDashboard
+                                warnings={getWarnings(currentCase.id)}
+                                onWarningClick={(warning) => {
+                                    // Navigate to the issue location
+                                    if (warning.location?.includes('Inlet')) {
+                                        setActiveTab(2); // Switch to Inlet tab
+                                    } else if (warning.location?.includes('Outlet')) {
+                                        setActiveTab(3); // Switch to Outlet tab
+                                    }
+                                }}
+                            />
+                        )}
+
                         <Typography variant="h6" sx={{ mb: 1 }}>Calculation Results</Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                             Summary of sizing calculations, pressure drops, and recommendations.
