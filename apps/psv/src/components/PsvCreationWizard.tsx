@@ -207,7 +207,7 @@ export function PsvCreationWizard({ open, onClose, projectId }: PsvCreationWizar
             fluidPhase: formData.fluidPhase,
             setPressure: formData.setPressure,
             mawp: formData.designPressure, // Use design pressure as MAWP
-            ownerId: currentUser?.id || '00000000-0000-0000-0000-000000000000', // Fallback for dev/demo if auth fails
+            ownerId: currentUser?.id || 'f6c289ac-fabe-4d2e-a635-127e5b9045ad', // Fallback to Admin ID (exists in seed) if auth fails
             status: 'draft' as const,
             valveType: formData.valveType,
             tags: [],
