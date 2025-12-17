@@ -66,10 +66,12 @@ import {
     PublishedWithChanges,
     Visibility,
     ExpandLess,
+    FileDownload,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
 import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem, ProtectiveSystem, ProjectNote, Attachment } from "@/data/types";
 import { SizingWorkspace } from "./SizingWorkspace";
+import { exportScenariosToExcel } from "@/lib/export/excelExport";
 import { ScenarioEditor } from "./ScenarioEditor"; // Import ScenarioEditor
 import { FireCaseDialog } from "./scenarios/FireCaseDialog";
 import { getUserById, users } from "@/data/mockData";
@@ -397,6 +399,14 @@ function ScenariosTab() {
                 </Box>
                 {canEdit && (
                     <Box sx={{ display: 'flex', gap: 1 }}>
+                        <Button
+                            variant="outlined"
+                            startIcon={<FileDownload />}
+                            size="small"
+                            onClick={() => exportScenariosToExcel(scenarioList, selectedPsv!, unitSystem)}
+                        >
+                            Export Excel
+                        </Button>
                         {/* <Button
                             variant="outlined"
                             startIcon={<LocalFireDepartment />}

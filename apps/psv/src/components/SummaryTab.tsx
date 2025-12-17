@@ -25,7 +25,9 @@ import {
     Business,
     AttachFile,
     Star,
+    PictureAsPdf,
 } from "@mui/icons-material";
+import { generatePsvSummaryPdf } from "@/lib/export/pdfExport";
 import { usePsvStore } from "@/store/usePsvStore";
 import { getUserById } from "@/data/mockData";
 import { PipelineNetwork, OverpressureScenario, PipeProps } from "@/data/types";
@@ -360,6 +362,21 @@ export function SummaryTab() {
         window.print();
     };
 
+    const handleExportPdf = () => {
+        generatePsvSummaryPdf({
+            psv: selectedPsv,
+            project: selectedProject || undefined,
+            customer: selectedCustomer || undefined,
+            plant: selectedPlant || undefined,
+            unit: selectedUnit || undefined,
+            area: selectedArea || undefined,
+            owner: owner || undefined,
+            scenarios: psvScenarios,
+            sizingCases: psvSizingCases,
+            unitSystem: unitSystem || 'metric', // Pass unitSystem
+        });
+    };
+
     const sectionStyles = {
         mb: 2,
         p: 1.5,
@@ -412,6 +429,15 @@ export function SummaryTab() {
                     onClick={handlePrint}
                 >
                     Print Summary
+                </Button>
+                <Button
+                    variant="outlined"
+                    startIcon={<PictureAsPdf />}
+                    size="small"
+                    onClick={handleExportPdf}
+                    sx={{ ml: 1 }}
+                >
+                    Export PDF
                 </Button>
             </Box>
 

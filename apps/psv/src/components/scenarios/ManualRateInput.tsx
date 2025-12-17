@@ -22,11 +22,11 @@ import {
 
 interface ManualRateInputProps {
     input: {
-        relievingRate: number;
+        relievingRate: string;
         rateUnit: string;
-        relievingTemp: number;
+        relievingTemp: string;
         tempUnit: string;
-        relievingPressure: number;
+        relievingPressure: string;
         pressureUnit: string;
         basis: string;
     };
@@ -37,6 +37,12 @@ export function ManualRateInput({ input, onChange }: ManualRateInputProps) {
     const updateInput = (updates: Partial<typeof input>) => {
         onChange({ ...input, ...updates });
     };
+
+    const rateTrimmed = input.relievingRate.trim();
+    const rateNumber = rateTrimmed === '' ? NaN : Number(rateTrimmed);
+    const rateError = rateTrimmed !== '' && (Number.isNaN(rateNumber) || rateNumber <= 0);
+    const rateHelper =
+        !Number.isNaN(rateNumber) && rateNumber <= 0 ? 'Relief rate must be positive' : '';
 
     return (
         <Box sx={{ p: 2 }}>
@@ -67,11 +73,10 @@ export function ManualRateInput({ input, onChange }: ManualRateInputProps) {
                                     type="number"
                                     value={input.relievingRate}
                                     onChange={(e) =>
-                                        updateInput({ relievingRate: parseFloat(e.target.value) })
+                                        updateInput({ relievingRate: e.target.value })
                                     }
-                                    error={input.relievingRate <= 0}
-                                    helperText={
-                                        input.relievingRate <= 0 ? 'Relief rate must be positive' : ''}
+                                    error={rateError}
+                                    helperText={rateHelper}
                                     sx={{ flex: 1 }}
                                     size="small"
                                 />
@@ -99,7 +104,7 @@ export function ManualRateInput({ input, onChange }: ManualRateInputProps) {
                                     type="number"
                                     value={input.relievingTemp}
                                     onChange={(e) =>
-                                        updateInput({ relievingTemp: parseFloat(e.target.value) })
+                                        updateInput({ relievingTemp: e.target.value })
                                     }
                                     sx={{ flex: 1 }}
                                     size="small"
@@ -127,7 +132,7 @@ export function ManualRateInput({ input, onChange }: ManualRateInputProps) {
                                     type="number"
                                     value={input.relievingPressure}
                                     onChange={(e) =>
-                                        updateInput({ relievingPressure: parseFloat(e.target.value) })
+                                        updateInput({ relievingPressure: e.target.value })
                                     }
                                     helperText="Set pressure + accumulation"
                                     sx={{ flex: 1 }}

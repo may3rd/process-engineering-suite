@@ -40,15 +40,15 @@ interface FireCaseFormData {
 
     // API-521 configuration
     api521Config: {
-        latentHeat: number;
+        latentHeat: number | null;
         latentHeatUnit: string;
-        relievingTemp: number;
+        relievingTemp: number | null;
         relievingTempUnit: string;
         environmentalFactor: number;
-        heightAboveGrade: number;
+        heightAboveGrade: number | null;
         heightUnit: string;
         // Per-equipment liquid levels - allow empty string for empty inputs
-        liquidLevels: Map<string, { value: number | string; unit: string }>;
+        liquidLevels: Map<string, { value: number | string | null; unit: string }>;
     };
 
     // Calculation results
@@ -67,15 +67,15 @@ interface FireCaseFormData {
     };
 
     // Manual input
-    manualInput: {
-        relievingRate: number;
-        rateUnit: string;
-        relievingTemp: number;
-        tempUnit: string;
-        relievingPressure: number;
-        pressureUnit: string;
-        basis: string;
-    };
+        manualInput: {
+            relievingRate: string;
+            rateUnit: string;
+            relievingTemp: string;
+            tempUnit: string;
+            relievingPressure: string;
+            pressureUnit: string;
+            basis: string;
+        };
 
     // Common
     description: string;
@@ -106,11 +106,11 @@ export function FireCaseDialog({
             liquidLevels: new Map(),
         },
         manualInput: {
-            relievingRate: 0,
+            relievingRate: '',
             rateUnit: 'kg/h',
-            relievingTemp: 50,
+            relievingTemp: '',
             tempUnit: '°C',
-            relievingPressure: 17.5,
+            relievingPressure: '',
             pressureUnit: 'barg',
             basis: '',
         },
@@ -132,11 +132,11 @@ export function FireCaseDialog({
             cause: 'fire_case',
             description: formData.description,
             relievingTemp: formData.calculationMethod === 'api521'
-                ? formData.api521Config.relievingTemp
-                : formData.manualInput.relievingTemp,
+                ? formData.api521Config.relievingTemp ?? 0
+                : parseFloat(formData.manualInput.relievingTemp) || 0,
             relievingRate: formData.calculationMethod === 'api521'
                 ? formData.calculationResults?.reliefRate || 0
-                : formData.manualInput.relievingRate,
+                : parseFloat(formData.manualInput.relievingRate) || 0,
             // ... other fields
         };
 
