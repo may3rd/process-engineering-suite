@@ -39,7 +39,7 @@ import {
     ArrowBack,
     Info,
     CheckCircle,
-    Warning,
+    Warning as WarningIcon,
     Error as ErrorIcon,
     Download,
     Calculate,
@@ -50,11 +50,12 @@ import {
     Straighten,
     Timeline,
 } from "@mui/icons-material";
-import { SizingCase, PipelineNetwork, PipeProps, ORIFICE_SIZES, SizingInputs, UnitPreferences, FluidPhase } from "@/data/types";
+import { SizingCase, PipelineNetwork, PipeProps, ORIFICE_SIZES, SizingInputs, UnitPreferences, FluidPhase, Warning } from "@/data/types";
 import { PipelineDataGrid } from "./PipelineDataGrid";
 import { PipeEditorDialog } from "./PipeEditorDialog";
 import { HydraulicReportTable } from "./HydraulicReportTable";
 import { HydraulicReportDialog } from "./HydraulicReportDialog";
+import { WarningsDashboard } from "./WarningsDashboard";
 import { v4 as uuidv4 } from "uuid";
 import { calculateSizing } from "@eng-suite/api/psv";
 import { useUnitConversion, UnitType } from "@/hooks/useUnitConversion";
@@ -74,6 +75,7 @@ import {
     type ValidationError
 } from "@/lib/inputValidation";
 import { useAuthStore } from "@/store/useAuthStore";
+import { usePsvStore } from "@/store/usePsvStore";
 import { convertUnit } from "@eng-suite/physics";
 
 interface SizingWorkspaceProps {
@@ -299,6 +301,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const canEdit = useAuthStore((state) => state.canEdit());
+    const { addWarning, clearWarnings, getWarnings } = usePsvStore();
     const [activeTab, setActiveTab] = useState(0);
     const [currentCase, setCurrentCase] = useState<SizingCase>(sizingCase);
     const [manualOrificeMode, setManualOrificeMode] = useState(false);
@@ -652,7 +655,8 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
 
             console.group('[PSV Sizing] Hydraulic Calculations');
 
-            // Collect all warnings from both networks
+            // Clear old warnings and collect new ones
+            clearWarnings(currentCase.id);
             const allWarnings: string[] = [];
 
             // Determine flow rate for hydraulic calculations
@@ -686,6 +690,19 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                 // Collect inlet warnings
                 if (inletResult.warnings.length > 0) {
                     allWarnings.push(...inletResult.warnings.map(w => `Inlet: ${w}`));
+
+                    // Add structured warnings to store
+                    inletResult.warnings.forEach((msg, idx) => {
+                        addWarning({
+                            id: `${currentCase.id}-inlet-${idx}-${Date.now()}`,
+                            sizingCaseId: currentCase.id,
+                            severity: msg.toLowerCase().includes('choked') ? 'error' : 'warning',
+                            source: 'hydraulic',
+                            message: msg,
+                            location: 'Inlet Network',
+                            timestamp: new Date().toISOString(),
+                        });
+                    });
                 }
 
                 inletValidation = validateInletPressureDrop(
@@ -735,6 +752,19 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                 // Collect choked flow warnings
                 if (outletResult.warnings.length > 0) {
                     allWarnings.push(...outletResult.warnings.map(w => `Outlet: ${w}`));
+
+                    // Add structured warnings to store
+                    outletResult.warnings.forEach((msg, idx) => {
+                        addWarning({
+                            id: `${currentCase.id}-outlet-${idx}-${Date.now()}`,
+                            sizingCaseId: currentCase.id,
+                            severity: msg.toLowerCase().includes('choked') || msg.toLowerCase().includes('mach') ? 'error' : 'warning',
+                            source: 'hydraulic',
+                            message: msg,
+                            location: 'Outlet Network',
+                            timestamp: new Date().toISOString(),
+                        });
+                    });
                 }
 
                 // Only update backpressure if mode is 'calculated'
@@ -1435,7 +1465,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                     {currentCase.outputs?.inletValidation ? (
                                         <Alert
                                             severity={currentCase.outputs?.inletValidation?.severity}
-                                            icon={currentCase.outputs?.inletValidation?.isValid ? <CheckCircle /> : <Warning />}
+                                            icon={currentCase.outputs?.inletValidation?.isValid ? <CheckCircle /> : <WarningIcon />}
                                         >
                                             <Typography variant="body2">
                                                 {currentCase.outputs?.inletPressureDrop !== undefined
@@ -1465,7 +1495,22 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
 
                 {/* ==================== TAB 2: INLET PIPING ==================== */}
                 <TabPanel value={activeTab} index={2}>
-                    <Box sx={{ maxWidth: 1000, mx: 'auto' }}>
+                    <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+                        {/* Warnings Dashboard */}
+                        {isCalculated && (
+                            <WarningsDashboard
+                                warnings={getWarnings(currentCase.id)}
+                                onWarningClick={(warning) => {
+                                    // Navigate to the issue location
+                                    if (warning.location?.includes('Inlet')) {
+                                        setActiveTab(3); // Switch to Inlet tab
+                                    } else if (warning.location?.includes('Outlet')) {
+                                        setActiveTab(4); // Switch to Outlet tab
+                                    }
+                                }}
+                            />
+                        )}
+
                         <Typography variant="h6" sx={{ mb: 1 }}>Inlet Pipeline Configuration</Typography>
                         <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                             Define the pipe segments from the protected equipment to the PSV inlet.
@@ -1545,7 +1590,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                         </Typography>
                                         {currentCase.outputs?.inletValidation && (
                                             <Chip
-                                                icon={currentCase.outputs.inletValidation.isValid ? <CheckCircle /> : currentCase.outputs.inletValidation.severity === 'warning' ? <Warning /> : <ErrorIcon />}
+                                                icon={currentCase.outputs.inletValidation.isValid ? <CheckCircle /> : currentCase.outputs.inletValidation.severity === 'warning' ? <WarningIcon /> : <ErrorIcon />}
                                                 label={currentCase.outputs.inletValidation.isValid ? 'PASS' : currentCase.outputs.inletValidation.severity === 'warning' ? 'WARNING' : 'FAIL'}
                                                 color={currentCase.outputs.inletValidation.isValid ? 'success' : currentCase.outputs.inletValidation.severity === 'warning' ? 'warning' : 'error'}
                                                 size="small"
@@ -1961,7 +2006,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                     />
                                     {(currentCase.outputs?.percentUsed ?? 0) > 90 && (
                                         <Chip
-                                            icon={<Warning />}
+                                            icon={<WarningIcon />}
                                             label="High Utilization"
                                             color="warning"
                                         />
@@ -2475,7 +2520,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                         currentCase.outputs.inletValidation.isValid ?
                                             <CheckCircle /> :
                                             currentCase.outputs.inletValidation.severity === 'warning' ?
-                                                <Warning /> :
+                                                <WarningIcon /> :
                                                 <ErrorIcon />
                                     }
                                 >
