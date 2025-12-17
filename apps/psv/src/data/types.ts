@@ -486,6 +486,23 @@ export interface Attachment {
     createdAt: string;
 }
 
+// Calculation warnings types
+export type WarningSeverity = 'error' | 'warning' | 'info';
+export type WarningSource = 'hydraulic' | 'sizing' | 'scenario' | 'validation';
+
+export interface Warning {
+    id: string;
+    sizingCaseId: string;
+    severity: WarningSeverity;
+    source: WarningSource;
+    message: string;
+    details?: string; // Additional context
+    location?: string; // Where in the UI (e.g., "Inlet Network, Segment 2")
+    value?: number | string; // The problematic value
+    threshold?: number | string; // The limit that was exceeded
+    timestamp: string;
+}
+
 // Comments and Todos for Notes tab
 export interface Comment {
     id: string;
