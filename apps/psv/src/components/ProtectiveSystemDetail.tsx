@@ -71,7 +71,7 @@ import { usePsvStore } from "@/store/usePsvStore";
 import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem, ProtectiveSystem, ProjectNote, Attachment } from "@/data/types";
 import { SizingWorkspace } from "./SizingWorkspace";
 import { ScenarioEditor } from "./ScenarioEditor"; // Import ScenarioEditor
-import { FireCaseScenarioDialog } from "./FireCaseScenarioDialog";
+import { FireCaseDialog } from "./scenarios/FireCaseDialog";
 import { getUserById, users } from "@/data/mockData";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useState, useEffect, MouseEvent, useMemo } from "react";
@@ -85,18 +85,16 @@ import { EquipmentCard } from "./EquipmentCard";
 import { TagsCard } from "./TagsCard";
 import { SummaryTab } from "./SummaryTab";
 import { RevisionsTab } from "./RevisionsTab";
-import { glassCardStyles } from "./styles";
-import { PipelineHydraulicsCard } from "./PipelineHydraulicsCard";
 import { WORKFLOW_STATUS_SEQUENCE, getWorkflowStatusColor, getWorkflowStatusLabel, SIZING_STATUS_SEQUENCE, getSizingStatusColor, getSizingStatusLabel } from "@/lib/statusColors";
 import { RevisionBadge } from "./RevisionBadge";
 import { NewRevisionDialog } from "./NewRevisionDialog";
 import { RevisionHistoryPanel } from "./RevisionHistoryPanel";
 import { SnapshotPreviewDialog } from "./SnapshotPreviewDialog";
 import { RevisionHistory } from "@/data/types";
-import { ScenarioTemplateSelector } from "./ScenarioTemplateSelector";
-import { BlockedOutletDialog } from "./BlockedOutletDialog";
-import { ControlValveFailureDialog } from "./ControlValveFailureDialog";
-import { TubeRuptureDialog } from "./TubeRuptureDialog";
+import { ScenarioTemplateSelector } from "./scenarios/ScenarioTemplateSelector";
+import { BlockedOutletDialog } from "./scenarios/BlockedOutletDialog";
+import { ControlValveFailureDialog } from "./scenarios/ControlValveFailureDialog";
+import { TubeRuptureDialog } from "./scenarios/TubeRuptureDialog";
 import { sortRevisionsByOriginatedAtDesc } from "@/lib/revisionSort";
 import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
 import { convertValue, formatLocaleNumber, formatNumber, formatPressureGauge, formatTemperatureC, formatMassFlowKgH } from "@/lib/projectUnits";
@@ -399,7 +397,7 @@ function ScenariosTab() {
                 </Box>
                 {canEdit && (
                     <Box sx={{ display: 'flex', gap: 1 }}>
-                        <Button
+                        {/* <Button
                             variant="outlined"
                             startIcon={<LocalFireDepartment />}
                             size="small"
@@ -417,7 +415,7 @@ function ScenariosTab() {
                             }}
                         >
                             Fire Case
-                        </Button>
+                        </Button> */}
                         <Button variant="contained" startIcon={<Add />} size="small" onClick={handleAddScenario}>
                             Add Scenario
                         </Button>
@@ -523,7 +521,7 @@ function ScenariosTab() {
             />
 
             {/* Fire Case Wizard */}
-            <FireCaseScenarioDialog
+            <FireCaseDialog
                 open={fireDialogOpen}
                 onClose={() => setFireDialogOpen(false)}
                 psvId={selectedPsv?.id || ''}

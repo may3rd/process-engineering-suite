@@ -10,27 +10,18 @@
 
 import React, { useState } from 'react';
 import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Button,
     Box,
     Typography,
-    Stepper,
-    Step,
-    StepLabel,
-    Alert,
-    IconButton,
 } from '@mui/material';
-import { Close as CloseIcon, Calculate as CalculateIcon } from '@mui/icons-material';
+import { Calculate as CalculateIcon } from '@mui/icons-material';
+import { ScenarioWizardLayout } from './ScenarioWizardLayout';
 import { Equipment, VesselDetails, OverpressureScenario } from '@/data/types';
 import { MultiEquipmentSelector } from './MultiEquipmentSelector';
 import { API521Calculator } from './API521Calculator';
 import { ManualRateInput } from './ManualRateInput';
 import { FireCalculationResults } from './FireCalculationResults';
 
-interface FireCaseScenarioDialogProps {
+interface FireCaseDialogProps {
     open: boolean;
     onClose: () => void;
     psvId: string;
@@ -93,13 +84,13 @@ interface FireCaseFormData {
 
 const steps = ['Equipment', 'Method', 'Configure', 'Review'];
 
-export function FireCaseScenarioDialog({
+export function FireCaseDialog({
     open,
     onClose,
     psvId,
     areaId,
     onSave,
-}: FireCaseScenarioDialogProps) {
+}: FireCaseDialogProps) {
     const [activeStep, setActiveStep] = useState(0);
     const [formData, setFormData] = useState<FireCaseFormData>({
         selectedEquipment: [],
@@ -279,61 +270,20 @@ export function FireCaseScenarioDialog({
     };
 
     return (
-        <Dialog
+        <ScenarioWizardLayout
             open={open}
             onClose={onClose}
-            maxWidth="md"
-            fullWidth
-            PaperProps={{
-                sx: {
-                    borderRadius: 3,
-                    background: (theme) =>
-                        theme.palette.mode === 'dark'
-                            ? 'rgba(18, 18, 18, 0.95)'
-                            : 'rgba(255, 255, 255, 0.98)',
-                    backdropFilter: 'blur(20px)',
-                },
-            }}
+            title="Fire Case Scenario"
+            icon={<CalculateIcon color="primary" />}
+            activeStep={activeStep}
+            steps={steps}
+            onBack={handleBack}
+            onNext={handleNext}
+            onSave={handleSave}
+            isLastStep={activeStep === steps.length - 1}
+            saveLabel="Save Scenario"
         >
-            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CalculateIcon color="primary" />
-                    <Typography variant="h6">Fire Case Scenario</Typography>
-                </Box>
-                <IconButton onClick={onClose} size="small">
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
-
-            <DialogContent dividers sx={{ minHeight: 500 }}>
-                <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-                    {steps.map((label) => (
-                        <Step key={label}>
-                            <StepLabel>{label}</StepLabel>
-                        </Step>
-                    ))}
-                </Stepper>
-
-                {renderStepContent()}
-            </DialogContent>
-
-            <DialogActions sx={{ p: 2, gap: 1 }}>
-                <Button onClick={onClose}>Cancel</Button>
-                <Box sx={{ flex: 1 }} />
-                {activeStep > 0 && (
-                    <Button onClick={handleBack}>Back</Button>
-                )}
-                {activeStep < steps.length - 1 && (
-                    <Button variant="contained" onClick={handleNext}>
-                        Next
-                    </Button>
-                )}
-                {activeStep === steps.length - 1 && (
-                    <Button variant="contained" onClick={handleSave}>
-                        Save Scenario
-                    </Button>
-                )}
-            </DialogActions>
-        </Dialog>
+            {renderStepContent()}
+        </ScenarioWizardLayout>
     );
 }

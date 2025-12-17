@@ -2,23 +2,15 @@
 
 import React, { useState } from 'react';
 import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Button,
     Box,
     Typography,
-    Stepper,
-    Step,
-    StepLabel,
-    IconButton,
     TextField,
     MenuItem,
     InputAdornment,
     Alert,
 } from '@mui/material';
-import { Close as CloseIcon, Settings as SettingsIcon } from '@mui/icons-material';
+import { Settings as SettingsIcon } from '@mui/icons-material';
+import { ScenarioWizardLayout } from './ScenarioWizardLayout';
 import { OverpressureScenario, FluidPhase } from '@/data/types';
 import { useUnitConversion } from '@/hooks/useUnitConversion';
 import { useProjectUnitSystem } from '@/lib/useProjectUnitSystem';
@@ -236,42 +228,20 @@ Rate estimated based on rated Cv and maximum upstream pressure.
     };
 
     return (
-        <Dialog
+        <ScenarioWizardLayout
             open={open}
             onClose={onClose}
-            maxWidth="md"
-            fullWidth
-            PaperProps={{
-                sx: { borderRadius: 3 }
-            }}
+            title="Control Valve Failure"
+            icon={<SettingsIcon color="info" />}
+            activeStep={activeStep}
+            steps={steps}
+            onBack={handleBack}
+            onNext={handleNext}
+            onSave={handleSave}
+            isLastStep={activeStep === steps.length - 1}
+            saveLabel="Create Scenario"
         >
-            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <SettingsIcon color="info" />
-                    <Typography variant="h6">Control Valve Failure</Typography>
-                </Box>
-                <IconButton onClick={onClose} size="small">
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
-
-            <DialogContent dividers sx={{ minHeight: 400 }}>
-                <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-                    {steps.map((label) => <Step key={label}><StepLabel>{label}</StepLabel></Step>)}
-                </Stepper>
-                {renderStepContent()}
-            </DialogContent>
-
-            <DialogActions sx={{ p: 2 }}>
-                <Button onClick={onClose}>Cancel</Button>
-                <Box sx={{ flex: 1 }} />
-                {activeStep > 0 && <Button onClick={handleBack}>Back</Button>}
-                {activeStep < steps.length - 1 ? (
-                    <Button variant="contained" onClick={handleNext}>Next</Button>
-                ) : (
-                    <Button variant="contained" onClick={handleSave} color="primary">Create Scenario</Button>
-                )}
-            </DialogActions>
-        </Dialog>
+            {renderStepContent()}
+        </ScenarioWizardLayout>
     );
 }

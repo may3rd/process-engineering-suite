@@ -30,7 +30,7 @@ import {
 } from '@mui/icons-material';
 import { Equipment, VesselDetails, TankDetails, ColumnDetails } from '@/data/types';
 import { usePsvStore } from '@/store/usePsvStore';
-import { EquipmentEditorDialog } from './EquipmentEditorDialog';
+import { EquipmentEditorDialog } from '../EquipmentEditorDialog';
 
 // Special option for adding new equipment
 const ADD_NEW_EQUIPMENT_OPTION: Equipment = {
