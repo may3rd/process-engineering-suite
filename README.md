@@ -164,7 +164,12 @@ The API supports both **PostgreSQL** (production) and **mock data** (fallback).
 2. Database migrations:
    - In `infra/docker-compose.yml`, the API container runs `alembic upgrade head` automatically on startup.
    - To generate a new migration:
+
      ```bash
+     cd infra
+
+     docker-compose exec -w /app/apps/api api alembic upgrade head
+
      docker-compose exec -w /app/apps/api api alembic revision --autogenerate -m "your_message"
      ```
 

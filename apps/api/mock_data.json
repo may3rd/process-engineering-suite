@@ -345,20 +345,11 @@
             "id": "p1",
             "source": "n1",
             "target": "n2",
-            "diameter": 4,
-            "length": 5,
+            "diameter": 400,
+            "length": 25,
             "schedule": "40",
-            "roughness": 0.045,
-            "fittings": [
-              {
-                "type": "elbow_90_lr",
-                "quantity": 2
-              },
-              {
-                "type": "gate_valve",
-                "quantity": 1
-              }
-            ]
+            "roughness": 0.0457,
+            "fittings": []
           }
         ]
       },
@@ -388,20 +379,11 @@
             "id": "p1",
             "source": "n1",
             "target": "n2",
-            "diameter": 6,
+            "diameter": 600,
             "length": 15,
             "schedule": "40",
             "roughness": 0.045,
-            "fittings": [
-              {
-                "type": "elbow_90_lr",
-                "quantity": 3
-              },
-              {
-                "type": "tee_run",
-                "quantity": 1
-              }
-            ]
+            "fittings": []
           }
         ]
       }
@@ -454,20 +436,11 @@
             "id": "p1",
             "source": "n1",
             "target": "n2",
-            "diameter": 4,
+            "diameter": 400,
             "length": 4,
             "schedule": "40",
             "roughness": 0.045,
-            "fittings": [
-              {
-                "type": "elbow_90_lr",
-                "quantity": 1
-              },
-              {
-                "type": "gate_valve",
-                "quantity": 1
-              }
-            ]
+            "fittings": []
           }
         ]
       },
@@ -497,16 +470,11 @@
             "id": "p1",
             "source": "n1",
             "target": "n2",
-            "diameter": 6,
+            "diameter": 600,
             "length": 12,
             "schedule": "40",
             "roughness": 0.045,
-            "fittings": [
-              {
-                "type": "elbow_90_lr",
-                "quantity": 2
-              }
-            ]
+            "fittings": []
           }
         ]
       }
