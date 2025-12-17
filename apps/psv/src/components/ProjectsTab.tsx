@@ -292,10 +292,10 @@ export function ProjectsTab() {
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                                         <Box sx={{ flex: 1, minWidth: 0, mr: 1 }}>
                                             <Typography variant="h6" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
-                                                {project.code}
+                                                {project.name}
                                             </Typography>
                                             <Typography variant="body2" color="text.secondary">
-                                                {project.name}
+                                                {project.code}
                                             </Typography>
                                         </Box>
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-end' }}>
@@ -425,10 +425,10 @@ export function ProjectsTab() {
                                         >
                                             <TableCell>
                                                 <Typography variant="body2" fontWeight={600}>
-                                                    {project.code}
+                                                    {project.name}
                                                 </Typography>
                                                 <Typography variant="caption" color="text.secondary">
-                                                    {project.name}
+                                                    {project.code}
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>

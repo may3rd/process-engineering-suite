@@ -305,10 +305,10 @@ export function CustomersTab() {
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                                         <Box sx={{ flex: 1, minWidth: 0, mr: 1 }}>
                                             <Typography variant="h6" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
-                                                {customer.code}
+                                                {customer.name}
                                             </Typography>
                                             <Typography variant="body2" color="text.secondary">
-                                                {customer.name}
+                                                {customer.code}
                                             </Typography>
                                         </Box>
                                         <Chip
@@ -414,10 +414,10 @@ export function CustomersTab() {
                                         >
                                             <TableCell>
                                                 <Typography variant="body2" fontWeight={600}>
-                                                    {customer.code}
+                                                    {customer.name}
                                                 </Typography>
                                                 <Typography variant="caption" color="text.secondary">
-                                                    {customer.name}
+                                                    {customer.code}
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>

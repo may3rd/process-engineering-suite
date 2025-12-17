@@ -294,10 +294,10 @@ export function PlantsTab() {
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                                         <Box sx={{ flex: 1, minWidth: 0, mr: 1 }}>
                                             <Typography variant="h6" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
-                                                {plant.code}
+                                                {plant.name}
                                             </Typography>
                                             <Typography variant="body2" color="text.secondary">
-                                                {plant.name}
+                                                {plant.code}
                                             </Typography>
                                         </Box>
                                         <Chip
@@ -413,10 +413,10 @@ export function PlantsTab() {
                                         >
                                             <TableCell>
                                                 <Typography variant="body2" fontWeight={600}>
-                                                    {plant.code}
+                                                    {plant.name}
                                                 </Typography>
                                                 <Typography variant="caption" color="text.secondary">
-                                                    {plant.name}
+                                                    {plant.code}
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>

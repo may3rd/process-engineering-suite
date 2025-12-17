@@ -289,10 +289,10 @@ export function UnitsTab() {
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                                         <Box sx={{ flex: 1, minWidth: 0, mr: 1 }}>
                                             <Typography variant="h6" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
-                                                {unit.code}
+                                                {unit.name}
                                             </Typography>
                                             <Typography variant="body2" color="text.secondary">
-                                                {unit.name}
+                                                {unit.code}
                                             </Typography>
                                         </Box>
                                         <Chip
@@ -408,10 +408,10 @@ export function UnitsTab() {
                                         >
                                             <TableCell>
                                                 <Typography variant="body2" fontWeight={600}>
-                                                    {unit.code}
+                                                    {unit.name}
                                                 </Typography>
                                                 <Typography variant="caption" color="text.secondary">
-                                                    {unit.name}
+                                                    {unit.code}
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>

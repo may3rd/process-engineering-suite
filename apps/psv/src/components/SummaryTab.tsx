@@ -415,6 +415,12 @@ export function SummaryTab() {
                 </Button>
             </Box>
 
+            {/* Warning Messages */}
+            {psvScenarios.length === 0 && (
+                <Alert severity="error" variant="outlined" sx={{ mb: 2 }} className="no-print">
+                    <strong>No overpressure scenarios configured.</strong> Add at least one scenario in the Scenarios tab to define relief conditions.
+                </Alert>
+            )}
             {hasMultipleGoverning && (
                 <Alert severity="error" variant="outlined" sx={{ mb: 2 }} className="no-print">
                     <strong>Multiple governing scenarios selected.</strong> Only one scenario should be marked as governing. Go to Scenarios tab to fix.
@@ -422,12 +428,17 @@ export function SummaryTab() {
             )}
             {hasNoGoverning && (
                 <Alert severity="warning" variant="outlined" sx={{ mb: 2 }} className="no-print">
-                    <strong>No governing scenario selected.</strong> Mark a scenario as governing in the Scenarios tab.
+                    <strong>No governing scenario selected.</strong> Mark a scenario as governing in the Scenarios tab to enable hydraulic validation.
                 </Alert>
             )}
             {governingNotSized && !hasMultipleGoverning && (
                 <Alert severity="info" variant="outlined" sx={{ mb: 2 }} className="no-print">
-                    <strong>Governing scenario not sized.</strong> Create and calculate a sizing case for "{formatScenarioCause(governingScenario?.cause)}" to enable hydraulic validation.
+                    <strong>Governing scenario not sized.</strong> Create and calculate a sizing case for "{formatScenarioCause(governingScenario?.cause)}" in the Sizing Cases tab to complete the analysis.
+                </Alert>
+            )}
+            {psvSizingCases.length === 0 && psvScenarios.length > 0 && (
+                <Alert severity="warning" variant="outlined" sx={{ mb: 2 }} className="no-print">
+                    <strong>No sizing cases calculated.</strong> Go to the Sizing Cases tab to create and calculate sizing cases for your scenarios.
                 </Alert>
             )}
 

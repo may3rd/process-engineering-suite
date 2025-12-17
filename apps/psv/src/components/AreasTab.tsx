@@ -292,10 +292,10 @@ export function AreasTab() {
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
                                         <Box sx={{ flex: 1, minWidth: 0, mr: 1 }}>
                                             <Typography variant="h6" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
-                                                {area.code}
+                                                {area.name}
                                             </Typography>
                                             <Typography variant="body2" color="text.secondary">
-                                                {area.name}
+                                                {area.code}
                                             </Typography>
                                         </Box>
                                         <Chip
@@ -425,10 +425,10 @@ export function AreasTab() {
                                         >
                                             <TableCell>
                                                 <Typography variant="body2" fontWeight={600}>
-                                                    {area.code}
+                                                    {area.name}
                                                 </Typography>
                                                 <Typography variant="caption" color="text.secondary">
-                                                    {area.name}
+                                                    {area.code}
                                                 </Typography>
                                             </TableCell>
                                             <TableCell>
