@@ -19,12 +19,13 @@ import {
     Settings,
     Edit,
     Close,
+    BrokenImage,
 } from '@mui/icons-material';
 
 interface ScenarioTemplateSelectorProps {
     open: boolean;
     onClose: () => void;
-    onSelectTemplate: (template: 'fire_case' | 'blocked_outlet' | 'control_valve_failure' | 'generic') => void;
+    onSelectTemplate: (template: 'fire_case' | 'blocked_outlet' | 'control_valve_failure' | 'tube_rupture' | 'generic') => void;
 }
 
 export function ScenarioTemplateSelector({
@@ -35,7 +36,7 @@ export function ScenarioTemplateSelector({
     const theme = useTheme();
 
     const TEMPLATES: {
-        id: 'fire_case' | 'blocked_outlet' | 'control_valve_failure' | 'generic';
+        id: 'fire_case' | 'blocked_outlet' | 'control_valve_failure' | 'tube_rupture' | 'generic';
         title: string;
         description: string;
         icon: React.ReactNode;
@@ -63,6 +64,13 @@ export function ScenarioTemplateSelector({
                 description: 'Failure of an upstream control valve causing overpressure.',
                 icon: <Settings fontSize="large" color="info" />,
                 color: theme.palette.info.main,
+            },
+            {
+                id: 'tube_rupture',
+                title: 'Tube Rupture',
+                description: 'Heat exchanger tube rupture (10/13 Rule check).',
+                icon: <BrokenImage fontSize="large" color="error" />,
+                color: theme.palette.error.dark,
             },
             {
                 id: 'generic',

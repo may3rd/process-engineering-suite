@@ -96,6 +96,7 @@ import { RevisionHistory } from "@/data/types";
 import { ScenarioTemplateSelector } from "./ScenarioTemplateSelector";
 import { BlockedOutletDialog } from "./BlockedOutletDialog";
 import { ControlValveFailureDialog } from "./ControlValveFailureDialog";
+import { TubeRuptureDialog } from "./TubeRuptureDialog";
 import { sortRevisionsByOriginatedAtDesc } from "@/lib/revisionSort";
 import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
 import { convertValue, formatLocaleNumber, formatNumber, formatPressureGauge, formatTemperatureC, formatMassFlowKgH } from "@/lib/projectUnits";
@@ -227,12 +228,13 @@ function ScenariosTab() {
     const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
     const [blockedOutletOpen, setBlockedOutletOpen] = useState(false);
     const [cvFailureOpen, setCvFailureOpen] = useState(false);
+    const [tubeRuptureOpen, setTubeRuptureOpen] = useState(false);
 
     const handleAddScenario = () => {
         setTemplateSelectorOpen(true);
     };
 
-    const handleTemplateSelect = (template: 'fire_case' | 'blocked_outlet' | 'control_valve_failure' | 'generic') => {
+    const handleTemplateSelect = (template: 'fire_case' | 'blocked_outlet' | 'control_valve_failure' | 'tube_rupture' | 'generic') => {
         setTemplateSelectorOpen(false);
         if (template === 'fire_case') {
             setFireDialogOpen(true);
@@ -240,6 +242,8 @@ function ScenariosTab() {
             setBlockedOutletOpen(true);
         } else if (template === 'control_valve_failure') {
             setCvFailureOpen(true);
+        } else if (template === 'tube_rupture') {
+            setTubeRuptureOpen(true);
         } else {
             // Generic
             setEditingScenario(undefined);
@@ -289,6 +293,25 @@ function ScenariosTab() {
         // Also ensure wizard dialogs are closed if they triggered this
         setBlockedOutletOpen(false);
         setCvFailureOpen(false);
+        setTubeRuptureOpen(false);
+    };
+
+    const handleToggleGoverning = (scenarioId: string, isGoverning: boolean) => {
+        if (!selectedPsv) return;
+
+        // If setting to true, unset others
+        if (isGoverning) {
+            sortedScenarios.forEach(s => {
+                if (s.id !== scenarioId && s.isGoverning) {
+                    updateScenario({ ...s, isGoverning: false });
+                }
+            });
+        }
+
+        const target = sortedScenarios.find(s => s.id === scenarioId);
+        if (target) {
+            updateScenario({ ...target, isGoverning });
+        }
     };
 
     const handleDeleteScenario = (id: string) => {
@@ -524,6 +547,14 @@ function ScenariosTab() {
                 onSave={handleSaveScenario}
             />
 
+            {/* Tube Rupture Wizard */}
+            <TubeRuptureDialog
+                open={tubeRuptureOpen}
+                onClose={() => setTubeRuptureOpen(false)}
+                psvId={selectedPsv.id}
+                onSave={handleSaveScenario}
+            />
+
             {sortedScenarios.length > 0 ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                     {sortedScenarios.map((scenario) => {
@@ -556,12 +587,25 @@ function ScenariosTab() {
                                                     <Typography variant="h6" fontWeight={600}>
                                                         {getCauseLabel(scenario.cause)}
                                                     </Typography>
+                                                    <Tooltip title={scenario.isGoverning ? "Governing Case (Click to unset)" : "Set as Governing Case"}>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleToggleGoverning(scenario.id, !scenario.isGoverning);
+                                                            }}
+                                                            color={scenario.isGoverning ? "warning" : "default"}
+                                                        >
+                                                            {scenario.isGoverning ? <Star sx={{ fontSize: 20 }} /> : <Star sx={{ fontSize: 20, opacity: 0.2 }} />}
+                                                        </IconButton>
+                                                    </Tooltip>
                                                     {scenario.isGoverning && (
                                                         <Chip
                                                             label="Governing"
                                                             size="small"
                                                             color="warning"
-                                                            icon={<Star sx={{ fontSize: 14 }} />}
+                                                            variant="outlined"
+                                                            sx={{ height: 24 }}
                                                         />
                                                     )}
                                                 </Box>
@@ -750,8 +794,9 @@ function ScenariosTab() {
                         Add First Scenario
                     </Button>
                 </Paper>
-            )}
-        </Box>
+            )
+            }
+        </Box >
     );
 }
 
