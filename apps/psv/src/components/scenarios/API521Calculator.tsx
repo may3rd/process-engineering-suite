@@ -49,15 +49,15 @@ import {
 interface API521CalculatorProps {
     equipment: Equipment[];
     config: {
-        latentHeat: number;
+        latentHeat: number | null;
         latentHeatUnit: string;
-        relievingTemp: number;
+        relievingTemp: number | null;
         relievingTempUnit: string;
         environmentalFactor: number;
-        heightAboveGrade: number;
+        heightAboveGrade: number | null;
         heightUnit: string;
         // Per-equipment liquid levels - allow empty string for empty inputs
-        liquidLevels: Map<string, { value: number | string; unit: string }>;
+        liquidLevels: Map<string, { value: number | string | null; unit: string }>;
     };
     onChange: (config: any, results?: any) => void;
 }
@@ -77,15 +77,28 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
         try {
             setErrors([]);
 
+            const requiredFields = [
+                { value: localConfig.latentHeat, name: 'latent heat' },
+                { value: localConfig.relievingTemp, name: 'relieving temperature' },
+                { value: localConfig.heightAboveGrade, name: 'height above grade' },
+            ]
+                .filter((field) => field.value === null)
+                .map((field) => `Missing ${field.name}`);
+
+            if (requiredFields.length > 0) {
+                setErrors(requiredFields);
+                return;
+            }
+
             // Convert all units to SI
             const latentHeatSI = convertUnit(
-                localConfig.latentHeat,
+                localConfig.latentHeat!,
                 localConfig.latentHeatUnit,
                 'kJ/kg'
             );
 
             const heightSI = convertUnit(
-                localConfig.heightAboveGrade,
+                localConfig.heightAboveGrade!,
                 localConfig.heightUnit,
                 'm'
             );
@@ -207,12 +220,12 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
                     <Stack spacing={3}>
                         <UnitSelector
                             label="Latent Heat of Vaporization"
-                            value={localConfig.latentHeat}
+                            value={localConfig.latentHeat ?? null}
                             unit={localConfig.latentHeatUnit}
                             availableUnits={['kJ/kg', 'Btu/lb', 'kcal/kg']}
                             onChange={(val, unit) =>
                                 updateConfig({
-                                    latentHeat: val || 0,
+                                    latentHeat: val,
                                     latentHeatUnit: unit,
                                 })
                             }
@@ -222,12 +235,12 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
 
                         <UnitSelector
                             label="Relieving Temperature"
-                            value={localConfig.relievingTemp}
+                            value={localConfig.relievingTemp ?? null}
                             unit={localConfig.relievingTempUnit}
                             availableUnits={['°C', '°F', 'K']}
                             onChange={(val, unit) =>
                                 updateConfig({
-                                    relievingTemp: val || 0,
+                                    relievingTemp: val,
                                     relievingTempUnit: unit,
                                 })
                             }
@@ -279,12 +292,12 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
                     <Box sx={{ mt: 2 }}>
                         <UnitSelector
                             label="Height Above Grade"
-                            value={localConfig.heightAboveGrade}
+                            value={localConfig.heightAboveGrade ?? null}
                             unit={localConfig.heightUnit}
                             availableUnits={['m', 'ft']}
                             onChange={(val, unit) =>
                                 updateConfig({
-                                    heightAboveGrade: val || 0,
+                                    heightAboveGrade: val,
                                     heightUnit: unit,
                                 })
                             }
@@ -314,9 +327,9 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
                                 const details = eq.details as VesselDetails | TankDetails;
 
                                 // Convert liquid level to number (treat empty/invalid as 0)
-                                const liquidLevelValue = typeof liquidLevel.value === 'string'
-                                    ? parseFloat(liquidLevel.value) || 0
-                                    : liquidLevel.value || 0;
+                const liquidLevelValue = typeof liquidLevel.value === 'string'
+                    ? parseFloat(liquidLevel.value) || 0
+                    : liquidLevel.value ?? 0;
 
                                 if (!details || liquidLevelValue <= 0) return null;
 
@@ -358,22 +371,28 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
                                 </AccordionSummary>
                                 <AccordionDetails>
                                     <Stack spacing={2}>
-                                        <UnitSelector
-                                            label="Normal Liquid Level"
-                                            value={typeof liquidLevel.value === 'string' ? parseFloat(liquidLevel.value) || 0 : liquidLevel.value}
-                                            unit={liquidLevel.unit}
-                                            availableUnits={['m', 'ft', 'mm', 'in']}
-                                            onChange={(val, unit) => {
-                                                const newLevels = new Map(localConfig.liquidLevels);
-                                                newLevels.set(eq.id, {
-                                                    value: val || 0,
-                                                    unit: unit,
-                                                });
-                                                updateConfig({ liquidLevels: newLevels });
-                                            }}
-                                            required
-                                            helperText="Height from bottom of vessel"
-                                        />
+                <UnitSelector
+                    label="Normal Liquid Level"
+                    value={
+                        typeof liquidLevel.value === 'string'
+                            ? Number.isNaN(Number(liquidLevel.value))
+                                ? null
+                                : Number(liquidLevel.value)
+                            : liquidLevel.value ?? null
+                    }
+                    unit={liquidLevel.unit}
+                    availableUnits={['m', 'ft', 'mm', 'in']}
+                    onChange={(val, unit) => {
+                        const newLevels = new Map(localConfig.liquidLevels);
+                        newLevels.set(eq.id, {
+                            value: val,
+                            unit: unit,
+                        });
+                        updateConfig({ liquidLevels: newLevels });
+                    }}
+                    required
+                    helperText="Height from bottom of vessel"
+                />
 
                                         {/* Real-time wetted area display */}
                                         {quickWettedArea !== null && (

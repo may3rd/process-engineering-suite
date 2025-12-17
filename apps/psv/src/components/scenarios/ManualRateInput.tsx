@@ -11,22 +11,25 @@ import {
     TextField,
     MenuItem,
     Typography,
-    FormControl,
-    InputLabel,
     Select,
     Card,
     CardContent,
     Stack,
     Alert,
 } from '@mui/material';
+import {
+    getPressureValidationError,
+    getTemperatureValidationError,
+    getPositiveNumberError,
+} from '@/lib/physicsValidation';
 
 interface ManualRateInputProps {
     input: {
-        relievingRate: number;
+        relievingRate: string;
         rateUnit: string;
-        relievingTemp: number;
+        relievingTemp: string;
         tempUnit: string;
-        relievingPressure: number;
+        relievingPressure: string;
         pressureUnit: string;
         basis: string;
     };
@@ -37,6 +40,10 @@ export function ManualRateInput({ input, onChange }: ManualRateInputProps) {
     const updateInput = (updates: Partial<typeof input>) => {
         onChange({ ...input, ...updates });
     };
+
+    const rateErrorMessage = getPositiveNumberError(input.relievingRate, "Relief rate");
+    const pressureErrorMessage = getPressureValidationError(input.relievingPressure, input.pressureUnit, "Relieving pressure");
+    const temperatureErrorMessage = getTemperatureValidationError(input.relievingTemp, input.tempUnit, "Relieving temperature");
 
     return (
         <Box sx={{ p: 2 }}>
@@ -67,11 +74,10 @@ export function ManualRateInput({ input, onChange }: ManualRateInputProps) {
                                     type="number"
                                     value={input.relievingRate}
                                     onChange={(e) =>
-                                        updateInput({ relievingRate: parseFloat(e.target.value) })
+                                        updateInput({ relievingRate: e.target.value })
                                     }
-                                    error={input.relievingRate <= 0}
-                                    helperText={
-                                        input.relievingRate <= 0 ? 'Relief rate must be positive' : ''}
+                                    error={!!rateErrorMessage}
+                                    helperText={rateErrorMessage || ''}
                                     sx={{ flex: 1 }}
                                     size="small"
                                 />
@@ -99,8 +105,10 @@ export function ManualRateInput({ input, onChange }: ManualRateInputProps) {
                                     type="number"
                                     value={input.relievingTemp}
                                     onChange={(e) =>
-                                        updateInput({ relievingTemp: parseFloat(e.target.value) })
+                                        updateInput({ relievingTemp: e.target.value })
                                     }
+                                    error={!!temperatureErrorMessage}
+                                    helperText={temperatureErrorMessage || ''}
                                     sx={{ flex: 1 }}
                                     size="small"
                                 />
@@ -127,9 +135,10 @@ export function ManualRateInput({ input, onChange }: ManualRateInputProps) {
                                     type="number"
                                     value={input.relievingPressure}
                                     onChange={(e) =>
-                                        updateInput({ relievingPressure: parseFloat(e.target.value) })
+                                        updateInput({ relievingPressure: e.target.value })
                                     }
-                                    helperText="Set pressure + accumulation"
+                                    error={!!pressureErrorMessage}
+                                    helperText={pressureErrorMessage || "Set pressure + accumulation"}
                                     sx={{ flex: 1 }}
                                     size="small"
                                 />

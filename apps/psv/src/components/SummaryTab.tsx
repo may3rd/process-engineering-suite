@@ -25,7 +25,9 @@ import {
     Business,
     AttachFile,
     Star,
+    PictureAsPdf,
 } from "@mui/icons-material";
+import { generatePsvSummaryPdf } from "@/lib/export/pdfExport";
 import { usePsvStore } from "@/store/usePsvStore";
 import { getUserById } from "@/data/mockData";
 import { PipelineNetwork, OverpressureScenario, PipeProps } from "@/data/types";
@@ -33,7 +35,7 @@ import { getWorkflowStatusLabel } from "@/lib/statusColors";
 import { convertUnit } from "@eng-suite/physics";
 import { RevisionHistoryCard } from "./RevisionHistoryCard";
 import { getProjectUnits, convertValue, formatWithUnit, formatNumber, formatLocaleNumber, formatPressureGauge, formatPressureDrop, formatMassFlowKgH } from "@/lib/projectUnits";
-import { UnitSystem } from "@/data/types";
+import { UnitSystem, Equipment } from "@/data/types";
 
 
 // Helper functions for hydraulic calculations
@@ -280,6 +282,10 @@ export function SummaryTab() {
     const projectUnits = getProjectUnits(unitSystem);
 
     const linkedEquipment = equipmentLinkList.filter(link => link.psvId === selectedPsv.id);
+    const equipmentForExport = linkedEquipment
+        .map(link => equipmentList.find(e => e.id === link.equipmentId))
+        .filter((e): e is Equipment => !!e);
+
     const owner = getUserById(selectedPsv.ownerId);
     const psvScenarios = scenarioList.filter(s => s.protectiveSystemId === selectedPsv.id);
     const psvSizingCases = sizingCaseList.filter(c => c.protectiveSystemId === selectedPsv.id);
@@ -299,6 +305,10 @@ export function SummaryTab() {
     const hasNoGoverning = psvScenarios.length > 0 && governingScenarios.length === 0;
     const hasMultipleGoverning = governingScenarios.length > 1;
     const governingNotSized = governingScenario && !governingSizingCase;
+
+    // Helper to get project units (moved up or used from hook if available)
+    // Note: projectUnits is defined below, let's make sure order is correct.
+    // Actually, `projectUnits` is defined at line 282, above this block.
 
     const facilityDescriptor = selectedPlant
         ? `${selectedPlant.name}${selectedUnit ? ` / ${selectedUnit.name}` : ''}`
@@ -360,6 +370,26 @@ export function SummaryTab() {
         window.print();
     };
 
+    const handleExportPdf = () => {
+        generatePsvSummaryPdf({
+            psv: selectedPsv,
+            project: selectedProject || undefined,
+            customer: selectedCustomer || undefined,
+            plant: selectedPlant || undefined,
+            unit: selectedUnit || undefined,
+            area: selectedArea || undefined,
+            owner: owner || undefined,
+            scenarios: psvScenarios,
+            sizingCases: psvSizingCases,
+            unitSystem: unitSystem || 'metric', // Pass unitSystem
+            linkedEquipment: equipmentForExport,
+            projectNotes: psvNotes,
+            attachments: psvAttachments,
+            inletSegments,
+            outletSegments,
+        });
+    };
+
     const sectionStyles = {
         mb: 2,
         p: 1.5,
@@ -412,6 +442,15 @@ export function SummaryTab() {
                     onClick={handlePrint}
                 >
                     Print Summary
+                </Button>
+                <Button
+                    variant="outlined"
+                    startIcon={<PictureAsPdf />}
+                    size="small"
+                    onClick={handleExportPdf}
+                    sx={{ ml: 1 }}
+                >
+                    Export PDF
                 </Button>
             </Box>
 

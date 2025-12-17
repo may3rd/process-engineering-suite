@@ -1,5 +1,7 @@
 "use client";
 
+import React from 'react';
+
 import {
     Box,
     Tabs,
@@ -64,12 +66,14 @@ import {
     PublishedWithChanges,
     Visibility,
     ExpandLess,
+    FileDownload,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
-import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem, ProtectiveSystem, ProjectNote } from "@/data/types";
+import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem, ProtectiveSystem, ProjectNote, Attachment } from "@/data/types";
 import { SizingWorkspace } from "./SizingWorkspace";
+import { exportScenariosToExcel } from "@/lib/export/excelExport";
 import { ScenarioEditor } from "./ScenarioEditor"; // Import ScenarioEditor
-import { FireCaseScenarioDialog } from "./FireCaseScenarioDialog";
+import { FireCaseDialog } from "./scenarios/FireCaseDialog";
 import { getUserById, users } from "@/data/mockData";
 import { useAuthStore } from "@/store/useAuthStore";
 import { useState, useEffect, MouseEvent, useMemo } from "react";
@@ -83,14 +87,16 @@ import { EquipmentCard } from "./EquipmentCard";
 import { TagsCard } from "./TagsCard";
 import { SummaryTab } from "./SummaryTab";
 import { RevisionsTab } from "./RevisionsTab";
-import { glassCardStyles } from "./styles";
-import { PipelineHydraulicsCard } from "./PipelineHydraulicsCard";
 import { WORKFLOW_STATUS_SEQUENCE, getWorkflowStatusColor, getWorkflowStatusLabel, SIZING_STATUS_SEQUENCE, getSizingStatusColor, getSizingStatusLabel } from "@/lib/statusColors";
 import { RevisionBadge } from "./RevisionBadge";
 import { NewRevisionDialog } from "./NewRevisionDialog";
 import { RevisionHistoryPanel } from "./RevisionHistoryPanel";
 import { SnapshotPreviewDialog } from "./SnapshotPreviewDialog";
 import { RevisionHistory } from "@/data/types";
+import { ScenarioTemplateSelector } from "./scenarios/ScenarioTemplateSelector";
+import { BlockedOutletDialog } from "./scenarios/BlockedOutletDialog";
+import { ControlValveFailureDialog } from "./scenarios/ControlValveFailureDialog";
+import { TubeRuptureDialog } from "./scenarios/TubeRuptureDialog";
 import { sortRevisionsByOriginatedAtDesc } from "@/lib/revisionSort";
 import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
 import { convertValue, formatLocaleNumber, formatNumber, formatPressureGauge, formatTemperatureC, formatMassFlowKgH } from "@/lib/projectUnits";
@@ -215,9 +221,34 @@ function ScenariosTab() {
         [scenarioList, sortConfig]
     );
 
+    // --- Scenario Management ---
+    // Using existing state variables where possible
+    // editorOpen -> Generic Scenario Editor
+    // fireDialogOpen -> Fire Case Wizard
+    const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
+    const [blockedOutletOpen, setBlockedOutletOpen] = useState(false);
+    const [cvFailureOpen, setCvFailureOpen] = useState(false);
+    const [tubeRuptureOpen, setTubeRuptureOpen] = useState(false);
+
     const handleAddScenario = () => {
-        setEditingScenario(undefined);
-        setEditorOpen(true);
+        setTemplateSelectorOpen(true);
+    };
+
+    const handleTemplateSelect = (template: 'fire_case' | 'blocked_outlet' | 'control_valve_failure' | 'tube_rupture' | 'generic') => {
+        setTemplateSelectorOpen(false);
+        if (template === 'fire_case') {
+            setFireDialogOpen(true);
+        } else if (template === 'blocked_outlet') {
+            setBlockedOutletOpen(true);
+        } else if (template === 'control_valve_failure') {
+            setCvFailureOpen(true);
+        } else if (template === 'tube_rupture') {
+            setTubeRuptureOpen(true);
+        } else {
+            // Generic
+            setEditingScenario(undefined);
+            setEditorOpen(true);
+        }
     };
 
     const handleEditScenario = (scenario: OverpressureScenario) => {
@@ -225,20 +256,68 @@ function ScenariosTab() {
         setEditorOpen(true);
     };
 
-    const handleSaveScenario = (scenario: OverpressureScenario) => {
-        if (editingScenario) {
-            updateScenario(scenario);
+    const handleSaveScenario = (scenario: Partial<OverpressureScenario>) => {
+        if (!selectedPsv) return;
+
+        const now = new Date().toISOString();
+        const scenarioId = scenario.id;
+        const existingScenario = scenarioId ? scenarioList.find((s) => s.id === scenarioId) : editingScenario;
+        const shouldUpdate = !!existingScenario && (scenarioId ? existingScenario.id === scenarioId : true);
+
+        if (shouldUpdate) {
+            updateScenario({ ...existingScenario, ...scenario, updatedAt: now } as OverpressureScenario);
         } else {
-            addScenario(scenario);
+            const relievingRate = scenario.relievingRate ?? 0;
+            addScenario({
+                id: scenarioId ?? uuidv4(),
+                protectiveSystemId: selectedPsv.id,
+                cause: scenario.cause ?? 'blocked_outlet',
+                description: scenario.description ?? '',
+                relievingTemp: scenario.relievingTemp ?? 0,
+                relievingPressure: scenario.relievingPressure ?? selectedPsv.setPressure * 1.1,
+                phase: scenario.phase ?? 'gas',
+                relievingRate,
+                accumulationPct: scenario.accumulationPct ?? 10,
+                requiredCapacity: scenario.requiredCapacity ?? relievingRate,
+                assumptions: scenario.assumptions ?? [],
+                codeRefs: scenario.codeRefs ?? [],
+                isGoverning: scenario.isGoverning ?? false,
+                currentRevisionId: scenario.currentRevisionId,
+                caseConsideration: scenario.caseConsideration,
+                createdAt: scenario.createdAt ?? now,
+                updatedAt: now,
+            });
         }
         setEditorOpen(false);
+        setEditingScenario(undefined);
+        // Also ensure wizard dialogs are closed if they triggered this
+        setBlockedOutletOpen(false);
+        setCvFailureOpen(false);
+        setTubeRuptureOpen(false);
+    };
+
+    const handleToggleGoverning = (scenarioId: string, isGoverning: boolean) => {
+        if (!selectedPsv) return;
+
+        // If setting to true, unset others
+        if (isGoverning) {
+            sortedScenarios.forEach(s => {
+                if (s.id !== scenarioId && s.isGoverning) {
+                    updateScenario({ ...s, isGoverning: false });
+                }
+            });
+        }
+
+        const target = sortedScenarios.find(s => s.id === scenarioId);
+        if (target) {
+            updateScenario({ ...target, isGoverning });
+        }
     };
 
     const handleDeleteScenario = (id: string) => {
-        if (window.confirm("Are you sure you want to delete this scenario? This action cannot be undone.")) {
-            deleteScenario(id);
-            setEditorOpen(false);
-        }
+        deleteScenario(id);
+        setEditorOpen(false);
+        setEditingScenario(undefined);
     };
 
     const handleFireCaseSave = (fireScenario: Partial<OverpressureScenario>) => {
@@ -322,6 +401,14 @@ function ScenariosTab() {
                     <Box sx={{ display: 'flex', gap: 1 }}>
                         <Button
                             variant="outlined"
+                            startIcon={<FileDownload />}
+                            size="small"
+                            onClick={() => exportScenariosToExcel(scenarioList, selectedPsv!, unitSystem)}
+                        >
+                            Export Excel
+                        </Button>
+                        {/* <Button
+                            variant="outlined"
                             startIcon={<LocalFireDepartment />}
                             size="small"
                             onClick={() => setFireDialogOpen(true)}
@@ -338,8 +425,26 @@ function ScenariosTab() {
                             }}
                         >
                             Fire Case
-                        </Button>
-                        <Button variant="contained" startIcon={<Add />} size="small" onClick={handleAddScenario}>
+                        </Button> */}
+                        <IconButton
+                            size="small"
+                            onClick={handleAddScenario}
+                            sx={{
+                                display: { xs: 'inline-flex', sm: 'none' },
+                                bgcolor: 'primary.main',
+                                color: 'primary.contrastText',
+                                '&:hover': { bgcolor: 'primary.dark' },
+                            }}
+                        >
+                            <Add />
+                        </IconButton>
+                        <Button
+                            variant="contained"
+                            startIcon={<Add />}
+                            size="small"
+                            onClick={handleAddScenario}
+                            sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+                        >
                             Add Scenario
                         </Button>
                     </Box>
@@ -410,7 +515,10 @@ function ScenariosTab() {
 
             <Dialog
                 open={editorOpen}
-                onClose={() => setEditorOpen(false)}
+                onClose={() => {
+                    setEditorOpen(false);
+                    setEditingScenario(undefined);
+                }}
                 maxWidth="md"
                 fullWidth
             >
@@ -423,20 +531,54 @@ function ScenariosTab() {
                             psvId={selectedPsv.id}
                             initialData={editingScenario}
                             onSave={handleSaveScenario}
-                            onCancel={() => setEditorOpen(false)}
+                            onCancel={() => {
+                                setEditorOpen(false);
+                                setEditingScenario(undefined);
+                            }}
                             onDelete={editingScenario ? handleDeleteScenario : undefined}
                         />
                     )}
                 </DialogContent>
             </Dialog>
 
-            {/* Fire Case Scenario Dialog */}
-            <FireCaseScenarioDialog
+            {/* Scenario Tools */}
+            <ScenarioTemplateSelector
+                open={templateSelectorOpen}
+                onClose={() => setTemplateSelectorOpen(false)}
+                onSelectTemplate={handleTemplateSelect}
+            />
+
+            {/* Fire Case Wizard */}
+            <FireCaseDialog
                 open={fireDialogOpen}
                 onClose={() => setFireDialogOpen(false)}
                 psvId={selectedPsv?.id || ''}
                 areaId={selectedPsv?.areaId || ''}
                 onSave={handleFireCaseSave}
+            />
+
+            {/* Blocked Outlet Wizard */}
+            <BlockedOutletDialog
+                open={blockedOutletOpen}
+                onClose={() => setBlockedOutletOpen(false)}
+                psvId={selectedPsv.id}
+                onSave={handleSaveScenario}
+            />
+
+            {/* Control Valve Failure Wizard */}
+            <ControlValveFailureDialog
+                open={cvFailureOpen}
+                onClose={() => setCvFailureOpen(false)}
+                psvId={selectedPsv.id}
+                onSave={handleSaveScenario}
+            />
+
+            {/* Tube Rupture Wizard */}
+            <TubeRuptureDialog
+                open={tubeRuptureOpen}
+                onClose={() => setTubeRuptureOpen(false)}
+                psvId={selectedPsv.id}
+                onSave={handleSaveScenario}
             />
 
             {sortedScenarios.length > 0 ? (
@@ -471,12 +613,25 @@ function ScenariosTab() {
                                                     <Typography variant="h6" fontWeight={600}>
                                                         {getCauseLabel(scenario.cause)}
                                                     </Typography>
+                                                    <Tooltip title={scenario.isGoverning ? "Governing Case (Click to unset)" : "Set as Governing Case"}>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                handleToggleGoverning(scenario.id, !scenario.isGoverning);
+                                                            }}
+                                                            color={scenario.isGoverning ? "warning" : "default"}
+                                                        >
+                                                            {scenario.isGoverning ? <Star sx={{ fontSize: 20 }} /> : <Star sx={{ fontSize: 20, opacity: 0.2 }} />}
+                                                        </IconButton>
+                                                    </Tooltip>
                                                     {scenario.isGoverning && (
                                                         <Chip
                                                             label="Governing"
                                                             size="small"
                                                             color="warning"
-                                                            icon={<Star sx={{ fontSize: 14 }} />}
+                                                            variant="outlined"
+                                                            sx={{ height: 24 }}
                                                         />
                                                     )}
                                                 </Box>
@@ -665,8 +820,9 @@ function ScenariosTab() {
                         Add First Scenario
                     </Button>
                 </Paper>
-            )}
-        </Box>
+            )
+            }
+        </Box >
     );
 }
 
@@ -1190,8 +1346,10 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
 
 // Attachments Tab Content
 function AttachmentsTab() {
-    const { selectedPsv, attachmentList, deleteAttachment } = usePsvStore();
+    const { selectedPsv, attachmentList, deleteAttachment, addAttachment } = usePsvStore();
+    const { currentUser } = useAuthStore();
     const canEdit = useAuthStore((state) => state.canEdit());
+    const fileInputRef = React.useRef<HTMLInputElement>(null);
 
     if (!selectedPsv) return null;
 
@@ -1219,8 +1377,53 @@ function AttachmentsTab() {
         }
     };
 
+    const handleUploadClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || files.length === 0) return;
+
+        const file = files[0];
+
+        // Create attachment object
+        const attachment: Attachment = {
+            id: `att-${Date.now()}`,
+            protectiveSystemId: selectedPsv.id,
+            fileUri: `/uploads/${selectedPsv.id}/${file.name}`, // This would be updated by backend
+            fileName: file.name,
+            mimeType: file.type,
+            size: file.size,
+            uploadedBy: currentUser?.id || '',
+            createdAt: new Date().toISOString(),
+        };
+
+        try {
+            await addAttachment(attachment);
+            // In a real implementation, you would also upload the actual file to a server
+            // For now, this just adds the metadata to the store
+        } catch (error) {
+            console.error('Failed to upload file:', error);
+        }
+
+        // Reset input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
     return (
         <Box>
+            {/* Hidden file input */}
+            <input
+                ref={fileInputRef}
+                type="file"
+                style={{ display: 'none' }}
+                onChange={handleFileSelect}
+                accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.txt"
+            />
+
             {/* Attachments Section */}
             <Box sx={{ mb: 4 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
@@ -1228,7 +1431,12 @@ function AttachmentsTab() {
                         Attachments
                     </Typography>
                     {canEdit && (
-                        <Button variant="contained" startIcon={<AttachFile />} size="small">
+                        <Button
+                            variant="contained"
+                            startIcon={<AttachFile />}
+                            size="small"
+                            onClick={handleUploadClick}
+                        >
                             Upload File
                         </Button>
                     )}

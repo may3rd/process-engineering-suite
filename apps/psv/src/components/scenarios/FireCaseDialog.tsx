@@ -10,27 +10,23 @@
 
 import React, { useState } from 'react';
 import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Button,
     Box,
     Typography,
-    Stepper,
-    Step,
-    StepLabel,
-    Alert,
-    IconButton,
 } from '@mui/material';
-import { Close as CloseIcon, Calculate as CalculateIcon } from '@mui/icons-material';
+import { Calculate as CalculateIcon } from '@mui/icons-material';
+import { ScenarioWizardLayout } from './ScenarioWizardLayout';
 import { Equipment, VesselDetails, OverpressureScenario } from '@/data/types';
 import { MultiEquipmentSelector } from './MultiEquipmentSelector';
 import { API521Calculator } from './API521Calculator';
 import { ManualRateInput } from './ManualRateInput';
 import { FireCalculationResults } from './FireCalculationResults';
+import {
+    getPressureValidationError,
+    getTemperatureValidationError,
+    getPositiveNumberError,
+} from '@/lib/physicsValidation';
 
-interface FireCaseScenarioDialogProps {
+interface FireCaseDialogProps {
     open: boolean;
     onClose: () => void;
     psvId: string;
@@ -49,15 +45,15 @@ interface FireCaseFormData {
 
     // API-521 configuration
     api521Config: {
-        latentHeat: number;
+        latentHeat: number | null;
         latentHeatUnit: string;
-        relievingTemp: number;
+        relievingTemp: number | null;
         relievingTempUnit: string;
         environmentalFactor: number;
-        heightAboveGrade: number;
+        heightAboveGrade: number | null;
         heightUnit: string;
         // Per-equipment liquid levels - allow empty string for empty inputs
-        liquidLevels: Map<string, { value: number | string; unit: string }>;
+        liquidLevels: Map<string, { value: number | string | null; unit: string }>;
     };
 
     // Calculation results
@@ -76,15 +72,15 @@ interface FireCaseFormData {
     };
 
     // Manual input
-    manualInput: {
-        relievingRate: number;
-        rateUnit: string;
-        relievingTemp: number;
-        tempUnit: string;
-        relievingPressure: number;
-        pressureUnit: string;
-        basis: string;
-    };
+        manualInput: {
+            relievingRate: string;
+            rateUnit: string;
+            relievingTemp: string;
+            tempUnit: string;
+            relievingPressure: string;
+            pressureUnit: string;
+            basis: string;
+        };
 
     // Common
     description: string;
@@ -93,13 +89,13 @@ interface FireCaseFormData {
 
 const steps = ['Equipment', 'Method', 'Configure', 'Review'];
 
-export function FireCaseScenarioDialog({
+export function FireCaseDialog({
     open,
     onClose,
     psvId,
     areaId,
     onSave,
-}: FireCaseScenarioDialogProps) {
+}: FireCaseDialogProps) {
     const [activeStep, setActiveStep] = useState(0);
     const [formData, setFormData] = useState<FireCaseFormData>({
         selectedEquipment: [],
@@ -115,19 +111,69 @@ export function FireCaseScenarioDialog({
             liquidLevels: new Map(),
         },
         manualInput: {
-            relievingRate: 0,
+            relievingRate: '',
             rateUnit: 'kg/h',
-            relievingTemp: 50,
+            relievingTemp: '',
             tempUnit: '°C',
-            relievingPressure: 17.5,
+            relievingPressure: '',
             pressureUnit: 'barg',
             basis: '',
         },
         description: 'External fire exposure',
         assumptions: [],
     });
+    const [configureErrors, setConfigureErrors] = useState<string[]>([]);
+
+    const validateConfigureStep = () => {
+        const errors: string[] = [];
+        if (formData.calculationMethod === 'api521') {
+            if (formData.selectedEquipment.length === 0) {
+                errors.push('Select at least one equipment before calculating');
+            }
+            const latentError = getPositiveNumberError(formData.api521Config.latentHeat, 'Latent heat');
+            if (latentError) errors.push(latentError);
+            const tempError = getTemperatureValidationError(
+                formData.api521Config.relievingTemp,
+                formData.api521Config.relievingTempUnit,
+                'Relieving temperature'
+            );
+            if (tempError) errors.push(tempError);
+            const heightError = getPositiveNumberError(
+                formData.api521Config.heightAboveGrade,
+                'Height above grade'
+            );
+            if (heightError) errors.push(heightError);
+            if (!formData.calculationResults) {
+                errors.push('Run the API-521 calculation to compute the relief load');
+            }
+        } else {
+            const rateError = getPositiveNumberError(formData.manualInput.relievingRate, 'Manual relieving rate');
+            if (rateError) errors.push(rateError);
+            const tempError = getTemperatureValidationError(
+                formData.manualInput.relievingTemp,
+                formData.manualInput.tempUnit,
+                'Manual relieving temperature'
+            );
+            if (tempError) errors.push(tempError);
+            const pressureError = getPressureValidationError(
+                formData.manualInput.relievingPressure,
+                formData.manualInput.pressureUnit,
+                'Manual relieving pressure'
+            );
+            if (pressureError) errors.push(pressureError);
+        }
+        return errors;
+    };
 
     const handleNext = () => {
+        if (activeStep === 2) {
+            const errors = validateConfigureStep();
+            if (errors.length) {
+                setConfigureErrors(errors);
+                return;
+            }
+        }
+        setConfigureErrors([]);
         setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
     };
 
@@ -136,16 +182,21 @@ export function FireCaseScenarioDialog({
     };
 
     const handleSave = () => {
+        const errors = validateConfigureStep();
+        if (errors.length) {
+            setConfigureErrors(errors);
+            return;
+        }
         const scenario: Partial<OverpressureScenario> = {
             protectiveSystemId: psvId,
             cause: 'fire_case',
             description: formData.description,
             relievingTemp: formData.calculationMethod === 'api521'
-                ? formData.api521Config.relievingTemp
-                : formData.manualInput.relievingTemp,
+                ? formData.api521Config.relievingTemp ?? 0
+                : parseFloat(formData.manualInput.relievingTemp) || 0,
             relievingRate: formData.calculationMethod === 'api521'
                 ? formData.calculationResults?.reliefRate || 0
-                : formData.manualInput.relievingRate,
+                : parseFloat(formData.manualInput.relievingRate) || 0,
             // ... other fields
         };
 
@@ -279,61 +330,25 @@ export function FireCaseScenarioDialog({
     };
 
     return (
-        <Dialog
+        <ScenarioWizardLayout
             open={open}
             onClose={onClose}
-            maxWidth="md"
-            fullWidth
-            PaperProps={{
-                sx: {
-                    borderRadius: 3,
-                    background: (theme) =>
-                        theme.palette.mode === 'dark'
-                            ? 'rgba(18, 18, 18, 0.95)'
-                            : 'rgba(255, 255, 255, 0.98)',
-                    backdropFilter: 'blur(20px)',
-                },
-            }}
+            title="Fire Case Scenario"
+            icon={<CalculateIcon color="primary" />}
+            activeStep={activeStep}
+            steps={steps}
+            onBack={handleBack}
+            onNext={handleNext}
+            onSave={handleSave}
+            isLastStep={activeStep === steps.length - 1}
+            saveLabel="Save Scenario"
+            validationAlert={
+                configureErrors.length
+                    ? { message: configureErrors[0], severity: 'warning' }
+                    : undefined
+            }
         >
-            <DialogTitle sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <CalculateIcon color="primary" />
-                    <Typography variant="h6">Fire Case Scenario</Typography>
-                </Box>
-                <IconButton onClick={onClose} size="small">
-                    <CloseIcon />
-                </IconButton>
-            </DialogTitle>
-
-            <DialogContent dividers sx={{ minHeight: 500 }}>
-                <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-                    {steps.map((label) => (
-                        <Step key={label}>
-                            <StepLabel>{label}</StepLabel>
-                        </Step>
-                    ))}
-                </Stepper>
-
-                {renderStepContent()}
-            </DialogContent>
-
-            <DialogActions sx={{ p: 2, gap: 1 }}>
-                <Button onClick={onClose}>Cancel</Button>
-                <Box sx={{ flex: 1 }} />
-                {activeStep > 0 && (
-                    <Button onClick={handleBack}>Back</Button>
-                )}
-                {activeStep < steps.length - 1 && (
-                    <Button variant="contained" onClick={handleNext}>
-                        Next
-                    </Button>
-                )}
-                {activeStep === steps.length - 1 && (
-                    <Button variant="contained" onClick={handleSave}>
-                        Save Scenario
-                    </Button>
-                )}
-            </DialogActions>
-        </Dialog>
+            {renderStepContent()}
+        </ScenarioWizardLayout>
     );
 }

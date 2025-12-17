@@ -37,6 +37,7 @@ import { glassCardStyles } from "./styles";
 import { SortConfig, sortByGetter } from "@/lib/sortUtils";
 import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
 import { formatPressureGauge } from "@/lib/projectUnits";
+import { PsvCreationWizard } from "./PsvCreationWizard";
 
 export function ProtectiveSystemList() {
     const theme = useTheme();
@@ -52,30 +53,9 @@ export function ProtectiveSystemList() {
         key: 'tag',
         direction: 'asc',
     });
+    const [wizardOpen, setWizardOpen] = useState(false);
 
-    const handleAddPsv = () => {
-        if (!selectedArea || !selectedProject || !currentUser) return;
 
-        const newPsvData = {
-            areaId: selectedArea.id,
-            projectIds: [selectedProject.id],
-            name: 'New Protective System',
-            tag: `PSV-${psvList.length + 1}`,
-            type: 'psv' as const,
-            designCode: 'API-520' as const,
-            serviceFluid: '',
-            fluidPhase: 'gas' as const,
-            setPressure: 0,
-            mawp: 0,
-            ownerId: currentUser.id,
-            status: 'draft' as const,
-            tags: [],
-        };
-
-        addProtectiveSystem(newPsvData);
-        // Note: selectPsv would need the new ID, but addProtectiveSystem generates it internally
-        // The PSV list will update and show the new item
-    };
 
     const filteredPsvs = useMemo(() => {
         const query = searchText.trim().toLowerCase();
@@ -197,7 +177,7 @@ export function ProtectiveSystemList() {
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
                     <Typography variant="h5" fontWeight={600}>
-                        { selectedProject.code || "Project Code" } : {selectedProject.name || "Project Name"}
+                        {selectedProject.code || "Project Code"} : {selectedProject.name || "Project Name"}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
                         {filteredCountLabel} device{sortedPsvs.length !== 1 ? 's' : ''}
@@ -208,9 +188,9 @@ export function ProtectiveSystemList() {
                         variant="contained"
                         startIcon={<Add />}
                         size="small"
-                        onClick={handleAddPsv}
+                        onClick={() => setWizardOpen(true)}
                     >
-                        Add New Device
+                        New PSV/RD
                     </Button>
                 )}
             </Box>
@@ -409,6 +389,15 @@ export function ProtectiveSystemList() {
                     </Grid>
                 )}
             </Grid>
+
+            {/* PSV Creation Wizard */}
+            {selectedProject && (
+                <PsvCreationWizard
+                    open={wizardOpen}
+                    onClose={() => setWizardOpen(false)}
+                    projectId={selectedProject.id}
+                />
+            )}
         </Box>
     );
 }

@@ -16,6 +16,7 @@ import type {
     ProjectNote,
     RevisionHistory,
     RevisionEntityType,
+    Warning,
 } from '@/data/types';
 import { getDataService } from '@/lib/api';
 import { toast } from '@/lib/toast';
@@ -37,7 +38,7 @@ function derivePsvStatusFromRevision(
 function handleOptionalFetch<T>(promise: Promise<T>, label: string, fallback: T): Promise<T> {
     return promise.catch((error) => {
         const message = error instanceof Error ? error.message : String(error);
-        console.warn(`${label} unavailable: ${message}`);
+        console.warn(`${label} unavailable: ${message} `);
         return fallback;
     });
 }
@@ -178,6 +179,12 @@ interface PsvStore {
     deleteComment: (id: string) => Promise<void>;
     commentList: Comment[];
 
+    // Warnings State and Actions
+    warnings: Map<string, Warning[]>; // Key: sizingCaseId
+    addWarning: (warning: Warning) => void;
+    clearWarnings: (sizingCaseId: string) => void;
+    getWarnings: (sizingCaseId: string) => Warning[];
+
     // Revision History Actions
     revisionHistory: RevisionHistory[];
     loadRevisionHistory: (entityType: RevisionEntityType, entityId: string) => Promise<void>;
@@ -233,6 +240,9 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     todoList: [],
     noteList: [],
     commentList: [],
+
+    // Warnings state
+    warnings: new Map(),
 
     // UI state
     activeTab: 0,
@@ -1110,6 +1120,28 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         }
     },
 
+    // Warnings Actions
+    addWarning: (warning) => {
+        set((state) => {
+            const caseWarnings = state.warnings.get(warning.sizingCaseId) || [];
+            const newWarnings = new Map(state.warnings);
+            newWarnings.set(warning.sizingCaseId, [...caseWarnings, warning]);
+            return { warnings: newWarnings };
+        });
+    },
+
+    clearWarnings: (sizingCaseId) => {
+        set((state) => {
+            const newWarnings = new Map(state.warnings);
+            newWarnings.delete(sizingCaseId);
+            return { warnings: newWarnings };
+        });
+    },
+
+    getWarnings: (sizingCaseId) => {
+        return get().warnings.get(sizingCaseId) || [];
+    },
+
     // Hierarchy CRUD Actions
     // Customer
     addCustomer: async (customer) => {
@@ -1496,7 +1528,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             }));
         }
 
-        toast.success(`Created revision ${revisionCode}`);
+        toast.success(`Created revision ${revisionCode} `);
         return newRevision;
     },
 
@@ -1504,7 +1536,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         const now = new Date().toISOString();
         const updates: Partial<RevisionHistory> = {
             [field]: userId,
-            [`${field.replace('By', 'At')}`]: now,
+            [`${field.replace('By', 'At')} `]: now,
         };
 
         await dataService.updateRevision(revisionId, updates);
@@ -1515,7 +1547,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         }));
 
         const action = field === 'checkedBy' ? 'Checked' : 'Approved';
-        toast.success(`Revision ${action}`);
+        toast.success(`Revision ${action} `);
     },
 
     updateRevision: async (revisionId: string, updates: Partial<RevisionHistory>) => {
