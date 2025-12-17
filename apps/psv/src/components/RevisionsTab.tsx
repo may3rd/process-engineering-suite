@@ -115,6 +115,12 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
                 originatedBy: currentUser.id,
                 originatedAt: new Date().toISOString(),
             });
+
+            // Update PSV status to 'in_review' when originator signs
+            if (selectedPsv) {
+                await updatePsv({ ...selectedPsv, status: 'in_review' });
+            }
+
             await reload();
         } finally {
             setIsSigning(null);
@@ -131,6 +137,12 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
                 checkedBy: currentUser.id,
                 checkedAt: new Date().toISOString(),
             });
+
+            // Update PSV status to 'checked' when checker signs
+            if (selectedPsv) {
+                await updatePsv({ ...selectedPsv, status: 'checked' });
+            }
+
             await reload();
         } finally {
             setIsSigning(null);
@@ -148,6 +160,12 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
                 approvedBy: currentUser.id,
                 approvedAt: new Date().toISOString(),
             });
+
+            // Update PSV status to 'approved' when approver signs
+            if (selectedPsv) {
+                await updatePsv({ ...selectedPsv, status: 'approved' });
+            }
+
             await reload();
         } finally {
             setIsSigning(null);
@@ -171,6 +189,12 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
                 approvedBy: null,
                 approvedAt: null,
             });
+
+            // Update PSV status back to 'draft' when originator is revoked
+            if (selectedPsv) {
+                await updatePsv({ ...selectedPsv, status: 'draft' });
+            }
+
             await reload();
         } finally {
             setIsSigning(null);
@@ -189,6 +213,12 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
                 approvedBy: null,
                 approvedAt: null,
             });
+
+            // Update PSV status back to 'in_review' when checker is revoked
+            if (selectedPsv) {
+                await updatePsv({ ...selectedPsv, status: 'in_review' });
+            }
+
             await reload();
         } finally {
             setIsSigning(null);
@@ -204,6 +234,12 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
                 approvedBy: null,
                 approvedAt: null,
             });
+
+            // Update PSV status back to 'checked' when approver is revoked
+            if (selectedPsv) {
+                await updatePsv({ ...selectedPsv, status: 'checked' });
+            }
+
             await reload();
         } finally {
             setIsSigning(null);
@@ -360,8 +396,8 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
                                                 : !currentRevision.checkedBy
                                                     ? 'Checker must sign first'
                                                     : !canApproveSignature
-                                                ? 'Requires Lead/Approver/Admin role'
-                                                : undefined
+                                                        ? 'Requires Lead/Approver/Admin role'
+                                                        : undefined
                                     }
                                     onSign={signApprover}
                                     loading={isSigning === 'approver'}
