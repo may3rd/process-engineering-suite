@@ -26,7 +26,7 @@ import {
     InputAdornment,
 } from "@mui/material";
 import { Add, Edit, Delete, Category, Search, Map, Timeline } from "@mui/icons-material";
-import { plants, users } from "@/data/mockData";
+import { users } from "@/data/mockData";
 import { Unit } from "@/data/types";
 import { glassCardStyles } from "./styles";
 import { DeleteConfirmDialog, TableSortButton } from "./shared";
@@ -43,6 +43,7 @@ export function UnitsTab() {
     const { addUnit, updateUnit, deleteUnit } = usePsvStore();
     const selectedPlant = usePsvStore((state) => state.selectedPlant);
     const units = usePsvStore((state) => state.units);
+    const plants = usePsvStore((state) => state.plants);
     const areas = usePsvStore((state) => state.areas);
     const projects = usePsvStore((state) => state.projects);
     const protectiveSystems = usePsvStore((state) => state.protectiveSystems);
