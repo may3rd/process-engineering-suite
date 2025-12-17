@@ -93,6 +93,9 @@ import { NewRevisionDialog } from "./NewRevisionDialog";
 import { RevisionHistoryPanel } from "./RevisionHistoryPanel";
 import { SnapshotPreviewDialog } from "./SnapshotPreviewDialog";
 import { RevisionHistory } from "@/data/types";
+import { ScenarioTemplateSelector } from "./ScenarioTemplateSelector";
+import { BlockedOutletDialog } from "./BlockedOutletDialog";
+import { ControlValveFailureDialog } from "./ControlValveFailureDialog";
 import { sortRevisionsByOriginatedAtDesc } from "@/lib/revisionSort";
 import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
 import { convertValue, formatLocaleNumber, formatNumber, formatPressureGauge, formatTemperatureC, formatMassFlowKgH } from "@/lib/projectUnits";
@@ -217,9 +220,31 @@ function ScenariosTab() {
         [scenarioList, sortConfig]
     );
 
+    // --- Scenario Management ---
+    // Using existing state variables where possible
+    // editorOpen -> Generic Scenario Editor
+    // fireDialogOpen -> Fire Case Wizard
+    const [templateSelectorOpen, setTemplateSelectorOpen] = useState(false);
+    const [blockedOutletOpen, setBlockedOutletOpen] = useState(false);
+    const [cvFailureOpen, setCvFailureOpen] = useState(false);
+
     const handleAddScenario = () => {
-        setEditingScenario(undefined);
-        setEditorOpen(true);
+        setTemplateSelectorOpen(true);
+    };
+
+    const handleTemplateSelect = (template: 'fire_case' | 'blocked_outlet' | 'control_valve_failure' | 'generic') => {
+        setTemplateSelectorOpen(false);
+        if (template === 'fire_case') {
+            setFireDialogOpen(true);
+        } else if (template === 'blocked_outlet') {
+            setBlockedOutletOpen(true);
+        } else if (template === 'control_valve_failure') {
+            setCvFailureOpen(true);
+        } else {
+            // Generic
+            setEditingScenario(undefined);
+            setEditorOpen(true);
+        }
     };
 
     const handleEditScenario = (scenario: OverpressureScenario) => {
@@ -227,20 +252,49 @@ function ScenariosTab() {
         setEditorOpen(true);
     };
 
-    const handleSaveScenario = (scenario: OverpressureScenario) => {
-        if (editingScenario) {
-            updateScenario(scenario);
+    const handleSaveScenario = (scenario: Partial<OverpressureScenario>) => {
+        if (!selectedPsv) return;
+
+        const now = new Date().toISOString();
+        const scenarioId = scenario.id;
+        const existingScenario = scenarioId ? scenarioList.find((s) => s.id === scenarioId) : editingScenario;
+        const shouldUpdate = !!existingScenario && (scenarioId ? existingScenario.id === scenarioId : true);
+
+        if (shouldUpdate) {
+            updateScenario({ ...existingScenario, ...scenario, updatedAt: now } as OverpressureScenario);
         } else {
-            addScenario(scenario);
+            const relievingRate = scenario.relievingRate ?? 0;
+            addScenario({
+                id: scenarioId ?? uuidv4(),
+                protectiveSystemId: selectedPsv.id,
+                cause: scenario.cause ?? 'blocked_outlet',
+                description: scenario.description ?? '',
+                relievingTemp: scenario.relievingTemp ?? 0,
+                relievingPressure: scenario.relievingPressure ?? selectedPsv.setPressure * 1.1,
+                phase: scenario.phase ?? 'gas',
+                relievingRate,
+                accumulationPct: scenario.accumulationPct ?? 10,
+                requiredCapacity: scenario.requiredCapacity ?? relievingRate,
+                assumptions: scenario.assumptions ?? [],
+                codeRefs: scenario.codeRefs ?? [],
+                isGoverning: scenario.isGoverning ?? false,
+                currentRevisionId: scenario.currentRevisionId,
+                caseConsideration: scenario.caseConsideration,
+                createdAt: scenario.createdAt ?? now,
+                updatedAt: now,
+            });
         }
         setEditorOpen(false);
+        setEditingScenario(undefined);
+        // Also ensure wizard dialogs are closed if they triggered this
+        setBlockedOutletOpen(false);
+        setCvFailureOpen(false);
     };
 
     const handleDeleteScenario = (id: string) => {
-        if (window.confirm("Are you sure you want to delete this scenario? This action cannot be undone.")) {
-            deleteScenario(id);
-            setEditorOpen(false);
-        }
+        deleteScenario(id);
+        setEditorOpen(false);
+        setEditingScenario(undefined);
     };
 
     const handleFireCaseSave = (fireScenario: Partial<OverpressureScenario>) => {
@@ -412,7 +466,10 @@ function ScenariosTab() {
 
             <Dialog
                 open={editorOpen}
-                onClose={() => setEditorOpen(false)}
+                onClose={() => {
+                    setEditorOpen(false);
+                    setEditingScenario(undefined);
+                }}
                 maxWidth="md"
                 fullWidth
             >
@@ -425,20 +482,46 @@ function ScenariosTab() {
                             psvId={selectedPsv.id}
                             initialData={editingScenario}
                             onSave={handleSaveScenario}
-                            onCancel={() => setEditorOpen(false)}
+                            onCancel={() => {
+                                setEditorOpen(false);
+                                setEditingScenario(undefined);
+                            }}
                             onDelete={editingScenario ? handleDeleteScenario : undefined}
                         />
                     )}
                 </DialogContent>
             </Dialog>
 
-            {/* Fire Case Scenario Dialog */}
+            {/* Scenario Tools */}
+            <ScenarioTemplateSelector
+                open={templateSelectorOpen}
+                onClose={() => setTemplateSelectorOpen(false)}
+                onSelectTemplate={handleTemplateSelect}
+            />
+
+            {/* Fire Case Wizard */}
             <FireCaseScenarioDialog
                 open={fireDialogOpen}
                 onClose={() => setFireDialogOpen(false)}
                 psvId={selectedPsv?.id || ''}
                 areaId={selectedPsv?.areaId || ''}
                 onSave={handleFireCaseSave}
+            />
+
+            {/* Blocked Outlet Wizard */}
+            <BlockedOutletDialog
+                open={blockedOutletOpen}
+                onClose={() => setBlockedOutletOpen(false)}
+                psvId={selectedPsv.id}
+                onSave={handleSaveScenario}
+            />
+
+            {/* Control Valve Failure Wizard */}
+            <ControlValveFailureDialog
+                open={cvFailureOpen}
+                onClose={() => setCvFailureOpen(false)}
+                psvId={selectedPsv.id}
+                onSave={handleSaveScenario}
             />
 
             {sortedScenarios.length > 0 ? (

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
     Box,
     TextField,
@@ -101,6 +101,8 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
+    const [touched, setTouched] = useState<Record<string, boolean>>({});
+    const [dismissedValidationWarning, setDismissedValidationWarning] = useState(false);
     const [newAssumption, setNewAssumption] = useState("");
     const [newCodeRef, setNewCodeRef] = useState("");
 
@@ -108,14 +110,43 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
     useEffect(() => {
         if (initialData) {
             setFormData(initialData);
+            setTouched({});
+            setErrors({});
+            setDismissedValidationWarning(false);
         }
     }, [initialData]);
+
+    const getValidationErrors = (data: Partial<OverpressureScenario>) => {
+        const newErrors: Record<string, string> = {};
+
+        if (!data.description?.trim()) newErrors.description = "Description is required";
+        if (data.relievingRate === undefined || Number.isNaN(data.relievingRate) || data.relievingRate < 0) {
+            newErrors.relievingRate = "Valid relieving rate is required";
+        }
+        if (
+            data.relievingPressure === undefined ||
+            Number.isNaN(data.relievingPressure) ||
+            data.relievingPressure <= 0
+        ) {
+            newErrors.relievingPressure = "Valid relieving pressure is required";
+        }
+        if (data.relievingTemp === undefined || Number.isNaN(data.relievingTemp)) {
+            newErrors.relievingTemp = "Temperature is required";
+        }
+
+        return newErrors;
+    };
+
+    const liveErrors = useMemo(() => getValidationErrors(formData), [formData]);
+    const isFormValid = Object.keys(liveErrors).length === 0;
+    const hasTouchedAnyField = Object.values(touched).some(Boolean);
 
     const handleInputChange = (field: keyof OverpressureScenario, value: any) => {
         setFormData({
             ...formData,
             [field]: value,
         });
+        setTouched((prev) => ({ ...prev, [field]: true }));
         // Clear error when field is edited
         if (errors[field]) {
             setErrors({ ...errors, [field]: '' });
@@ -123,19 +154,16 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
     };
 
     const validate = () => {
-        const newErrors: Record<string, string> = {};
-
-        if (!formData.description) newErrors.description = "Description is required";
-        if (formData.relievingRate === undefined || formData.relievingRate < 0) newErrors.relievingRate = "Valid relieving rate is required";
-        if (!formData.relievingPressure || formData.relievingPressure <= 0) newErrors.relievingPressure = "Valid relieving pressure is required";
-        if (formData.relievingTemp === undefined) newErrors.relievingTemp = "Temperature is required";
-
+        const newErrors = getValidationErrors(formData);
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
     const handleSubmit = () => {
-        if (!validate()) return;
+        if (!validate()) {
+            setDismissedValidationWarning(false);
+            return;
+        }
 
         // Auto-set required capacity if 0 or undefined (simple assumption for MVP)
         const finalData = {
@@ -162,9 +190,24 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
 
     // Convert base values (kg/h, barg, °C) to display values in selected units
     // Apply user's decimal place preferences
-    const relievingRateDisplay = Number(toDisplay(formData.relievingRate ?? 0, 'flow').toFixed(decimalPlaces.flow));
-    const relievingPressureDisplay = Number(toDisplay(formData.relievingPressure ?? 0, 'pressure').toFixed(decimalPlaces.pressure));
-    const relievingTempDisplay = Number(toDisplay(formData.relievingTemp ?? 0, 'temperature').toFixed(decimalPlaces.temperature));
+    const relievingRateBase = toDisplay(formData.relievingRate ?? 0, 'flow');
+    const relievingRateDisplay: number | '' = Number.isFinite(relievingRateBase)
+        ? Number(relievingRateBase.toFixed(decimalPlaces.flow))
+        : '';
+
+    const relievingPressureBase = toDisplay(formData.relievingPressure ?? 0, 'pressure');
+    const relievingPressureDisplay: number | '' = Number.isFinite(relievingPressureBase)
+        ? Number(relievingPressureBase.toFixed(decimalPlaces.pressure))
+        : '';
+
+    const relievingTempBase = toDisplay(formData.relievingTemp ?? 0, 'temperature');
+    const relievingTempDisplay: number | '' = Number.isFinite(relievingTempBase)
+        ? Number(relievingTempBase.toFixed(decimalPlaces.temperature))
+        : '';
+
+    useEffect(() => {
+        if (isFormValid) setDismissedValidationWarning(false);
+    }, [isFormValid]);
 
     const handleConfirmDelete = () => {
         if (onDelete && initialData && deleteConfirmationInput === "delete scenario") {
@@ -205,6 +248,11 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
 
     return (
         <Box sx={{ pt: 1 }}>
+            {!dismissedValidationWarning && canEdit && !isFormValid && hasTouchedAnyField && (
+                <Alert severity="warning" sx={{ mb: 2 }} onClose={() => setDismissedValidationWarning(true)}>
+                    Fix the highlighted fields to enable Save.
+                </Alert>
+            )}
             <Box sx={{ mb: 3 }}>
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     Scenario Details
@@ -307,6 +355,7 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                             }
                         }}
                         error={!!errors.relievingRate}
+                        helperText={errors.relievingRate}
                         fullWidth
                         disabled={!canEdit}
                     />
@@ -343,6 +392,7 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                             }
                         }}
                         error={!!errors.relievingPressure}
+                        helperText={errors.relievingPressure}
                         fullWidth
                         disabled={!canEdit}
                     />
@@ -379,6 +429,7 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                             }
                         }}
                         error={!!errors.relievingTemp}
+                        helperText={errors.relievingTemp}
                         fullWidth
                         disabled={!canEdit}
                     />
@@ -534,6 +585,7 @@ Summary of findings and recommendations...`}
                         variant="contained"
                         onClick={handleSubmit}
                         startIcon={<Save />}
+                        disabled={!isFormValid}
                     >
                         Save Scenario
                     </Button>
