@@ -2092,11 +2092,11 @@ export function ProtectiveSystemDetail() {
     return (
         <Box>
             {/* Header */}
-            <Paper className="print-hide" sx={{ p: 3, mb: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <Paper className="print-hide" sx={{ p: { xs: 2, sm: 3 }, mb: 3 }}>
+                <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'flex-start' }, gap: { xs: 2, sm: 0 } }}>
                     <Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
-                            <Typography variant="h4" fontWeight={700}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, mb: 1, flexWrap: 'wrap' }}>
+                            <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
                                 {selectedPsv.tag}
                             </Typography>
                             <RevisionBadge
@@ -2200,7 +2200,7 @@ export function ProtectiveSystemDetail() {
                             {selectedPsv.name}
                         </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', gap: 1 }}>
+                    <Box sx={{ display: 'flex', gap: 1, flexDirection: { xs: 'row', sm: 'row' }, width: { xs: '100%', sm: 'auto' } }}>
                         {canEdit && (
                             <>
                                 {/* <Button
@@ -2215,12 +2215,13 @@ export function ProtectiveSystemDetail() {
                                     color="error"
                                     startIcon={<Delete />}
                                     onClick={handleDeletePsv}
+                                    sx={{ flex: { xs: 1, sm: 'none' } }}
                                 >
                                     Delete
                                 </Button>
                             </>
                         )}
-                        <Button variant="outlined" onClick={() => selectPsv(null)}>
+                        <Button variant="outlined" onClick={() => selectPsv(null)} sx={{ flex: { xs: 1, sm: 'none' } }}>
                             Close
                         </Button>
                     </Box>

@@ -197,10 +197,10 @@ export function ProtectiveSystemList() {
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <Box>
                     <Typography variant="h5" fontWeight={600}>
-                        Protective Systems
+                        { selectedProject.code || "Project Code" } : {selectedProject.name || "Project Name"}
                     </Typography>
                     <Typography variant="body2" color="text.secondary">
-                        {filteredCountLabel} device{sortedPsvs.length !== 1 ? 's' : ''} in {selectedProject.name}
+                        {filteredCountLabel} device{sortedPsvs.length !== 1 ? 's' : ''}
                     </Typography>
                 </Box>
                 {canEdit && (
@@ -292,7 +292,7 @@ export function ProtectiveSystemList() {
                             }}
                             onClick={() => selectPsv(psv.id)}
                         >
-                            <CardContent>
+                            <CardContent sx={{ p: { xs: 2, sm: 2.5 }, '&:last-child': { pb: { xs: 2, sm: 2.5 } } }}>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
                                         <Box
@@ -326,11 +326,11 @@ export function ProtectiveSystemList() {
                                     />
                                 </Box>
 
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 2, minHeight: 40 }}>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, minHeight: { xs: 'auto', sm: 40 }, lineHeight: 1.4 }}>
                                     {psv.name}
                                 </Typography>
 
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2 }}>
+                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5 }}>
                                     <Chip
                                         label={psv.fluidPhase}
                                         size="small"
@@ -350,7 +350,7 @@ export function ProtectiveSystemList() {
                                         display: 'grid',
                                         gridTemplateColumns: '1fr 1fr',
                                         gap: 1,
-                                        p: 1.5,
+                                        p: { xs: 1.25, sm: 1.5 },
                                         borderRadius: "14px",
                                         backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
                                     }}
@@ -373,7 +373,7 @@ export function ProtectiveSystemList() {
                                     </Box>
                                 </Box>
 
-                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 2, gap: 0.5 }}>
+                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5, gap: 0.5 }}>
                                     {canEdit ? (
                                         <Tooltip title="Edit">
                                             <IconButton size="small" onClick={(e) => { e.stopPropagation(); selectPsv(psv.id); }}>
