@@ -90,11 +90,23 @@ export function PSVsTab() {
         }
     };
 
-    const handleSave = (data: Omit<ProtectiveSystem, 'id' | 'createdAt' | 'updatedAt'>) => {
+    const handleSave = (data: Partial<Omit<ProtectiveSystem, 'id' | 'createdAt' | 'updatedAt'>>) => {
+        console.log('PSVsTab handleSave called with data:', data);
+        console.log('selectedPSV:', selectedPSV);
+
         if (selectedPSV) {
+            // For updates, only send the fields that changed
+            console.log('Calling updateProtectiveSystem with id:', selectedPSV.id, 'and data:', data);
             updateProtectiveSystem(selectedPSV.id, data);
         } else {
-            addProtectiveSystem(data);
+            // For new PSVs, provide defaults for optional fields not in the dialog
+            addProtectiveSystem({
+                ...data,
+                currentRevisionId: undefined,
+                valveType: undefined,
+                inletNetwork: undefined,
+                outletNetwork: undefined,
+            } as Omit<ProtectiveSystem, 'id' | 'createdAt' | 'updatedAt'>);
         }
         setDialogOpen(false);
     };

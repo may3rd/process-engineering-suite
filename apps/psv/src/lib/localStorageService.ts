@@ -484,11 +484,14 @@ class LocalStorageService {
     }
 
     async updateProtectiveSystem(id: string, data: Partial<ProtectiveSystem>): Promise<ProtectiveSystem> {
+        console.log('localStorage updateProtectiveSystem called with id:', id, 'and data:', data);
         const psvs = await this.getProtectiveSystems();
         const index = psvs.findIndex(p => p.id === id);
         if (index === -1) throw new Error('PSV not found');
 
+        console.log('Before update:', psvs[index]);
         psvs[index] = { ...psvs[index], ...data, updatedAt: now() };
+        console.log('After update:', psvs[index]);
         setItem(STORAGE_KEYS.PSVS, psvs);
         return psvs[index];
     }
