@@ -1,5 +1,5 @@
 """PSV (Protective Systems) API router."""
-from typing import List, Optional
+from typing import List, Optional, Literal
 from datetime import datetime
 
 from fastapi import APIRouter, HTTPException
@@ -41,14 +41,23 @@ class ProtectiveSystemCreate(BaseModel):
     areaId: str
     name: str
     tag: str
-    type: str = "psv"
-    designCode: str = "API-520"
+    type: Literal[
+        "psv",
+        "rupture_disc",
+        "breather_valve",
+        "flame_arrestor",
+        "tank_vent",
+        "control_valve",
+        "vent_system",
+        "prv",
+    ] = "psv"
+    designCode: Literal["API-520", "API-521", "API-2000", "ASME-VIII"] = "API-520"
     serviceFluid: Optional[str] = None
-    fluidPhase: str = "gas"
+    fluidPhase: Literal["gas", "liquid", "steam", "two_phase"] = "gas"
     setPressure: float
     mawp: float
     ownerId: str
-    valveType: Optional[str] = None
+    valveType: Optional[Literal["conventional", "balanced_bellows", "pilot_operated"]] = None
     tags: List[str] = []
     projectIds: Optional[List[str]] = None
     currentRevisionId: Optional[str] = None
@@ -58,14 +67,23 @@ class ProtectiveSystemUpdate(BaseModel):
     model_config = ConfigDict(extra='ignore')
     name: Optional[str] = None
     tag: Optional[str] = None
-    type: Optional[str] = None
-    designCode: Optional[str] = None
+    type: Optional[Literal[
+        "psv",
+        "rupture_disc",
+        "breather_valve",
+        "flame_arrestor",
+        "tank_vent",
+        "control_valve",
+        "vent_system",
+        "prv",
+    ]] = None
+    designCode: Optional[Literal["API-520", "API-521", "API-2000", "ASME-VIII"]] = None
     serviceFluid: Optional[str] = None
-    fluidPhase: Optional[str] = None
+    fluidPhase: Optional[Literal["gas", "liquid", "steam", "two_phase"]] = None
     setPressure: Optional[float] = None
     mawp: Optional[float] = None
     status: Optional[str] = None
-    valveType: Optional[str] = None
+    valveType: Optional[Literal["conventional", "balanced_bellows", "pilot_operated"]] = None
     tags: Optional[List[str]] = None
     currentRevisionId: Optional[str] = None
     inletNetwork: Optional[dict] = None

@@ -29,11 +29,10 @@ import {
     InputAdornment,
 } from '@mui/material';
 import { Close, ArrowBack, ArrowForward, Check } from '@mui/icons-material';
-import { DesignCode, FluidPhase, ValveOperatingType, ProtectiveSystemType } from '@/data/types';
+import { DesignCode, FluidPhase, ValveOperatingType, ProtectiveSystem, ProtectiveSystemType } from '@/data/types';
 import { usePsvStore } from '@/store/usePsvStore';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useProjectUnitSystem } from '@/lib/useProjectUnitSystem';
-import { v4 as uuidv4 } from 'uuid';
 import { UnitSelector } from './shared/UnitSelector';
 
 interface PsvCreationWizardProps {
@@ -196,7 +195,7 @@ export function PsvCreationWizard({ open, onClose, projectId }: PsvCreationWizar
             return;
         }
 
-        const newPsv: Omit<any, 'id' | 'createdAt' | 'updatedAt'> = {
+        const newPsv: Omit<ProtectiveSystem, 'id' | 'createdAt' | 'updatedAt'> = {
             areaId: selectedArea.id,
             projectIds: [projectId],
             tag: formData.tag,
@@ -208,7 +207,7 @@ export function PsvCreationWizard({ open, onClose, projectId }: PsvCreationWizar
             setPressure: formData.setPressure,
             mawp: formData.designPressure, // Use design pressure as MAWP
             ownerId: currentUser?.id || 'f6c289ac-fabe-4d2e-a635-127e5b9045ad', // Fallback to Admin ID (exists in seed) if auth fails
-            status: 'draft' as const,
+            status: 'draft',
             valveType: formData.valveType,
             tags: [],
         };
@@ -279,9 +278,9 @@ export function PsvCreationWizard({ open, onClose, projectId }: PsvCreationWizar
                         value={formData.type}
                         onChange={(e) => updateFormData({ type: e.target.value as ProtectiveSystemType })}
                     >
-                        <FormControlLabel value="PSV" control={<Radio />} label="Pressure Safety Valve" />
-                        <FormControlLabel value="RD" control={<Radio />} label="Rupture Disc" />
-                        <FormControlLabel value="CSO" control={<Radio />} label="Conservation Vent" />
+                        <FormControlLabel value="psv" control={<Radio />} label="Pressure Safety Valve" />
+                        <FormControlLabel value="rupture_disc" control={<Radio />} label="Rupture Disc" />
+                        <FormControlLabel value="breather_valve" control={<Radio />} label="Breather Valve (Conservation Vent)" />
                     </RadioGroup>
                 </FormControl>
 
@@ -309,7 +308,6 @@ export function PsvCreationWizard({ open, onClose, projectId }: PsvCreationWizar
                     <MenuItem value="API-521">API-521 (Fire Relief)</MenuItem>
                     <MenuItem value="API-2000">API-2000 (Atmospheric Tanks)</MenuItem>
                     <MenuItem value="ASME-VIII">ASME Section VIII</MenuItem>
-                    <MenuItem value="ISO-4126">ISO-4126</MenuItem>
                 </TextField>
             </Stack>
         </Box>
