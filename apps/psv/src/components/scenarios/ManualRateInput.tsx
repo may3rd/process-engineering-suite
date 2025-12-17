@@ -11,14 +11,17 @@ import {
     TextField,
     MenuItem,
     Typography,
-    FormControl,
-    InputLabel,
     Select,
     Card,
     CardContent,
     Stack,
     Alert,
 } from '@mui/material';
+import {
+    getPressureValidationError,
+    getTemperatureValidationError,
+    getPositiveNumberError,
+} from '@/lib/physicsValidation';
 
 interface ManualRateInputProps {
     input: {
@@ -38,11 +41,9 @@ export function ManualRateInput({ input, onChange }: ManualRateInputProps) {
         onChange({ ...input, ...updates });
     };
 
-    const rateTrimmed = input.relievingRate.trim();
-    const rateNumber = rateTrimmed === '' ? NaN : Number(rateTrimmed);
-    const rateError = rateTrimmed !== '' && (Number.isNaN(rateNumber) || rateNumber <= 0);
-    const rateHelper =
-        !Number.isNaN(rateNumber) && rateNumber <= 0 ? 'Relief rate must be positive' : '';
+    const rateErrorMessage = getPositiveNumberError(input.relievingRate, "Relief rate");
+    const pressureErrorMessage = getPressureValidationError(input.relievingPressure, input.pressureUnit, "Relieving pressure");
+    const temperatureErrorMessage = getTemperatureValidationError(input.relievingTemp, input.tempUnit, "Relieving temperature");
 
     return (
         <Box sx={{ p: 2 }}>
@@ -75,8 +76,8 @@ export function ManualRateInput({ input, onChange }: ManualRateInputProps) {
                                     onChange={(e) =>
                                         updateInput({ relievingRate: e.target.value })
                                     }
-                                    error={rateError}
-                                    helperText={rateHelper}
+                                    error={!!rateErrorMessage}
+                                    helperText={rateErrorMessage || ''}
                                     sx={{ flex: 1 }}
                                     size="small"
                                 />
@@ -106,6 +107,8 @@ export function ManualRateInput({ input, onChange }: ManualRateInputProps) {
                                     onChange={(e) =>
                                         updateInput({ relievingTemp: e.target.value })
                                     }
+                                    error={!!temperatureErrorMessage}
+                                    helperText={temperatureErrorMessage || ''}
                                     sx={{ flex: 1 }}
                                     size="small"
                                 />
@@ -134,7 +137,8 @@ export function ManualRateInput({ input, onChange }: ManualRateInputProps) {
                                     onChange={(e) =>
                                         updateInput({ relievingPressure: e.target.value })
                                     }
-                                    helperText="Set pressure + accumulation"
+                                    error={!!pressureErrorMessage}
+                                    helperText={pressureErrorMessage || "Set pressure + accumulation"}
                                     sx={{ flex: 1 }}
                                     size="small"
                                 />

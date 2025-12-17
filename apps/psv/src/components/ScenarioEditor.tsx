@@ -42,6 +42,7 @@ import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
 import { useUnitConversion } from "@/hooks/useUnitConversion";
 import { getDefaultUnitPreferences } from "@/lib/unitPreferences";
 import { useDisplaySettings } from "@/hooks/useDisplaySettings";
+import { getPressureValidationError, getTemperatureValidationError, getPositiveNumberError } from "@/lib/physicsValidation";
 
 interface ScenarioEditorProps {
     initialData?: OverpressureScenario;
@@ -119,19 +120,23 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
     const getValidationErrors = (data: Partial<OverpressureScenario>) => {
         const newErrors: Record<string, string> = {};
 
-        if (!data.description?.trim()) newErrors.description = "Description is required";
-        if (data.relievingRate === undefined || Number.isNaN(data.relievingRate) || data.relievingRate < 0) {
-            newErrors.relievingRate = "Valid relieving rate is required";
+        if (!data.description?.trim()) {
+            newErrors.description = "Description is required";
         }
-        if (
-            data.relievingPressure === undefined ||
-            Number.isNaN(data.relievingPressure) ||
-            data.relievingPressure <= 0
-        ) {
-            newErrors.relievingPressure = "Valid relieving pressure is required";
+
+        const rateError = getPositiveNumberError(data.relievingRate, "Relieving rate");
+        if (rateError) {
+            newErrors.relievingRate = rateError;
         }
-        if (data.relievingTemp === undefined || Number.isNaN(data.relievingTemp)) {
-            newErrors.relievingTemp = "Temperature is required";
+
+        const pressureError = getPressureValidationError(data.relievingPressure, "barg", "Relieving pressure");
+        if (pressureError) {
+            newErrors.relievingPressure = pressureError;
+        }
+
+        const tempError = getTemperatureValidationError(data.relievingTemp, "C", "Relieving temperature");
+        if (tempError) {
+            newErrors.relievingTemp = tempError;
         }
 
         return newErrors;

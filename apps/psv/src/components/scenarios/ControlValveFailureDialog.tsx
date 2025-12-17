@@ -15,6 +15,7 @@ import { OverpressureScenario, FluidPhase } from '@/data/types';
 import { useUnitConversion } from '@/hooks/useUnitConversion';
 import { useProjectUnitSystem } from '@/lib/useProjectUnitSystem';
 import { getDefaultUnitPreferences } from '@/lib/unitPreferences';
+import { getPressureValidationError, getPositiveNumberError } from '@/lib/physicsValidation';
 
 interface ControlValveFailureDialogProps {
     open: boolean;
@@ -56,8 +57,28 @@ export function ControlValveFailureDialog({
         upstreamPressure: 0,
         upstreamTemp: 25, // C
     });
+    const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
-    const handleNext = () => setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
+    const validateValveStep = () => {
+        const errors: string[] = [];
+        const cvError = getPositiveNumberError(displayValues.ratedCv, 'Rated Cv');
+        if (cvError) errors.push(cvError);
+        const pressureError = getPressureValidationError(displayValues.upstreamPressure, preferences.pressure, 'Upstream pressure');
+        if (pressureError) errors.push(pressureError);
+        return errors;
+    };
+
+    const handleNext = () => {
+        if (activeStep === 0) {
+            const errors = validateValveStep();
+            if (errors.length) {
+                setValidationErrors(errors);
+                return;
+            }
+        }
+        setValidationErrors([]);
+        setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
+    };
     const handleBack = () => setActiveStep((prev) => Math.max(prev - 1, 0));
 
     const calculateLoad = () => {
@@ -72,6 +93,11 @@ export function ControlValveFailureDialog({
     const handleSave = () => {
         const calculatedRate = calculateLoad();
         const startRate = toBase(calculatedRate, 'flow'); // Assuming calc result is in kg/h for now
+        const errors = validateValveStep();
+        if (errors.length) {
+            setValidationErrors(errors);
+            return;
+        }
 
         const scenario: Partial<OverpressureScenario> = {
             protectiveSystemId: psvId,
@@ -116,45 +142,45 @@ Rate estimated based on rated Cv and maximum upstream pressure.
                             placeholder="e.g. FV-1001"
                         />
 
-                        <TextField
-                            label="Rated Cv (Valve Coefficient)"
-                            type="number"
-                            value={displayValues.ratedCv}
-                            onChange={(e) => {
-                                const val = parseFloat(e.target.value) || 0;
-                                setDisplayValues({ ...displayValues, ratedCv: val });
-                                setFormData({ ...formData, ratedCv: val });
-                            }}
-                            fullWidth
-                            helperText="Enter the full open Cv of the valve"
-                        />
+                <TextField
+                    label="Rated Cv (Valve Coefficient)"
+                    type="number"
+                    value={displayValues.ratedCv}
+                    onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 0;
+                        setDisplayValues({ ...displayValues, ratedCv: val });
+                        setFormData({ ...formData, ratedCv: val });
+                    }}
+                    fullWidth
+                    helperText="Enter the full open Cv of the valve"
+                />
 
-                        <TextField
-                            label="Max Upstream Pressure (P1)"
-                            type="number"
-                            value={displayValues.upstreamPressure}
-                            onChange={(e) => {
-                                const val = parseFloat(e.target.value) || 0;
-                                setDisplayValues({ ...displayValues, upstreamPressure: val });
-                                setFormData({ ...formData, upstreamPressure: toBase(val, 'pressure') });
-                            }}
-                            InputProps={{
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <TextField
-                                            select
-                                            variant="standard"
-                                            value={preferences.pressure}
-                                            onChange={(e) => setUnit('pressure', e.target.value)}
-                                            sx={{ minWidth: 60 }}
-                                        >
-                                            {['barg', 'psig', 'kPag'].map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                        </TextField>
-                                    </InputAdornment>
-                                ),
-                            }}
-                            fullWidth
-                        />
+                <TextField
+                    label="Max Upstream Pressure (P1)"
+                    type="number"
+                    value={displayValues.upstreamPressure}
+                    onChange={(e) => {
+                        const val = parseFloat(e.target.value) || 0;
+                        setDisplayValues({ ...displayValues, upstreamPressure: val });
+                        setFormData({ ...formData, upstreamPressure: toBase(val, 'pressure') });
+                    }}
+                    InputProps={{
+                        endAdornment: (
+                            <InputAdornment position="end">
+                                <TextField
+                                    select
+                                    variant="standard"
+                                    value={preferences.pressure}
+                                    onChange={(e) => setUnit('pressure', e.target.value)}
+                                    sx={{ minWidth: 60 }}
+                                >
+                                    {['barg', 'psig', 'kPag'].map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                </TextField>
+                            </InputAdornment>
+                        ),
+                    }}
+                    fullWidth
+                />
                         <TextField
                             select
                             label="Fluid Phase"
@@ -240,6 +266,11 @@ Rate estimated based on rated Cv and maximum upstream pressure.
             onSave={handleSave}
             isLastStep={activeStep === steps.length - 1}
             saveLabel="Create Scenario"
+            validationAlert={
+                validationErrors.length
+                    ? { message: validationErrors[0], severity: 'warning' }
+                    : undefined
+            }
         >
             {renderStepContent()}
         </ScenarioWizardLayout>

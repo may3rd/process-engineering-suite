@@ -11,6 +11,7 @@ import {
     Step,
     StepLabel,
     IconButton,
+    Alert,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 
@@ -26,6 +27,12 @@ interface ScenarioWizardLayoutProps {
     onSave?: () => void;
     isLastStep?: boolean;
     saveLabel?: string;
+    nextDisabled?: boolean;
+    saveDisabled?: boolean;
+    validationAlert?: {
+        message: string;
+        severity?: 'error' | 'warning' | 'info';
+    };
     children: React.ReactNode;
 }
 
@@ -41,6 +48,9 @@ export function ScenarioWizardLayout({
     onSave,
     isLastStep = false,
     saveLabel = 'Create Scenario',
+    nextDisabled,
+    saveDisabled,
+    validationAlert,
     children,
 }: ScenarioWizardLayoutProps) {
     return (
@@ -65,8 +75,13 @@ export function ScenarioWizardLayout({
 
             <DialogContent dividers sx={{ minHeight: 400 }}>
                 <Stepper activeStep={activeStep} sx={{ mb: 4 }}>
-                    {steps.map((label) => <Step key={label}><StepLabel>{label}</StepLabel></Step>)}
+                {steps.map((label) => <Step key={label}><StepLabel>{label}</StepLabel></Step>)}
                 </Stepper>
+                {validationAlert && (
+                    <Alert severity={validationAlert.severity ?? 'warning'} sx={{ mb: 2 }}>
+                        {validationAlert.message}
+                    </Alert>
+                )}
                 {children}
             </DialogContent>
 
@@ -75,9 +90,9 @@ export function ScenarioWizardLayout({
                 <Box sx={{ flex: 1 }} />
                 {activeStep > 0 && <Button onClick={onBack}>Back</Button>}
                 {!isLastStep ? (
-                    <Button variant="contained" onClick={onNext}>Next</Button>
+                    <Button variant="contained" onClick={onNext} disabled={nextDisabled}>Next</Button>
                 ) : (
-                    <Button variant="contained" onClick={onSave} color="primary">{saveLabel}</Button>
+                    <Button variant="contained" onClick={onSave} color="primary" disabled={saveDisabled}>{saveLabel}</Button>
                 )}
             </DialogActions>
         </Dialog>

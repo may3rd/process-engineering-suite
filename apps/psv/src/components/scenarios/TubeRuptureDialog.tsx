@@ -15,6 +15,7 @@ import { OverpressureScenario, FluidPhase } from '@/data/types';
 import { useUnitConversion } from '@/hooks/useUnitConversion';
 import { useProjectUnitSystem } from '@/lib/useProjectUnitSystem';
 import { getDefaultUnitPreferences } from '@/lib/unitPreferences';
+import { getPressureValidationError, getPositiveNumberError } from '@/lib/physicsValidation';
 
 interface TubeRuptureDialogProps {
     open: boolean;
@@ -60,8 +61,32 @@ export function TubeRuptureDialog({
         lpTestPressure: 0,
         holeDiameter: 0,
     });
+    const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
-    const handleNext = () => setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
+    const validatePressureStep = () => {
+        const errors: string[] = [];
+        const hpError = getPressureValidationError(displayValues.hpDesignPressure, preferences.pressure, 'HP design pressure');
+        if (hpError) errors.push(hpError);
+        const lpError = getPressureValidationError(displayValues.lpDesignPressure, preferences.pressure, 'LP design pressure');
+        if (lpError) errors.push(lpError);
+        const lpTestError = getPressureValidationError(displayValues.lpTestPressure, preferences.pressure, 'LP test pressure');
+        if (lpTestError) errors.push(lpTestError);
+        const holeError = getPositiveNumberError(displayValues.holeDiameter, 'Hole diameter');
+        if (holeError) errors.push(holeError);
+        return errors;
+    };
+
+    const handleNext = () => {
+        if (activeStep === 1) {
+            const errors = validatePressureStep();
+            if (errors.length) {
+                setValidationErrors(errors);
+                return;
+            }
+        }
+        setValidationErrors([]);
+        setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
+    };
     const handleBack = () => setActiveStep((prev) => Math.max(prev - 1, 0));
 
     // 10/13 Rule Check (API-521)
@@ -92,6 +117,11 @@ export function TubeRuptureDialog({
     };
 
     const handleSave = () => {
+        const errors = validatePressureStep();
+        if (errors.length) {
+            setValidationErrors(errors);
+            return;
+        }
         const estRate = calculateRate();
 
         const scenario: Partial<OverpressureScenario> = {
@@ -288,6 +318,9 @@ Evaluated as a full bore tube rupture scenario.
             onSave={handleSave}
             isLastStep={activeStep === steps.length - 1}
             saveLabel="Create Scenario"
+            validationAlert={
+                validationErrors.length ? { message: validationErrors[0], severity: 'warning' } : undefined
+            }
         >
             {renderStepContent()}
         </ScenarioWizardLayout>

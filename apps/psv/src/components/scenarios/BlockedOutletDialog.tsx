@@ -15,6 +15,7 @@ import { OverpressureScenario, FluidPhase } from '@/data/types';
 import { useUnitConversion } from '@/hooks/useUnitConversion';
 import { useProjectUnitSystem } from '@/lib/useProjectUnitSystem';
 import { getDefaultUnitPreferences } from '@/lib/unitPreferences';
+import { getPressureValidationError, getPositiveNumberError } from '@/lib/physicsValidation';
 
 interface BlockedOutletDialogProps {
     open: boolean;
@@ -55,9 +56,31 @@ export function BlockedOutletDialog({
         normalFlow: 0,
         tripPressure: 0,
     });
+    const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
-    const handleNext = () => setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
+    const handleNext = () => {
+        if (activeStep === 1) {
+            const errors = validateSourceStep();
+            if (errors.length) {
+                setValidationErrors(errors);
+                return;
+            }
+        }
+        setValidationErrors([]);
+        setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
+    };
     const handleBack = () => setActiveStep((prev) => Math.max(prev - 1, 0));
+
+    const validateSourceStep = () => {
+        const errors: string[] = [];
+        const sourcePressureError = getPressureValidationError(displayValues.sourcePressure, preferences.pressure, 'Source pressure');
+        if (sourcePressureError) errors.push(sourcePressureError);
+        const tripPressureError = getPressureValidationError(displayValues.tripPressure, preferences.pressure, 'Trip pressure');
+        if (tripPressureError) errors.push(tripPressureError);
+        const flowError = getPositiveNumberError(displayValues.normalFlow, 'Normal flow');
+        if (flowError) errors.push(flowError);
+        return errors;
+    };
 
     const handleSave = () => {
         // Simple logic: If source pressure > set pressure (not checked here but assumed), 
@@ -93,6 +116,11 @@ Evaluated as a blocked outlet case per API-521.
 Required relief rate is taken as the maximum normal flow capability of the upstream source.
 `,
         };
+        const finalErrors = validateSourceStep();
+        if (finalErrors.length) {
+            setValidationErrors(finalErrors);
+            return;
+        }
         onSave(scenario);
         onClose();
         // Reset steps
@@ -263,6 +291,11 @@ Required relief rate is taken as the maximum normal flow capability of the upstr
             onSave={handleSave}
             isLastStep={activeStep === steps.length - 1}
             saveLabel="Create Scenario"
+            validationAlert={
+                validationErrors.length
+                    ? { message: validationErrors[0], severity: 'warning' }
+                    : undefined
+            }
         >
             {renderStepContent()}
         </ScenarioWizardLayout>

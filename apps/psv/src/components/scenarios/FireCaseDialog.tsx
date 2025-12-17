@@ -20,6 +20,11 @@ import { MultiEquipmentSelector } from './MultiEquipmentSelector';
 import { API521Calculator } from './API521Calculator';
 import { ManualRateInput } from './ManualRateInput';
 import { FireCalculationResults } from './FireCalculationResults';
+import {
+    getPressureValidationError,
+    getTemperatureValidationError,
+    getPositiveNumberError,
+} from '@/lib/physicsValidation';
 
 interface FireCaseDialogProps {
     open: boolean;
@@ -117,8 +122,58 @@ export function FireCaseDialog({
         description: 'External fire exposure',
         assumptions: [],
     });
+    const [configureErrors, setConfigureErrors] = useState<string[]>([]);
+
+    const validateConfigureStep = () => {
+        const errors: string[] = [];
+        if (formData.calculationMethod === 'api521') {
+            if (formData.selectedEquipment.length === 0) {
+                errors.push('Select at least one equipment before calculating');
+            }
+            const latentError = getPositiveNumberError(formData.api521Config.latentHeat, 'Latent heat');
+            if (latentError) errors.push(latentError);
+            const tempError = getTemperatureValidationError(
+                formData.api521Config.relievingTemp,
+                formData.api521Config.relievingTempUnit,
+                'Relieving temperature'
+            );
+            if (tempError) errors.push(tempError);
+            const heightError = getPositiveNumberError(
+                formData.api521Config.heightAboveGrade,
+                'Height above grade'
+            );
+            if (heightError) errors.push(heightError);
+            if (!formData.calculationResults) {
+                errors.push('Run the API-521 calculation to compute the relief load');
+            }
+        } else {
+            const rateError = getPositiveNumberError(formData.manualInput.relievingRate, 'Manual relieving rate');
+            if (rateError) errors.push(rateError);
+            const tempError = getTemperatureValidationError(
+                formData.manualInput.relievingTemp,
+                formData.manualInput.tempUnit,
+                'Manual relieving temperature'
+            );
+            if (tempError) errors.push(tempError);
+            const pressureError = getPressureValidationError(
+                formData.manualInput.relievingPressure,
+                formData.manualInput.pressureUnit,
+                'Manual relieving pressure'
+            );
+            if (pressureError) errors.push(pressureError);
+        }
+        return errors;
+    };
 
     const handleNext = () => {
+        if (activeStep === 2) {
+            const errors = validateConfigureStep();
+            if (errors.length) {
+                setConfigureErrors(errors);
+                return;
+            }
+        }
+        setConfigureErrors([]);
         setActiveStep((prev) => Math.min(prev + 1, steps.length - 1));
     };
 
@@ -127,6 +182,11 @@ export function FireCaseDialog({
     };
 
     const handleSave = () => {
+        const errors = validateConfigureStep();
+        if (errors.length) {
+            setConfigureErrors(errors);
+            return;
+        }
         const scenario: Partial<OverpressureScenario> = {
             protectiveSystemId: psvId,
             cause: 'fire_case',
@@ -282,6 +342,11 @@ export function FireCaseDialog({
             onSave={handleSave}
             isLastStep={activeStep === steps.length - 1}
             saveLabel="Save Scenario"
+            validationAlert={
+                configureErrors.length
+                    ? { message: configureErrors[0], severity: 'warning' }
+                    : undefined
+            }
         >
             {renderStepContent()}
         </ScenarioWizardLayout>
