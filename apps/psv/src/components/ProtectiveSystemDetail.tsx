@@ -4,8 +4,6 @@ import React from 'react';
 
 import {
     Box,
-    Tabs,
-    Tab,
     Typography,
     Chip,
     Paper,
@@ -2115,6 +2113,7 @@ function NotesTab() {
 export function ProtectiveSystemDetail() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
+    const selectedTabBg = theme.palette.background.default;
     const {
         selectedPsv,
         selectPsv,
@@ -2278,10 +2277,6 @@ export function ProtectiveSystemDetail() {
         }
     };
 
-    const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
-        setActiveTab(newValue);
-    };
-
     const statusSequenceIndex = WORKFLOW_STATUS_SEQUENCE.indexOf(selectedPsv.status);
     const statusEnabledSequentially = (value: ProtectiveSystem['status']) => {
         const targetIndex = WORKFLOW_STATUS_SEQUENCE.indexOf(value);
@@ -2339,7 +2334,7 @@ export function ProtectiveSystemDetail() {
     return (
         <Box>
             {/* Header */}
-            <Paper className="print-hide" sx={{ p: { xs: 2, sm: 3 }, mb: 3 }}>
+            <Paper className="print-hide" sx={{ p: { xs: 2, sm: 3 }, mb: 3, backgroundColor: "transparent", boxShadow: "none", border: "none" }}>
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'flex-start' }, gap: { xs: 2, sm: 0 } }}>
                     <Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, mb: 1, flexWrap: 'wrap' }}>
@@ -2539,33 +2534,113 @@ export function ProtectiveSystemDetail() {
             </Dialog>
 
             {/* Tabs */}
-            <Paper className="print-hide" sx={{ mb: 3 }}>
-                <Tabs
-                    value={activeTab}
-                    onChange={handleTabChange}
-                    indicatorColor="primary"
-                    textColor="primary"
-                    sx={{
-                        borderBottom: 1,
-                        borderColor: 'divider',
-                        '& .MuiTabs-flexContainer': {
-                            flexWrap: 'wrap',
-                        },
-                        '& .MuiTab-root': {
-                            minHeight: 56,
-                            minWidth: { xs: 120, sm: 140 },
-                            flex: { xs: '1 1 auto', sm: '0 0 auto' },
-                        },
-                    }}
-                >
-                    <Tab label="Overview" />
-                    <Tab label="Scenarios" />
-                    <Tab label="Sizing Cases" />
-                    <Tab label="Notes" />
-                    <Tab label="Attachments" />
-                    <Tab label="Revisions Control" />
-                    <Tab label="Summary" />
-                </Tabs>
+            <Paper
+                className="print-hide"
+                sx={{
+                    mb: 3,
+                    backgroundColor: "transparent",
+                    border: "none",
+                    boxShadow: "none"
+                }}
+            >
+                <Box sx={{ px: { xs: 2, sm: 3 }, pt: 2, backgroundColor: "transparent" }}>
+                    <Box
+                        role="tablist"
+                        aria-label="Protective system detail tabs"
+                        sx={{
+                            display: 'flex',
+                            gap: 0.5,
+                            flexWrap: 'nowrap',
+                            overflowX: 'auto',
+                            overflowY: 'visible',
+                            WebkitOverflowScrolling: 'touch',
+                            scrollbarWidth: 'none',
+                            '&::-webkit-scrollbar': { display: 'none' },
+                            position: 'relative',
+                            '&::after': {
+                                content: '""',
+                                position: 'absolute',
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                height: '2px',
+                                backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)',
+                                pointerEvents: 'none',
+                                zIndex: 0,
+                            },
+                        }}
+                    >
+                        {[
+                            'Overview',
+                            'Scenarios',
+                            'Sizing Cases',
+                            'Notes',
+                            'Attachments',
+                            'Revisions Control',
+                            'Summary',
+                        ].map((label, index) => {
+                            const isSelected = activeTab === index;
+                            return (
+                                <Box
+                                    key={label}
+                                    role="tab"
+                                    aria-selected={isSelected}
+                                    onClick={() => setActiveTab(index)}
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 0.75,
+                                        px: 2,
+                                        py: 1.2,
+                                        cursor: 'pointer',
+                                        position: 'relative',
+                                        transition: 'all 0.15s ease',
+                                        flexShrink: 0,
+                                        whiteSpace: 'nowrap',
+                                        borderRadius: '8px 8px 0 0',
+                                        zIndex: isSelected ? 2 : 1,
+
+                                        border: '1px solid transparent',
+                                        borderBottom: 'none',
+
+                                        ...(isSelected && {
+                                            borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
+                                            borderRadius: '8px 8px 0 0',
+                                            backgroundColor: selectedTabBg,
+                                        }),
+
+                                        '&:hover': !isSelected
+                                            ? {
+                                                  color: isDark ? '#fff' : '#000',
+                                                  backgroundColor: isDark
+                                                      ? 'rgba(255,255,255,0.05)'
+                                                      : 'rgba(0,0,0,0.04)',
+                                                  borderRadius: '8px 8px 0 0',
+                                              }
+                                            : {},
+                                    }}
+                                >
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            fontWeight: isSelected ? 600 : 500,
+                                            fontSize: '0.875rem',
+                                            whiteSpace: 'nowrap',
+                                            color: isSelected
+                                                ? (isDark ? '#fff' : '#000')
+                                                : isDark
+                                                  ? 'rgba(255,255,255,0.5)'
+                                                  : 'rgba(0,0,0,0.45)',
+                                            transition: 'color 0.2s',
+                                        }}
+                                    >
+                                        {label}
+                                    </Typography>
+                                </Box>
+                            );
+                        })}
+                    </Box>
+                </Box>
             </Paper>
 
             {/* Tab Panels */}
