@@ -16,6 +16,7 @@ import {
     TextField,
     InputAdornment,
     MenuItem,
+    useMediaQuery,
 } from "@mui/material";
 import {
     Security,
@@ -42,6 +43,7 @@ import { PsvCreationWizard } from "./PsvCreationWizard";
 export function ProtectiveSystemList() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
     const { unitSystem } = useProjectUnitSystem();
     const { psvList, selectPsv, selectedProject, selectedArea, addProtectiveSystem } = usePsvStore();
     const currentUser = useAuthStore((state) => state.currentUser);
@@ -184,14 +186,34 @@ export function ProtectiveSystemList() {
                     </Typography>
                 </Box>
                 {canEdit && (
-                    <Button
-                        variant="contained"
-                        startIcon={<Add />}
-                        size="small"
-                        onClick={() => setWizardOpen(true)}
-                    >
-                        New PSV/RD
-                    </Button>
+                    <>
+                        {!isMobile ? (
+                            <Button
+                                variant="contained"
+                                startIcon={<Add />}
+                                size="small"
+                                onClick={() => setWizardOpen(true)}
+                                sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+                            >
+                                New PSV/RD
+                            </Button>
+                        ) : (
+                            <Tooltip title="New PSV/RD">
+                                <IconButton
+                                    size="small"
+                                        onClick={() => setWizardOpen(true)}
+                                        sx={{
+                                            display: { xs: 'inline-flex', sm: 'none' },
+                                            bgcolor: 'primary.main',
+                                            color: 'primary.contrastText',
+                                            '&:hover': { bgcolor: 'primary.dark' },
+                                        }}
+                                >
+                                    <Add />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+                    </>
                 )}
             </Box>
 

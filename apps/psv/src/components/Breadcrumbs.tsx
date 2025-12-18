@@ -101,7 +101,7 @@ export function Breadcrumbs() {
                 py: 1,
                 px: 2,
                 backgroundColor: isDark ? 'rgba(30, 41, 59, 0.6)' : 'rgba(255, 255, 255, 0.95)',
-                borderRadius: '20px',
+                borderRadius: '14px',
                 backdropFilter: 'blur(12px)',
                 border: 1,
                 borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(0, 0, 0, 0.08)',

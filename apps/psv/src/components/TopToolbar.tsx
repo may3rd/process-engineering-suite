@@ -331,7 +331,7 @@ export function TopToolbar({ title = "PSV Sizing", onBack }: TopToolbarProps) {
                     sx={{
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 1,
+                        gap: 1.5,
                     }}
                 >
                     {/* Search */}

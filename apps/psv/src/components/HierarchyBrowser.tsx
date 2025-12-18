@@ -356,7 +356,7 @@ export function HierarchyBrowser() {
         <>
             <Paper
                 sx={{
-                    borderRadius: "20px",
+                    borderRadius: "14px",
                     overflow: 'hidden',
                 }}
             >
@@ -412,12 +412,14 @@ export function HierarchyBrowser() {
                             onChange={(e) => setSearchText(e.target.value)}
                             size="small"
                             fullWidth
-                            InputProps={{
-                                startAdornment: (
-                                    <InputAdornment position="start">
-                                        <Search fontSize="small" />
-                                    </InputAdornment>
-                                ),
+                            slotProps={{
+                                input: {
+                                    startAdornment: (
+                                        <InputAdornment position="start">
+                                            <Search fontSize="small" />
+                                        </InputAdornment>
+                                    ),
+                                }
                             }}
                         />
 

@@ -21,6 +21,8 @@ import {
     Stack,
     Tooltip,
     Typography,
+    useTheme,
+    useMediaQuery,
 } from '@mui/material';
 import { Add, HowToReg, History, Verified, CheckCircle, Person, Undo } from '@mui/icons-material';
 
@@ -301,9 +303,23 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
                                 startIcon={<Add />}
                                 onClick={() => setNewRevisionOpen(true)}
                                 disabled={!canCreateRevision}
+                                sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
                             >
                                 Add Revision
                             </Button>
+                            <IconButton
+                                size="small"
+                                onClick={() => setNewRevisionOpen(true)}
+                                disabled={!canCreateRevision}
+                                sx={{
+                                    display: { xs: 'inline-flex', sm: 'none' },
+                                    bgcolor: 'primary.main',
+                                    color: 'primary.contrastText',
+                                    '&:hover': { bgcolor: 'primary.dark' },
+                                }}
+                            >
+                                <Add />
+                            </IconButton>
                         </span>
                     </Tooltip>
                 </Box>

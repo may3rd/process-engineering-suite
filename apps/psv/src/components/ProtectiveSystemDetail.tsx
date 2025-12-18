@@ -16,6 +16,7 @@ import {
     ListItemText,
     ListItemButton,
     useTheme,
+    useMediaQuery,
     Card,
     CardContent,
     Button,
@@ -67,6 +68,7 @@ import {
     Visibility,
     ExpandLess,
     FileDownload,
+    Download,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
 import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem, ProtectiveSystem, ProjectNote, Attachment } from "@/data/types";
@@ -406,9 +408,24 @@ function ScenariosTab() {
                             startIcon={<FileDownload />}
                             size="small"
                             onClick={() => exportScenariosToExcel(scenarioList, selectedPsv!, unitSystem)}
+                            sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
                         >
                             Export Excel
                         </Button>
+                        <Tooltip title="Export Excel">
+                            <IconButton
+                                size="small"
+                                onClick={() => exportScenariosToExcel(scenarioList, selectedPsv!, unitSystem)}
+                                sx={{
+                                    display: { xs: 'inline-flex', sm: 'none' },
+                                    bgcolor: 'primary.main',
+                                    color: 'primary.contrastText',
+                                    '&:hover': { bgcolor: 'primary.dark' },
+                                }}
+                            >
+                                <Download />
+                            </IconButton>
+                        </Tooltip>
                         {/* <Button
                             variant="outlined"
                             startIcon={<LocalFireDepartment />}
@@ -1017,15 +1034,35 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                     </Box>
                 </Box>
                 {canEdit && (
-                    <Button
-                        variant="contained"
-                        startIcon={<Add />}
-                        size="small"
-                        onClick={() => setDialogOpen(true)}
-                        disabled={scenarioList.length === 0}
-                    >
-                        New Sizing Case
-                    </Button>
+                    <>
+                        <Button
+                            variant="contained"
+                            startIcon={<Add />}
+                            size="small"
+                            onClick={() => setDialogOpen(true)}
+                            disabled={scenarioList.length === 0}
+                            sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+                        >
+                            New Sizing Case
+                        </Button>
+                        <Tooltip title="New Sizing Case">
+                            <span>
+                                <IconButton
+                                    size="small"
+                                    onClick={() => setDialogOpen(true)}
+                                    disabled={scenarioList.length === 0}
+                                    sx={{
+                                        display: { xs: 'inline-flex', sm: 'none' },
+                                        bgcolor: 'primary.main',
+                                        color: 'primary.contrastText',
+                                        '&:hover': { bgcolor: 'primary.dark' },
+                                    }}
+                                >
+                                    <Add />
+                                </IconButton>
+                            </span>
+                        </Tooltip>
+                    </>
                 )}
             </Box>
 

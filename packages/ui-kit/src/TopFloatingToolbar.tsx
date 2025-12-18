@@ -51,12 +51,13 @@ export const TopFloatingToolbar = ({
                             width: 40,
                             height: 40,
                             borderRadius: '12px',
-                            background: 'linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%)',
+                            background: 'linear-gradient(#00C4F9,#0076F0)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             color: 'white',
-                            boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)',
+                            boxShadow: "0px 0px 2px 1px rgba(255, 255, 255, 0.3) inset, 2px 2px 3px -2px rgba(255,255,255,0.7) inset, -2px -2px 3px -2px rgba(255,255,255,0.7) inset"
+                            // boxShadow: '0 4px 12px rgba(2, 132, 199, 0.3)',
                         }}
                     >
                         {icon}
@@ -75,7 +76,7 @@ export const TopFloatingToolbar = ({
             </Stack>
 
             {/* Right Side: Actions */}
-            <Stack direction="row" alignItems="center" spacing={2}>
+            <Stack direction="row" alignItems="center" spacing={1.5}>
                 {actions}
                 {onToggleTheme && (
                     <Tooltip title={`Switch to ${isDarkMode ? 'light' : 'dark'} mode`}>
