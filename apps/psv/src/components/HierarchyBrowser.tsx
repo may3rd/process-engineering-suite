@@ -25,6 +25,7 @@ import {
     Domain,
     FolderSpecial,
     ChevronRight,
+    ChevronLeft,
     Add,
     Search,
     ArrowUpward,
@@ -259,6 +260,24 @@ export function HierarchyBrowser() {
         setProjectDialogOpen(false);
     };
 
+    const handleBack = () => {
+        if (!currentLevel) return;
+        switch (currentLevel.level) {
+            case 'plant':
+                selectCustomer(null);
+                break;
+            case 'unit':
+                selectPlant(null);
+                break;
+            case 'area':
+                selectUnit(null);
+                break;
+            case 'project':
+                selectArea(null);
+                break;
+        }
+    };
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const getSubtitle = (item: any, level: string): string => {
         switch (level) {
@@ -308,10 +327,10 @@ export function HierarchyBrowser() {
             level === 'plant'
                 ? ['location' in item ? String(item.location) : '']
                 : level === 'unit'
-                  ? ['service' in item ? String(item.service) : '']
-                  : level === 'project'
-                    ? ['phase' in item ? String(item.phase) : '']
-                    : [];
+                    ? ['service' in item ? String(item.service) : '']
+                    : level === 'project'
+                        ? ['phase' in item ? String(item.phase) : '']
+                        : [];
 
         return [...base, ...extra]
             .filter(Boolean)
@@ -370,13 +389,30 @@ export function HierarchyBrowser() {
                         alignItems: 'center',
                     }}
                 >
-                    <Box>
-                        <Typography variant="h6" fontWeight={600}>
-                            {currentLevel.title}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                            {filteredCountLabel} item{sortedItems.length !== 1 ? 's' : ''}
-                        </Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        {currentLevel.level !== 'customer' && (
+                            <Tooltip title="Go Back">
+                                <IconButton
+                                    onClick={handleBack}
+                                    size="small"
+                                    sx={{
+                                        color: 'text.secondary',
+                                        bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                                        '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }
+                                    }}
+                                >
+                                    <ChevronLeft />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+                        <Box>
+                            <Typography variant="h6" fontWeight={600}>
+                                {currentLevel.level !== 'customer' ? `${currentLevel.title}` : currentLevel.title}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {filteredCountLabel} item{sortedItems.length !== 1 ? 's' : ''}
+                            </Typography>
+                        </Box>
                     </Box>
                     {canAddItem() && (
                         <Tooltip title={`Add ${currentLevel.level}`}>
@@ -384,7 +420,7 @@ export function HierarchyBrowser() {
                                 onClick={handleOpenDialog}
                                 sx={{
                                     bgcolor: 'primary.main',
-                                    color: 'white',
+                                    color: isDark ? 'common.black' : 'common.white',
                                     '&:hover': { bgcolor: 'primary.dark' },
                                 }}
                             >

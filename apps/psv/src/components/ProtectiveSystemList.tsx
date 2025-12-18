@@ -28,6 +28,7 @@ import {
     Search,
     ArrowUpward,
     ArrowDownward,
+    ChevronLeft,
 } from "@mui/icons-material";
 import { useMemo, useState } from "react";
 import { usePsvStore } from "@/store/usePsvStore";
@@ -43,9 +44,9 @@ import { PsvCreationWizard } from "./PsvCreationWizard";
 export function ProtectiveSystemList() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
-    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+    const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const { unitSystem } = useProjectUnitSystem();
-    const { psvList, selectPsv, selectedProject, selectedArea, addProtectiveSystem } = usePsvStore();
+    const { psvList, selectPsv, selectedProject, selectedArea, addProtectiveSystem, selectProject } = usePsvStore();
     const currentUser = useAuthStore((state) => state.currentUser);
     const canEdit = useAuthStore((state) => state.canEdit());
     const [searchText, setSearchText] = useState('');
@@ -177,13 +178,27 @@ export function ProtectiveSystemList() {
     return (
         <Box>
             <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Box>
-                    <Typography variant="h5" fontWeight={600}>
-                        {selectedProject.code || "Project Code"} : {selectedProject.name || "Project Name"}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                        {filteredCountLabel} device{sortedPsvs.length !== 1 ? 's' : ''}
-                    </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Tooltip title="Back to Projects">
+                        <IconButton
+                            onClick={() => selectProject(null)}
+                            sx={{
+                                color: 'text.secondary',
+                                bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
+                                '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }
+                            }}
+                        >
+                            <ChevronLeft />
+                        </IconButton>
+                    </Tooltip>
+                    <Box>
+                        <Typography variant="h5" fontWeight={600}>
+                            {selectedProject.code || "Project Code"} : {selectedProject.name || "Project Name"}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                            {filteredCountLabel} device{sortedPsvs.length !== 1 ? 's' : ''}
+                        </Typography>
+                    </Box>
                 </Box>
                 {canEdit && (
                     <>
@@ -193,7 +208,7 @@ export function ProtectiveSystemList() {
                                 startIcon={<Add />}
                                 size="small"
                                 onClick={() => setWizardOpen(true)}
-                                sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
+                                sx={{ display: { xs: 'none', md: 'inline-flex' } }}
                             >
                                 New PSV/RD
                             </Button>
@@ -201,13 +216,13 @@ export function ProtectiveSystemList() {
                             <Tooltip title="New PSV/RD">
                                 <IconButton
                                     size="small"
-                                        onClick={() => setWizardOpen(true)}
-                                        sx={{
-                                            display: { xs: 'inline-flex', sm: 'none' },
-                                            bgcolor: 'primary.main',
-                                            color: 'primary.contrastText',
-                                            '&:hover': { bgcolor: 'primary.dark' },
-                                        }}
+                                    onClick={() => setWizardOpen(true)}
+                                    sx={{
+                                        display: { xs: 'inline-flex', md: 'none' },
+                                        bgcolor: 'primary.main',
+                                        color: 'primary.contrastText',
+                                        '&:hover': { bgcolor: 'primary.dark' },
+                                    }}
                                 >
                                     <Add />
                                 </IconButton>
