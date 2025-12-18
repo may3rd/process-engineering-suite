@@ -43,6 +43,7 @@ import { useUnitConversion } from "@/hooks/useUnitConversion";
 import { getDefaultUnitPreferences } from "@/lib/unitPreferences";
 import { useDisplaySettings } from "@/hooks/useDisplaySettings";
 import { getPressureValidationError, getTemperatureValidationError, getPositiveNumberError } from "@/lib/physicsValidation";
+import { getScenarioTemplate } from '@/templates/scenarios';
 
 interface ScenarioEditorProps {
     initialData?: OverpressureScenario;
@@ -160,6 +161,32 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
         }
     };
 
+    /**
+     * Handle cause change with template population.
+     * When the scenario cause changes, populate caseConsideration with the template
+     * if it's empty or unchanged from a previous template.
+     */
+    const handleCauseChange = (newCause: ScenarioCause) => {
+        const currentCause = formData.cause as ScenarioCause;
+        const currentTemplate = currentCause ? getScenarioTemplate(currentCause) : '';
+        const currentContent = formData.caseConsideration || '';
+
+        // Check if caseConsideration is empty or matches the previous template
+        const isEmpty = !currentContent.trim();
+        const isUnchangedTemplate = currentContent.trim() === currentTemplate.trim();
+
+        // Update formData with new cause
+        const updates: Partial<OverpressureScenario> = { cause: newCause };
+
+        // Populate template if content is empty or unchanged from previous template
+        if (isEmpty || isUnchangedTemplate) {
+            updates.caseConsideration = getScenarioTemplate(newCause);
+        }
+
+        setFormData({ ...formData, ...updates });
+        setTouched((prev) => ({ ...prev, cause: true }));
+    };
+
     const validate = () => {
         const newErrors = getValidationErrors(formData);
         setErrors(newErrors);
@@ -270,7 +297,7 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                             select
                             label="Cause"
                             value={formData.cause}
-                            onChange={(e) => handleInputChange('cause', e.target.value)}
+                            onChange={(e) => handleCauseChange(e.target.value as ScenarioCause)}
                             fullWidth
                             disabled={!canEdit}
                         >
