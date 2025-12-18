@@ -62,6 +62,8 @@ const CAUSE_OPTIONS: { value: ScenarioCause; label: string }[] = [
     { value: 'control_valve_failure', label: 'Control Valve Failure' },
     { value: 'power_failure', label: 'Power Failure' },
     { value: 'cooling_water_failure', label: 'Cooling Water Failure' },
+    { value: 'reflux_failure', label: 'Loss of Reflux' },
+    { value: 'abnormal_heat_input', label: 'Abnormal Heat Input' },
     { value: 'check_valve_failure', label: 'Check Valve Failure' },
     { value: 'other', label: 'Other' },
 ];

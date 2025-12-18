@@ -138,6 +138,8 @@ export type ScenarioCause =
     | 'control_valve_failure'
     | 'power_failure'
     | 'cooling_water_failure'
+    | 'reflux_failure'
+    | 'abnormal_heat_input'
     | 'check_valve_failure'
     | 'external_fire'
     | 'other';

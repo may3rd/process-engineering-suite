@@ -914,6 +914,8 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
             outputs: {
                 ...currentCase.outputs,
                 numberOfValves,
+                // Recalculate percentUsed based on final numberOfValves to ensure it's not stale
+                percentUsed: (currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100,
             },
         };
         onSaveNetworks?.(localInletNetwork, localOutletNetwork, networkDirty);

@@ -41,6 +41,7 @@ export interface PipelineSegmentRow {
 }
 
 export interface RevisionRow {
+    id: string;
     rev: string;
     desc: string;
     by: string;
@@ -156,20 +157,26 @@ export function generatePsvSummaryPdf(data: PsvSummaryData) {
         doc.setFontSize(12);
         doc.text('Revision History', 14, finalY);
 
-        const revRows = revisions.map(r => [
-            r.rev,
-            r.desc,
-            r.by,
-            r.date,
-            r.chk,
-            r.chkDate,
-            r.app,
-            r.appDate
-        ]);
+        const revRows = revisions.map(r => {
+            const formatCell = (initials: string, date: string) => {
+                if (initials === '-' && date === '-') return '-';
+                if (initials === '-') return date;
+                if (date === '-') return initials;
+                return `${initials} / ${date}`;
+            };
+
+            return [
+                r.rev,
+                r.desc,
+                formatCell(r.by, r.date),
+                formatCell(r.chk, r.chkDate),
+                formatCell(r.app, r.appDate)
+            ];
+        });
 
         autoTable(doc, {
             startY: finalY + 4,
-            head: [['Rev', 'Description', 'By', 'Date', 'Chk', 'Date', 'App', 'Date']],
+            head: [['Rev', 'Description', 'By', 'Checked', 'Approved']],
             body: revRows,
             theme: 'grid',
             headStyles: {
@@ -187,14 +194,11 @@ export function generatePsvSummaryPdf(data: PsvSummaryData) {
                 lineColor: [220, 220, 220]
             },
             columnStyles: {
-                0: { fontStyle: 'bold', cellWidth: 15 },
+                0: { fontStyle: 'bold', cellWidth: 25 }, // Rev
                 1: { cellWidth: 'auto' }, // Description
-                2: { cellWidth: 15 }, // By
-                3: { cellWidth: 20 }, // Date
-                4: { cellWidth: 15 }, // Chk
-                5: { cellWidth: 20 }, // Date
-                6: { cellWidth: 15 }, // App
-                7: { cellWidth: 20 }  // Date
+                2: { cellWidth: 35 }, // By
+                3: { cellWidth: 35 }, // Checked
+                4: { cellWidth: 35 }  // Approved
             },
             alternateRowStyles: {
                 fillColor: [250, 250, 250]
@@ -286,12 +290,17 @@ export function generatePsvSummaryPdf(data: PsvSummaryData) {
         // 'numberOfValves' is stored in outputs
         const numValves = (c.outputs as any)?.numberOfValves ?? 1;
 
+        // Calculate percentUsed correctly accounting for number of valves
+        const requiredArea = c.outputs?.requiredArea ?? 0;
+        const orificeArea = c.outputs?.orificeArea ?? 1;
+        const percentUsed = (requiredArea / (orificeArea * numValves)) * 100;
+
         return [
             cause,
             c.method,
             numValves.toString(), // Valve Count
             `${c.outputs?.selectedOrifice || '-'} (${c.outputs?.orificeArea || '-'} mm2)`,
-            `${c.outputs?.percentUsed?.toFixed(1) || '-'} %`,
+            `${percentUsed.toFixed(1)} %`,
             c.status.toUpperCase()
         ];
     });

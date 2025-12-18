@@ -361,6 +361,8 @@ function ScenariosTab() {
         { cause: 'control_valve_failure', label: 'Control Valve Failure' },
         { cause: 'power_failure', label: 'Power Failure' },
         { cause: 'cooling_water_failure', label: 'Cooling Water Failure' },
+        { cause: 'reflux_failure', label: 'Loss of Reflux' },
+        { cause: 'abnormal_heat_input', label: 'Abnormal Heat Input' },
         { cause: 'check_valve_failure', label: 'Check Valve Failure' },
         { cause: 'other', label: 'Other' },
     ];

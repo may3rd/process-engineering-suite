@@ -384,16 +384,20 @@ export function SummaryTab() {
             return userId.length > 5 ? 'USR' : userId.toUpperCase();
         };
 
-        const exportRevisions = psvRevisions.map(r => ({
-            rev: r.revisionCode,
-            desc: r.description || '-',
-            by: getInitials(r.originatedBy),
-            date: formatDate(r.originatedAt),
-            chk: getInitials(r.checkedBy),
-            chkDate: formatDate(r.checkedAt),
-            app: getInitials(r.approvedBy),
-            appDate: formatDate(r.approvedAt)
-        }));
+        const exportRevisions = psvRevisions.map(r => {
+            const isCurrent = r.id === selectedPsv.currentRevisionId;
+            return {
+                id: r.id,
+                rev: r.revisionCode + (isCurrent ? ' (Current)' : ''),
+                desc: r.description || '-',
+                by: getInitials(r.originatedBy),
+                date: formatDate(r.originatedAt),
+                chk: getInitials(r.checkedBy),
+                chkDate: formatDate(r.checkedAt),
+                app: getInitials(r.approvedBy),
+                appDate: formatDate(r.approvedAt)
+            };
+        });
 
         generatePsvSummaryPdf({
             psv: selectedPsv,
@@ -796,7 +800,13 @@ export function SummaryTab() {
                                                 {sizingCase.outputs?.selectedOrifice ?? '—'} ({sizingCase.outputs?.orificeArea ?? '—'} mm²)
                                             </TableCell>
                                             <TableCell align="right">
-                                                {sizingCase.outputs?.percentUsed?.toFixed(1) ?? '—'}%
+                                                {(() => {
+                                                    const requiredArea = sizingCase.outputs?.requiredArea ?? 0;
+                                                    const orificeArea = sizingCase.outputs?.orificeArea ?? 1;
+                                                    const numberOfValves = sizingCase.outputs?.numberOfValves || 1;
+                                                    const percentUsed = (requiredArea / (orificeArea * numberOfValves)) * 100;
+                                                    return `${percentUsed.toFixed(1)}%`;
+                                                })()}
                                             </TableCell>
                                             <TableCell align="right">
                                                 {sizingCase.outputs?.inletPressureDrop !== undefined
