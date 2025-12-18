@@ -26,6 +26,8 @@ import {
 import { Close as CloseIcon } from '@mui/icons-material';
 import { Equipment, VesselDetails } from '@/data/types';
 import { useAuthStore } from '@/store/useAuthStore';
+import { UnitSelector } from '@/components/shared';
+import { convertUnit } from '@eng-suite/physics';
 
 interface EquipmentEditorDialogProps {
     open: boolean;
@@ -54,6 +56,11 @@ export function EquipmentEditorDialog({
         insulated: false,
     });
 
+    const [units, setUnits] = useState({
+        innerDiameter: 'mm',
+        tangentToTangentLength: 'mm',
+    });
+
     useEffect(() => {
         if (equipment) {
             const details = equipment.details as VesselDetails;
@@ -67,6 +74,10 @@ export function EquipmentEditorDialog({
                 headType: (details?.headType === 'ellipsoidal' ? 'elliptical' : details?.headType) || 'torispherical',
                 insulated: details?.insulated || false,
             });
+            setUnits({
+                innerDiameter: 'mm',
+                tangentToTangentLength: 'mm',
+            });
         } else {
             // Reset for new equipment
             setFormData({
@@ -79,10 +90,23 @@ export function EquipmentEditorDialog({
                 headType: 'torispherical',
                 insulated: false,
             });
+            setUnits({
+                innerDiameter: 'mm',
+                tangentToTangentLength: 'mm',
+            });
         }
     }, [equipment, open]);
 
     const handleSave = () => {
+        // Ensure values are converted back to mm for storage
+        const innerDiameterMm = units.innerDiameter === 'mm'
+            ? formData.innerDiameter
+            : convertUnit(formData.innerDiameter, units.innerDiameter, 'mm');
+
+        const lengthMm = units.tangentToTangentLength === 'mm'
+            ? formData.tangentToTangentLength
+            : convertUnit(formData.tangentToTangentLength, units.tangentToTangentLength, 'mm');
+
         const newEquipment: Equipment = {
             id: equipment?.id || `temp-${Date.now()}`,
             areaId,
@@ -96,8 +120,8 @@ export function EquipmentEditorDialog({
             ownerId: equipment?.ownerId || currentUser?.id || '',
             status: 'active',
             details: {
-                innerDiameter: formData.innerDiameter,
-                tangentToTangentLength: formData.tangentToTangentLength,
+                innerDiameter: innerDiameterMm,
+                tangentToTangentLength: lengthMm,
                 orientation: formData.orientation,
                 headType: formData.headType,
                 insulated: formData.insulated,
@@ -165,46 +189,29 @@ export function EquipmentEditorDialog({
                             Vessel Dimensions
                         </Typography>
                         <Stack spacing={2}>
-                            <Box>
-                                <Typography variant="body2" color="text.secondary" gutterBottom>
-                                    Inner Diameter
-                                </Typography>
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                    <TextField
-                                        required
-                                        type="number"
-                                        value={formData.innerDiameter}
-                                        onChange={(e) =>
-                                            setFormData({ ...formData, innerDiameter: parseFloat(e.target.value) })
-                                        }
-                                        sx={{ flex: 1 }}
-                                        size="small"
-                                    />
-                                    <Typography variant="body2" sx={{ minWidth: 40 }}>mm</Typography>
-                                </Stack>
-                            </Box>
+                            <UnitSelector
+                                label="Inner Diameter"
+                                value={formData.innerDiameter}
+                                unit={units.innerDiameter}
+                                availableUnits={['mm', 'm', 'in', 'ft']}
+                                onChange={(val, unit) => {
+                                    setFormData({ ...formData, innerDiameter: val || 0 });
+                                    setUnits({ ...units, innerDiameter: unit });
+                                }}
+                                required
+                            />
 
-                            <Box>
-                                <Typography variant="body2" color="text.secondary" gutterBottom>
-                                    Tangent-to-Tangent Length
-                                </Typography>
-                                <Stack direction="row" spacing={1} alignItems="center">
-                                    <TextField
-                                        required
-                                        type="number"
-                                        value={formData.tangentToTangentLength}
-                                        onChange={(e) =>
-                                            setFormData({
-                                                ...formData,
-                                                tangentToTangentLength: parseFloat(e.target.value),
-                                            })
-                                        }
-                                        sx={{ flex: 1 }}
-                                        size="small"
-                                    />
-                                    <Typography variant="body2" sx={{ minWidth: 40 }}>mm</Typography>
-                                </Stack>
-                            </Box>
+                            <UnitSelector
+                                label="Tangent-to-Tangent Length"
+                                value={formData.tangentToTangentLength}
+                                unit={units.tangentToTangentLength}
+                                availableUnits={['mm', 'm', 'in', 'ft']}
+                                onChange={(val, unit) => {
+                                    setFormData({ ...formData, tangentToTangentLength: val || 0 });
+                                    setUnits({ ...units, tangentToTangentLength: unit });
+                                }}
+                                required
+                            />
 
                             <FormControl fullWidth size="small">
                                 <InputLabel>Orientation</InputLabel>
