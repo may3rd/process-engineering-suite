@@ -53,7 +53,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
 import { SortConfig, sortByGetter, toggleSortConfig } from "@/lib/sortUtils";
 
-const USERS_STORAGE_KEY = "psv_demo_users";
+const USERS_STORAGE_KEY = "psv_demo_users_v2";
 
 type SortKey = "name" | "role" | "status" | "impact";
 
