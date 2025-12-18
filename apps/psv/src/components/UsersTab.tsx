@@ -39,11 +39,13 @@ import {
     Shield,
     CheckCircle,
     Groups,
+    Key,
+    KeyOff,
 } from "@mui/icons-material";
 import { v4 as uuidv4 } from "uuid";
 
 import { User } from "@/data/types";
-import { users as mockUsers } from "@/data/mockData";
+import { users as mockUsers, credentials } from "@/data/mockData";
 import { glassCardStyles } from "./styles";
 import { DeleteConfirmDialog, TableSortButton } from "./shared";
 import { UserDialog } from "./dashboard/UserDialog";
@@ -174,6 +176,10 @@ export function UsersTab() {
             default:
                 return user.name.toLowerCase();
         }
+    };
+
+    const hasCredentials = (userId: string) => {
+        return credentials.some(cred => cred.userId === userId);
     };
 
     const filteredUsers = useMemo(() => {
@@ -483,8 +489,17 @@ export function UsersTab() {
                                                 {user.name.charAt(0)}
                                             </Avatar>
                                             <Box>
-                                                <Typography fontWeight={600}>
+                                                <Typography fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                                                     {user.name} {user.username && `(${user.username})`}
+                                                    {hasCredentials(user.id) ? (
+                                                        <Tooltip title="Password set">
+                                                            <Key fontSize="small" sx={{ color: 'success.main', ml: 0.5 }} />
+                                                        </Tooltip>
+                                                    ) : (
+                                                        <Tooltip title="Password not set">
+                                                            <KeyOff fontSize="small" sx={{ color: 'text.disabled', ml: 0.5 }} />
+                                                        </Tooltip>
+                                                    )}
                                                 </Typography>
                                                 <Typography
                                                     variant="body2"
@@ -638,7 +653,18 @@ export function UsersTab() {
                                         {user.name.charAt(0)}
                                     </Avatar>
                                     <Box flex={1}>
-                                        <Typography fontWeight={600}>{user.name} {user.username && `(${user.username})`}</Typography>
+                                        <Typography fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                            {user.name} {user.username && `(${user.username})`}
+                                            {hasCredentials(user.id) ? (
+                                                <Tooltip title="Password set">
+                                                    <Key fontSize="small" sx={{ color: 'success.main', ml: 0.5 }} />
+                                                </Tooltip>
+                                            ) : (
+                                                <Tooltip title="Password not set">
+                                                    <KeyOff fontSize="small" sx={{ color: 'text.disabled', ml: 0.5 }} />
+                                                </Tooltip>
+                                            )}
+                                        </Typography>
                                         <Typography variant="body2" color="text.secondary">
                                             {user.email}
                                         </Typography>
