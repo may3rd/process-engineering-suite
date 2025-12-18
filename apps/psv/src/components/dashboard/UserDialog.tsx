@@ -36,6 +36,7 @@ interface UserDialogProps {
 
 const roleOptions: { value: User["role"]; label: string; description: string }[] = [
     { value: "admin", label: "Administrator", description: "Full access across the suite" },
+    { value: "division_manager", label: "Division Manager", description: "Admin privileges, cannot modify admin accounts" },
     { value: "approver", label: "Approver", description: "Can approve PSVs and manage customers" },
     { value: "lead", label: "Lead Engineer", description: "Manages hierarchy and projects" },
     { value: "engineer", label: "Engineer", description: "Creates and edits PSVs" },
@@ -123,159 +124,159 @@ export function UserDialog({ open, user, onSave, onClose }: UserDialogProps) {
     return (
         <>
             <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-            <DialogTitle>{user ? "Edit User" : "Invite User"}</DialogTitle>
-            <DialogContent dividers>
-                <Stack spacing={2} sx={{ mt: 1 }}>
-                    {copyFeedback && (
-                        <Alert severity={copyFeedback === "Copied to clipboard" ? "success" : "info"}>
-                            {copyFeedback}
-                        </Alert>
-                    )}
+                <DialogTitle>{user ? "Edit User" : "Invite User"}</DialogTitle>
+                <DialogContent dividers>
+                    <Stack spacing={2} sx={{ mt: 1 }}>
+                        {copyFeedback && (
+                            <Alert severity={copyFeedback === "Copied to clipboard" ? "success" : "info"}>
+                                {copyFeedback}
+                            </Alert>
+                        )}
 
-                    {resetResult && (
-                        <Alert
-                            severity="warning"
-                            sx={{ '& .MuiAlert-message': { width: '100%' } }}
-                        >
-                            <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                                Temporary password created
-                            </Typography>
-                            <Stack spacing={1}>
-                                <TextField
-                                    size="small"
-                                    label="Username"
-                                    value={resetResult.username}
-                                    InputProps={{
-                                        readOnly: true,
-                                        endAdornment: (
-                                            <InputAdornment position="end">
-                                                <IconButton
-                                                    size="small"
-                                                    aria-label="Copy username"
-                                                    onClick={() => copyToClipboard(resetResult.username)}
-                                                >
-                                                    <ContentCopy fontSize="small" />
-                                                </IconButton>
-                                            </InputAdornment>
-                                        ),
-                                    }}
-                                />
-                                <TextField
-                                    size="small"
-                                    label="Temporary Password"
-                                    value={resetResult.temporaryPassword}
-                                    InputProps={{
-                                        readOnly: true,
-                                        endAdornment: (
-                                            <InputAdornment position="end">
-                                                <IconButton
-                                                    size="small"
-                                                    aria-label="Copy password"
-                                                    onClick={() => copyToClipboard(resetResult.temporaryPassword)}
-                                                >
-                                                    <ContentCopy fontSize="small" />
-                                                </IconButton>
-                                            </InputAdornment>
-                                        ),
-                                    }}
-                                />
-                                <Typography variant="body2" color="text.secondary">
-                                    Share this password securely. The user should change it after signing in.
+                        {resetResult && (
+                            <Alert
+                                severity="warning"
+                                sx={{ '& .MuiAlert-message': { width: '100%' } }}
+                            >
+                                <Typography variant="subtitle2" sx={{ mb: 1 }}>
+                                    Temporary password created
                                 </Typography>
-                            </Stack>
-                        </Alert>
+                                <Stack spacing={1}>
+                                    <TextField
+                                        size="small"
+                                        label="Username"
+                                        value={resetResult.username}
+                                        InputProps={{
+                                            readOnly: true,
+                                            endAdornment: (
+                                                <InputAdornment position="end">
+                                                    <IconButton
+                                                        size="small"
+                                                        aria-label="Copy username"
+                                                        onClick={() => copyToClipboard(resetResult.username)}
+                                                    >
+                                                        <ContentCopy fontSize="small" />
+                                                    </IconButton>
+                                                </InputAdornment>
+                                            ),
+                                        }}
+                                    />
+                                    <TextField
+                                        size="small"
+                                        label="Temporary Password"
+                                        value={resetResult.temporaryPassword}
+                                        InputProps={{
+                                            readOnly: true,
+                                            endAdornment: (
+                                                <InputAdornment position="end">
+                                                    <IconButton
+                                                        size="small"
+                                                        aria-label="Copy password"
+                                                        onClick={() => copyToClipboard(resetResult.temporaryPassword)}
+                                                    >
+                                                        <ContentCopy fontSize="small" />
+                                                    </IconButton>
+                                                </InputAdornment>
+                                            ),
+                                        }}
+                                    />
+                                    <Typography variant="body2" color="text.secondary">
+                                        Share this password securely. The user should change it after signing in.
+                                    </Typography>
+                                </Stack>
+                            </Alert>
+                        )}
+                        <TextField
+                            label="Full Name"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            autoFocus
+                            fullWidth
+                            required
+                        />
+                        <TextField
+                            label="Initials"
+                            value={initials}
+                            onChange={(e) => setInitials(e.target.value.toUpperCase())}
+                            fullWidth
+                            helperText="Used in revision history (e.g. MTL, TE)"
+                            inputProps={{ maxLength: 16 }}
+                        />
+                        <TextField
+                            label="Email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            fullWidth
+                            required
+                            type="email"
+                        />
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Role</InputLabel>
+                            <Select
+                                value={role}
+                                label="Role"
+                                onChange={(e) => setRole(e.target.value as User["role"])}
+                                renderValue={(value) => value.charAt(0).toUpperCase() + value.slice(1)}
+                            >
+                                {roleOptions.map((option) => (
+                                    <MenuItem key={option.value} value={option.value}>
+                                        <Stack direction="row" spacing={1} alignItems="center">
+                                            <Chip
+                                                size="small"
+                                                label={option.label}
+                                                sx={{ textTransform: "capitalize" }}
+                                            />
+                                            <Typography variant="body2" color="text.secondary">
+                                                {option.description}
+                                            </Typography>
+                                        </Stack>
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        <FormControl fullWidth size="small">
+                            <InputLabel>Status</InputLabel>
+                            <Select
+                                value={status}
+                                label="Status"
+                                onChange={(e) => setStatus(e.target.value as User["status"])}
+                            >
+                                {statusOptions.map((option) => (
+                                    <MenuItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </MenuItem>
+                                ))}
+                            </Select>
+                        </FormControl>
+                        <TextField
+                            label="Avatar URL (optional)"
+                            value={avatarUrl}
+                            onChange={(e) => setAvatarUrl(e.target.value)}
+                            fullWidth
+                            placeholder="https://"
+                        />
+                    </Stack>
+                </DialogContent>
+                <DialogActions sx={{ px: 3, py: 2 }}>
+                    <Button onClick={onClose}>Cancel</Button>
+                    {user && canManageUsers && (
+                        <Button
+                            variant="outlined"
+                            color="warning"
+                            startIcon={<LockReset />}
+                            onClick={() => setResetDialogOpen(true)}
+                        >
+                            Reset Password
+                        </Button>
                     )}
-                    <TextField
-                        label="Full Name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        autoFocus
-                        fullWidth
-                        required
-                    />
-                    <TextField
-                        label="Initials"
-                        value={initials}
-                        onChange={(e) => setInitials(e.target.value.toUpperCase())}
-                        fullWidth
-                        helperText="Used in revision history (e.g. MTL, TE)"
-                        inputProps={{ maxLength: 16 }}
-                    />
-                    <TextField
-                        label="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        fullWidth
-                        required
-                        type="email"
-                    />
-                    <FormControl fullWidth size="small">
-                        <InputLabel>Role</InputLabel>
-                        <Select
-                            value={role}
-                            label="Role"
-                            onChange={(e) => setRole(e.target.value as User["role"])}
-                            renderValue={(value) => value.charAt(0).toUpperCase() + value.slice(1)}
-                        >
-                            {roleOptions.map((option) => (
-                                <MenuItem key={option.value} value={option.value}>
-                                    <Stack direction="row" spacing={1} alignItems="center">
-                                        <Chip
-                                            size="small"
-                                            label={option.label}
-                                            sx={{ textTransform: "capitalize" }}
-                                        />
-                                        <Typography variant="body2" color="text.secondary">
-                                            {option.description}
-                                        </Typography>
-                                    </Stack>
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    <FormControl fullWidth size="small">
-                        <InputLabel>Status</InputLabel>
-                        <Select
-                            value={status}
-                            label="Status"
-                            onChange={(e) => setStatus(e.target.value as User["status"])}
-                        >
-                            {statusOptions.map((option) => (
-                                <MenuItem key={option.value} value={option.value}>
-                                    {option.label}
-                                </MenuItem>
-                            ))}
-                        </Select>
-                    </FormControl>
-                    <TextField
-                        label="Avatar URL (optional)"
-                        value={avatarUrl}
-                        onChange={(e) => setAvatarUrl(e.target.value)}
-                        fullWidth
-                        placeholder="https://"
-                    />
-                </Stack>
-            </DialogContent>
-            <DialogActions sx={{ px: 3, py: 2 }}>
-                <Button onClick={onClose}>Cancel</Button>
-                {user && canManageUsers && (
                     <Button
-                        variant="outlined"
-                        color="warning"
-                        startIcon={<LockReset />}
-                        onClick={() => setResetDialogOpen(true)}
+                        onClick={handleSubmit}
+                        variant="contained"
+                        disabled={!isValid}
                     >
-                        Reset Password
+                        {user ? "Save Changes" : "Send Invite"}
                     </Button>
-                )}
-                <Button
-                    onClick={handleSubmit}
-                    variant="contained"
-                    disabled={!isValid}
-                >
-                    {user ? "Save Changes" : "Send Invite"}
-                </Button>
-            </DialogActions>
+                </DialogActions>
             </Dialog>
 
             <ConfirmDialog open={resetDialogOpen} onClose={() => setResetDialogOpen(false)} maxWidth="xs" fullWidth>

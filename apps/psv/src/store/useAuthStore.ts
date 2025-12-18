@@ -134,8 +134,8 @@ export const useAuthStore = create<AuthState>()(
 
             resetUserPassword: (userId) => {
                 const { currentUser } = get();
-                if (!currentUser || currentUser.role !== 'admin') {
-                    return { success: false, message: 'Admin permission required' };
+                if (!currentUser || !['admin', 'division_manager'].includes(currentUser.role)) {
+                    return { success: false, message: 'Admin or Division Manager permission required' };
                 }
 
                 ensureSeedData();
@@ -145,6 +145,11 @@ export const useAuthStore = create<AuthState>()(
                 const targetUser = storedUsers.find((u) => u.id === userId);
                 if (!targetUser) {
                     return { success: false, message: 'User not found' };
+                }
+
+                // Division managers cannot reset admin passwords
+                if (currentUser.role === 'division_manager' && targetUser.role === 'admin') {
+                    return { success: false, message: 'Division Manager cannot reset Admin passwords' };
                 }
 
                 const temporaryPassword = generateTemporaryPassword();
@@ -174,31 +179,31 @@ export const useAuthStore = create<AuthState>()(
             canEdit: () => {
                 const { currentUser } = get();
                 if (!currentUser) return false;
-                return ['engineer', 'lead', 'approver', 'admin'].includes(currentUser.role);
+                return ['engineer', 'lead', 'approver', 'division_manager', 'admin'].includes(currentUser.role);
             },
 
             canApprove: () => {
                 const { currentUser } = get();
                 if (!currentUser) return false;
-                return ['approver', 'admin'].includes(currentUser.role);
+                return ['lead', 'approver', 'division_manager', 'admin'].includes(currentUser.role);
             },
 
             canManageHierarchy: () => {
                 const { currentUser } = get();
                 if (!currentUser) return false;
-                return ['lead', 'approver', 'admin'].includes(currentUser.role);
+                return ['lead', 'approver', 'division_manager', 'admin'].includes(currentUser.role);
             },
 
             canManageCustomer: () => {
                 const { currentUser } = get();
                 if (!currentUser) return false;
-                return ['approver', 'admin'].includes(currentUser.role);
+                return ['approver', 'division_manager', 'admin'].includes(currentUser.role);
             },
 
             canManageUsers: () => {
                 const { currentUser } = get();
                 if (!currentUser) return false;
-                return currentUser.role === 'admin';
+                return ['admin', 'division_manager'].includes(currentUser.role);
             },
         }),
         {

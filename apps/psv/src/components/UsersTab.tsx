@@ -73,6 +73,7 @@ const emptyOwnership: OwnershipCounts = {
 
 const roleLabels: Record<User["role"], string> = {
     admin: "Admin",
+    division_manager: "Division Manager",
     approver: "Approver",
     lead: "Lead",
     engineer: "Engineer",
@@ -196,7 +197,7 @@ export function UsersTab() {
     const totalUsers = userList.length;
     const activeUsers = userList.filter((user) => user.status === "active").length;
     const keyRoleUsers = userList.filter((user) =>
-        ["admin", "approver", "lead"].includes(user.role)
+        ["admin", "division_manager", "approver", "lead"].includes(user.role)
     ).length;
 
     const handleAdd = () => {
@@ -284,8 +285,15 @@ export function UsersTab() {
         ];
     };
 
-    const actionDisabled = (user: User) =>
-        !canManageUsers || currentUser?.id === user.id;
+    // Check if current user can act on target user
+    // Division managers cannot edit/delete admins
+    const actionDisabled = (user: User) => {
+        if (!canManageUsers) return true;
+        if (currentUser?.id === user.id) return true;
+        // Division manager cannot edit/delete admin
+        if (currentUser?.role === 'division_manager' && user.role === 'admin') return true;
+        return false;
+    };
 
     return (
         <Box>

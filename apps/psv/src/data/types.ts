@@ -554,7 +554,7 @@ export interface User {
     name: string;
     initials?: string; // e.g. "MTL", "TE"
     email: string;
-    role: 'engineer' | 'lead' | 'approver' | 'viewer' | 'admin';
+    role: 'engineer' | 'lead' | 'approver' | 'viewer' | 'division_manager' | 'admin';
     status: 'active' | 'inactive';
     avatarUrl?: string; // Optional mock avatar URL
     displaySettings?: DisplaySettings; // User display preferences
