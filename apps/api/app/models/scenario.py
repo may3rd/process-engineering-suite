@@ -20,10 +20,20 @@ class OverpressureScenario(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
     cause: Mapped[str] = mapped_column(
         SQLEnum(
-            "blocked_outlet", "fire_case", "external_fire", "tube_rupture",
-            "thermal_expansion", "utility_failure", "control_valve_failure",
-            "power_failure", "cooling_water_failure", "check_valve_failure", "other",
-            name="scenario_cause"
+            "blocked_outlet",
+            "fire_case",
+            "external_fire",
+            "tube_rupture",
+            "thermal_expansion",
+            "utility_failure",
+            "control_valve_failure",
+            "power_failure",
+            "cooling_water_failure",
+            "reflux_failure",
+            "abnormal_heat_input",
+            "check_valve_failure",
+            "other",
+            name="scenario_cause",
         ),
         nullable=False,
     )
@@ -54,4 +64,3 @@ class OverpressureScenario(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     protective_system = relationship("ProtectiveSystem", back_populates="scenarios")
     sizing_cases = relationship("SizingCase", back_populates="scenario")
     current_revision = relationship("RevisionHistory", foreign_keys=[current_revision_id])
-

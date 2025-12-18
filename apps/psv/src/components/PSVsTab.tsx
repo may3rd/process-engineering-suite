@@ -387,19 +387,9 @@ export function PSVsTab() {
                 </Box>
             ) : (
                 /* Desktop Table View */
-                <Paper sx={{ ...glassCardStyles, p: 0, overflow: 'hidden' }}>
-                    <TableContainer sx={{
-                        maxHeight: 'calc(100vh - 350px)',
-                        overflowX: 'auto',
-                        '&::-webkit-scrollbar': {
-                            height: 8,
-                        },
-                        '&::-webkit-scrollbar-thumb': {
-                            backgroundColor: 'rgba(0,0,0,0.2)',
-                            borderRadius: 4,
-                        },
-                    }}>
-                        <Table stickyHeader>
+                <Paper sx={{ ...glassCardStyles, p: 0 }}>
+                    <TableContainer>
+                        <Table>
                             <TableHead>
                                 <TableRow>
                                     <TableCell>{renderHeader('Tag', 'tag')}</TableCell>

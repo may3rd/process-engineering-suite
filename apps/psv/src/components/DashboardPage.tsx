@@ -127,39 +127,92 @@ export function DashboardPage() {
                 </IconButton>
             </Paper>
 
-            {/* Tabs */}
-            <Paper sx={{ ...glassCardStyles, borderRadius: "0 0 12px 12px" }}>
-                <Tabs
-                    value={activeTab}
-                    onChange={(_e, newValue) => {
-                        setActiveTab(newValue);
-                        if (dashboardTab) setDashboardTab(null);
-                    }}
-                    sx={{
-                        borderBottom: 0,
-                        borderColor: 'divider',
-                        px: { xs: 1, sm: 2 },
-                        '& .MuiTabs-flexContainer': {
-                            flexWrap: 'wrap',
-                        },
-                        '& .MuiTab-root': {
-                            minHeight: { xs: 48, sm: 64 },
-                            fontSize: { xs: '0.875rem', sm: '1rem' },
-                            minWidth: { xs: 120, sm: 140 },
-                            flex: { xs: '1 1 auto', sm: '0 0 auto' },
-                        }
-                    }}
-                >
-                    {visibleTabs.map((tab) => (
-                        <Tab
+            {/* Tabs - GitHub Style */}
+            <Box
+                sx={{
+                    borderBottom: 1,
+                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                    px: { xs: 2, sm: 3 },
+                    pt: 2,
+                    pb: 0,
+                    display: 'flex',
+                    gap: 0.5,
+                    flexWrap: 'wrap',
+                }}
+            >
+                {visibleTabs.map((tab, index) => {
+                    const isSelected = activeTab === index;
+                    return (
+                        <Box
                             key={tab.label}
-                            label={tab.label}
-                            icon={tab.icon}
-                            iconPosition="start"
-                        />
-                    ))}
-                </Tabs>
-            </Paper>
+                            onClick={() => {
+                                setActiveTab(index);
+                                if (dashboardTab) setDashboardTab(null);
+                            }}
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 0.75,
+                                px: 2,
+                                py: 1,
+                                cursor: 'pointer',
+                                borderRadius: '6px',
+                                border: '1px solid',
+                                borderColor: isSelected
+                                    ? 'transparent'
+                                    : isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)',
+                                backgroundColor: isSelected
+                                    ? 'transparent'
+                                    : 'transparent',
+                                position: 'relative',
+                                mb: '-1px',
+                                transition: 'all 0.15s ease',
+                                '&:hover': {
+                                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+                                },
+                                // Bottom border indicator for selected tab
+                                '&::after': isSelected ? {
+                                    content: '""',
+                                    position: 'absolute',
+                                    bottom: -1,
+                                    left: 0,
+                                    right: 0,
+                                    height: 2,
+                                    backgroundColor: '#f78166', // GitHub orange
+                                    borderRadius: '2px 2px 0 0',
+                                } : {},
+                            }}
+                        >
+                            <Box
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    color: isSelected
+                                        ? (isDark ? '#fff' : '#000')
+                                        : (isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)'),
+                                    '& .MuiSvgIcon-root': {
+                                        fontSize: '1rem',
+                                    },
+                                }}
+                            >
+                                {tab.icon}
+                            </Box>
+                            <Typography
+                                variant="body2"
+                                sx={{
+                                    fontWeight: isSelected ? 600 : 400,
+                                    fontSize: '0.875rem',
+                                    color: isSelected
+                                        ? (isDark ? '#fff' : '#000')
+                                        : (isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)'),
+                                }}
+                            >
+                                {tab.label}
+                            </Typography>
+                        </Box>
+                    );
+                })}
+            </Box>
 
             {/* Tab Content */}
             <Box sx={{ flex: 1, overflow: 'auto', p: { xs: 2, sm: 3 } }}>

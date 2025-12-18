@@ -1,11 +1,11 @@
 {
   "users": [
     {
-      "id": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
-      "name": "John Smith",
-      "initials": "JS",
-      "email": "john.smith@acme.com",
-      "role": "engineer",
+      "id": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "name": "Maetee",
+      "initials": "MTL",
+      "email": "maetee@eng-suite.com",
+      "role": "admin",
       "status": "active"
     },
     {
@@ -33,11 +33,11 @@
       "status": "active"
     },
     {
-      "id": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
-      "name": "Maetee",
-      "initials": "MTL",
-      "email": "maetee@eng-suite.com",
-      "role": "admin",
+      "id": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "name": "John Smith",
+      "initials": "JS",
+      "email": "john.smith@acme.com",
+      "role": "engineer",
       "status": "active"
     },
     {
@@ -116,7 +116,7 @@
       "name": "Acme Petrochemical",
       "code": "ACME",
       "status": "active",
-      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "ownerId": "22ee3f22-898a-461b-85ec-83f84d250810",
       "createdAt": "2024-01-15T08:00:00Z"
     },
     {
@@ -136,7 +136,7 @@
       "code": "HOU-REF",
       "location": "Houston, TX, USA",
       "status": "active",
-      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "ownerId": "22ee3f22-898a-461b-85ec-83f84d250810",
       "createdAt": "2024-01-20T09:00:00Z"
     },
     {
@@ -146,11 +146,11 @@
       "code": "BAY-CHEM",
       "location": "Baytown, TX, USA",
       "status": "active",
-      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "ownerId": "22ee3f22-898a-461b-85ec-83f84d250810",
       "createdAt": "2024-01-25T11:00:00Z"
     },
     {
-      "id": "d1632a0a-a600-4274-b307-cce0cb50c3c7",
+      "id": "c3b4d5e6-f7a8-49c0-b1c2-d3e4f5a6b7c8",
       "customerId": "bc479980-8e75-4bec-ae36-f8437e1471d5",
       "name": "Singapore LNG Terminal",
       "code": "SG-LNG",
@@ -160,7 +160,7 @@
       "createdAt": "2024-03-01T08:00:00Z"
     },
     {
-      "id": "57d54a94-de67-41c1-9764-065984647638",
+      "id": "d4c5e6f7-a8b9-40c1-d2e3-f4a5b6c7d8e9",
       "customerId": "bc479980-8e75-4bec-ae36-f8437e1471d5",
       "name": "Rotterdam Storage Facility",
       "code": "RTM-STOR",
@@ -178,7 +178,7 @@
       "code": "CDU-100",
       "service": "Crude Oil Processing",
       "status": "active",
-      "ownerId": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
       "createdAt": "2024-02-01T10:00:00Z"
     },
     {
@@ -188,22 +188,22 @@
       "code": "VDU-200",
       "service": "Vacuum Distillation",
       "status": "active",
-      "ownerId": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
       "createdAt": "2024-02-05T10:00:00Z"
     },
     {
-      "id": "4cca7df9-091e-4960-8b11-b27011de9abe",
+      "id": "e5d6f7a8-b9c0-41d2-e3f4-a5b6c7d8e9f0",
       "plantId": "be0fa93c-c3f8-4c81-842f-e2af54fbee75",
       "name": "Ethylene Cracker",
       "code": "ETH-100",
       "service": "Ethylene Production",
       "status": "active",
-      "ownerId": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
       "createdAt": "2024-02-10T10:00:00Z"
     },
     {
-      "id": "3553f0ab-3cdc-42c2-bd26-d30683c6a637",
-      "plantId": "d1632a0a-a600-4274-b307-cce0cb50c3c7",
+      "id": "f6e7a8b9-c0d1-42e3-f4a5-b6c7d8e9f0a1",
+      "plantId": "c3b4d5e6-f7a8-49c0-b1c2-d3e4f5a6b7c8",
       "name": "LNG Receiving Terminal",
       "code": "LNG-REC",
       "service": "LNG Regasification",
@@ -239,7 +239,7 @@
     },
     {
       "id": "ba68c07b-d72a-4155-aa45-2cf91ce28fb3",
-      "unitId": "4cca7df9-091e-4960-8b11-b27011de9abe",
+      "unitId": "e5d6f7a8-b9c0-41d2-e3f4-a5b6c7d8e9f0",
       "name": "Furnace Area",
       "code": "ETH-100-FUR",
       "status": "active",
@@ -247,7 +247,7 @@
     },
     {
       "id": "780cbf94-e8ff-4ec4-9d69-786a0cd3f095",
-      "unitId": "3553f0ab-3cdc-42c2-bd26-d30683c6a637",
+      "unitId": "f6e7a8b9-c0d1-42e3-f4a5-b6c7d8e9f0a1",
       "name": "Vaporizer Section",
       "code": "LNG-REC-VAP",
       "status": "active",
@@ -256,66 +256,544 @@
   ],
   "projects": [
     {
-      "id": "b29268ba-d545-4a87-9df4-c6eb47f5208f",
+      "id": "d0e1f2a3-b4c5-46d7-e8f9-a0b1c2d3e4f5",
       "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
       "name": "CDU Atmospheric Tower Relief Study",
       "code": "ACME-2024-001",
       "phase": "design",
       "status": "in_review",
       "startDate": "2024-06-01",
-      "leadId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "leadId": "22ee3f22-898a-461b-85ec-83f84d250810",
       "createdAt": "2024-06-01T08:00:00Z"
     },
     {
-      "id": "93d3f6a9-ed74-448c-83f4-fc3fe830edab",
+      "id": "e1f2a3b4-c5d6-47e8-f9a0-b1c2d3e4f5a6",
       "areaId": "52519920-7f49-44a1-b601-62a891d1f41d",
       "name": "Preheat Exchanger PSV Review",
       "code": "ACME-2024-002",
       "phase": "design",
       "status": "draft",
       "startDate": "2024-07-15",
-      "leadId": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "leadId": "c34f5c40-8193-4e39-a628-e684361c2b67",
       "createdAt": "2024-07-15T08:00:00Z"
+    },
+    {
+      "id": "f2a3b4c5-d6e7-48f9-a0b1-c2d3e4f5a6b7",
+      "areaId": "136fb02a-a1b3-46c3-b2b5-bbcdcbb8eb3d",
+      "name": "Vacuum Column Fire Case Analysis",
+      "code": "ACME-2024-003",
+      "phase": "design",
+      "status": "approved",
+      "startDate": "2024-05-01",
+      "endDate": "2024-08-30",
+      "leadId": "22ee3f22-898a-461b-85ec-83f84d250810",
+      "createdAt": "2024-05-01T08:00:00Z"
+    },
+    {
+      "id": "a3b4c5d6-e7f8-49a0-b1c2-d3e4f5a6b7c8",
+      "areaId": "ba68c07b-d72a-4155-aa45-2cf91ce28fb3",
+      "name": "Cracker Furnace Relief Upgrade",
+      "code": "ACME-2024-004",
+      "phase": "construction",
+      "status": "issued",
+      "startDate": "2024-03-01",
+      "leadId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "createdAt": "2024-03-01T08:00:00Z"
+    },
+    {
+      "id": "b4c5d6e7-f8a9-40b1-c2d3-e4f5a6b7c8d9",
+      "areaId": "780cbf94-e8ff-4ec4-9d69-786a0cd3f095",
+      "name": "LNG Vaporizer PSV Sizing",
+      "code": "GEP-2024-001",
+      "phase": "design",
+      "status": "in_review",
+      "startDate": "2024-08-01",
+      "leadId": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "createdAt": "2024-08-01T08:00:00Z"
+    },
+    {
+      "id": "5b35c05c-d7c7-4348-ba98-05b6329437d2",
+      "areaId": "52519920-7f49-44a1-b601-62a891d1f41d",
+      "name": "Crude Preheat Safety Review",
+      "code": "ACME-2024-005",
+      "phase": "design",
+      "status": "in_review",
+      "startDate": "2024-09-01",
+      "leadId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "createdAt": "2024-09-01T08:00:00Z"
+    },
+    {
+      "id": "7ba0f0f4-522d-4340-9755-e414c8104bd1",
+      "areaId": "136fb02a-a1b3-46c3-b2b5-bbcdcbb8eb3d",
+      "name": "VDU Overhead Rating",
+      "code": "ACME-2024-006",
+      "phase": "design",
+      "status": "in_review",
+      "startDate": "2024-10-01",
+      "leadId": "22ee3f22-898a-461b-85ec-83f84d250810",
+      "createdAt": "2024-10-01T08:00:00Z"
+    },
+    {
+      "id": "7257989d-7f41-477c-a45e-b15358055458",
+      "areaId": "ba68c07b-d72a-4155-aa45-2cf91ce28fb3",
+      "name": "Ethylene Furnace 101 Revamp",
+      "code": "ACME-2024-007",
+      "phase": "design",
+      "status": "draft",
+      "startDate": "2024-11-01",
+      "leadId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "createdAt": "2024-11-01T08:00:00Z"
+    },
+    {
+      "id": "88c27eeb-98d0-4089-a2ea-9e735414d79c",
+      "areaId": "780cbf94-e8ff-4ec4-9d69-786a0cd3f095",
+      "name": "LNG Boil-off Gas Study",
+      "code": "GEP-2024-002",
+      "phase": "operation",
+      "status": "approved",
+      "startDate": "2024-09-15",
+      "leadId": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "createdAt": "2024-09-15T08:00:00Z"
+    },
+    {
+      "id": "6767c699-b141-4c6e-8260-ef0240d9089f",
+      "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
+      "name": "Atmospheric Relief Header Check",
+      "code": "ACME-2024-008",
+      "phase": "construction",
+      "status": "issued",
+      "startDate": "2024-08-20",
+      "leadId": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "createdAt": "2024-08-20T08:00:00Z"
     }
   ],
   "equipment": [
     {
-      "id": "ade8593f-0554-47b7-9873-4f88e61f5eb0",
+      "id": "e0000001-0001-0001-0001-000000000001",
       "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
       "type": "column",
       "tag": "T-101",
       "name": "Atmospheric Crude Tower",
       "description": "Atmospheric Crude Tower",
       "designPressure": 3.5,
-      "mawp": 4.0,
+      "mawp": 4,
       "designTemperature": 400,
       "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
       "status": "active",
+      "details": {
+        "innerDiameter": 4000,
+        "tangentToTangentLength": 45000,
+        "orientation": "vertical",
+        "headType": "elliptical",
+        "insulated": false
+      },
       "createdAt": "2024-06-05T10:00:00Z",
       "updatedAt": "2024-06-05T10:00:00Z"
     },
     {
-      "id": "72ad9e44-c348-4e76-886c-223e30aef4a3",
+      "id": "e0000002-0002-0002-0002-000000000002",
       "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
       "type": "vessel",
       "tag": "V-102",
       "name": "Overhead Accumulator",
       "description": "Overhead Accumulator",
-      "designPressure": 5.0,
-      "mawp": 6.0,
+      "designPressure": 5,
+      "mawp": 6,
       "designTemperature": 150,
       "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
       "status": "active",
+      "details": {
+        "innerDiameter": 3000,
+        "tangentToTangentLength": 8000,
+        "orientation": "horizontal",
+        "headType": "torispherical",
+        "insulated": true
+      },
       "createdAt": "2024-06-05T10:00:00Z",
       "updatedAt": "2024-06-05T10:00:00Z"
+    },
+    {
+      "id": "e0000003-0003-0003-0003-000000000003",
+      "areaId": "52519920-7f49-44a1-b601-62a891d1f41d",
+      "type": "heat_exchanger",
+      "tag": "E-101A/B",
+      "name": "Crude Preheat Exchanger",
+      "description": "Crude Preheat Exchanger",
+      "designPressure": 25,
+      "mawp": 28,
+      "designTemperature": 300,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-07-20T10:00:00Z",
+      "updatedAt": "2024-07-20T10:00:00Z"
+    },
+    {
+      "id": "e0000004-0004-0004-0004-000000000004",
+      "areaId": "136fb02a-a1b3-46c3-b2b5-bbcdcbb8eb3d",
+      "type": "column",
+      "tag": "T-201",
+      "name": "Vacuum Column",
+      "description": "Vacuum Column",
+      "designPressure": 1,
+      "mawp": 1.5,
+      "designTemperature": 420,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-05-10T10:00:00Z",
+      "updatedAt": "2024-05-10T10:00:00Z"
+    },
+    {
+      "id": "e0000005-0005-0005-0005-000000000005",
+      "areaId": "780cbf94-e8ff-4ec4-9d69-786a0cd3f095",
+      "type": "heat_exchanger",
+      "tag": "E-501",
+      "name": "LNG Vaporizer",
+      "description": "LNG Vaporizer",
+      "designPressure": 85,
+      "mawp": 90,
+      "designTemperature": -165,
+      "ownerId": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "status": "active",
+      "createdAt": "2024-08-10T10:00:00Z",
+      "updatedAt": "2024-08-10T10:00:00Z"
+    },
+    {
+      "id": "07e997a6-12c8-4775-9989-13da05e46c72",
+      "areaId": "52519920-7f49-44a1-b601-62a891d1f41d",
+      "type": "heat_exchanger",
+      "tag": "E-102",
+      "name": "Preheat Exchanger 2",
+      "description": "Crude/Residue Exchanger",
+      "designPressure": 25,
+      "mawp": 30,
+      "designTemperature": 320,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "7c9a9245-fb41-471a-be29-d65fa34629ce",
+      "areaId": "52519920-7f49-44a1-b601-62a891d1f41d",
+      "type": "heat_exchanger",
+      "tag": "E-103",
+      "name": "Preheat Exchanger 3",
+      "description": "Crude/VGO Exchanger",
+      "designPressure": 25,
+      "mawp": 30,
+      "designTemperature": 310,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "2be891ad-d5e8-4a5f-a63e-108151522f20",
+      "areaId": "52519920-7f49-44a1-b601-62a891d1f41d",
+      "type": "heat_exchanger",
+      "tag": "E-104",
+      "name": "Preheat Exchanger 4",
+      "description": "Crude/Kero Exchanger",
+      "designPressure": 25,
+      "mawp": 30,
+      "designTemperature": 250,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "fca201e7-8b09-4623-83dd-2384aabc0101",
+      "areaId": "52519920-7f49-44a1-b601-62a891d1f41d",
+      "type": "heat_exchanger",
+      "tag": "E-105",
+      "name": "Preheat Exchanger 5",
+      "description": "Crude/Diesel Exchanger",
+      "designPressure": 25,
+      "mawp": 30,
+      "designTemperature": 280,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "f0a4f553-61b4-4e44-b0ad-e2c7f55a73e6",
+      "areaId": "52519920-7f49-44a1-b601-62a891d1f41d",
+      "type": "pump",
+      "tag": "P-101A",
+      "name": "Crude Booster Pump",
+      "description": "Crude Charge Pump A",
+      "designPressure": 40,
+      "mawp": 45,
+      "designTemperature": 60,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "91122a28-986c-4b68-809c-30b8098544e3",
+      "areaId": "52519920-7f49-44a1-b601-62a891d1f41d",
+      "type": "pump",
+      "tag": "P-101B",
+      "name": "Crude Booster Pump",
+      "description": "Crude Charge Pump B",
+      "designPressure": 40,
+      "mawp": 45,
+      "designTemperature": 60,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "2a975764-16a8-48b2-b103-61ce229a4358",
+      "areaId": "136fb02a-a1b3-46c3-b2b5-bbcdcbb8eb3d",
+      "type": "vessel",
+      "tag": "V-202",
+      "name": "VDU Overhead Receiver",
+      "description": "Vacuum Tower Overhead Drum",
+      "designPressure": 3.5,
+      "mawp": 5,
+      "designTemperature": 120,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "7f485764-a745-4293-84bc-2f94119842a2",
+      "areaId": "136fb02a-a1b3-46c3-b2b5-bbcdcbb8eb3d",
+      "type": "column",
+      "tag": "T-202",
+      "name": "Vacuum Pre-Flash Column",
+      "description": "Pre-Flash Tower",
+      "designPressure": 3.5,
+      "mawp": 5,
+      "designTemperature": 350,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "4f724391-766b-4e63-88ee-13291535186b",
+      "areaId": "136fb02a-a1b3-46c3-b2b5-bbcdcbb8eb3d",
+      "type": "heat_exchanger",
+      "tag": "E-201",
+      "name": "VDU Feed Heater",
+      "description": "Fired Heater",
+      "designPressure": 20,
+      "mawp": 25,
+      "designTemperature": 450,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "78fe1571-0428-4ce9-89a1-0268a2bfd9d4",
+      "areaId": "ba68c07b-d72a-4155-aa45-2cf91ce28fb3",
+      "type": "vessel",
+      "tag": "D-101",
+      "name": "Steam Drum",
+      "description": "High Pressure Steam Drum",
+      "designPressure": 110,
+      "mawp": 120,
+      "designTemperature": 320,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "50fc5045-8fce-4217-bf28-fc24dcb01f65",
+      "areaId": "ba68c07b-d72a-4155-aa45-2cf91ce28fb3",
+      "type": "column",
+      "tag": "T-301",
+      "name": "Quench Tower",
+      "description": "Water Quench Tower",
+      "designPressure": 10,
+      "mawp": 15,
+      "designTemperature": 180,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "29c9ef63-95b0-44be-be45-e6f790c6ca7f",
+      "areaId": "ba68c07b-d72a-4155-aa45-2cf91ce28fb3",
+      "type": "heat_exchanger",
+      "tag": "E-301",
+      "name": "Transfer Line Exchanger",
+      "description": "TLE-1",
+      "designPressure": 50,
+      "mawp": 60,
+      "designTemperature": 400,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "e8a3a789-0ae0-4497-b935-7c088f170af3",
+      "areaId": "ba68c07b-d72a-4155-aa45-2cf91ce28fb3",
+      "type": "vessel",
+      "tag": "V-302",
+      "name": "Fuel Gas Knockout",
+      "description": "Fuel Gas KO Drum",
+      "designPressure": 8,
+      "mawp": 10,
+      "designTemperature": 60,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "677db0fd-1663-4752-9653-b9fd39f1c944",
+      "areaId": "ba68c07b-d72a-4155-aa45-2cf91ce28fb3",
+      "type": "vessel",
+      "tag": "V-303",
+      "name": "BFW Deaerator",
+      "description": "Boiler Feed Water Deaerator",
+      "designPressure": 5,
+      "mawp": 7,
+      "designTemperature": 150,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "f6813350-13f6-407b-8321-4d3759a22cc4",
+      "areaId": "780cbf94-e8ff-4ec4-9d69-786a0cd3f095",
+      "type": "vessel",
+      "tag": "TK-501",
+      "name": "LNG Storage Tank",
+      "description": "Main Storage Tank",
+      "designPressure": 0.5,
+      "mawp": 0.8,
+      "designTemperature": -170,
+      "ownerId": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "521191ec-298a-4467-96a9-8350db9011af",
+      "areaId": "780cbf94-e8ff-4ec4-9d69-786a0cd3f095",
+      "type": "pump",
+      "tag": "P-502A",
+      "name": "LNG Sendout Pump",
+      "description": "Sendout Pump A",
+      "designPressure": 90,
+      "mawp": 100,
+      "designTemperature": -165,
+      "ownerId": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "d0a2f5ae-d4ff-49a6-8051-fb18df4dc1df",
+      "areaId": "780cbf94-e8ff-4ec4-9d69-786a0cd3f095",
+      "type": "pump",
+      "tag": "P-502B",
+      "name": "LNG Sendout Pump",
+      "description": "Sendout Pump B",
+      "designPressure": 90,
+      "mawp": 100,
+      "designTemperature": -165,
+      "ownerId": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "c4c5a92d-e215-4fa8-bc3c-cba82cb87dbe",
+      "areaId": "780cbf94-e8ff-4ec4-9d69-786a0cd3f095",
+      "type": "vessel",
+      "tag": "V-505",
+      "name": "BOG Compressor Suction",
+      "description": "Suction Drum",
+      "designPressure": 1,
+      "mawp": 2,
+      "designTemperature": -100,
+      "ownerId": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "7cbde4b3-4f27-463e-ac38-a115c57b7f5d",
+      "areaId": "780cbf94-e8ff-4ec4-9d69-786a0cd3f095",
+      "type": "heat_exchanger",
+      "tag": "E-502",
+      "name": "BOG Recondenser",
+      "description": "Boil-off Gas Recondenser",
+      "designPressure": 10,
+      "mawp": 15,
+      "designTemperature": -160,
+      "ownerId": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "0c79b940-272e-4058-aa8c-f9ec6711582e",
+      "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
+      "type": "vessel",
+      "tag": "V-105",
+      "name": "Desalter",
+      "description": "Crude Desalter",
+      "designPressure": 15,
+      "mawp": 18,
+      "designTemperature": 150,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "efd59d1e-bf40-4560-8fdd-b34e44b97d26",
+      "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
+      "type": "column",
+      "tag": "T-102",
+      "name": "Naphtha Stabilizer",
+      "description": "Stabilizer Column",
+      "designPressure": 10,
+      "mawp": 12,
+      "designTemperature": 180,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "27658cdd-b003-4fbb-b328-98e6b18c642e",
+      "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
+      "type": "vessel",
+      "tag": "V-106",
+      "name": "Stabilizer Overhead Drum",
+      "description": "Reflux Drum",
+      "designPressure": 10,
+      "mawp": 12,
+      "designTemperature": 60,
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
     }
   ],
   "protectiveSystems": [
     {
-      "id": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
+      "id": "11111111-1111-1111-1111-111111111111",
       "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
       "projectIds": [
-        "b29268ba-d545-4a87-9df4-c6eb47f5208f"
+        "d0e1f2a3-b4c5-46d7-e8f9-a0b1c2d3e4f5"
       ],
       "name": "Atmospheric Tower Overhead PSV",
       "tag": "PSV-101A",
@@ -325,45 +803,66 @@
       "fluidPhase": "gas",
       "setPressure": 2.8,
       "mawp": 3.5,
-      "ownerId": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
       "status": "in_review",
-      "valveType": "conventional",
       "tags": [
         "critical",
         "fire-case"
       ],
-      "createdAt": "2024-06-10T08:00:00Z",
-      "updatedAt": "2024-09-15T14:30:00Z",
       "inletNetwork": {
         "nodes": [
           {
             "id": "n1",
-            "label": "Equipment",
-            "type": "equipment",
+            "label": "Source",
             "position": {
-              "x": 100,
-              "y": 200
+              "x": 0,
+              "y": 0
+            },
+            "pressure": 3.5,
+            "temperature": 180,
+            "fluid": {
+              "id": "fl1",
+              "phase": "gas"
             }
           },
           {
             "id": "n2",
-            "label": "PSV",
-            "type": "psv",
+            "label": "PSV Inlet",
             "position": {
-              "x": 400,
-              "y": 200
+              "x": 100,
+              "y": 0
+            },
+            "pressure": 2.8,
+            "temperature": 180,
+            "fluid": {
+              "id": "fl1",
+              "phase": "gas"
             }
           }
         ],
         "pipes": [
           {
             "id": "p1",
-            "source": "n1",
-            "target": "n2",
+            "name": "Inlet Pipe",
+            "startNodeId": "n1",
+            "endNodeId": "n2",
+            "length": 5,
+            "lengthUnit": "m",
             "diameter": 400,
-            "length": 25,
-            "schedule": "40",
-            "roughness": 0.0457,
+            "diameterUnit": "mm",
+            "elevation": 0,
+            "fittings": []
+          },
+          {
+            "id": "p2",
+            "name": "Inlet Pipe",
+            "startNodeId": "n2",
+            "endNodeId": "n1",
+            "length": 5,
+            "lengthUnit": "m",
+            "diameter": 400,
+            "diameterUnit": "mm",
+            "elevation": 0,
             "fittings": []
           }
         ]
@@ -371,43 +870,69 @@
       "outletNetwork": {
         "nodes": [
           {
-            "id": "n1",
-            "label": "PSV",
-            "type": "psv",
+            "id": "on1",
+            "label": "PSV Outlet",
             "position": {
-              "x": 100,
-              "y": 200
+              "x": 0,
+              "y": 0
+            },
+            "pressure": 0.5,
+            "temperature": 150,
+            "fluid": {
+              "id": "fl1",
+              "phase": "gas"
             }
           },
           {
-            "id": "n2",
-            "label": "Header",
-            "type": "header",
+            "id": "on2",
+            "label": "Discharge",
             "position": {
-              "x": 400,
-              "y": 200
+              "x": 200,
+              "y": 0
+            },
+            "pressure": 0,
+            "temperature": 140,
+            "fluid": {
+              "id": "fl1",
+              "phase": "gas"
             }
           }
         ],
         "pipes": [
           {
-            "id": "p1",
-            "source": "n1",
-            "target": "n2",
+            "id": "op1",
+            "name": "Discharge Pipe",
+            "startNodeId": "on1",
+            "endNodeId": "on2",
+            "length": 20,
+            "lengthUnit": "m",
             "diameter": 600,
-            "length": 15,
-            "schedule": "40",
-            "roughness": 0.045,
+            "diameterUnit": "mm",
+            "elevation": 5,
+            "fittings": []
+          },
+          {
+            "id": "op2",
+            "name": "Discharge Pipe",
+            "startNodeId": "on2",
+            "endNodeId": "on1",
+            "length": 20,
+            "lengthUnit": "m",
+            "diameter": 600,
+            "diameterUnit": "mm",
+            "elevation": 5,
             "fittings": []
           }
         ]
-      }
+      },
+      "createdAt": "2024-06-10T08:00:00Z",
+      "updatedAt": "2024-09-15T14:30:00Z"
     },
     {
-      "id": "a50b3dcd-c40a-4a62-afc2-ba38566441c8",
+      "id": "22222222-2222-2222-2222-222222222222",
       "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
       "projectIds": [
-        "b29268ba-d545-4a87-9df4-c6eb47f5208f"
+        "d0e1f2a3-b4c5-46d7-e8f9-a0b1c2d3e4f5"
       ],
       "name": "Atmospheric Tower Overhead PSV (Spare)",
       "tag": "PSV-101B",
@@ -417,172 +942,2441 @@
       "fluidPhase": "gas",
       "setPressure": 2.9,
       "mawp": 3.5,
-      "ownerId": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
       "status": "draft",
-      "valveType": "balanced_bellows",
       "tags": [
         "spare"
       ],
       "createdAt": "2024-06-10T08:00:00Z",
-      "updatedAt": "2024-09-10T10:00:00Z",
-      "inletNetwork": {
-        "nodes": [
-          {
-            "id": "n1",
-            "label": "Equipment",
-            "type": "equipment",
-            "position": {
-              "x": 100,
-              "y": 200
-            }
-          },
-          {
-            "id": "n2",
-            "label": "PSV",
-            "type": "psv",
-            "position": {
-              "x": 400,
-              "y": 200
-            }
-          }
-        ],
-        "pipes": [
-          {
-            "id": "p1",
-            "source": "n1",
-            "target": "n2",
-            "diameter": 400,
-            "length": 4,
-            "schedule": "40",
-            "roughness": 0.045,
-            "fittings": []
-          }
-        ]
-      },
-      "outletNetwork": {
-        "nodes": [
-          {
-            "id": "n1",
-            "label": "PSV",
-            "type": "psv",
-            "position": {
-              "x": 100,
-              "y": 200
-            }
-          },
-          {
-            "id": "n2",
-            "label": "Header",
-            "type": "header",
-            "position": {
-              "x": 400,
-              "y": 200
-            }
-          }
-        ],
-        "pipes": [
-          {
-            "id": "p1",
-            "source": "n1",
-            "target": "n2",
-            "diameter": 600,
-            "length": 12,
-            "schedule": "40",
-            "roughness": 0.045,
-            "fittings": []
-          }
-        ]
-      }
+      "updatedAt": "2024-09-10T10:00:00Z"
+    },
+    {
+      "id": "33333333-3333-3333-3333-333333333333",
+      "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
+      "projectIds": [
+        "d0e1f2a3-b4c5-46d7-e8f9-a0b1c2d3e4f5"
+      ],
+      "name": "Overhead Accumulator PSV",
+      "tag": "PSV-102",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "Naphtha",
+      "fluidPhase": "liquid",
+      "setPressure": 4,
+      "mawp": 5,
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "status": "approved",
+      "tags": [
+        "blocked-outlet"
+      ],
+      "createdAt": "2024-06-15T08:00:00Z",
+      "updatedAt": "2024-08-20T16:00:00Z"
+    },
+    {
+      "id": "44444444-4444-4444-4444-444444444444",
+      "areaId": "52519920-7f49-44a1-b601-62a891d1f41d",
+      "projectIds": [
+        "e1f2a3b4-c5d6-47e8-f9a0-b1c2d3e4f5a6"
+      ],
+      "name": "Preheat Exchanger Tube Rupture PSV",
+      "tag": "PSV-103",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "Crude Oil",
+      "fluidPhase": "liquid",
+      "setPressure": 20,
+      "mawp": 25,
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "status": "draft",
+      "tags": [
+        "tube-rupture"
+      ],
+      "createdAt": "2024-07-25T08:00:00Z",
+      "updatedAt": "2024-07-25T08:00:00Z"
+    },
+    {
+      "id": "55555555-5555-5555-5555-555555555555",
+      "areaId": "136fb02a-a1b3-46c3-b2b5-bbcdcbb8eb3d",
+      "projectIds": [
+        "f2a3b4c5-d6e7-48f9-a0b1-c2d3e4f5a6b7"
+      ],
+      "name": "Vacuum Column Fire Case RD",
+      "tag": "RD-201",
+      "type": "rupture_disc",
+      "designCode": "API-520",
+      "serviceFluid": "Vacuum Residue",
+      "fluidPhase": "liquid",
+      "setPressure": 0.8,
+      "mawp": 1,
+      "ownerId": "22ee3f22-898a-461b-85ec-83f84d250810",
+      "status": "issued",
+      "tags": [
+        "fire-case",
+        "rupture-disc"
+      ],
+      "createdAt": "2024-05-20T08:00:00Z",
+      "updatedAt": "2024-08-25T10:00:00Z"
+    },
+    {
+      "id": "66666666-6666-6666-6666-666666666666",
+      "areaId": "780cbf94-e8ff-4ec4-9d69-786a0cd3f095",
+      "projectIds": [
+        "b4c5d6e7-f8a9-40b1-c2d3-e4f5a6b7c8d9"
+      ],
+      "name": "LNG Vaporizer PSV",
+      "tag": "PSV-501",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "Natural Gas (Methane)",
+      "fluidPhase": "gas",
+      "setPressure": 75,
+      "mawp": 85,
+      "ownerId": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "status": "in_review",
+      "tags": [
+        "high-pressure",
+        "cryogenic"
+      ],
+      "createdAt": "2024-08-15T08:00:00Z",
+      "updatedAt": "2024-09-20T12:00:00Z"
+    },
+    {
+      "id": "6a249540-745c-4e27-b8c6-4ffc390bba6f",
+      "areaId": "52519920-7f49-44a1-b601-62a891d1f41d",
+      "projectIds": [
+        "e1f2a3b4-c5d6-47e8-f9a0-b1c2d3e4f5a6"
+      ],
+      "name": "Exchanger E-102 Thermal Relief",
+      "tag": "TSV-102",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "Crude Oil",
+      "fluidPhase": "liquid",
+      "setPressure": 30,
+      "mawp": 30,
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "status": "in_review",
+      "tags": [
+        "thermal"
+      ],
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "88c1aa2c-b885-41e0-b959-2c7da33f92f8",
+      "areaId": "52519920-7f49-44a1-b601-62a891d1f41d",
+      "projectIds": [
+        "e1f2a3b4-c5d6-47e8-f9a0-b1c2d3e4f5a6"
+      ],
+      "name": "Exchanger E-103 Thermal Relief",
+      "tag": "TSV-103",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "Crude Oil",
+      "fluidPhase": "liquid",
+      "setPressure": 30,
+      "mawp": 30,
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "status": "in_review",
+      "tags": [
+        "thermal"
+      ],
+      "createdAt": "2024-01-01T00:00:00Z",
+      "updatedAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "95d89be5-0cd3-4b49-91a1-1a4506197ed3",
+      "areaId": "52519920-7f49-44a1-b601-62a891d1f41d",
+      "projectIds": [
+        "5b35c05c-d7c7-4348-ba98-05b6329437d2"
+      ],
+      "name": "Exchanger E-104 Thermal Relief",
+      "tag": "TSV-104",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "Crude Oil",
+      "fluidPhase": "liquid",
+      "setPressure": 30,
+      "mawp": 30,
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "status": "draft",
+      "tags": [
+        "thermal"
+      ],
+      "createdAt": "2024-09-01T00:00:00Z",
+      "updatedAt": "2024-09-01T00:00:00Z"
+    },
+    {
+      "id": "01751507-9830-4193-81bb-3b62958b17e0",
+      "areaId": "52519920-7f49-44a1-b601-62a891d1f41d",
+      "projectIds": [
+        "5b35c05c-d7c7-4348-ba98-05b6329437d2"
+      ],
+      "name": "Exchanger E-105 Thermal Relief",
+      "tag": "TSV-105",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "Crude Oil",
+      "fluidPhase": "liquid",
+      "setPressure": 30,
+      "mawp": 30,
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "status": "draft",
+      "tags": [
+        "thermal"
+      ],
+      "createdAt": "2024-09-01T00:00:00Z",
+      "updatedAt": "2024-09-01T00:00:00Z"
+    },
+    {
+      "id": "2afab739-bf7d-4d73-8692-46b58cae23a8",
+      "areaId": "52519920-7f49-44a1-b601-62a891d1f41d",
+      "projectIds": [
+        "5b35c05c-d7c7-4348-ba98-05b6329437d2"
+      ],
+      "name": "Pump P-101A Discharge PRV",
+      "tag": "PSV-101A-D",
+      "type": "prv",
+      "designCode": "API-520",
+      "serviceFluid": "Crude Oil",
+      "fluidPhase": "liquid",
+      "setPressure": 45,
+      "mawp": 45,
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "status": "in_review",
+      "tags": [
+        "blocked-discharge"
+      ],
+      "createdAt": "2024-09-01T00:00:00Z",
+      "updatedAt": "2024-09-01T00:00:00Z"
+    },
+    {
+      "id": "e1016706-e422-4201-b56f-5634383596d7",
+      "areaId": "52519920-7f49-44a1-b601-62a891d1f41d",
+      "projectIds": [
+        "5b35c05c-d7c7-4348-ba98-05b6329437d2"
+      ],
+      "name": "Pump P-101B Discharge PRV",
+      "tag": "PSV-101B-D",
+      "type": "prv",
+      "designCode": "API-520",
+      "serviceFluid": "Crude Oil",
+      "fluidPhase": "liquid",
+      "setPressure": 45,
+      "mawp": 45,
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "status": "in_review",
+      "tags": [
+        "blocked-discharge"
+      ],
+      "createdAt": "2024-09-01T00:00:00Z",
+      "updatedAt": "2024-09-01T00:00:00Z"
+    },
+    {
+      "id": "de196a32-93aa-4fcd-8522-89330730fb2a",
+      "areaId": "136fb02a-a1b3-46c3-b2b5-bbcdcbb8eb3d",
+      "projectIds": [
+        "7ba0f0f4-522d-4340-9755-e414c8104bd1"
+      ],
+      "name": "VDU Overhead PSV",
+      "tag": "PSV-202A",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "Vapors",
+      "fluidPhase": "gas",
+      "setPressure": 5,
+      "mawp": 5,
+      "ownerId": "22ee3f22-898a-461b-85ec-83f84d250810",
+      "status": "in_review",
+      "tags": [
+        "pilot-operated"
+      ],
+      "createdAt": "2024-10-01T00:00:00Z",
+      "updatedAt": "2024-10-01T00:00:00Z"
+    },
+    {
+      "id": "8715c712-0e96-4246-9762-c577d27c1001",
+      "areaId": "136fb02a-a1b3-46c3-b2b5-bbcdcbb8eb3d",
+      "projectIds": [
+        "7ba0f0f4-522d-4340-9755-e414c8104bd1"
+      ],
+      "name": "VDU Pre-Flash PSV",
+      "tag": "PSV-202B",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "Vapors",
+      "fluidPhase": "gas",
+      "setPressure": 5,
+      "mawp": 5,
+      "ownerId": "22ee3f22-898a-461b-85ec-83f84d250810",
+      "status": "in_review",
+      "tags": [
+        "pilot-operated"
+      ],
+      "createdAt": "2024-10-01T00:00:00Z",
+      "updatedAt": "2024-10-01T00:00:00Z"
+    },
+    {
+      "id": "975b85bb-2677-4888-b90f-cbcbe1eefe69",
+      "areaId": "136fb02a-a1b3-46c3-b2b5-bbcdcbb8eb3d",
+      "projectIds": [
+        "f2a3b4c5-d6e7-48f9-a0b1-c2d3e4f5a6b7"
+      ],
+      "name": "Heater Tube Rupture Disc",
+      "tag": "RD-202",
+      "type": "rupture_disc",
+      "designCode": "ASME-VIII",
+      "serviceFluid": "Crude",
+      "fluidPhase": "two_phase",
+      "setPressure": 25,
+      "mawp": 25,
+      "ownerId": "22ee3f22-898a-461b-85ec-83f84d250810",
+      "status": "approved",
+      "tags": [
+        "fire-case"
+      ],
+      "createdAt": "2024-05-15T00:00:00Z",
+      "updatedAt": "2024-05-15T00:00:00Z"
+    },
+    {
+      "id": "74edbded-2339-4467-83c7-1d11f7c320d3",
+      "areaId": "ba68c07b-d72a-4155-aa45-2cf91ce28fb3",
+      "projectIds": [
+        "a3b4c5d6-e7f8-49a0-b1c2-d3e4f5a6b7c8"
+      ],
+      "name": "HP Steam Drum PSV",
+      "tag": "PSV-301A",
+      "type": "psv",
+      "designCode": "ASME-VIII",
+      "serviceFluid": "Steam",
+      "fluidPhase": "steam",
+      "setPressure": 120,
+      "mawp": 120,
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "status": "issued",
+      "tags": [
+        "power-boiler"
+      ],
+      "createdAt": "2024-03-01T00:00:00Z",
+      "updatedAt": "2024-03-01T00:00:00Z"
+    },
+    {
+      "id": "4c44243a-7ed4-4065-9831-23f2f5c76579",
+      "areaId": "ba68c07b-d72a-4155-aa45-2cf91ce28fb3",
+      "projectIds": [
+        "a3b4c5d6-e7f8-49a0-b1c2-d3e4f5a6b7c8"
+      ],
+      "name": "HP Steam Drum PSV Spare",
+      "tag": "PSV-301B",
+      "type": "psv",
+      "designCode": "ASME-VIII",
+      "serviceFluid": "Steam",
+      "fluidPhase": "steam",
+      "setPressure": 121,
+      "mawp": 120,
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "status": "issued",
+      "tags": [
+        "power-boiler",
+        "spare"
+      ],
+      "createdAt": "2024-03-01T00:00:00Z",
+      "updatedAt": "2024-03-01T00:00:00Z"
+    },
+    {
+      "id": "2cd06d15-9993-41c3-8898-15cf64d36e78",
+      "areaId": "ba68c07b-d72a-4155-aa45-2cf91ce28fb3",
+      "projectIds": [
+        "7257989d-7f41-477c-a45e-b15358055458"
+      ],
+      "name": "Quench Tower PSV",
+      "tag": "PSV-302",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "Hydrocarbon",
+      "fluidPhase": "two_phase",
+      "setPressure": 15,
+      "mawp": 15,
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "status": "draft",
+      "tags": [
+        "process"
+      ],
+      "createdAt": "2024-11-01T00:00:00Z",
+      "updatedAt": "2024-11-01T00:00:00Z"
+    },
+    {
+      "id": "f146bc84-934c-473d-88b6-963d76b1cc4b",
+      "areaId": "ba68c07b-d72a-4155-aa45-2cf91ce28fb3",
+      "projectIds": [
+        "7257989d-7f41-477c-a45e-b15358055458"
+      ],
+      "name": "Fuel Gas KO Drum PSV",
+      "tag": "PSV-303",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "Fuel Gas",
+      "fluidPhase": "gas",
+      "setPressure": 10,
+      "mawp": 10,
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "status": "draft",
+      "tags": [
+        "fire-case"
+      ],
+      "createdAt": "2024-11-01T00:00:00Z",
+      "updatedAt": "2024-11-01T00:00:00Z"
+    },
+    {
+      "id": "475039ea-a4c7-44b7-97ed-e0331fb497f1",
+      "areaId": "ba68c07b-d72a-4155-aa45-2cf91ce28fb3",
+      "projectIds": [
+        "7257989d-7f41-477c-a45e-b15358055458"
+      ],
+      "name": "Deaerator PSV",
+      "tag": "PSV-304",
+      "type": "psv",
+      "designCode": "ASME-VIII",
+      "serviceFluid": "Steam/Water",
+      "fluidPhase": "steam",
+      "setPressure": 7,
+      "mawp": 7,
+      "ownerId": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "status": "draft",
+      "tags": [
+        "utility"
+      ],
+      "createdAt": "2024-11-01T00:00:00Z",
+      "updatedAt": "2024-11-01T00:00:00Z"
+    },
+    {
+      "id": "16705733-2581-468c-9912-127501c8e636",
+      "areaId": "780cbf94-e8ff-4ec4-9d69-786a0cd3f095",
+      "projectIds": [
+        "b4c5d6e7-f8a9-40b1-c2d3-e4f5a6b7c8d9"
+      ],
+      "name": "LNG Tank PSV",
+      "tag": "PSV-501A",
+      "type": "psv",
+      "designCode": "API-2000",
+      "serviceFluid": "LNG Vapor",
+      "fluidPhase": "gas",
+      "setPressure": 0.8,
+      "mawp": 0.8,
+      "ownerId": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "status": "in_review",
+      "tags": [
+        "low-pressure"
+      ],
+      "createdAt": "2024-08-01T00:00:00Z",
+      "updatedAt": "2024-08-01T00:00:00Z"
+    },
+    {
+      "id": "73fc30bc-6fbf-45ca-ae6c-6d0220e187a4",
+      "areaId": "780cbf94-e8ff-4ec4-9d69-786a0cd3f095",
+      "projectIds": [
+        "b4c5d6e7-f8a9-40b1-c2d3-e4f5a6b7c8d9"
+      ],
+      "name": "LNG Tank PSV 2",
+      "tag": "PSV-501B",
+      "type": "psv",
+      "designCode": "API-2000",
+      "serviceFluid": "LNG Vapor",
+      "fluidPhase": "gas",
+      "setPressure": 0.8,
+      "mawp": 0.8,
+      "ownerId": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "status": "in_review",
+      "tags": [
+        "low-pressure"
+      ],
+      "createdAt": "2024-08-01T00:00:00Z",
+      "updatedAt": "2024-08-01T00:00:00Z"
+    },
+    {
+      "id": "e6145f3a-703c-4fb1-878a-f33ddf68316f",
+      "areaId": "780cbf94-e8ff-4ec4-9d69-786a0cd3f095",
+      "projectIds": [
+        "88c27eeb-98d0-4089-a2ea-9e735414d79c"
+      ],
+      "name": "Sendout Pump Thermal Relief",
+      "tag": "TSV-502A",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "LNG",
+      "fluidPhase": "liquid",
+      "setPressure": 100,
+      "mawp": 100,
+      "ownerId": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "status": "in_review",
+      "tags": [
+        "thermal",
+        "cryogenic"
+      ],
+      "createdAt": "2024-09-15T00:00:00Z",
+      "updatedAt": "2024-09-15T00:00:00Z"
+    },
+    {
+      "id": "c3dcb30d-ece4-4b7a-809d-a9ba1ded36d2",
+      "areaId": "780cbf94-e8ff-4ec4-9d69-786a0cd3f095",
+      "projectIds": [
+        "88c27eeb-98d0-4089-a2ea-9e735414d79c"
+      ],
+      "name": "Sendout Pump Thermal Relief",
+      "tag": "TSV-502B",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "LNG",
+      "fluidPhase": "liquid",
+      "setPressure": 100,
+      "mawp": 100,
+      "ownerId": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "status": "in_review",
+      "tags": [
+        "thermal",
+        "cryogenic"
+      ],
+      "createdAt": "2024-09-15T00:00:00Z",
+      "updatedAt": "2024-09-15T00:00:00Z"
+    },
+    {
+      "id": "b49530ae-be65-4eb0-88f9-f4f254ced73c",
+      "areaId": "780cbf94-e8ff-4ec4-9d69-786a0cd3f095",
+      "projectIds": [
+        "88c27eeb-98d0-4089-a2ea-9e735414d79c"
+      ],
+      "name": "BOG Suction Drum PSV",
+      "tag": "PSV-505",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "BOG",
+      "fluidPhase": "gas",
+      "setPressure": 2,
+      "mawp": 2,
+      "ownerId": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "status": "in_review",
+      "tags": [
+        "cryogenic"
+      ],
+      "createdAt": "2024-09-15T00:00:00Z",
+      "updatedAt": "2024-09-15T00:00:00Z"
+    },
+    {
+      "id": "93644372-667b-4922-91d5-5e66ffd78b77",
+      "areaId": "780cbf94-e8ff-4ec4-9d69-786a0cd3f095",
+      "projectIds": [
+        "88c27eeb-98d0-4089-a2ea-9e735414d79c"
+      ],
+      "name": "BOG Recondenser PSV",
+      "tag": "PSV-502",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "LNG",
+      "fluidPhase": "two_phase",
+      "setPressure": 15,
+      "mawp": 15,
+      "ownerId": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "status": "in_review",
+      "tags": [
+        "cryogenic"
+      ],
+      "createdAt": "2024-09-15T00:00:00Z",
+      "updatedAt": "2024-09-15T00:00:00Z"
+    },
+    {
+      "id": "30ba97b1-2a1e-4513-a9d1-0f4b36142c67",
+      "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
+      "projectIds": [
+        "6767c699-b141-4c6e-8260-ef0240d9089f"
+      ],
+      "name": "Desalter PSV",
+      "tag": "PSV-105",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "Crude/Water",
+      "fluidPhase": "liquid",
+      "setPressure": 18,
+      "mawp": 18,
+      "ownerId": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "status": "approved",
+      "tags": [
+        "process"
+      ],
+      "createdAt": "2024-08-20T00:00:00Z",
+      "updatedAt": "2024-08-20T00:00:00Z"
+    },
+    {
+      "id": "652f416d-3174-4b47-b353-0661ca3fb65e",
+      "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
+      "projectIds": [
+        "6767c699-b141-4c6e-8260-ef0240d9089f"
+      ],
+      "name": "Stabilizer PSV",
+      "tag": "PSV-106A",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "Naphtha/LPG",
+      "fluidPhase": "gas",
+      "setPressure": 12,
+      "mawp": 12,
+      "ownerId": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "status": "approved",
+      "tags": [
+        "process"
+      ],
+      "createdAt": "2024-08-20T00:00:00Z",
+      "updatedAt": "2024-08-20T00:00:00Z"
+    },
+    {
+      "id": "276708ab-9cda-46a4-8451-925a1762c2f4",
+      "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
+      "projectIds": [
+        "6767c699-b141-4c6e-8260-ef0240d9089f"
+      ],
+      "name": "Stabilizer PSV Spare",
+      "tag": "PSV-106B",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "Naphtha/LPG",
+      "fluidPhase": "gas",
+      "setPressure": 12,
+      "mawp": 12,
+      "ownerId": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "status": "approved",
+      "tags": [
+        "process",
+        "spare"
+      ],
+      "createdAt": "2024-08-20T00:00:00Z",
+      "updatedAt": "2024-08-20T00:00:00Z"
+    },
+    {
+      "id": "8f7e6d5c-4b3a-2190-a8b7-c6d5e4f3a2b1",
+      "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
+      "projectIds": [
+        "6767c699-b141-4c6e-8260-ef0240d9089f"
+      ],
+      "name": "Stabilizer Overhead Drum PSV",
+      "tag": "PSV-107",
+      "type": "psv",
+      "designCode": "API-520",
+      "serviceFluid": "LPG",
+      "fluidPhase": "gas",
+      "setPressure": 12,
+      "mawp": 12,
+      "ownerId": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "status": "approved",
+      "tags": [
+        "process"
+      ],
+      "createdAt": "2024-08-20T00:00:00Z",
+      "updatedAt": "2024-08-20T00:00:00Z"
     }
   ],
   "scenarios": [
     {
-      "id": "b43e9a7f-727d-4ba4-8bc6-70ceff24fb47",
-      "protectiveSystemId": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
+      "id": "3dc2fce8-88a2-48cf-8abf-22a07aa7ded5",
+      "protectiveSystemId": "11111111-1111-1111-1111-111111111111",
       "cause": "blocked_outlet",
-      "description": "Blocked outlet scenario for atmospheric tower",
-      "relievingTemp": 180,
+      "description": "Overhead vapor line blocked while pumparound continues",
+      "relievingTemp": 120,
       "relievingPressure": 2.8,
       "phase": "gas",
-      "relievingRate": 50000,
+      "relievingRate": 45000,
       "accumulationPct": 10,
-      "requiredCapacity": 50000,
+      "requiredCapacity": 45000,
       "assumptions": [
-        "Valve fully open",
-        "Normal operations"
+        "Control valve fails open on pumparound",
+        "All overhead vapor blocked",
+        "Maximum heat input maintained"
       ],
       "codeRefs": [
-        "API-521 Section 5"
+        "API-521 Section 4.4.2"
       ],
-      "isGoverning": true,
-      "createdAt": "2024-06-15T10:00:00Z",
-      "updatedAt": "2024-06-15T10:00:00Z"
+      "isGoverning": false,
+      "createdAt": "2024-06-12T10:00:00Z",
+      "updatedAt": "2024-06-12T10:00:00Z"
     },
     {
-      "id": "a70330cc-d47a-4d9b-af98-1e7b06308656",
-      "protectiveSystemId": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
+      "id": "3143ab0b-1d8d-4e05-a3c3-ba619616ff9a",
+      "protectiveSystemId": "11111111-1111-1111-1111-111111111111",
       "cause": "fire_case",
-      "description": "Fire case - external pool fire",
-      "relievingTemp": 200,
-      "relievingPressure": 3.08,
+      "description": "External fire engulfing atmospheric column base",
+      "relievingTemp": 180,
+      "relievingPressure": 2.8,
       "phase": "gas",
       "relievingRate": 85000,
       "accumulationPct": 21,
       "requiredCapacity": 85000,
       "assumptions": [
-        "API 521 fire zone",
-        "Adequate drainage"
+        "Wetted area from API-521 Table 4",
+        "Fire duration 2 hours",
+        "Adequate drainage assumed",
+        "Environmental factor F = 1.0"
+      ],
+      "codeRefs": [
+        "API-521 Section 5.15",
+        "API-521 Table 4"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-06-15T10:00:00Z",
+      "updatedAt": "2024-09-10T14:00:00Z"
+    },
+    {
+      "id": "9da5b757-930b-4ae3-97cf-c806ee8072c6",
+      "protectiveSystemId": "33333333-3333-3333-3333-333333333333",
+      "cause": "blocked_outlet",
+      "description": "Naphtha rundown line blocked with reflux pump running",
+      "relievingTemp": 85,
+      "relievingPressure": 4,
+      "phase": "liquid",
+      "relievingRate": 120000,
+      "accumulationPct": 10,
+      "requiredCapacity": 120000,
+      "assumptions": [
+        "Maximum pump capacity = 150 m\u00b3/h",
+        "Density at relieving conditions = 720 kg/m\u00b3"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.1"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-06-20T10:00:00Z",
+      "updatedAt": "2024-08-15T10:00:00Z"
+    },
+    {
+      "id": "eb0dd53f-d7ce-4fa5-b322-ec1dbd613792",
+      "protectiveSystemId": "44444444-4444-4444-4444-444444444444",
+      "cause": "tube_rupture",
+      "description": "High pressure process fluid enters low pressure shell side",
+      "relievingTemp": 250,
+      "relievingPressure": 20,
+      "phase": "liquid",
+      "relievingRate": 280000,
+      "accumulationPct": 10,
+      "requiredCapacity": 280000,
+      "assumptions": [
+        "Single tube rupture (2 open ends)",
+        "Maximum \u0394P across tube",
+        "Sonic velocity not limiting"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.12"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-07-28T10:00:00Z",
+      "updatedAt": "2024-07-28T10:00:00Z"
+    },
+    {
+      "id": "d7835008-2b70-4f7f-9777-a7e86e529a57",
+      "protectiveSystemId": "66666666-6666-6666-6666-666666666666",
+      "cause": "blocked_outlet",
+      "description": "Gas export line blocked with vaporizer in operation",
+      "relievingTemp": -10,
+      "relievingPressure": 75,
+      "phase": "gas",
+      "relievingRate": 150000,
+      "accumulationPct": 10,
+      "requiredCapacity": 150000,
+      "assumptions": [
+        "Maximum vaporization rate",
+        "LNG sendout at design capacity",
+        "Ambient vaporizer heat input"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.2"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-08-20T10:00:00Z",
+      "updatedAt": "2024-09-18T10:00:00Z"
+    },
+    {
+      "id": "aa033994-d80b-415c-ac95-44304bb8e827",
+      "protectiveSystemId": "66666666-6666-6666-6666-666666666666",
+      "cause": "external_fire",
+      "description": "External fire on vaporizer equipment",
+      "relievingTemp": 50,
+      "relievingPressure": 75,
+      "phase": "gas",
+      "relievingRate": 95000,
+      "accumulationPct": 21,
+      "requiredCapacity": 95000,
+      "assumptions": [
+        "Wetted area per API-521",
+        "Insulation credit applied (k = 0.9)",
+        "Fire duration 2 hours"
       ],
       "codeRefs": [
         "API-521 Section 5.15"
       ],
       "isGoverning": false,
-      "createdAt": "2024-06-16T10:00:00Z",
-      "updatedAt": "2024-06-16T10:00:00Z"
+      "createdAt": "2024-08-22T10:00:00Z",
+      "updatedAt": "2024-08-22T10:00:00Z"
+    },
+    {
+      "id": "95e90b4a-4a5c-4670-a70f-9c937559b6a1",
+      "protectiveSystemId": "6a249540-745c-4e27-b8c6-4ffc390bba6f",
+      "cause": "thermal_expansion",
+      "description": "E-102 blocked in with ambient heating",
+      "relievingTemp": 60,
+      "relievingPressure": 30,
+      "phase": "liquid",
+      "relievingRate": 500,
+      "accumulationPct": 10,
+      "requiredCapacity": 500,
+      "assumptions": [
+        "Exchanger fully blocked in",
+        "Solar heating 800 W/m\u00b2",
+        "No insulation"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.11"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-01-15T10:00:00Z",
+      "updatedAt": "2024-01-15T10:00:00Z"
+    },
+    {
+      "id": "fec6e67c-2d85-4c9c-8420-2ebff04e7b4b",
+      "protectiveSystemId": "88c1aa2c-b885-41e0-b959-2c7da33f92f8",
+      "cause": "thermal_expansion",
+      "description": "E-103 blocked in with ambient heating",
+      "relievingTemp": 60,
+      "relievingPressure": 30,
+      "phase": "liquid",
+      "relievingRate": 500,
+      "accumulationPct": 10,
+      "requiredCapacity": 500,
+      "assumptions": [
+        "Exchanger fully blocked in",
+        "Solar heating 800 W/m\u00b2",
+        "No insulation"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.11"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-01-15T10:00:00Z",
+      "updatedAt": "2024-01-15T10:00:00Z"
+    },
+    {
+      "id": "41eeabf7-cb0c-4d19-a89b-8ee52b2702d6",
+      "protectiveSystemId": "95d89be5-0cd3-4b49-91a1-1a4506197ed3",
+      "cause": "thermal_expansion",
+      "description": "E-104 blocked in with ambient heating",
+      "relievingTemp": 60,
+      "relievingPressure": 30,
+      "phase": "liquid",
+      "relievingRate": 500,
+      "accumulationPct": 10,
+      "requiredCapacity": 500,
+      "assumptions": [
+        "Exchanger fully blocked in",
+        "Solar heating 800 W/m\u00b2",
+        "No insulation"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.11"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-09-05T10:00:00Z",
+      "updatedAt": "2024-09-05T10:00:00Z"
+    },
+    {
+      "id": "e179b0a4-a0ca-40c2-85ec-8721f9da5625",
+      "protectiveSystemId": "01751507-9830-4193-81bb-3b62958b17e0",
+      "cause": "thermal_expansion",
+      "description": "E-105 blocked in with ambient heating",
+      "relievingTemp": 60,
+      "relievingPressure": 30,
+      "phase": "liquid",
+      "relievingRate": 500,
+      "accumulationPct": 10,
+      "requiredCapacity": 500,
+      "assumptions": [
+        "Exchanger fully blocked in",
+        "Solar heating 800 W/m\u00b2",
+        "No insulation"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.11"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-09-05T10:00:00Z",
+      "updatedAt": "2024-09-05T10:00:00Z"
+    },
+    {
+      "id": "98cf4e80-3d43-4c0d-9d42-9af49afafc9d",
+      "protectiveSystemId": "2afab739-bf7d-4d73-8692-46b58cae23a8",
+      "cause": "blocked_outlet",
+      "description": "P-101A running against closed discharge valve",
+      "relievingTemp": 80,
+      "relievingPressure": 45,
+      "phase": "liquid",
+      "relievingRate": 32000,
+      "accumulationPct": 10,
+      "requiredCapacity": 32000,
+      "assumptions": [
+        "Pump at maximum capacity",
+        "Crude density 850 kg/m\u00b3"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.1"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-09-10T10:00:00Z",
+      "updatedAt": "2024-09-10T10:00:00Z"
+    },
+    {
+      "id": "1b74df0c-31db-47d8-92a2-5ffc10ec3bf4",
+      "protectiveSystemId": "e1016706-e422-4201-b56f-5634383596d7",
+      "cause": "blocked_outlet",
+      "description": "P-101B running against closed discharge valve",
+      "relievingTemp": 80,
+      "relievingPressure": 45,
+      "phase": "liquid",
+      "relievingRate": 32000,
+      "accumulationPct": 10,
+      "requiredCapacity": 32000,
+      "assumptions": [
+        "Pump at maximum capacity",
+        "Crude density 850 kg/m\u00b3"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.1"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-09-10T10:00:00Z",
+      "updatedAt": "2024-09-10T10:00:00Z"
+    },
+    {
+      "id": "8399d873-ff9d-4d39-ab7a-4d9166b9d0bd",
+      "protectiveSystemId": "de196a32-93aa-4fcd-8522-89330730fb2a",
+      "cause": "blocked_outlet",
+      "description": "VDU overhead vapor blocked with ejector running",
+      "relievingTemp": 80,
+      "relievingPressure": 5,
+      "phase": "gas",
+      "relievingRate": 18000,
+      "accumulationPct": 10,
+      "requiredCapacity": 18000,
+      "assumptions": [
+        "Maximum vapor load",
+        "All ejectors operating",
+        "Overhead condenser operating"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.2"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-10-05T10:00:00Z",
+      "updatedAt": "2024-10-05T10:00:00Z"
+    },
+    {
+      "id": "6decf2f9-4c6a-4f28-8f50-1753775aad38",
+      "protectiveSystemId": "8715c712-0e96-4246-9762-c577d27c1001",
+      "cause": "blocked_outlet",
+      "description": "Pre-flash overhead blocked with feed continuing",
+      "relievingTemp": 120,
+      "relievingPressure": 5,
+      "phase": "gas",
+      "relievingRate": 12000,
+      "accumulationPct": 10,
+      "requiredCapacity": 12000,
+      "assumptions": [
+        "Maximum feed rate",
+        "Flash vapor generation per design"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.2"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-10-05T10:00:00Z",
+      "updatedAt": "2024-10-05T10:00:00Z"
+    },
+    {
+      "id": "21a8c7b4-45b3-43f5-8339-1c4010690176",
+      "protectiveSystemId": "975b85bb-2677-4888-b90f-cbcbe1eefe69",
+      "cause": "external_fire",
+      "description": "Fire case on heater tubes",
+      "relievingTemp": 400,
+      "relievingPressure": 25,
+      "phase": "two_phase",
+      "relievingRate": 65000,
+      "accumulationPct": 21,
+      "requiredCapacity": 65000,
+      "assumptions": [
+        "Pool fire scenario",
+        "Wetted Area per API-521",
+        "F = 1.0 (no insulation)"
+      ],
+      "codeRefs": [
+        "API-521 Section 5.15",
+        "API-521 Table 4"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-05-20T10:00:00Z",
+      "updatedAt": "2024-05-20T10:00:00Z"
+    },
+    {
+      "id": "74eb3513-ecbd-490a-ae9c-8d61cfad460d",
+      "protectiveSystemId": "74edbded-2339-4467-83c7-1d11f7c320d3",
+      "cause": "external_fire",
+      "description": "Fire exposure on HP steam drum",
+      "relievingTemp": 320,
+      "relievingPressure": 120,
+      "phase": "steam",
+      "relievingRate": 95000,
+      "accumulationPct": 10,
+      "requiredCapacity": 95000,
+      "assumptions": [
+        "Pool fire per API-521",
+        "Wetted area 120 m\u00b2",
+        "F = 0.3 (insulated)"
+      ],
+      "codeRefs": [
+        "API-521 Section 5.15",
+        "ASME Section VIII"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-03-10T10:00:00Z",
+      "updatedAt": "2024-03-10T10:00:00Z"
+    },
+    {
+      "id": "faae218f-9c39-4552-90d7-efc32f740e77",
+      "protectiveSystemId": "74edbded-2339-4467-83c7-1d11f7c320d3",
+      "cause": "tube_rupture",
+      "description": "Furnace tube failure - economizer",
+      "relievingTemp": 280,
+      "relievingPressure": 120,
+      "phase": "steam",
+      "relievingRate": 72000,
+      "accumulationPct": 10,
+      "requiredCapacity": 72000,
+      "assumptions": [
+        "Single tube rupture",
+        "Continued firing for 30 seconds"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.12"
+      ],
+      "isGoverning": false,
+      "createdAt": "2024-03-10T10:00:00Z",
+      "updatedAt": "2024-03-10T10:00:00Z"
+    },
+    {
+      "id": "ba977d7e-d907-4911-94dd-409a7f9fa19f",
+      "protectiveSystemId": "2cd06d15-9993-41c3-8898-15cf64d36e78",
+      "cause": "cooling_water_failure",
+      "description": "Cooling water loss to quench tower",
+      "relievingTemp": 180,
+      "relievingPressure": 15,
+      "phase": "two_phase",
+      "relievingRate": 48000,
+      "accumulationPct": 10,
+      "requiredCapacity": 48000,
+      "assumptions": [
+        "Total CW failure",
+        "Continuation of vapor load",
+        "Temperature rise per simulation"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.6"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-11-05T10:00:00Z",
+      "updatedAt": "2024-11-05T10:00:00Z"
+    },
+    {
+      "id": "4ce58915-e0f3-40d2-852b-873d2d8cea95",
+      "protectiveSystemId": "2cd06d15-9993-41c3-8898-15cf64d36e78",
+      "cause": "blocked_outlet",
+      "description": "Quench tower bottom outlet blocked",
+      "relievingTemp": 160,
+      "relievingPressure": 15,
+      "phase": "gas",
+      "relievingRate": 28000,
+      "accumulationPct": 10,
+      "requiredCapacity": 28000,
+      "assumptions": [
+        "Maximum vapor rate",
+        "Level maintained at high alarm"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.2"
+      ],
+      "isGoverning": false,
+      "createdAt": "2024-11-05T10:00:00Z",
+      "updatedAt": "2024-11-05T10:00:00Z"
+    },
+    {
+      "id": "f8fd97c2-7e95-46ba-8ef4-9efafa7dc7e0",
+      "protectiveSystemId": "f146bc84-934c-473d-88b6-963d76b1cc4b",
+      "cause": "external_fire",
+      "description": "Fire exposure on fuel gas KO drum",
+      "relievingTemp": 80,
+      "relievingPressure": 10,
+      "phase": "gas",
+      "relievingRate": 15000,
+      "accumulationPct": 21,
+      "requiredCapacity": 15000,
+      "assumptions": [
+        "Pool fire",
+        "Wetted area 25 m\u00b2",
+        "F = 1.0 (no insulation)"
+      ],
+      "codeRefs": [
+        "API-521 Section 5.15"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-11-08T10:00:00Z",
+      "updatedAt": "2024-11-08T10:00:00Z"
+    },
+    {
+      "id": "97ba30bf-a35f-48ad-af75-8b8108cc49e5",
+      "protectiveSystemId": "475039ea-a4c7-44b7-97ed-e0331fb497f1",
+      "cause": "external_fire",
+      "description": "Fire exposure on deaerator",
+      "relievingTemp": 150,
+      "relievingPressure": 7,
+      "phase": "steam",
+      "relievingRate": 12000,
+      "accumulationPct": 21,
+      "requiredCapacity": 12000,
+      "assumptions": [
+        "Pool fire",
+        "Wetted area 18 m\u00b2",
+        "F = 0.5 (partial insulation)"
+      ],
+      "codeRefs": [
+        "API-521 Section 5.15"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-11-08T10:00:00Z",
+      "updatedAt": "2024-11-08T10:00:00Z"
+    },
+    {
+      "id": "b1c5773b-d1db-46d8-81cf-da9e7f042c68",
+      "protectiveSystemId": "16705733-2581-468c-9912-127501c8e636",
+      "cause": "external_fire",
+      "description": "Fire exposure on LNG storage tank",
+      "relievingTemp": -100,
+      "relievingPressure": 0.8,
+      "phase": "gas",
+      "relievingRate": 18000,
+      "accumulationPct": 21,
+      "requiredCapacity": 18000,
+      "assumptions": [
+        "Pool fire near tank",
+        "Wetted area per API-2000",
+        "Insulation credit F = 0.15"
+      ],
+      "codeRefs": [
+        "API-2000 Section 5.4",
+        "API-521 Section 5.15"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-08-10T10:00:00Z",
+      "updatedAt": "2024-08-10T10:00:00Z"
+    },
+    {
+      "id": "df16c2ae-793b-490c-b66b-726bdc0e95b0",
+      "protectiveSystemId": "16705733-2581-468c-9912-127501c8e636",
+      "cause": "other",
+      "description": "LNG rollover causing rapid vaporization",
+      "relievingTemp": -155,
+      "relievingPressure": 0.8,
+      "phase": "gas",
+      "relievingRate": 8500,
+      "accumulationPct": 10,
+      "requiredCapacity": 8500,
+      "assumptions": [
+        "Stratification leading to rollover",
+        "Rate per NFPA 59A calculation"
+      ],
+      "codeRefs": [
+        "NFPA 59A",
+        "API-2000"
+      ],
+      "isGoverning": false,
+      "createdAt": "2024-08-10T10:00:00Z",
+      "updatedAt": "2024-08-10T10:00:00Z"
+    },
+    {
+      "id": "3e1b1fc0-afec-46be-8e24-4083ac336cb8",
+      "protectiveSystemId": "e6145f3a-703c-4fb1-878a-f33ddf68316f",
+      "cause": "thermal_expansion",
+      "description": "TSV-502A blocked in LNG line thermal expansion",
+      "relievingTemp": -140,
+      "relievingPressure": 100,
+      "phase": "liquid",
+      "relievingRate": 2200,
+      "accumulationPct": 10,
+      "requiredCapacity": 2200,
+      "assumptions": [
+        "Line fully blocked",
+        "Ambient heat leak 12 W/m\u00b2",
+        "Density 450 kg/m\u00b3"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.11"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-09-20T10:00:00Z",
+      "updatedAt": "2024-09-20T10:00:00Z"
+    },
+    {
+      "id": "228336da-6564-4b2f-b065-e785111ca273",
+      "protectiveSystemId": "c3dcb30d-ece4-4b7a-809d-a9ba1ded36d2",
+      "cause": "thermal_expansion",
+      "description": "TSV-502B blocked in LNG line thermal expansion",
+      "relievingTemp": -140,
+      "relievingPressure": 100,
+      "phase": "liquid",
+      "relievingRate": 2200,
+      "accumulationPct": 10,
+      "requiredCapacity": 2200,
+      "assumptions": [
+        "Line fully blocked",
+        "Ambient heat leak 12 W/m\u00b2",
+        "Density 450 kg/m\u00b3"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.11"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-09-20T10:00:00Z",
+      "updatedAt": "2024-09-20T10:00:00Z"
+    },
+    {
+      "id": "3c486469-3abf-475c-b804-0f5c605a33f3",
+      "protectiveSystemId": "b49530ae-be65-4eb0-88f9-f4f254ced73c",
+      "cause": "other",
+      "description": "BOG compressor trip causing BOG surge",
+      "relievingTemp": -120,
+      "relievingPressure": 2,
+      "phase": "gas",
+      "relievingRate": 5500,
+      "accumulationPct": 10,
+      "requiredCapacity": 5500,
+      "assumptions": [
+        "Compressor trip",
+        "Continued BOG generation",
+        "Tank vapor return"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.5"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-09-20T10:00:00Z",
+      "updatedAt": "2024-09-20T10:00:00Z"
+    },
+    {
+      "id": "f57f2b74-a44b-44ad-9568-eb9aa659d082",
+      "protectiveSystemId": "93644372-667b-4922-91d5-5e66ffd78b77",
+      "cause": "blocked_outlet",
+      "description": "BOG recondenser outlet blocked",
+      "relievingTemp": -150,
+      "relievingPressure": 15,
+      "phase": "two_phase",
+      "relievingRate": 8500,
+      "accumulationPct": 10,
+      "requiredCapacity": 8500,
+      "assumptions": [
+        "Continued condensation duty",
+        "BOG feed at design rate"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.2"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-09-20T10:00:00Z",
+      "updatedAt": "2024-09-20T10:00:00Z"
+    },
+    {
+      "id": "26f130c5-b86a-4b62-b433-c9737db727ca",
+      "protectiveSystemId": "93644372-667b-4922-91d5-5e66ffd78b77",
+      "cause": "cooling_water_failure",
+      "description": "Refrigerant failure to BOG recondenser",
+      "relievingTemp": -80,
+      "relievingPressure": 15,
+      "phase": "gas",
+      "relievingRate": 6200,
+      "accumulationPct": 10,
+      "requiredCapacity": 6200,
+      "assumptions": [
+        "Total refrigerant loss",
+        "BOG feed continues"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.6"
+      ],
+      "isGoverning": false,
+      "createdAt": "2024-09-20T10:00:00Z",
+      "updatedAt": "2024-09-20T10:00:00Z"
+    },
+    {
+      "id": "2ffc44d2-5776-478e-bb2d-944593264b05",
+      "protectiveSystemId": "30ba97b1-2a1e-4513-a9d1-0f4b36142c67",
+      "cause": "blocked_outlet",
+      "description": "Desalter water outlet blocked",
+      "relievingTemp": 140,
+      "relievingPressure": 18,
+      "phase": "liquid",
+      "relievingRate": 28000,
+      "accumulationPct": 10,
+      "requiredCapacity": 28000,
+      "assumptions": [
+        "Maximum crude throughput",
+        "Continued heating",
+        "Water accumulation"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.2"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-08-25T10:00:00Z",
+      "updatedAt": "2024-08-25T10:00:00Z"
+    },
+    {
+      "id": "288aaaa2-bdf8-4847-a78c-071b014326d3",
+      "protectiveSystemId": "652f416d-3174-4b47-b353-0661ca3fb65e",
+      "cause": "reflux_failure",
+      "description": "Stabilizer reflux pump failure",
+      "relievingTemp": 100,
+      "relievingPressure": 12,
+      "phase": "gas",
+      "relievingRate": 35000,
+      "accumulationPct": 10,
+      "requiredCapacity": 35000,
+      "assumptions": [
+        "Total reflux loss",
+        "Continued feed",
+        "Reboiler at duty"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.3"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-08-25T10:00:00Z",
+      "updatedAt": "2024-08-25T10:00:00Z"
+    },
+    {
+      "id": "92a56d6f-2a4b-41e5-9ac8-0345e9e00794",
+      "protectiveSystemId": "652f416d-3174-4b47-b353-0661ca3fb65e",
+      "cause": "external_fire",
+      "description": "Fire exposure on stabilizer column",
+      "relievingTemp": 120,
+      "relievingPressure": 12,
+      "phase": "gas",
+      "relievingRate": 42000,
+      "accumulationPct": 21,
+      "requiredCapacity": 42000,
+      "assumptions": [
+        "Pool fire",
+        "Wetted area 55 m\u00b2",
+        "F = 0.7 (partial insulation)"
+      ],
+      "codeRefs": [
+        "API-521 Section 5.15"
+      ],
+      "isGoverning": false,
+      "createdAt": "2024-08-25T10:00:00Z",
+      "updatedAt": "2024-08-25T10:00:00Z"
+    },
+    {
+      "id": "99ad18b2-735a-4e55-bf4c-93865f156e5a",
+      "protectiveSystemId": "8f7e6d5c-4b3a-2190-a8b7-c6d5e4f3a2b1",
+      "cause": "blocked_outlet",
+      "description": "Stabilizer overhead drum rundown blocked",
+      "relievingTemp": 60,
+      "relievingPressure": 12,
+      "phase": "gas",
+      "relievingRate": 22000,
+      "accumulationPct": 10,
+      "requiredCapacity": 22000,
+      "assumptions": [
+        "Reflux pump running",
+        "Overhead condenser operating"
+      ],
+      "codeRefs": [
+        "API-521 Section 4.4.2"
+      ],
+      "isGoverning": true,
+      "createdAt": "2024-08-25T10:00:00Z",
+      "updatedAt": "2024-08-25T10:00:00Z"
     }
   ],
   "sizingCases": [
     {
-      "id": "d1b5aff2-7393-4845-999c-0d9c7bf75465",
-      "protectiveSystemId": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
-      "scenarioId": "b43e9a7f-727d-4ba4-8bc6-70ceff24fb47",
+      "id": "f6d7d880-2e5a-4e40-b65d-7113a5d3cf01",
+      "protectiveSystemId": "11111111-1111-1111-1111-111111111111",
+      "scenarioId": "3143ab0b-1d8d-4e05-a3c3-ba619616ff9a",
       "standard": "API-520",
       "method": "gas",
       "inputs": {
-        "massFlowRate": 50000,
+        "massFlowRate": 85000,
+        "molecularWeight": 44,
         "temperature": 180,
         "pressure": 2.8,
-        "molecularWeight": 44,
-        "compressibilityZ": 0.95,
-        "specificHeatRatio": 1.15
+        "compressibilityZ": 0.92,
+        "specificHeatRatio": 1.15,
+        "backpressure": 0.5,
+        "backpressureType": "superimposed",
+        "gasViscosity": 0.01
       },
       "outputs": {
-        "requiredArea": 1200,
+        "requiredArea": 1250,
+        "requiredAreaIn2": 1.94,
         "selectedOrifice": "J",
-        "selectedArea": 1264
+        "orificeArea": 1290,
+        "percentUsed": 96.9,
+        "ratedCapacity": 87650,
+        "dischargeCoefficient": 0.975,
+        "backpressureCorrectionFactor": 1,
+        "isCriticalFlow": false,
+        "numberOfValves": 1,
+        "messages": [
+          "Subcritical flow conditions detected"
+        ]
+      },
+      "unitPreferences": {
+        "pressure": "barg",
+        "temperature": "C",
+        "flow": "kg/h",
+        "length": "m",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
+        "viscosity": "cP"
+      },
+      "status": "verified",
+      "createdBy": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "approvedBy": "f97ba14f-1fe6-4ad8-8c6e-241c12efcc27",
+      "createdAt": "2024-06-20T10:00:00Z",
+      "updatedAt": "2024-09-12T14:00:00Z"
+    },
+    {
+      "id": "e0c19c12-4366-46b0-8643-16e6551a90bd",
+      "protectiveSystemId": "33333333-3333-3333-3333-333333333333",
+      "scenarioId": "9da5b757-930b-4ae3-97cf-c806ee8072c6",
+      "standard": "API-520",
+      "method": "liquid",
+      "inputs": {
+        "massFlowRate": 120000,
+        "molecularWeight": 100,
+        "temperature": 45,
+        "pressure": 5.5,
+        "density": 850,
+        "liquidViscosity": 1.2,
+        "compressibilityZ": 1,
+        "specificHeatRatio": 1,
+        "backpressure": 1.5,
+        "backpressureType": "built_up"
+      },
+      "outputs": {
+        "requiredArea": 850,
+        "requiredAreaIn2": 1.32,
+        "selectedOrifice": "H",
+        "orificeArea": 1025,
+        "percentUsed": 82.9,
+        "ratedCapacity": 144500,
+        "dischargeCoefficient": 0.65,
+        "backpressureCorrectionFactor": 1,
+        "isCriticalFlow": false,
+        "numberOfValves": 1,
+        "messages": []
+      },
+      "unitPreferences": {
+        "pressure": "barg",
+        "temperature": "C",
+        "flow": "kg/h",
+        "length": "m",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
+        "viscosity": "cP"
+      },
+      "status": "approved",
+      "createdBy": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "approvedBy": "22ee3f22-898a-461b-85ec-83f84d250810",
+      "createdAt": "2024-06-25T10:00:00Z",
+      "updatedAt": "2024-08-18T16:00:00Z"
+    },
+    {
+      "id": "f9aab8f6-7bf0-4f0f-950f-fbe9f6ed9acf",
+      "protectiveSystemId": "66666666-6666-6666-6666-666666666666",
+      "scenarioId": "d7835008-2b70-4f7f-9777-a7e86e529a57",
+      "standard": "API-520",
+      "method": "gas",
+      "inputs": {
+        "massFlowRate": 150000,
+        "molecularWeight": 16.04,
+        "temperature": -10,
+        "pressure": 75,
+        "compressibilityZ": 0.88,
+        "specificHeatRatio": 1.31,
+        "backpressure": 5,
+        "backpressureType": "superimposed",
+        "gasViscosity": 0.011
+      },
+      "outputs": {
+        "requiredArea": 120,
+        "requiredAreaIn2": 0.186,
+        "selectedOrifice": "D",
+        "orificeArea": 1841,
+        "percentUsed": 85.8,
+        "ratedCapacity": 175000,
+        "dischargeCoefficient": 0.975,
+        "backpressureCorrectionFactor": 0.95,
+        "isCriticalFlow": true,
+        "numberOfValves": 1,
+        "messages": [
+          "Critical flow confirmed (P1/P2 > critical ratio)",
+          "Balanced bellows recommended for high backpressure"
+        ]
+      },
+      "unitPreferences": {
+        "pressure": "barg",
+        "temperature": "C",
+        "flow": "kg/h",
+        "length": "m",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
+        "viscosity": "cP"
       },
       "status": "calculated",
+      "createdBy": "1b9de640-0851-4ed5-941c-411efa30585c",
+      "createdAt": "2024-08-25T10:00:00Z",
+      "updatedAt": "2024-09-20T11:00:00Z"
+    },
+    {
+      "id": "7decda01-9db3-442c-9bf1-f1b1c883f7c0",
+      "protectiveSystemId": "6a249540-745c-4e27-b8c6-4ffc390bba6f",
+      "scenarioId": "95e90b4a-4a5c-4670-a70f-9c937559b6a1",
+      "standard": "API-520",
+      "method": "liquid",
+      "inputs": {
+        "massFlowRate": 500,
+        "temperature": 60,
+        "pressure": 30,
+        "density": 850,
+        "liquidViscosity": 5,
+        "molecularWeight": 200,
+        "compressibilityZ": 1,
+        "specificHeatRatio": 1,
+        "backpressure": 1.5,
+        "backpressureType": "built_up"
+      },
+      "outputs": {
+        "requiredArea": 25,
+        "requiredAreaIn2": 0.039,
+        "selectedOrifice": "D",
+        "orificeArea": 71,
+        "percentUsed": 35.2,
+        "ratedCapacity": 1420,
+        "dischargeCoefficient": 0.65,
+        "backpressureCorrectionFactor": 1,
+        "isCriticalFlow": false,
+        "numberOfValves": 1,
+        "messages": []
+      },
+      "unitPreferences": {
+        "pressure": "barg",
+        "temperature": "C",
+        "flow": "kg/h",
+        "length": "m",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
+        "viscosity": "cP"
+      },
+      "status": "approved",
+      "createdBy": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "approvedBy": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "createdAt": "2024-01-20T10:00:00Z",
+      "updatedAt": "2024-01-22T14:00:00Z"
+    },
+    {
+      "id": "8038182e-f244-4ac8-98bf-dccc3d710093",
+      "protectiveSystemId": "2afab739-bf7d-4d73-8692-46b58cae23a8",
+      "scenarioId": "98cf4e80-3d43-4c0d-9d42-9af49afafc9d",
+      "standard": "API-520",
+      "method": "liquid",
+      "inputs": {
+        "massFlowRate": 32000,
+        "temperature": 80,
+        "pressure": 45,
+        "density": 850,
+        "liquidViscosity": 2.5,
+        "molecularWeight": 200,
+        "compressibilityZ": 1,
+        "specificHeatRatio": 1,
+        "backpressure": 0.5,
+        "backpressureType": "superimposed"
+      },
+      "outputs": {
+        "requiredArea": 320,
+        "requiredAreaIn2": 0.496,
+        "selectedOrifice": "F",
+        "orificeArea": 323,
+        "percentUsed": 99.1,
+        "ratedCapacity": 32280,
+        "dischargeCoefficient": 0.65,
+        "backpressureCorrectionFactor": 1,
+        "isCriticalFlow": false,
+        "numberOfValves": 1,
+        "messages": [
+          "High utilization - consider next size"
+        ]
+      },
+      "unitPreferences": {
+        "pressure": "barg",
+        "temperature": "C",
+        "flow": "kg/h",
+        "length": "m",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
+        "viscosity": "cP"
+      },
+      "status": "approved",
+      "createdBy": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "approvedBy": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "createdAt": "2024-09-15T10:00:00Z",
+      "updatedAt": "2024-09-16T14:00:00Z"
+    },
+    {
+      "id": "431b9489-4878-48d7-a5e9-0fcb3e232343",
+      "protectiveSystemId": "de196a32-93aa-4fcd-8522-89330730fb2a",
+      "scenarioId": "8399d873-ff9d-4d39-ab7a-4d9166b9d0bd",
+      "standard": "API-520",
+      "method": "gas",
+      "inputs": {
+        "massFlowRate": 18000,
+        "molecularWeight": 58,
+        "temperature": 80,
+        "pressure": 5,
+        "compressibilityZ": 0.95,
+        "specificHeatRatio": 1.12,
+        "backpressure": 0.2,
+        "backpressureType": "superimposed",
+        "gasViscosity": 0.009
+      },
+      "outputs": {
+        "requiredArea": 2150,
+        "requiredAreaIn2": 3.33,
+        "selectedOrifice": "K",
+        "orificeArea": 2323,
+        "percentUsed": 92.5,
+        "ratedCapacity": 19460,
+        "dischargeCoefficient": 0.975,
+        "backpressureCorrectionFactor": 1,
+        "isCriticalFlow": true,
+        "numberOfValves": 1,
+        "messages": [
+          "Critical flow confirmed",
+          "Pilot operated recommended for low set pressure"
+        ]
+      },
+      "unitPreferences": {
+        "pressure": "barg",
+        "temperature": "C",
+        "flow": "kg/h",
+        "length": "m",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
+        "viscosity": "cP"
+      },
+      "status": "verified",
+      "createdBy": "22ee3f22-898a-461b-85ec-83f84d250810",
+      "approvedBy": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "createdAt": "2024-10-08T10:00:00Z",
+      "updatedAt": "2024-10-10T14:00:00Z"
+    },
+    {
+      "id": "05e4145d-e286-490b-ad48-e7b8fa421f45",
+      "protectiveSystemId": "975b85bb-2677-4888-b90f-cbcbe1eefe69",
+      "scenarioId": "21a8c7b4-45b3-43f5-8339-1c4010690176",
+      "standard": "API-520",
+      "method": "two_phase",
+      "inputs": {
+        "massFlowRate": 65000,
+        "molecularWeight": 180,
+        "temperature": 400,
+        "pressure": 25,
+        "compressibilityZ": 0.82,
+        "specificHeatRatio": 1.08,
+        "backpressure": 1,
+        "backpressureType": "built_up",
+        "gasViscosity": 0.012,
+        "density": 650,
+        "liquidViscosity": 0.8
+      },
+      "outputs": {
+        "requiredArea": 1580,
+        "requiredAreaIn2": 2.45,
+        "selectedOrifice": "J",
+        "orificeArea": 1840,
+        "percentUsed": 85.9,
+        "ratedCapacity": 75650,
+        "dischargeCoefficient": 0.85,
+        "backpressureCorrectionFactor": 0.98,
+        "isCriticalFlow": false,
+        "numberOfValves": 1,
+        "messages": [
+          "Two-phase omega method applied",
+          "Rupture disc - no KD factor"
+        ]
+      },
+      "unitPreferences": {
+        "pressure": "barg",
+        "temperature": "C",
+        "flow": "kg/h",
+        "length": "m",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
+        "viscosity": "cP"
+      },
+      "status": "approved",
+      "createdBy": "22ee3f22-898a-461b-85ec-83f84d250810",
+      "approvedBy": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "createdAt": "2024-05-25T10:00:00Z",
+      "updatedAt": "2024-05-28T14:00:00Z"
+    },
+    {
+      "id": "4fa21c89-bea5-4f16-b0ce-d3d5782205f9",
+      "protectiveSystemId": "74edbded-2339-4467-83c7-1d11f7c320d3",
+      "scenarioId": "74eb3513-ecbd-490a-ae9c-8d61cfad460d",
+      "standard": "ASME-VIII",
+      "method": "steam",
+      "inputs": {
+        "massFlowRate": 95000,
+        "temperature": 320,
+        "pressure": 120,
+        "molecularWeight": 18,
+        "compressibilityZ": 0.95,
+        "specificHeatRatio": 1.28,
+        "backpressure": 2,
+        "backpressureType": "built_up",
+        "gasViscosity": 0.018
+      },
+      "outputs": {
+        "requiredArea": 3180,
+        "requiredAreaIn2": 4.93,
+        "selectedOrifice": "M",
+        "orificeArea": 3226,
+        "percentUsed": 98.6,
+        "ratedCapacity": 96320,
+        "dischargeCoefficient": 0.98,
+        "backpressureCorrectionFactor": 0.97,
+        "isCriticalFlow": true,
+        "numberOfValves": 1,
+        "messages": [
+          "ASME Section I power boiler code applies",
+          "Two valves required per code"
+        ]
+      },
+      "unitPreferences": {
+        "pressure": "barg",
+        "temperature": "C",
+        "flow": "kg/h",
+        "length": "m",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
+        "viscosity": "cP"
+      },
+      "status": "approved",
+      "createdBy": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "approvedBy": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "createdAt": "2024-03-15T10:00:00Z",
+      "updatedAt": "2024-03-20T14:00:00Z"
+    },
+    {
+      "id": "80f6d7e7-79bf-44fd-91ba-4a2baff9cf07",
+      "protectiveSystemId": "2cd06d15-9993-41c3-8898-15cf64d36e78",
+      "scenarioId": "ba977d7e-d907-4911-94dd-409a7f9fa19f",
+      "standard": "API-520",
+      "method": "two_phase",
+      "inputs": {
+        "massFlowRate": 48000,
+        "molecularWeight": 42,
+        "temperature": 180,
+        "pressure": 15,
+        "compressibilityZ": 0.88,
+        "specificHeatRatio": 1.15,
+        "backpressure": 0.8,
+        "backpressureType": "built_up",
+        "gasViscosity": 0.01,
+        "density": 420,
+        "liquidViscosity": 0.3
+      },
+      "outputs": {
+        "requiredArea": 1320,
+        "requiredAreaIn2": 2.05,
+        "selectedOrifice": "J",
+        "orificeArea": 1840,
+        "percentUsed": 71.7,
+        "ratedCapacity": 66900,
+        "dischargeCoefficient": 0.85,
+        "backpressureCorrectionFactor": 1,
+        "isCriticalFlow": false,
+        "numberOfValves": 1,
+        "messages": [
+          "Omega method for two-phase flow"
+        ]
+      },
+      "unitPreferences": {
+        "pressure": "barg",
+        "temperature": "C",
+        "flow": "kg/h",
+        "length": "m",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
+        "viscosity": "cP"
+      },
+      "status": "calculated",
+      "createdBy": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "createdAt": "2024-11-08T10:00:00Z",
+      "updatedAt": "2024-11-09T14:00:00Z"
+    },
+    {
+      "id": "d2cee6c9-45aa-4dec-a0ad-46771ac3969a",
+      "protectiveSystemId": "f146bc84-934c-473d-88b6-963d76b1cc4b",
+      "scenarioId": "f8fd97c2-7e95-46ba-8ef4-9efafa7dc7e0",
+      "standard": "API-520",
+      "method": "gas",
+      "inputs": {
+        "massFlowRate": 15000,
+        "molecularWeight": 19,
+        "temperature": 80,
+        "pressure": 10,
+        "compressibilityZ": 0.99,
+        "specificHeatRatio": 1.3,
+        "backpressure": 0.5,
+        "backpressureType": "built_up",
+        "gasViscosity": 0.011
+      },
+      "outputs": {
+        "requiredArea": 520,
+        "requiredAreaIn2": 0.806,
+        "selectedOrifice": "G",
+        "orificeArea": 510,
+        "percentUsed": 102,
+        "ratedCapacity": 14710,
+        "dischargeCoefficient": 0.975,
+        "backpressureCorrectionFactor": 1,
+        "isCriticalFlow": true,
+        "numberOfValves": 1,
+        "messages": [
+          "Over 100% - next size H recommended"
+        ]
+      },
+      "unitPreferences": {
+        "pressure": "barg",
+        "temperature": "C",
+        "flow": "kg/h",
+        "length": "m",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
+        "viscosity": "cP"
+      },
+      "status": "calculated",
+      "createdBy": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "createdAt": "2024-11-10T10:00:00Z",
+      "updatedAt": "2024-11-10T14:00:00Z"
+    },
+    {
+      "id": "c37ab4bd-84ed-4c91-904e-9af7c7d47683",
+      "protectiveSystemId": "475039ea-a4c7-44b7-97ed-e0331fb497f1",
+      "scenarioId": "97ba30bf-a35f-48ad-af75-8b8108cc49e5",
+      "standard": "ASME-VIII",
+      "method": "steam",
+      "inputs": {
+        "massFlowRate": 12000,
+        "temperature": 150,
+        "pressure": 7,
+        "molecularWeight": 18,
+        "compressibilityZ": 0.97,
+        "specificHeatRatio": 1.3,
+        "backpressure": 0.3,
+        "backpressureType": "built_up",
+        "gasViscosity": 0.014
+      },
+      "outputs": {
+        "requiredArea": 580,
+        "requiredAreaIn2": 0.899,
+        "selectedOrifice": "G",
+        "orificeArea": 713,
+        "percentUsed": 81.4,
+        "ratedCapacity": 14740,
+        "dischargeCoefficient": 0.98,
+        "backpressureCorrectionFactor": 1,
+        "isCriticalFlow": true,
+        "numberOfValves": 1,
+        "messages": [
+          "Low pressure steam service"
+        ]
+      },
+      "unitPreferences": {
+        "pressure": "barg",
+        "temperature": "C",
+        "flow": "kg/h",
+        "length": "m",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
+        "viscosity": "cP"
+      },
+      "status": "calculated",
+      "createdBy": "c34f5c40-8193-4e39-a628-e684361c2b67",
+      "createdAt": "2024-11-10T10:00:00Z",
+      "updatedAt": "2024-11-10T14:00:00Z"
+    },
+    {
+      "id": "25a40e6a-049f-4fac-8c0b-1b01a383316f",
+      "protectiveSystemId": "16705733-2581-468c-9912-127501c8e636",
+      "scenarioId": "b1c5773b-d1db-46d8-81cf-da9e7f042c68",
+      "standard": "API-2000",
+      "method": "gas",
+      "inputs": {
+        "massFlowRate": 18000,
+        "molecularWeight": 16.04,
+        "temperature": -100,
+        "pressure": 0.8,
+        "compressibilityZ": 0.92,
+        "specificHeatRatio": 1.31,
+        "backpressure": 0.05,
+        "backpressureType": "built_up",
+        "gasViscosity": 0.011
+      },
+      "outputs": {
+        "requiredArea": 12500,
+        "requiredAreaIn2": 19.38,
+        "selectedOrifice": "P",
+        "orificeArea": 11310,
+        "percentUsed": 110.5,
+        "ratedCapacity": 16290,
+        "dischargeCoefficient": 0.975,
+        "backpressureCorrectionFactor": 1,
+        "isCriticalFlow": false,
+        "numberOfValves": 2,
+        "messages": [
+          "Two PSVs in parallel",
+          "Split 50/50 per API-2000"
+        ]
+      },
+      "unitPreferences": {
+        "pressure": "barg",
+        "temperature": "C",
+        "flow": "kg/h",
+        "length": "m",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
+        "viscosity": "cP"
+      },
+      "status": "verified",
+      "createdBy": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "approvedBy": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "createdAt": "2024-08-15T10:00:00Z",
+      "updatedAt": "2024-08-18T14:00:00Z"
+    },
+    {
+      "id": "4263f078-97e3-44c3-98b1-2ea5f26a2284",
+      "protectiveSystemId": "e6145f3a-703c-4fb1-878a-f33ddf68316f",
+      "scenarioId": "3e1b1fc0-afec-46be-8e24-4083ac336cb8",
+      "standard": "API-520",
+      "method": "liquid",
+      "inputs": {
+        "massFlowRate": 2200,
+        "temperature": -140,
+        "pressure": 100,
+        "density": 450,
+        "liquidViscosity": 0.12,
+        "molecularWeight": 16.04,
+        "compressibilityZ": 1,
+        "specificHeatRatio": 1,
+        "backpressure": 1,
+        "backpressureType": "built_up"
+      },
+      "outputs": {
+        "requiredArea": 45,
+        "requiredAreaIn2": 0.07,
+        "selectedOrifice": "D",
+        "orificeArea": 71,
+        "percentUsed": 63.4,
+        "ratedCapacity": 3470,
+        "dischargeCoefficient": 0.65,
+        "backpressureCorrectionFactor": 1,
+        "isCriticalFlow": false,
+        "numberOfValves": 1,
+        "messages": [
+          "Cryogenic service - special trim required"
+        ]
+      },
+      "unitPreferences": {
+        "pressure": "barg",
+        "temperature": "C",
+        "flow": "kg/h",
+        "length": "m",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
+        "viscosity": "cP"
+      },
+      "status": "verified",
+      "createdBy": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "approvedBy": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "createdAt": "2024-09-25T10:00:00Z",
+      "updatedAt": "2024-09-28T14:00:00Z"
+    },
+    {
+      "id": "de72725a-0a60-4ace-b153-9ca45e0877d7",
+      "protectiveSystemId": "b49530ae-be65-4eb0-88f9-f4f254ced73c",
+      "scenarioId": "3c486469-3abf-475c-b804-0f5c605a33f3",
+      "standard": "API-520",
+      "method": "gas",
+      "inputs": {
+        "massFlowRate": 5500,
+        "molecularWeight": 16.04,
+        "temperature": -120,
+        "pressure": 2,
+        "compressibilityZ": 0.91,
+        "specificHeatRatio": 1.31,
+        "backpressure": 0.2,
+        "backpressureType": "built_up",
+        "gasViscosity": 0.011
+      },
+      "outputs": {
+        "requiredArea": 950,
+        "requiredAreaIn2": 1.47,
+        "selectedOrifice": "H",
+        "orificeArea": 1025,
+        "percentUsed": 92.7,
+        "ratedCapacity": 5930,
+        "dischargeCoefficient": 0.975,
+        "backpressureCorrectionFactor": 1,
+        "isCriticalFlow": false,
+        "numberOfValves": 1,
+        "messages": [
+          "BOG compressor trip scenario"
+        ]
+      },
+      "unitPreferences": {
+        "pressure": "barg",
+        "temperature": "C",
+        "flow": "kg/h",
+        "length": "m",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
+        "viscosity": "cP"
+      },
+      "status": "verified",
+      "createdBy": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "approvedBy": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "createdAt": "2024-09-25T10:00:00Z",
+      "updatedAt": "2024-09-28T14:00:00Z"
+    },
+    {
+      "id": "ec70febb-f5d3-4485-b51f-ccca616134a0",
+      "protectiveSystemId": "93644372-667b-4922-91d5-5e66ffd78b77",
+      "scenarioId": "f57f2b74-a44b-44ad-9568-eb9aa659d082",
+      "standard": "API-520",
+      "method": "two_phase",
+      "inputs": {
+        "massFlowRate": 8500,
+        "molecularWeight": 16.04,
+        "temperature": -150,
+        "pressure": 15,
+        "compressibilityZ": 0.85,
+        "specificHeatRatio": 1.31,
+        "backpressure": 1.2,
+        "backpressureType": "built_up",
+        "gasViscosity": 0.011,
+        "density": 450,
+        "liquidViscosity": 0.12
+      },
+      "outputs": {
+        "requiredArea": 710,
+        "requiredAreaIn2": 1.1,
+        "selectedOrifice": "H",
+        "orificeArea": 1025,
+        "percentUsed": 69.3,
+        "ratedCapacity": 12270,
+        "dischargeCoefficient": 0.85,
+        "backpressureCorrectionFactor": 1,
+        "isCriticalFlow": false,
+        "numberOfValves": 1,
+        "messages": [
+          "Omega method for cryogenic two-phase"
+        ]
+      },
+      "unitPreferences": {
+        "pressure": "barg",
+        "temperature": "C",
+        "flow": "kg/h",
+        "length": "m",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
+        "viscosity": "cP"
+      },
+      "status": "verified",
+      "createdBy": "890a53e4-85d9-4399-85bb-68af0aa179d1",
+      "approvedBy": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "createdAt": "2024-09-25T10:00:00Z",
+      "updatedAt": "2024-09-28T14:00:00Z"
+    },
+    {
+      "id": "ddb8ee6a-cdf3-4ad5-ae4c-113650f0a1b5",
+      "protectiveSystemId": "30ba97b1-2a1e-4513-a9d1-0f4b36142c67",
+      "scenarioId": "2ffc44d2-5776-478e-bb2d-944593264b05",
+      "standard": "API-520",
+      "method": "liquid",
+      "inputs": {
+        "massFlowRate": 28000,
+        "temperature": 140,
+        "pressure": 18,
+        "density": 920,
+        "liquidViscosity": 3.5,
+        "molecularWeight": 150,
+        "compressibilityZ": 1,
+        "specificHeatRatio": 1,
+        "backpressure": 1,
+        "backpressureType": "built_up"
+      },
+      "outputs": {
+        "requiredArea": 380,
+        "requiredAreaIn2": 0.589,
+        "selectedOrifice": "F",
+        "orificeArea": 323,
+        "percentUsed": 117.6,
+        "ratedCapacity": 23790,
+        "dischargeCoefficient": 0.65,
+        "backpressureCorrectionFactor": 1,
+        "isCriticalFlow": false,
+        "numberOfValves": 1,
+        "messages": [
+          "Over 100% - next size G required"
+        ]
+      },
+      "unitPreferences": {
+        "pressure": "barg",
+        "temperature": "C",
+        "flow": "kg/h",
+        "length": "m",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
+        "viscosity": "cP"
+      },
+      "status": "approved",
       "createdBy": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
-      "createdAt": "2024-06-20T10:00:00Z",
-      "updatedAt": "2024-06-20T10:00:00Z"
+      "approvedBy": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "createdAt": "2024-08-28T10:00:00Z",
+      "updatedAt": "2024-08-30T14:00:00Z"
+    },
+    {
+      "id": "fd2b6687-4f0c-43e1-8bf6-deaca9a87ac6",
+      "protectiveSystemId": "652f416d-3174-4b47-b353-0661ca3fb65e",
+      "scenarioId": "288aaaa2-bdf8-4847-a78c-071b014326d3",
+      "standard": "API-520",
+      "method": "gas",
+      "inputs": {
+        "massFlowRate": 35000,
+        "molecularWeight": 52,
+        "temperature": 100,
+        "pressure": 12,
+        "compressibilityZ": 0.93,
+        "specificHeatRatio": 1.14,
+        "backpressure": 0.6,
+        "backpressureType": "built_up",
+        "gasViscosity": 0.009
+      },
+      "outputs": {
+        "requiredArea": 1150,
+        "requiredAreaIn2": 1.78,
+        "selectedOrifice": "J",
+        "orificeArea": 1840,
+        "percentUsed": 62.5,
+        "ratedCapacity": 56000,
+        "dischargeCoefficient": 0.975,
+        "backpressureCorrectionFactor": 1,
+        "isCriticalFlow": true,
+        "numberOfValves": 1,
+        "messages": [
+          "Reflux failure governing case"
+        ]
+      },
+      "unitPreferences": {
+        "pressure": "barg",
+        "temperature": "C",
+        "flow": "kg/h",
+        "length": "m",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
+        "viscosity": "cP"
+      },
+      "status": "approved",
+      "createdBy": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "approvedBy": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "createdAt": "2024-08-28T10:00:00Z",
+      "updatedAt": "2024-08-30T14:00:00Z"
+    },
+    {
+      "id": "b66f0ce2-039b-4610-9193-c04ea602e444",
+      "protectiveSystemId": "8f7e6d5c-4b3a-2190-a8b7-c6d5e4f3a2b1",
+      "scenarioId": "99ad18b2-735a-4e55-bf4c-93865f156e5a",
+      "standard": "API-520",
+      "method": "gas",
+      "inputs": {
+        "massFlowRate": 22000,
+        "molecularWeight": 48,
+        "temperature": 60,
+        "pressure": 12,
+        "compressibilityZ": 0.94,
+        "specificHeatRatio": 1.13,
+        "backpressure": 0.5,
+        "backpressureType": "built_up",
+        "gasViscosity": 0.008
+      },
+      "outputs": {
+        "requiredArea": 720,
+        "requiredAreaIn2": 1.12,
+        "selectedOrifice": "H",
+        "orificeArea": 1025,
+        "percentUsed": 70.2,
+        "ratedCapacity": 31340,
+        "dischargeCoefficient": 0.975,
+        "backpressureCorrectionFactor": 1,
+        "isCriticalFlow": true,
+        "numberOfValves": 1,
+        "messages": []
+      },
+      "unitPreferences": {
+        "pressure": "barg",
+        "temperature": "C",
+        "flow": "kg/h",
+        "length": "m",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
+        "viscosity": "cP"
+      },
+      "status": "approved",
+      "createdBy": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
+      "approvedBy": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "createdAt": "2024-08-28T10:00:00Z",
+      "updatedAt": "2024-08-30T14:00:00Z"
     }
   ],
   "equipmentLinks": [
     {
       "id": "afd0e6d1-c8bd-41ab-9069-fb40a8b57e87",
-      "protectiveSystemId": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
-      "equipmentId": "ade8593f-0554-47b7-9873-4f88e61f5eb0",
+      "protectiveSystemId": "11111111-1111-1111-1111-111111111111",
+      "equipmentId": "e0000001-0001-0001-0001-000000000001",
       "isPrimary": true,
       "relationship": "protects",
       "notes": "Primary protection for atmospheric tower",
       "createdAt": "2024-06-12T10:00:00Z"
+    },
+    {
+      "id": "2a05f039-bdf3-4eb0-bf38-7be3703d7e5d",
+      "protectiveSystemId": "6a249540-745c-4e27-b8c6-4ffc390bba6f",
+      "equipmentId": "f0a4f553-61b4-4e44-b0ad-e2c7f55a73e6",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "72c638e0-f203-4e48-9da3-718251e62118",
+      "protectiveSystemId": "88c1aa2c-b885-41e0-b959-2c7da33f92f8",
+      "equipmentId": "91122a28-986c-4b68-809c-30b8098544e3",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "70f384a5-67c0-4202-b5e1-0c58619bc303",
+      "protectiveSystemId": "95d89be5-0cd3-4b49-91a1-1a4506197ed3",
+      "equipmentId": "07e997a6-12c8-4775-9989-13da05e46c72",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "eccd2003-8898-464a-ba92-d3c50980c611",
+      "protectiveSystemId": "01751507-9830-4193-81bb-3b62958b17e0",
+      "equipmentId": "7c9a9245-fb41-471a-be29-d65fa34629ce",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "f0a6d96a-04ae-43fb-a579-dd279ba65ff2",
+      "protectiveSystemId": "2afab739-bf7d-4d73-8692-46b58cae23a8",
+      "equipmentId": "2be891ad-d5e8-4a5f-a63e-108151522f20",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "6a6e5a6f-f230-4e0e-9679-b7b5f5403063",
+      "protectiveSystemId": "e1016706-e422-4201-b56f-5634383596d7",
+      "equipmentId": "fca201e7-8b09-4623-83dd-2384aabc0101",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "93b76251-2e61-41bd-ad01-b380631abf54",
+      "protectiveSystemId": "de196a32-93aa-4fcd-8522-89330730fb2a",
+      "equipmentId": "2a975764-16a8-48b2-b103-61ce229a4358",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "1364d9b6-45ef-4d37-814e-9844e9768652",
+      "protectiveSystemId": "8715c712-0e96-4246-9762-c577d27c1001",
+      "equipmentId": "2a975764-16a8-48b2-b103-61ce229a4358",
+      "isPrimary": false,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "63704281-2c06-4fc6-b258-763481ba99d2",
+      "protectiveSystemId": "975b85bb-2677-4888-b90f-cbcbe1eefe69",
+      "equipmentId": "7f485764-a745-4293-84bc-2f94119842a2",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "46d9006e-52f2-45e0-9173-16aee96a6645",
+      "protectiveSystemId": "975b85bb-2677-4888-b90f-cbcbe1eefe69",
+      "equipmentId": "4f724391-766b-4e63-88ee-13291535186b",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "a55227aa-f6b0-4ecb-9309-8ff46d88f50c",
+      "protectiveSystemId": "975b85bb-2677-4888-b90f-cbcbe1eefe69",
+      "equipmentId": "4f724391-766b-4e63-88ee-13291535186b",
+      "isPrimary": false,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "70817025-a1c1-4b13-a8df-e53b15ad428f",
+      "protectiveSystemId": "74edbded-2339-4467-83c7-1d11f7c320d3",
+      "equipmentId": "78fe1571-0428-4ce9-89a1-0268a2bfd9d4",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "5903b22e-e478-4339-ab9e-876bda316c87",
+      "protectiveSystemId": "4c44243a-7ed4-4065-9831-23f2f5c76579",
+      "equipmentId": "78fe1571-0428-4ce9-89a1-0268a2bfd9d4",
+      "isPrimary": false,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "7c703e35-fb5d-4f1e-920f-07ec3357596a",
+      "protectiveSystemId": "2cd06d15-9993-41c3-8898-15cf64d36e78",
+      "equipmentId": "50fc5045-8fce-4217-bf28-fc24dcb01f65",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "e8f81014-9988-468f-aa13-f476a084ef7a",
+      "protectiveSystemId": "f146bc84-934c-473d-88b6-963d76b1cc4b",
+      "equipmentId": "29c9ef63-95b0-44be-be45-e6f790c6ca7f",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "3932a392-563d-4cba-a1c9-7104d55b8e9d",
+      "protectiveSystemId": "475039ea-a4c7-44b7-97ed-e0331fb497f1",
+      "equipmentId": "e8a3a789-0ae0-4497-b935-7c088f170af3",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "81180860-31db-4965-b1a3-29007f9c898c",
+      "protectiveSystemId": "16705733-2581-468c-9912-127501c8e636",
+      "equipmentId": "f6813350-13f6-407b-8321-4d3759a22cc4",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "b7405e60-4c7b-4028-a6d5-26dd66c48972",
+      "protectiveSystemId": "73fc30bc-6fbf-45ca-ae6c-6d0220e187a4",
+      "equipmentId": "f6813350-13f6-407b-8321-4d3759a22cc4",
+      "isPrimary": false,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "d46fb59b-2a7e-40dc-8409-cf8006e88e2c",
+      "protectiveSystemId": "e6145f3a-703c-4fb1-878a-f33ddf68316f",
+      "equipmentId": "521191ec-298a-4467-96a9-8350db9011af",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "7b1eb428-765e-44d3-8b43-97992a549646",
+      "protectiveSystemId": "c3dcb30d-ece4-4b7a-809d-a9ba1ded36d2",
+      "equipmentId": "d0a2f5ae-d4ff-49a6-8051-fb18df4dc1df",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "0858e388-75c1-4bbf-a279-05a81ca8c9fa",
+      "protectiveSystemId": "b49530ae-be65-4eb0-88f9-f4f254ced73c",
+      "equipmentId": "c4c5a92d-e215-4fa8-bc3c-cba82cb87dbe",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "331bb99b-00a4-44b2-a4f6-7b44747cc9d1",
+      "protectiveSystemId": "93644372-667b-4922-91d5-5e66ffd78b77",
+      "equipmentId": "7cbde4b3-4f27-463e-ac38-a115c57b7f5d",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "0762c954-2f22-4820-94a2-1981a8c049d5",
+      "protectiveSystemId": "30ba97b1-2a1e-4513-a9d1-0f4b36142c67",
+      "equipmentId": "0c79b940-272e-4058-aa8c-f9ec6711582e",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "20436d6c-54a6-48c0-bc6f-e30b0507a2c2",
+      "protectiveSystemId": "652f416d-3174-4b47-b353-0661ca3fb65e",
+      "equipmentId": "efd59d1e-bf40-4560-8fdd-b34e44b97d26",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
+    },
+    {
+      "id": "e9c1db1b-e5ed-4e2b-b5cb-3fbf1199347d",
+      "protectiveSystemId": "276708ab-9cda-46a4-8451-925a1762c2f4",
+      "equipmentId": "27658cdd-b003-4fbb-b328-98e6b18c642e",
+      "isPrimary": true,
+      "relationship": "protects",
+      "createdAt": "2024-01-01T00:00:00Z"
     }
   ],
   "attachments": [],
   "comments": [
     {
       "id": "369063ca-a937-4025-9aeb-ef785a2483e8",
-      "protectiveSystemId": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
+      "protectiveSystemId": "11111111-1111-1111-1111-111111111111",
       "body": "Reviewed fire case calculations, looks good.",
       "createdBy": "c34f5c40-8193-4e39-a628-e684361c2b67",
       "createdAt": "2024-09-01T14:00:00Z",
@@ -592,7 +3386,7 @@
   "todos": [
     {
       "id": "174b7bf7-27fc-44fd-bedf-34ee09102948",
-      "protectiveSystemId": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
+      "protectiveSystemId": "11111111-1111-1111-1111-111111111111",
       "text": "Update P&ID with new PSV size",
       "completed": false,
       "assignedTo": "ab20b042-c519-423b-82e0-1dadf6f29fe0",
@@ -605,7 +3399,7 @@
     {
       "id": "e6a86fa3-c20a-4a06-8a0a-41a8ab0c65fd",
       "entityType": "protective_system",
-      "entityId": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
+      "entityId": "11111111-1111-1111-1111-111111111111",
       "revisionCode": "A1",
       "sequence": 2,
       "description": "Updated design flow based on latest process data",
@@ -621,7 +3415,7 @@
     {
       "id": "0b266050-4bdf-4d0a-a247-f00b5894ee65",
       "entityType": "protective_system",
-      "entityId": "16ceb8da-6d68-4635-b83b-10beda4f7f66",
+      "entityId": "11111111-1111-1111-1111-111111111111",
       "revisionCode": "O1",
       "sequence": 1,
       "description": "Original",
@@ -637,7 +3431,7 @@
     {
       "id": "3d284816-3b3a-4a6e-b054-5f96348fa625",
       "entityType": "protective_system",
-      "entityId": "a50b3dcd-c40a-4a62-afc2-ba38566441c8",
+      "entityId": "33333333-3333-3333-3333-333333333333",
       "revisionCode": "O1",
       "sequence": 1,
       "description": "Original",
