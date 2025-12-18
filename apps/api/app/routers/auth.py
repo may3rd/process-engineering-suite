@@ -93,18 +93,33 @@ async def login(data: LoginRequest, dal: DAL):
         raise HTTPException(status_code=401, detail="Invalid username or password")
     
     # Check if account is locked
-    locked_until = credential.get("lockedUntil")
-    if locked_until:
-        try:
-            lock_time = datetime.fromisoformat(locked_until.replace('Z', '+00:00'))
-            if datetime.utcnow() < lock_time.replace(tzinfo=None):
-                raise HTTPException(status_code=423, detail="Account is locked")
-        except ValueError:
-            pass
+    if hasattr(credential, "locked_until"):
+        is_locked = (credential.locked_until is not None and 
+                     datetime.utcnow() < credential.locked_until.replace(tzinfo=None))
+    else:
+        locked_until_str = credential.get("lockedUntil")
+        is_locked = False
+        if locked_until_str:
+            try:
+                lock_time = datetime.fromisoformat(locked_until_str.replace('Z', '+00:00'))
+                is_locked = datetime.utcnow() < lock_time.replace(tzinfo=None)
+            except ValueError:
+                pass
+    
+    if is_locked:
+        raise HTTPException(status_code=423, detail="Account is locked")
     
     # Verify password
     # For mock data, we do a simple check; for real data, use bcrypt
-    password_hash = credential.get("passwordHash", "")
+    if hasattr(credential, "password_hash"):
+        password_hash = credential.password_hash
+        credential_id = credential.id
+        user_id = credential.user_id
+    else:
+        password_hash = credential.get("passwordHash", "")
+        credential_id = credential.get("id")
+        user_id = credential.get("userId")
+
     is_valid = False
     
     if password_hash.startswith("$2"):
@@ -113,35 +128,43 @@ async def login(data: LoginRequest, dal: DAL):
     else:
         # Plain text comparison for mock data migration
         # Also support mock credentials that store plain passwords
-        is_valid = (credential.get("password") == data.password)
+        is_valid = (credential.get("password") == data.password if not hasattr(credential, "password") 
+                   else credential.password == data.password)
     
     if not is_valid:
-        await dal.update_credential_login(credential["id"], success=False)
+        await dal.update_credential_login(credential_id, success=False)
         raise HTTPException(status_code=401, detail="Invalid username or password")
     
     # Get user
-    user = await dal.get_user_by_id(credential["userId"])
+    user = await dal.get_user_by_id(user_id)
     if not user:
         raise HTTPException(status_code=401, detail="User not found")
     
-    if user.get("status") != "active":
+    # Handle user as ORM or dict
+    user_status = user.status if hasattr(user, "status") else user.get("status")
+    if user_status != "active":
         raise HTTPException(status_code=403, detail="User account is inactive")
     
     # Update login success
-    await dal.update_credential_login(credential["id"], success=True)
+    await dal.update_credential_login(credential_id, success=True)
     
     # Create token
-    token, expires_in = create_access_token(user["id"], user["role"])
+    user_role = user.role if hasattr(user, "role") else user.get("role")
+    token, expires_in = create_access_token(user_id, user_role)
     
+    user_name = user.name if hasattr(user, "name") else user.get("name")
+    user_initials = user.initials if hasattr(user, "initials") else user.get("initials")
+    user_email = user.email if hasattr(user, "email") else user.get("email")
+
     return LoginResponse(
         accessToken=token,
         expiresIn=expires_in,
         user={
-            "id": user["id"],
-            "name": user["name"],
-            "initials": user.get("initials"),
-            "email": user["email"],
-            "role": user["role"],
+            "id": user_id,
+            "name": user_name,
+            "initials": user_initials,
+            "email": user_email,
+            "role": user_role,
         }
     )
 

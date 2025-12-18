@@ -23,7 +23,7 @@ def upgrade() -> None:
     op.create_table('users',
     sa.Column('name', sa.String(length=255), nullable=False),
     sa.Column('email', sa.String(length=255), nullable=False),
-    sa.Column('role', sa.Enum('engineer', 'lead', 'approver', 'admin', 'viewer', name='user_role'), nullable=False),
+    sa.Column('role', sa.Enum('engineer', 'lead', 'approver', 'division_manager', 'admin', 'viewer', name='user_role'), nullable=False),
     sa.Column('status', sa.Enum('active', 'inactive', name='user_status'), nullable=False),
     sa.Column('id', sa.UUID(as_uuid=False), nullable=False),
     sa.Column('created_at', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
