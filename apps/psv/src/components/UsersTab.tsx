@@ -82,6 +82,24 @@ const roleLabels: Record<User["role"], string> = {
     viewer: "Viewer",
 };
 
+const ROLE_COLORS_LIGHT: Record<User["role"], string> = {
+    "admin": "#22c55e", // Green 500
+    "division_manager": "#f97316",   // Orange 500
+    "approver": "#ef4444", // Red 500
+    "engineer": "#94a3b8", // Slate 400
+    "lead": "#3b82f6", // Blue 500,
+    "viewer": "#94a3b8", // Slate 400
+};
+
+const ROLE_COLORS_DARK: Record<User["role"], string> = {
+    "admin": "#4ade80", // Green 400
+    "division_manager": "#fb923c",   // Orange 400
+    "approver": "#ef4444", // Red 400
+    "engineer": "#64748b", // Slate 500
+    "lead": "#60a5fa", // Blue 400
+    "viewer": "#64748b", // Slate 500
+};
+
 export function UsersTab() {
     const theme = useTheme();
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -180,6 +198,11 @@ export function UsersTab() {
 
     const hasCredentials = (userId: string) => {
         return credentials.some(cred => cred.userId === userId);
+    };
+
+    const getUsernameFromCredentials = (userId: string): string | undefined => {
+        const cred = credentials.find(c => c.userId === userId);
+        return cred?.username;
     };
 
     const filteredUsers = useMemo(() => {
@@ -489,18 +512,20 @@ export function UsersTab() {
                                                 {user.name.charAt(0)}
                                             </Avatar>
                                             <Box>
-                                                <Typography fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                    {user.name} {user.username && `(${user.username})`}
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                                    <Typography fontWeight={600}>
+                                                        {user.name} {(user.username || getUsernameFromCredentials(user.id)) && `(${user.username || getUsernameFromCredentials(user.id)})`}
+                                                    </Typography>
                                                     {hasCredentials(user.id) ? (
                                                         <Tooltip title="Password set">
-                                                            <Key fontSize="small" sx={{ color: 'success.main', ml: 0.5 }} />
+                                                            <Key fontSize="small" sx={{ color: 'success.main' }} />
                                                         </Tooltip>
                                                     ) : (
                                                         <Tooltip title="Password not set">
-                                                            <KeyOff fontSize="small" sx={{ color: 'text.disabled', ml: 0.5 }} />
+                                                            <KeyOff fontSize="small" sx={{ color: 'text.disabled' }} />
                                                         </Tooltip>
                                                     )}
-                                                </Typography>
+                                                </Box>
                                                 <Typography
                                                     variant="body2"
                                                     color="text.secondary"
@@ -514,17 +539,25 @@ export function UsersTab() {
                                         <Chip
                                             label={roleLabels[user.role]}
                                             size="small"
-                                            sx={{ textTransform: "capitalize" }}
-                                            color={
-                                                user.role === "admin"
-                                                    ? "primary"
-                                                    : user.role === "approver"
-                                                        ? "secondary"
-                                                        : "default"
-                                            }
                                             variant={
                                                 user.role === "viewer" ? "outlined" : "filled"
                                             }
+                                            sx={{
+                                                textTransform: "capitalize",
+                                                backgroundColor: theme.palette.mode === "dark"
+                                                    ? ROLE_COLORS_DARK[user.role]
+                                                    : ROLE_COLORS_LIGHT[user.role],
+                                                color: theme.palette.mode === "dark" ? "#000" : "#fff",
+                                                ...(user.role === "viewer" && {
+                                                    backgroundColor: "transparent",
+                                                    borderColor: theme.palette.mode === "dark"
+                                                        ? ROLE_COLORS_DARK[user.role]
+                                                        : ROLE_COLORS_LIGHT[user.role],
+                                                    color: theme.palette.mode === "dark"
+                                                        ? ROLE_COLORS_DARK[user.role]
+                                                        : ROLE_COLORS_LIGHT[user.role],
+                                                }),
+                                            }}
                                         />
                                     </TableCell>
                                     <TableCell>
@@ -653,18 +686,20 @@ export function UsersTab() {
                                         {user.name.charAt(0)}
                                     </Avatar>
                                     <Box flex={1}>
-                                        <Typography fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                            {user.name} {user.username && `(${user.username})`}
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                                            <Typography fontWeight={600}>
+                                                {user.name} {(user.username || getUsernameFromCredentials(user.id)) && `(${user.username || getUsernameFromCredentials(user.id)})`}
+                                            </Typography>
                                             {hasCredentials(user.id) ? (
                                                 <Tooltip title="Password set">
-                                                    <Key fontSize="small" sx={{ color: 'success.main', ml: 0.5 }} />
+                                                    <Key fontSize="small" sx={{ color: 'success.main' }} />
                                                 </Tooltip>
                                             ) : (
                                                 <Tooltip title="Password not set">
-                                                    <KeyOff fontSize="small" sx={{ color: 'text.disabled', ml: 0.5 }} />
+                                                    <KeyOff fontSize="small" sx={{ color: 'text.disabled' }} />
                                                 </Tooltip>
                                             )}
-                                        </Typography>
+                                        </Box>
                                         <Typography variant="body2" color="text.secondary">
                                             {user.email}
                                         </Typography>
@@ -672,7 +707,22 @@ export function UsersTab() {
                                             <Chip
                                                 size="small"
                                                 label={roleLabels[user.role]}
-                                                sx={{ textTransform: "capitalize" }}
+                                                variant={
+                                                    user.role === "viewer" ? "outlined" : "filled"
+                                                }
+                                                sx={{
+                                                    textTransform: "capitalize",
+                                                    backgroundColor: theme.palette.mode === "dark"
+                                                        ? ROLE_COLORS_DARK[user.role]
+                                                        : ROLE_COLORS_LIGHT[user.role],
+                                                    color: theme.palette.mode === "dark" ? "#000" : "#fff",
+                                                    ...(user.role === "viewer" && {
+                                                        backgroundColor: "transparent",
+                                                        color: theme.palette.mode === "dark"
+                                                            ? ROLE_COLORS_DARK[user.role]
+                                                            : ROLE_COLORS_LIGHT[user.role],
+                                                    }),
+                                                }}
                                             />
                                             <Chip
                                                 size="small"
