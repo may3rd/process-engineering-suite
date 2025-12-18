@@ -475,7 +475,7 @@ export function SummaryTab() {
                     Print Summary
                 </Button>
                 <Button
-                    variant="outlined"
+                    variant="contained"
                     startIcon={<PictureAsPdf />}
                     size="small"
                     onClick={handleExportPdf}

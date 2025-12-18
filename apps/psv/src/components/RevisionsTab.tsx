@@ -271,58 +271,53 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
 
     return (
         <Box>
-            <Paper sx={{ p: 3, mb: 3 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2 }}>
-                    <Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                            <History color="primary" />
-                            <Typography variant="h6" fontWeight={600}>
-                                Revision Control
-                            </Typography>
-                            {currentRevision && (
-                                <Chip
-                                    label={`Rev. ${currentRevision.revisionCode}`}
-                                    size="small"
-                                    color="primary"
-                                    variant="outlined"
-                                />
-                            )}
-                            {currentRevision && currentRevision.id === effectiveCurrentRevisionId && (
-                                <Chip label="Current" size="small" color="primary" />
-                            )}
-                        </Box>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                            Sign the current revision and review the full change history.
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    flexWrap: 'wrap',
+                    gap: 2,
+                    mb: 1,
+                }}
+            >
+                <Box>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                        <History color="primary" />
+                        <Typography variant="h6" fontWeight={600}>
+                            Revision Control
                         </Typography>
+                        {currentRevision && (
+                            <Chip label={`Rev. ${currentRevision.revisionCode}`} size="small" color="primary" variant="outlined" />
+                        )}
+                        {currentRevision && currentRevision.id === effectiveCurrentRevisionId && (
+                            <Chip label="Current" size="small" color="primary" />
+                        )}
                     </Box>
-                    <Tooltip title={canCreateRevision ? 'Add a new revision (snapshots current state)' : 'Sign in as Engineer+ to add revisions'}>
-                        <span>
-                            <Button
-                                variant="contained"
-                                size="small"
-                                startIcon={<Add />}
-                                onClick={() => setNewRevisionOpen(true)}
-                                disabled={!canCreateRevision}
-                                sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
-                            >
-                                Add Revision
-                            </Button>
-                            <IconButton
-                                size="small"
-                                onClick={() => setNewRevisionOpen(true)}
-                                disabled={!canCreateRevision}
-                                sx={{
-                                    display: { xs: 'inline-flex', sm: 'none' },
-                                    bgcolor: 'primary.main',
-                                    color: 'primary.contrastText',
-                                    '&:hover': { bgcolor: 'primary.dark' },
-                                }}
-                            >
-                                <Add />
-                            </IconButton>
-                        </span>
-                    </Tooltip>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        Sign the current revision and review the full change history.
+                    </Typography>
                 </Box>
+
+                <Tooltip title={canCreateRevision ? 'Add a new revision (snapshots current state)' : 'Sign in as Engineer+ to add revisions'}>
+                    <span>
+                        <Button
+                            variant="contained"
+                            size="small"
+                            startIcon={<Add />}
+                            onClick={() => setNewRevisionOpen(true)}
+                            disabled={!canCreateRevision}
+                            sx={{ whiteSpace: 'nowrap' }}
+                        >
+                            <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+                                Add Revision
+                            </Box>
+                        </Button>
+                    </span>
+                </Tooltip>
+            </Box>
+
+            <Paper sx={{ p: 3, mb: 3 }}>
 
                 {!isAuthenticated && (
                     <Alert severity="info" sx={{ mt: 2 }}>

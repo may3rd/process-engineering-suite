@@ -16,7 +16,6 @@ import {
     ListItemButton,
     useTheme,
     useMediaQuery,
-    useScrollTrigger,
     Card,
     CardContent,
     Button,
@@ -79,7 +78,7 @@ import { ScenarioEditor } from "./ScenarioEditor"; // Import ScenarioEditor
 import { FireCaseDialog } from "./scenarios/FireCaseDialog";
 import { getUserById, users } from "@/data/mockData";
 import { useAuthStore } from "@/store/useAuthStore";
-import { useState, useEffect, MouseEvent, useMemo } from "react";
+import { useState, useEffect, useRef, MouseEvent, useMemo } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { SortConfig, toggleSortConfig, sortByGetter } from "@/lib/sortUtils";
 import { TableSortButton } from "@/components/shared/TableSortButton";
@@ -1007,8 +1006,17 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
 
     return (
         <Box>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box
+                sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    flexWrap: 'wrap',
+                    gap: 1.5,
+                    mb: 3,
+                }}
+            >
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: '1 1 auto', minWidth: 0 }}>
                     <Typography variant="h6" fontWeight={600}>
                         Sizing Cases
                     </Typography>
@@ -1035,35 +1043,18 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                     </Box>
                 </Box>
                 {canEdit && (
-                    <>
-                        <Button
-                            variant="contained"
-                            startIcon={<Add />}
-                            size="small"
-                            onClick={() => setDialogOpen(true)}
-                            disabled={scenarioList.length === 0}
-                            sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
-                        >
+                    <Button
+                        variant="contained"
+                        startIcon={<Add />}
+                        size="small"
+                        onClick={() => setDialogOpen(true)}
+                        disabled={scenarioList.length === 0}
+                        sx={{ flex: '0 0 auto', ml: 'auto', whiteSpace: 'nowrap' }}
+                    >
+                        <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
                             New Sizing Case
-                        </Button>
-                        <Tooltip title="New Sizing Case">
-                            <span>
-                                <IconButton
-                                    size="small"
-                                    onClick={() => setDialogOpen(true)}
-                                    disabled={scenarioList.length === 0}
-                                    sx={{
-                                        display: { xs: 'inline-flex', sm: 'none' },
-                                        bgcolor: 'primary.main',
-                                        color: 'primary.contrastText',
-                                        '&:hover': { bgcolor: 'primary.dark' },
-                                    }}
-                                >
-                                    <Add />
-                                </IconButton>
-                            </span>
-                        </Tooltip>
-                    </>
+                        </Box>
+                    </Button>
                 )}
             </Box>
 
@@ -2117,7 +2108,8 @@ export function ProtectiveSystemDetail() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const selectedTabBg = theme.palette.background.default;
-    const compactHeader = useScrollTrigger({ threshold: 64 });
+    const fullHeaderRef = useRef<HTMLDivElement | null>(null);
+    const [showCompactHeader, setShowCompactHeader] = useState(false);
     const {
         selectedPsv,
         selectPsv,
@@ -2335,10 +2327,41 @@ export function ProtectiveSystemDetail() {
         }
     };
 
+    useEffect(() => {
+        const toolbarHeightPx = 72;
+        const update = () => {
+            const header = fullHeaderRef.current;
+            if (!header) return;
+            const rect = header.getBoundingClientRect();
+            // Show compact header only when the full header is completely hidden behind the fixed toolbar.
+            setShowCompactHeader(rect.bottom <= toolbarHeightPx + 1);
+        };
+
+        update();
+
+        let raf = 0;
+        const scheduleUpdate = () => {
+            cancelAnimationFrame(raf);
+            raf = requestAnimationFrame(update);
+        };
+
+        window.addEventListener('scroll', scheduleUpdate, { passive: true });
+        window.addEventListener('resize', scheduleUpdate);
+        return () => {
+            cancelAnimationFrame(raf);
+            window.removeEventListener('scroll', scheduleUpdate);
+            window.removeEventListener('resize', scheduleUpdate);
+        };
+    }, []);
+
     return (
         <Box>
             {/* Header */}
-            <Paper className="print-hide" sx={{ p: { xs: 2, sm: 3 }, mb: 3, backgroundColor: "transparent", boxShadow: "none", border: "none" }}>
+            <Paper
+                ref={fullHeaderRef}
+                className="print-hide"
+                sx={{ p: { xs: 2, sm: 3 }, mb: 3, backgroundColor: "transparent", boxShadow: "none", border: "none" }}
+            >
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'flex-start' }, gap: { xs: 2, sm: 0 } }}>
                     <Box>
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, mb: 1, flexWrap: 'wrap' }}>
@@ -2450,7 +2473,7 @@ export function ProtectiveSystemDetail() {
                         {canEdit && (
                             <>
                                 <Button
-                                    variant="outlined"
+                                    variant="contained"
                                     color="error"
                                     startIcon={<Delete />}
                                     onClick={handleDeletePsv}
@@ -2460,7 +2483,7 @@ export function ProtectiveSystemDetail() {
                                 </Button>
                             </>
                         )}
-                        <Button variant="outlined" onClick={() => selectPsv(null)} sx={{ flex: { xs: 1, sm: 'none' } }}>
+                        <Button variant="contained" onClick={() => selectPsv(null)} sx={{ flex: { xs: 1, sm: 'none' } }}>
                             Close
                         </Button>
                     </Box>
@@ -2476,22 +2499,25 @@ export function ProtectiveSystemDetail() {
                     left: 0,
                     right: 0,
                     zIndex: 999,
-                    pointerEvents: compactHeader ? 'auto' : 'none',
-                    opacity: compactHeader ? 1 : 0,
-                    transform: compactHeader ? 'translateY(0)' : 'translateY(-8px)',
+                    borderRadius: 0,
+                    pointerEvents: showCompactHeader ? 'auto' : 'none',
+                    opacity: showCompactHeader ? 1 : 0,
+                    transform: showCompactHeader ? 'translateY(0)' : 'translateY(-8px)',
                     transition: theme.transitions.create(['opacity', 'transform'], { duration: theme.transitions.duration.shortest }),
                 }}
             >
-                <Container maxWidth="xl">
-                    <Paper
-                        sx={{
-                            border: 'none',
-                            boxShadow: `0 4px 16px ${alpha(theme.palette.common.black, isDark ? 0.35 : 0.12)}`,
-                            backgroundColor: alpha(theme.palette.background.default, isDark ? 0.85 : 0.92),
-                            backdropFilter: 'blur(6px)',
-                            p: { xs: 1.5, sm: 2 },
-                        }}
-                    >
+                <Paper
+                    sx={{
+                        width: '100%',
+                        border: 'none',
+                        borderRadius: 0,
+                        boxShadow: `0 4px 16px ${alpha(theme.palette.common.black, isDark ? 0.35 : 0.12)}`,
+                        backgroundColor: alpha(theme.palette.background.default, isDark ? 0.85 : 0.92),
+                        backdropFilter: 'blur(6px)',
+                        py: { xs: 1.5, sm: 2 },
+                    }}
+                >
+                    <Container maxWidth="xl">
                         <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'flex-start' }, gap: { xs: 1.5, sm: 0 } }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, flexWrap: 'wrap', minWidth: 0 }}>
                                 <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, minWidth: 0 }}>
@@ -2520,26 +2546,9 @@ export function ProtectiveSystemDetail() {
                                     }}
                                 />
                             </Box>
-                            <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' } }}>
-                                {canEdit && (
-                                    <Button
-                                        variant="outlined"
-                                        color="error"
-                                        startIcon={<Delete />}
-                                        onClick={handleDeletePsv}
-                                        sx={{ flex: { xs: 1, sm: 'none' } }}
-                                        size="small"
-                                    >
-                                        Delete
-                                    </Button>
-                                )}
-                                <Button variant="outlined" onClick={() => selectPsv(null)} sx={{ flex: { xs: 1, sm: 'none' } }} size="small">
-                                    Close
-                                </Button>
-                            </Box>
                         </Box>
-                    </Paper>
-                </Container>
+                    </Container>
+                </Paper>
             </Box>
 
             {/* Edit PSV Dialog */}
