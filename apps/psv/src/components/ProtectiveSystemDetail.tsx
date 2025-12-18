@@ -4,6 +4,7 @@ import React from 'react';
 
 import {
     Box,
+    Container,
     Typography,
     Chip,
     Paper,
@@ -15,6 +16,7 @@ import {
     ListItemButton,
     useTheme,
     useMediaQuery,
+    useScrollTrigger,
     Card,
     CardContent,
     Button,
@@ -38,6 +40,7 @@ import {
     Fade,
     Alert,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 import {
     Info,
     Warning as WarningIcon,
@@ -2114,6 +2117,7 @@ export function ProtectiveSystemDetail() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const selectedTabBg = theme.palette.background.default;
+    const compactHeader = useScrollTrigger({ threshold: 64 });
     const {
         selectedPsv,
         selectPsv,
@@ -2445,13 +2449,6 @@ export function ProtectiveSystemDetail() {
                     <Box sx={{ display: 'flex', gap: 1, flexDirection: { xs: 'row', sm: 'row' }, width: { xs: '100%', sm: 'auto' } }}>
                         {canEdit && (
                             <>
-                                {/* <Button
-                                    variant="outlined"
-                                    startIcon={<Edit />}
-                                    onClick={handleEditClick}
-                                >
-                                    Edit
-                                </Button> */}
                                 <Button
                                     variant="outlined"
                                     color="error"
@@ -2469,6 +2466,81 @@ export function ProtectiveSystemDetail() {
                     </Box>
                 </Box>
             </Paper>
+
+            {/* Compact fixed header (no layout shift) */}
+            <Box
+                className="print-hide"
+                sx={{
+                    position: 'fixed',
+                    top: 72,
+                    left: 0,
+                    right: 0,
+                    zIndex: 999,
+                    pointerEvents: compactHeader ? 'auto' : 'none',
+                    opacity: compactHeader ? 1 : 0,
+                    transform: compactHeader ? 'translateY(0)' : 'translateY(-8px)',
+                    transition: theme.transitions.create(['opacity', 'transform'], { duration: theme.transitions.duration.shortest }),
+                }}
+            >
+                <Container maxWidth="xl">
+                    <Paper
+                        sx={{
+                            border: 'none',
+                            boxShadow: `0 4px 16px ${alpha(theme.palette.common.black, isDark ? 0.35 : 0.12)}`,
+                            backgroundColor: alpha(theme.palette.background.default, isDark ? 0.85 : 0.92),
+                            backdropFilter: 'blur(6px)',
+                            p: { xs: 1.5, sm: 2 },
+                        }}
+                    >
+                        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'flex-start' }, gap: { xs: 1.5, sm: 0 } }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, flexWrap: 'wrap', minWidth: 0 }}>
+                                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1, minWidth: 0 }}>
+                                    <Typography variant="h6" fontWeight={700} noWrap sx={{ fontSize: { xs: '1.1rem', sm: '1.25rem' } }}>
+                                        {selectedPsv.tag}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary" noWrap sx={{ minWidth: 0, maxWidth: { xs: 240, sm: 520 } }}>
+                                        {selectedPsv.name}
+                                    </Typography>
+                                </Box>
+                                <RevisionBadge revisionCode={displayedRevisionCode} onClick={handleRevisionMenuOpen} />
+                                <Chip
+                                    icon={getStatusIcon(selectedPsv.status)}
+                                    label={getWorkflowStatusLabel(selectedPsv.status)}
+                                    color={getWorkflowStatusColor(selectedPsv.status) as any}
+                                    onClick={canOpenStatusMenu ? handleStatusClick : undefined}
+                                    deleteIcon={canOpenStatusMenu ? <KeyboardArrowDown /> : undefined}
+                                    onDelete={canOpenStatusMenu ? handleStatusClick : undefined}
+                                    sx={{
+                                        textTransform: 'capitalize',
+                                        fontWeight: 600,
+                                        pl: 0.5,
+                                        transform: 'scale(0.92)',
+                                        '& .MuiChip-deleteIcon': { color: 'inherit', opacity: 0.7 },
+                                        cursor: canOpenStatusMenu ? 'pointer' : 'default',
+                                    }}
+                                />
+                            </Box>
+                            <Box sx={{ display: 'flex', gap: 1, width: { xs: '100%', sm: 'auto' } }}>
+                                {canEdit && (
+                                    <Button
+                                        variant="outlined"
+                                        color="error"
+                                        startIcon={<Delete />}
+                                        onClick={handleDeletePsv}
+                                        sx={{ flex: { xs: 1, sm: 'none' } }}
+                                        size="small"
+                                    >
+                                        Delete
+                                    </Button>
+                                )}
+                                <Button variant="outlined" onClick={() => selectPsv(null)} sx={{ flex: { xs: 1, sm: 'none' } }} size="small">
+                                    Close
+                                </Button>
+                            </Box>
+                        </Box>
+                    </Paper>
+                </Container>
+            </Box>
 
             {/* Edit PSV Dialog */}
             <Dialog open={editPsvOpen} onClose={() => setEditPsvOpen(false)} maxWidth="sm" fullWidth>
