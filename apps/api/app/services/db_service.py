@@ -600,12 +600,24 @@ class DatabaseService(DataAccessLayer):
         from sqlalchemy import insert
         
         # 1. Delete all data (Order matters for Foreign Keys!)
+        # First, nullify FK references to revision_history
+        await self.session.execute(
+            update(ProtectiveSystem).values(current_revision_id=None)
+        )
+        await self.session.execute(
+            update(OverpressureScenario).values(current_revision_id=None)
+        )
+        await self.session.execute(
+            update(SizingCase).values(current_revision_id=None)
+        )
+        await self.session.commit()
+        
         # Leaf nodes first
         await self.session.execute(delete(Todo))
         await self.session.execute(delete(Comment))
         await self.session.execute(delete(Attachment))
         await self.session.execute(delete(EquipmentLink))
-        await self.session.execute(delete(RevisionHistory))  # Added: Delete revisions before their entities
+        await self.session.execute(delete(RevisionHistory))  # Now safe to delete
         await self.session.execute(delete(SizingCase))
         await self.session.execute(delete(OverpressureScenario))
         await self.session.execute(delete(protective_system_projects)) # Association table

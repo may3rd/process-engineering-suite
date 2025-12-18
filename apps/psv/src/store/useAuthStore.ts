@@ -166,7 +166,15 @@ export const useAuthStore = create<AuthState>()(
                     nextCredentials.push({ userId, username, password: temporaryPassword });
                 }
 
+                // Sync username back to user object for display
+                const nextUsers = storedUsers.map(u => u.id === userId ? { ...u, username } : u);
+                persistToStorage(USERS_STORAGE_KEY, nextUsers);
                 persistToStorage(CREDENTIALS_STORAGE_KEY, nextCredentials);
+
+                // If the reset user is the current user (unlikely but possible), update local state
+                if (currentUser.id === userId) {
+                    set({ currentUser: { ...currentUser, username } });
+                }
                 return {
                     success: true,
                     message: `Temporary password created for ${targetUser.name}`,

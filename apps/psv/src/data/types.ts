@@ -551,6 +551,7 @@ export interface DisplaySettings {
 // User types
 export interface User {
     id: string;
+    username?: string;
     name: string;
     initials?: string; // e.g. "MTL", "TE"
     email: string;

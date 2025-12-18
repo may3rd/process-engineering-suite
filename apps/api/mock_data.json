@@ -63,6 +63,14 @@
       "email": "engineer@eng-suite.com",
       "role": "engineer",
       "status": "active"
+    },
+    {
+      "id": "d1a2b3c4-e5f6-47a8-b9c0-d1e2f3a4b5c6",
+      "name": "Division Manager",
+      "initials": "DM",
+      "email": "dm@eng-suite.com",
+      "role": "division_manager",
+      "status": "active"
     }
   ],
   "credentials": [
@@ -91,6 +99,13 @@
       "id": "d4fcabc8-36d1-4ce1-9ec2-b282aa361cc0",
       "userId": "2252f300-f2f3-4911-863d-40a5baa25346",
       "username": "engineer",
+      "passwordHash": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.VlS9I6Kf2ysVPK",
+      "failedAttempts": 0
+    },
+    {
+      "id": "d1a2b3c4-e5f6-47a8-b9c0-d1e2f3a4b5c7",
+      "userId": "d1a2b3c4-e5f6-47a8-b9c0-d1e2f3a4b5c6",
+      "username": "dm",
       "passwordHash": "$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/X4.VlS9I6Kf2ysVPK",
       "failedAttempts": 0
     }

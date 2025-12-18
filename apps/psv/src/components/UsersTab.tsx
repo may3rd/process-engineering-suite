@@ -484,7 +484,7 @@ export function UsersTab() {
                                             </Avatar>
                                             <Box>
                                                 <Typography fontWeight={600}>
-                                                    {user.name}
+                                                    {user.name} {user.username && `(${user.username})`}
                                                 </Typography>
                                                 <Typography
                                                     variant="body2"
@@ -638,7 +638,7 @@ export function UsersTab() {
                                         {user.name.charAt(0)}
                                     </Avatar>
                                     <Box flex={1}>
-                                        <Typography fontWeight={600}>{user.name}</Typography>
+                                        <Typography fontWeight={600}>{user.name} {user.username && `(${user.username})`}</Typography>
                                         <Typography variant="body2" color="text.secondary">
                                             {user.email}
                                         </Typography>
