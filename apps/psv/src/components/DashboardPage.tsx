@@ -104,14 +104,16 @@ export function DashboardPage() {
             {/* Header */}
             <Paper
                 sx={{
-                    ...glassCardStyles,
+                    // ...glassCardStyles,
                     p: { xs: 2, sm: 3 },
-                    borderRadius: '12px 12px 0 0',
+                    border: 'none',
+                    backgroundColor: 'transparent',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
                     mb: 0,
                     flexWrap: { xs: 'wrap', sm: 'nowrap' },
+                    boxShadow: 'none',
                 }}
             >
                 <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -127,91 +129,91 @@ export function DashboardPage() {
                 </IconButton>
             </Paper>
 
-            {/* Tabs - GitHub Style */}
-            <Box
-                sx={{
-                    borderBottom: 1,
-                    borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
-                    px: { xs: 2, sm: 3 },
-                    pt: 2,
-                    pb: 0,
-                    display: 'flex',
-                    gap: 0.5,
-                    flexWrap: 'wrap',
-                }}
-            >
-                {visibleTabs.map((tab, index) => {
-                    const isSelected = activeTab === index;
-                    return (
-                        <Box
-                            key={tab.label}
-                            onClick={() => {
-                                setActiveTab(index);
-                                if (dashboardTab) setDashboardTab(null);
-                            }}
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 0.75,
-                                px: 2,
-                                py: 1,
-                                cursor: 'pointer',
-                                borderRadius: '6px',
-                                border: '1px solid',
-                                borderColor: isSelected
-                                    ? 'transparent'
-                                    : isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.15)',
-                                backgroundColor: isSelected
-                                    ? 'transparent'
-                                    : 'transparent',
-                                position: 'relative',
-                                mb: '-1px',
-                                transition: 'all 0.15s ease',
-                                '&:hover': {
-                                    backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
-                                },
-                                // Bottom border indicator for selected tab
-                                '&::after': isSelected ? {
-                                    content: '""',
-                                    position: 'absolute',
-                                    bottom: -1,
-                                    left: 0,
-                                    right: 0,
-                                    height: 2,
-                                    backgroundColor: '#f78166', // GitHub orange
-                                    borderRadius: '2px 2px 0 0',
-                                } : {},
-                            }}
-                        >
+            {/* Tabs - Folder Tab Style */}
+            <Box sx={{ px: { xs: 2, sm: 3 }, pt: 2 }}>
+                <Box
+                    sx={{
+                        display: 'flex',
+                        gap: 0.5,
+                        flexWrap: 'wrap',
+                        position: 'relative',
+                        borderBottom: '2px solid', // Thicker border
+                        borderColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)',
+                    }}
+                >
+                    {visibleTabs.map((tab, index) => {
+                        const isSelected = activeTab === index;
+                        return (
                             <Box
+                                key={tab.label}
+                                onClick={() => {
+                                    setActiveTab(index);
+                                    if (dashboardTab) setDashboardTab(null);
+                                }}
                                 sx={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    color: isSelected
-                                        ? (isDark ? '#fff' : '#000')
-                                        : (isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)'),
-                                    '& .MuiSvgIcon-root': {
-                                        fontSize: '1rem',
-                                    },
+                                    gap: 0.75,
+                                    px: 2,
+                                    py: 1.2,
+                                    cursor: 'pointer',
+                                    position: 'relative',
+                                    transition: 'all 0.15s ease',
+                                    mb: '-2px', // Overlap the thicker 2px border
+                                    flexShrink: 0, // Prevent shrinking in single line
+
+                                    // Borders
+                                    border: '1px solid transparent',
+                                    borderBottom: '2px solid transparent',
+
+                                    ...(isSelected && {
+                                        borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
+                                        borderBottom: '2px solid',
+                                        borderBottomColor: isDark ? '#0f172a' : '#f8fafc', // Same as page background
+                                        borderRadius: '8px 8px 0 0',
+                                        backgroundColor: isDark ? '#0f172a' : '#f8fafc',
+                                        zIndex: 2,
+                                    }),
+
+                                    '&:hover': !isSelected ? {
+                                        color: isDark ? '#fff' : '#000',
+                                        backgroundColor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)',
+                                        borderRadius: '8px 8px 0 0',
+                                    } : {},
                                 }}
                             >
-                                {tab.icon}
+                                <Box
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        color: isSelected
+                                            ? (isDark ? '#fff' : '#000')
+                                            : (isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)'),
+                                        transition: 'color 0.2s',
+                                        '& .MuiSvgIcon-root': {
+                                            fontSize: '1rem',
+                                        },
+                                    }}
+                                >
+                                    {tab.icon}
+                                </Box>
+                                <Typography
+                                    variant="body2"
+                                    sx={{
+                                        fontWeight: isSelected ? 600 : 500,
+                                        fontSize: '0.875rem',
+                                        color: isSelected
+                                            ? (isDark ? '#fff' : '#000')
+                                            : (isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)'),
+                                        transition: 'color 0.2s',
+                                    }}
+                                >
+                                    {tab.label}
+                                </Typography>
                             </Box>
-                            <Typography
-                                variant="body2"
-                                sx={{
-                                    fontWeight: isSelected ? 600 : 400,
-                                    fontSize: '0.875rem',
-                                    color: isSelected
-                                        ? (isDark ? '#fff' : '#000')
-                                        : (isDark ? 'rgba(255,255,255,0.7)' : 'rgba(0,0,0,0.6)'),
-                                }}
-                            >
-                                {tab.label}
-                            </Typography>
-                        </Box>
-                    );
-                })}
+                        );
+                    })}
+                </Box>
             </Box>
 
             {/* Tab Content */}
