@@ -69,6 +69,7 @@ import {
     ExpandLess,
     FileDownload,
     Download,
+    ArrowBack,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
 import { ScenarioCause, OverpressureScenario, SizingCase, Comment, TodoItem, ProtectiveSystem, ProjectNote, Attachment } from "@/data/types";
@@ -2363,130 +2364,129 @@ export function ProtectiveSystemDetail() {
                 sx={{ p: { xs: 2, sm: 3 }, mb: 3, backgroundColor: "transparent", boxShadow: "none", border: "none" }}
             >
                 <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'stretch', sm: 'flex-start' }, gap: { xs: 2, sm: 0 } }}>
-                    <Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, mb: 1, flexWrap: 'wrap' }}>
-                            <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
-                                {selectedPsv.tag}
-                            </Typography>
-                            <RevisionBadge
-                                revisionCode={displayedRevisionCode}
-                                onClick={handleRevisionMenuOpen}
-                            />
-                            <Menu
-                                anchorEl={revisionMenuAnchor}
-                                open={Boolean(revisionMenuAnchor)}
-                                onClose={handleRevisionMenuClose}
-                                slots={{ transition: Fade }}
-                            >
-                                <MenuItem
-                                    onClick={() => {
-                                        setRevisionPanelOpen(true);
-                                        handleRevisionMenuClose();
+                    <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+                        <IconButton onClick={() => selectPsv(null)} edge="start">
+                            <ArrowBack />
+                        </IconButton>
+                        <Box>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: { xs: 1, sm: 2 }, mb: 1, flexWrap: 'wrap' }}>
+                                <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.75rem', sm: '2.125rem' } }}>
+                                    {selectedPsv.tag}
+                                </Typography>
+                                <RevisionBadge
+                                    revisionCode={displayedRevisionCode}
+                                    onClick={handleRevisionMenuOpen}
+                                />
+                                <Menu
+                                    anchorEl={revisionMenuAnchor}
+                                    open={Boolean(revisionMenuAnchor)}
+                                    onClose={handleRevisionMenuClose}
+                                    slots={{ transition: Fade }}
+                                >
+                                    <MenuItem
+                                        onClick={() => {
+                                            setRevisionPanelOpen(true);
+                                            handleRevisionMenuClose();
+                                        }}
+                                    >
+                                        <ListItemText>Revision History…</ListItemText>
+                                    </MenuItem>
+                                    {isAuthenticated
+                                        ? [
+                                            <Divider key="revision-divider" />,
+                                            ...psvRevisions.map((revision) => (
+                                                <MenuItem
+                                                    key={revision.id}
+                                                    selected={revision.id === revisionMenuCurrentId}
+                                                    onClick={() => handleRevisionSelect(revision.id)}
+                                                >
+                                                    <ListItemText
+                                                        primary={`Rev. ${revision.revisionCode}`}
+                                                        secondary={revision.description || undefined}
+                                                    />
+                                                </MenuItem>
+                                            )),
+                                        ]
+                                        : null}
+                                </Menu>
+                                <Chip
+                                    icon={getStatusIcon(selectedPsv.status)}
+                                    label={getWorkflowStatusLabel(selectedPsv.status)}
+                                    color={getWorkflowStatusColor(selectedPsv.status) as any}
+                                    onClick={canOpenStatusMenu ? handleStatusClick : undefined}
+                                    deleteIcon={canOpenStatusMenu ? <KeyboardArrowDown /> : undefined}
+                                    onDelete={canOpenStatusMenu ? handleStatusClick : undefined}
+                                    sx={{
+                                        textTransform: 'capitalize',
+                                        fontWeight: 600,
+                                        pl: 0.5,
+                                        '& .MuiChip-deleteIcon': {
+                                            color: 'inherit',
+                                            opacity: 0.7
+                                        },
+                                        cursor: canOpenStatusMenu ? 'pointer' : 'default'
                                     }}
+                                />
+                                <Menu
+                                    anchorEl={statusMenuAnchor}
+                                    open={Boolean(statusMenuAnchor)}
+                                    onClose={handleStatusClose}
+                                    slots={{ transition: Fade }}
                                 >
-                                    <ListItemText>Revision History…</ListItemText>
-                                </MenuItem>
-                                {isAuthenticated
-                                    ? [
-                                        <Divider key="revision-divider" />,
-                                        ...psvRevisions.map((revision) => (
-                                            <MenuItem
-                                                key={revision.id}
-                                                selected={revision.id === revisionMenuCurrentId}
-                                                onClick={() => handleRevisionSelect(revision.id)}
-                                            >
-                                                <ListItemText
-                                                    primary={`Rev. ${revision.revisionCode}`}
-                                                    secondary={revision.description || undefined}
-                                                />
-                                            </MenuItem>
-                                        )),
-                                    ]
-                                    : null}
-                            </Menu>
-                            <Chip
-                                icon={getStatusIcon(selectedPsv.status)}
-                                label={getWorkflowStatusLabel(selectedPsv.status)}
-                                color={getWorkflowStatusColor(selectedPsv.status) as any}
-                                onClick={canOpenStatusMenu ? handleStatusClick : undefined}
-                                deleteIcon={canOpenStatusMenu ? <KeyboardArrowDown /> : undefined}
-                                onDelete={canOpenStatusMenu ? handleStatusClick : undefined} // Shows the arrow and makes it clickable
-                                sx={{
-                                    textTransform: 'capitalize',
-                                    fontWeight: 600,
-                                    pl: 0.5,
-                                    '& .MuiChip-deleteIcon': {
-                                        color: 'inherit',
-                                        opacity: 0.7
-                                    },
-                                    cursor: canOpenStatusMenu ? 'pointer' : 'default'
-                                }}
-                            />
-                            <Menu
-                                anchorEl={statusMenuAnchor}
-                                open={Boolean(statusMenuAnchor)}
-                                onClose={handleStatusClose}
-                                slots={{ transition: Fade }}
-                            >
-                                <MenuItem
-                                    onClick={() => handleStatusChange('draft')}
-                                    selected={selectedPsv.status === 'draft'}
-                                    disabled={!statusPermissionFor('draft')}
-                                >
-                                    <ListItemIcon><Drafts fontSize="small" /></ListItemIcon>
-                                    <ListItemText>Draft</ListItemText>
-                                </MenuItem>
-                                <MenuItem
-                                    onClick={() => handleStatusChange('in_review')}
-                                    selected={selectedPsv.status === 'in_review'}
-                                    disabled={!statusPermissionFor('in_review')}
-                                >
-                                    <ListItemIcon><RateReview fontSize="small" sx={{ color: 'warning.main' }} /></ListItemIcon>
-                                    <ListItemText>In Review</ListItemText>
-                                </MenuItem>
-                                {statusPermissionFor('checked') && (
-                                    <MenuItem onClick={() => handleStatusChange('checked')} selected={selectedPsv.status === 'checked'}>
-                                        <ListItemIcon><Verified fontSize="small" sx={{ color: 'info.main' }} /></ListItemIcon>
-                                        <ListItemText>Checked</ListItemText>
+                                    <MenuItem
+                                        onClick={() => handleStatusChange('draft')}
+                                        selected={selectedPsv.status === 'draft'}
+                                        disabled={!statusPermissionFor('draft')}
+                                    >
+                                        <ListItemIcon><Drafts fontSize="small" /></ListItemIcon>
+                                        <ListItemText>Draft</ListItemText>
                                     </MenuItem>
-                                )}
-                                {statusPermissionFor('approved') && (
-                                    <MenuItem onClick={() => handleStatusChange('approved')} selected={selectedPsv.status === 'approved'}>
-                                        <ListItemIcon><CheckCircleOutline fontSize="small" sx={{ color: 'success.main' }} /></ListItemIcon>
-                                        <ListItemText>Approved</ListItemText>
+                                    <MenuItem
+                                        onClick={() => handleStatusChange('in_review')}
+                                        selected={selectedPsv.status === 'in_review'}
+                                        disabled={!statusPermissionFor('in_review')}
+                                    >
+                                        <ListItemIcon><RateReview fontSize="small" sx={{ color: 'warning.main' }} /></ListItemIcon>
+                                        <ListItemText>In Review</ListItemText>
                                     </MenuItem>
-                                )}
-                                {/* Issued can only be set from Approved status, by elevated roles */}
-                                {selectedPsv.status === 'approved' && statusPermissionFor('issued') && (
-                                    <MenuItem onClick={() => handleStatusChange('issued')}>
-                                        <ListItemIcon><PublishedWithChanges fontSize="small" sx={{ color: 'info.main' }} /></ListItemIcon>
-                                        <ListItemText>Issued</ListItemText>
-                                    </MenuItem>
-                                )}
-                            </Menu>
+                                    {statusPermissionFor('checked') && (
+                                        <MenuItem onClick={() => handleStatusChange('checked')} selected={selectedPsv.status === 'checked'}>
+                                            <ListItemIcon><Verified fontSize="small" sx={{ color: 'info.main' }} /></ListItemIcon>
+                                            <ListItemText>Checked</ListItemText>
+                                        </MenuItem>
+                                    )}
+                                    {statusPermissionFor('approved') && (
+                                        <MenuItem onClick={() => handleStatusChange('approved')} selected={selectedPsv.status === 'approved'}>
+                                            <ListItemIcon><CheckCircleOutline fontSize="small" sx={{ color: 'success.main' }} /></ListItemIcon>
+                                            <ListItemText>Approved</ListItemText>
+                                        </MenuItem>
+                                    )}
+                                    {selectedPsv.status === 'approved' && statusPermissionFor('issued') && (
+                                        <MenuItem onClick={() => handleStatusChange('issued')}>
+                                            <ListItemIcon><PublishedWithChanges fontSize="small" sx={{ color: 'info.main' }} /></ListItemIcon>
+                                            <ListItemText>Issued</ListItemText>
+                                        </MenuItem>
+                                    )}
+                                </Menu>
+                            </Box>
+                            <Typography variant="body1" color="text.secondary">
+                                {selectedPsv.name}
+                            </Typography>
                         </Box>
-                        <Typography variant="body1" color="text.secondary">
-                            {selectedPsv.name}
-                        </Typography>
                     </Box>
-                    <Box sx={{ display: 'flex', gap: 1, flexDirection: { xs: 'row', sm: 'row' }, width: { xs: '100%', sm: 'auto' } }}>
-                        {canEdit && (
-                            <>
-                                <Button
-                                    variant="contained"
-                                    color="error"
-                                    startIcon={<Delete />}
-                                    onClick={handleDeletePsv}
-                                    sx={{ flex: { xs: 1, sm: 'none' } }}
-                                >
-                                    Delete
-                                </Button>
-                            </>
-                        )}
-                        <Button variant="contained" onClick={() => selectPsv(null)} sx={{ flex: { xs: 1, sm: 'none' } }}>
-                            Close
-                        </Button>
-                    </Box>
+                    {canEdit && (
+                        <Box sx={{ display: 'flex', gap: 1, flexDirection: { xs: 'row', sm: 'row' }, width: { xs: '100%', sm: 'auto' } }}>
+                            <Button
+                                variant="outlined"
+                                color="error"
+                                startIcon={<Delete />}
+                                onClick={handleDeletePsv}
+                                sx={{ flex: { xs: 1, sm: 'none' } }}
+                            >
+                                Delete
+                            </Button>
+                        </Box>
+                    )}
                 </Box>
             </Paper>
 
@@ -2692,12 +2692,12 @@ export function ProtectiveSystemDetail() {
 
                                         '&:hover': !isSelected
                                             ? {
-                                                  color: isDark ? '#fff' : '#000',
-                                                  backgroundColor: isDark
-                                                      ? 'rgba(255,255,255,0.05)'
-                                                      : 'rgba(0,0,0,0.04)',
-                                                  borderRadius: '8px 8px 0 0',
-                                              }
+                                                color: isDark ? '#fff' : '#000',
+                                                backgroundColor: isDark
+                                                    ? 'rgba(255,255,255,0.05)'
+                                                    : 'rgba(0,0,0,0.04)',
+                                                borderRadius: '8px 8px 0 0',
+                                            }
                                             : {},
                                     }}
                                 >
@@ -2710,8 +2710,8 @@ export function ProtectiveSystemDetail() {
                                             color: isSelected
                                                 ? (isDark ? '#fff' : '#000')
                                                 : isDark
-                                                  ? 'rgba(255,255,255,0.5)'
-                                                  : 'rgba(0,0,0,0.45)',
+                                                    ? 'rgba(255,255,255,0.5)'
+                                                    : 'rgba(0,0,0,0.45)',
                                             transition: 'color 0.2s',
                                         }}
                                     >

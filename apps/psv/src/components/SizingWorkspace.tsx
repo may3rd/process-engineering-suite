@@ -4,8 +4,6 @@ import { useState, useEffect } from "react";
 import {
     Box,
     Paper,
-    Tabs,
-    Tab,
     Typography,
     Button,
     IconButton,
@@ -933,33 +931,54 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
 
     const isLiquidOrTwoPhase = currentCase.method === 'liquid' || currentCase.method === 'two_phase';
 
+    const selectedTabBg = theme.palette.background.default;
+
+    const TAB_LABELS = ['Conditions', 'PSV Sizing', 'Inlet Piping', 'Outlet Piping', 'Results'];
+
     return (
         <Box sx={{ height: '100vh - 20', display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
-            {/* Toolbar */}
-            <Paper square sx={{ px: 3, py: 2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: 1, borderColor: 'divider' }}>
+            {/* Header */}
+            <Paper
+                square
+                sx={{
+                    px: { xs: 2, sm: 3 },
+                    py: 2,
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'stretch', sm: 'center' },
+                    justifyContent: 'space-between',
+                    gap: 2,
+                    border: 'none',
+                    backgroundColor: 'transparent',
+                    boxShadow: 'none',
+                }}
+            >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <IconButton onClick={onClose} edge="start">
                         <ArrowBack />
                     </IconButton>
                     <Box>
-                        <Typography variant="h6" fontWeight={600}>
-                            Sizing Case
-                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                            <Typography variant="h6" fontWeight={700}>
+                                {psvTag ? `${psvTag}` : 'Sizing Case'}
+                            </Typography>
+                            {isDirty && (
+                                <Chip
+                                    label="Edited"
+                                    size="small"
+                                    color="warning"
+                                    variant="outlined"
+                                    sx={{ height: 20, fontSize: '0.7rem' }}
+                                />
+                            )}
+                        </Box>
                         <Typography variant="body2" color="text.secondary">
                             {currentCase.standard} • {currentCase.method}
                         </Typography>
                     </Box>
-                    {isDirty && (
-                        <Chip
-                            label="Edited"
-                            size="small"
-                            color="warning"
-                            variant="outlined"
-                        />
-                    )}
                 </Box>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                    <Button variant="outlined" onClick={onClose}>
+                <Box sx={{ display: 'flex', gap: 1, justifyContent: { xs: 'stretch', sm: 'flex-end' } }}>
+                    <Button variant="outlined" onClick={onClose} sx={{ flex: { xs: 1, sm: 'none' } }}>
                         {canEdit ? 'Cancel' : 'Close'}
                     </Button>
                     {canEdit && (
@@ -969,6 +988,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                 color="success"
                                 onClick={handleSaveAndClose}
                                 startIcon={<CheckCircle />}
+                                sx={{ flex: { xs: 1, sm: 'none' } }}
                             >
                                 Save & Close
                             </Button>
@@ -978,6 +998,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                 onClick={handleCalculate}
                                 disabled={!isDirty || isCalculating}
                                 startIcon={<Calculate />}
+                                sx={{ flex: { xs: 1, sm: 'none' } }}
                             >
                                 {isCalculating ? 'Calculating...' : 'Calculate'}
                             </Button>
@@ -1026,22 +1047,113 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
 
             {isCalculating && <LinearProgress />}
 
-            {/* Tabs */}
-            <Paper square sx={{ borderBottom: 1, borderColor: 'divider', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Tabs value={activeTab} onChange={handleTabChange} sx={{ flex: 1 }}>
-                    <Tab label="Conditions" />
-                    <Tab label="PSV Sizing" />
-                    <Tab label="Inlet Piping" />
-                    <Tab label="Outlet Piping" />
-                    <Tab label="Results" />
-                </Tabs>
-                {canEdit && (
-                    <Tooltip title="Delete Sizing Case">
-                        <IconButton onClick={() => setDeleteDialogOpen(true)} color="error" sx={{ mr: 2 }}>
-                            <Delete />
-                        </IconButton>
-                    </Tooltip>
-                )}
+            {/* Tabs - iOS Style */}
+            <Paper
+                sx={{
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    boxShadow: 'none',
+                }}
+            >
+                <Box sx={{ px: { xs: 2, sm: 3 }, pt: 2, backgroundColor: 'transparent' }}>
+                    <Box
+                        role="tablist"
+                        aria-label="Sizing case tabs"
+                        sx={{
+                            display: 'flex',
+                            gap: 0.5,
+                            flexWrap: 'nowrap',
+                            overflowX: 'auto',
+                            overflowY: 'visible',
+                            WebkitOverflowScrolling: 'touch',
+                            scrollbarWidth: 'none',
+                            '&::-webkit-scrollbar': { display: 'none' },
+                            position: 'relative',
+                            '&::after': {
+                                content: '""',
+                                position: 'absolute',
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                height: '2px',
+                                backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)',
+                                pointerEvents: 'none',
+                                zIndex: 0,
+                            },
+                        }}
+                    >
+                        {TAB_LABELS.map((label, index) => {
+                            const isSelected = activeTab === index;
+                            return (
+                                <Box
+                                    key={label}
+                                    role="tab"
+                                    aria-selected={isSelected}
+                                    onClick={() => setActiveTab(index)}
+                                    sx={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 0.75,
+                                        px: 2,
+                                        py: 1.2,
+                                        cursor: 'pointer',
+                                        position: 'relative',
+                                        transition: 'all 0.15s ease',
+                                        flexShrink: 0,
+                                        whiteSpace: 'nowrap',
+                                        borderRadius: '8px 8px 0 0',
+                                        zIndex: isSelected ? 2 : 1,
+
+                                        border: '1px solid transparent',
+                                        borderBottom: 'none',
+
+                                        ...(isSelected && {
+                                            borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
+                                            borderRadius: '8px 8px 0 0',
+                                            backgroundColor: selectedTabBg,
+                                        }),
+
+                                        '&:hover': !isSelected
+                                            ? {
+                                                color: isDark ? '#fff' : '#000',
+                                                backgroundColor: isDark
+                                                    ? 'rgba(255,255,255,0.05)'
+                                                    : 'rgba(0,0,0,0.04)',
+                                                borderRadius: '8px 8px 0 0',
+                                            }
+                                            : {},
+                                    }}
+                                >
+                                    <Typography
+                                        variant="body2"
+                                        sx={{
+                                            fontWeight: isSelected ? 600 : 500,
+                                            fontSize: '0.875rem',
+                                            whiteSpace: 'nowrap',
+                                            color: isSelected
+                                                ? (isDark ? '#fff' : '#000')
+                                                : isDark
+                                                    ? 'rgba(255,255,255,0.5)'
+                                                    : 'rgba(0,0,0,0.45)',
+                                            transition: 'color 0.2s',
+                                        }}
+                                    >
+                                        {label}
+                                    </Typography>
+                                </Box>
+                            );
+                        })}
+                        {/* Delete button at end of tabs */}
+                        <Box sx={{ flex: 1 }} />
+                        {canEdit && (
+                            <Tooltip title="Delete Sizing Case">
+                                <IconButton onClick={() => setDeleteDialogOpen(true)} color="error" size="small" sx={{ my: 0.5 }}>
+                                    <Delete />
+                                </IconButton>
+                            </Tooltip>
+                        )}
+                    </Box>
+                </Box>
             </Paper>
 
             {/* Content Area */}
