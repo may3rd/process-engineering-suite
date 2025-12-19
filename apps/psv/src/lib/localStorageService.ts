@@ -894,7 +894,11 @@ class LocalStorageService {
     // --- Utility: Reset demo data ---
 
     resetDemoData(): void {
-        localStorage.removeItem(STORAGE_KEYS.INITIALIZED);
+        // Clear all demo data keys
+        Object.values(STORAGE_KEYS).forEach((key) => {
+            localStorage.removeItem(key);
+        });
+        // Re-initialize from mock data
         initializeIfNeeded();
     }
 

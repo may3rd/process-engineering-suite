@@ -19,9 +19,11 @@ import {
     TextField,
     Typography,
 } from '@mui/material';
-import { Backup, Restore, Warning } from '@mui/icons-material';
+import { Backup, Restore, RestartAlt, Warning } from '@mui/icons-material';
 import { glassCardStyles } from './styles';
+import { localStorageService } from '@/lib/localStorageService';
 
+const USE_LOCAL_STORAGE = process.env.NEXT_PUBLIC_USE_LOCAL_STORAGE === 'true';
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 type DataSource = 'mock' | 'database';
@@ -53,6 +55,32 @@ export function SystemTab() {
         () => confirmText.trim().toUpperCase() === 'RESTORE' && !!selectedFile,
         [confirmText, selectedFile]
     );
+
+    // Reset Demo Data state
+    const [resetDialogOpen, setResetDialogOpen] = useState(false);
+    const [resetConfirmText, setResetConfirmText] = useState('');
+    const [resetBusy, setResetBusy] = useState(false);
+
+    const resetAllowed = useMemo(
+        () => resetConfirmText.trim().toUpperCase() === 'RESET',
+        [resetConfirmText]
+    );
+
+    const handleResetDemoData = () => {
+        setResetBusy(true);
+        setMessage(null);
+        try {
+            localStorageService.resetDemoData();
+            setMessage({ type: 'success', text: 'Demo data has been reset successfully. Refreshing page...' });
+            setResetDialogOpen(false);
+            setResetConfirmText('');
+            // Reload the page to apply the reset
+            setTimeout(() => window.location.reload(), 1500);
+        } catch (err) {
+            setMessage({ type: 'error', text: err instanceof Error ? err.message : 'Reset failed' });
+            setResetBusy(false);
+        }
+    };
 
     const loadSource = async () => {
         setLoadingSource(true);
@@ -238,6 +266,46 @@ export function SystemTab() {
                         </Button>
                     </CardActions>
                 </Card>
+
+                {/* Reset Demo Data - Only shown in localStorage mode */}
+                {USE_LOCAL_STORAGE && (
+                    <Card sx={{ ...glassCardStyles, borderRadius: '12px' }}>
+                        <CardContent>
+                            <Stack spacing={1}>
+                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
+                                    <Box>
+                                        <Typography variant="h6" fontWeight={650}>
+                                            Reset Demo Data
+                                        </Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            Reset all data to the initial demo state from mockData.ts
+                                        </Typography>
+                                    </Box>
+                                    <Chip
+                                        icon={<RestartAlt />}
+                                        color="error"
+                                        variant="outlined"
+                                        label="Destructive"
+                                    />
+                                </Box>
+                                <Divider />
+                                <Alert severity="info" sx={{ mb: 0 }}>
+                                    Use this to restore the demo environment to its original state. This is useful after testing or when you want fresh data.
+                                </Alert>
+                            </Stack>
+                        </CardContent>
+                        <CardActions sx={{ px: 2, pb: 2, justifyContent: 'flex-end' }}>
+                            <Button
+                                variant="contained"
+                                color="error"
+                                startIcon={<RestartAlt />}
+                                onClick={() => setResetDialogOpen(true)}
+                            >
+                                Reset Demo Data
+                            </Button>
+                        </CardActions>
+                    </Card>
+                )}
             </Stack>
 
             <Dialog open={restoreDialogOpen} onClose={() => setRestoreDialogOpen(false)} maxWidth="sm" fullWidth>
@@ -277,6 +345,48 @@ export function SystemTab() {
                         disabled={!restoreAllowed || restoreBusy}
                     >
                         Restore Now
+                    </Button>
+                </DialogActions>
+            </Dialog>
+
+            {/* Reset Demo Data Dialog */}
+            <Dialog open={resetDialogOpen} onClose={() => setResetDialogOpen(false)} maxWidth="sm" fullWidth>
+                <DialogTitle>Reset Demo Data?</DialogTitle>
+                <DialogContent>
+                    <Stack spacing={2} sx={{ mt: 1 }}>
+                        <Alert severity="warning" icon={<Warning />}>
+                            This will reset ALL data to the initial demo state. Any changes you&apos;ve made will be lost.
+                        </Alert>
+                        <Typography variant="body2" color="text.secondary">
+                            This action will:
+                        </Typography>
+                        <Box component="ul" sx={{ m: 0, pl: 3 }}>
+                            <Typography component="li" variant="body2">Clear all current localStorage data</Typography>
+                            <Typography component="li" variant="body2">Reload the default mock data from the application</Typography>
+                            <Typography component="li" variant="body2">Log you out (you'll need to log in again)</Typography>
+                        </Box>
+                        <TextField
+                            label='Type "RESET" to confirm'
+                            value={resetConfirmText}
+                            onChange={(e) => setResetConfirmText(e.target.value)}
+                            fullWidth
+                            disabled={resetBusy}
+                        />
+                        {resetBusy && <LinearProgress />}
+                    </Stack>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setResetDialogOpen(false)} disabled={resetBusy}>
+                        Cancel
+                    </Button>
+                    <Button
+                        variant="contained"
+                        color="error"
+                        startIcon={<RestartAlt />}
+                        onClick={handleResetDemoData}
+                        disabled={!resetAllowed || resetBusy}
+                    >
+                        Reset Now
                     </Button>
                 </DialogActions>
             </Dialog>
