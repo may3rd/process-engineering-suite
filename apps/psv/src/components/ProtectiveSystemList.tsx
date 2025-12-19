@@ -28,7 +28,6 @@ import {
     Add,
     Search,
     ArrowBack,
-    ChevronRight,
     Sort,
     Check,
     ArrowUpward,
@@ -201,6 +200,7 @@ export function ProtectiveSystemList() {
                         borderRadius: '6px',
                         border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
                         overflow: 'hidden',
+                        boxShadow: 'none',
                     }}
                 >
                     <TextField
@@ -320,9 +320,9 @@ export function ProtectiveSystemList() {
                             anchorEl={sortMenuAnchor}
                             open={Boolean(sortMenuAnchor)}
                             onClose={() => setSortMenuAnchor(null)}
-                            sx={{ '& .MuiPaper-root': { minWidth: 200 } }}
+                            sx={{ '& .MuiPaper-root': { minWidth: 180 }, '& .MuiMenuItem-root': { fontSize: '0.875rem', minHeight: 36 } }}
                         >
-                            <Typography variant="caption" sx={{ px: 2, py: 1, display: 'block', color: 'text.secondary', fontWeight: 600 }}>
+                            <Typography variant="caption" sx={{ px: 2, py: 0.75, display: 'block', color: 'text.secondary', fontWeight: 600, fontSize: '0.75rem' }}>
                                 Sort by
                             </Typography>
                             {sortOptions.map((opt) => (
@@ -334,16 +334,16 @@ export function ProtectiveSystemList() {
                                     }}
                                     sx={{ pl: 2 }}
                                 >
-                                    <Box sx={{ width: 24, display: 'flex', alignItems: 'center' }}>
+                                    <Box sx={{ width: 20, display: 'flex', alignItems: 'center' }}>
                                         {sortConfig.key === opt.key && (
-                                            <Check fontSize="small" />
+                                            <Check sx={{ fontSize: 16 }} />
                                         )}
                                     </Box>
                                     {opt.label}
                                 </MenuItem>
                             ))}
-                            <Box sx={{ my: 1, borderTop: 1, borderColor: 'divider' }} />
-                            <Typography variant="caption" sx={{ px: 2, py: 1, display: 'block', color: 'text.secondary', fontWeight: 600 }}>
+                            <Box sx={{ my: 0.75, borderTop: 1, borderColor: 'divider' }} />
+                            <Typography variant="caption" sx={{ px: 2, py: 0.75, display: 'block', color: 'text.secondary', fontWeight: 600, fontSize: '0.75rem' }}>
                                 Order
                             </Typography>
                             <MenuItem
@@ -353,12 +353,12 @@ export function ProtectiveSystemList() {
                                 }}
                                 sx={{ pl: 2 }}
                             >
-                                <Box sx={{ width: 24, display: 'flex', alignItems: 'center' }}>
+                                <Box sx={{ width: 20, display: 'flex', alignItems: 'center' }}>
                                     {sortConfig.direction === 'asc' && (
-                                        <Check fontSize="small" />
+                                        <Check sx={{ fontSize: 16 }} />
                                     )}
                                 </Box>
-                                <ArrowUpward fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                                <ArrowUpward sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
                                 Ascending
                             </MenuItem>
                             <MenuItem
@@ -368,12 +368,12 @@ export function ProtectiveSystemList() {
                                 }}
                                 sx={{ pl: 2 }}
                             >
-                                <Box sx={{ width: 24, display: 'flex', alignItems: 'center' }}>
+                                <Box sx={{ width: 20, display: 'flex', alignItems: 'center' }}>
                                     {sortConfig.direction === 'desc' && (
-                                        <Check fontSize="small" />
+                                        <Check sx={{ fontSize: 16 }} />
                                     )}
                                 </Box>
-                                <ArrowDownward fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                                <ArrowDownward sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
                                 Descending
                             </MenuItem>
                         </Menu>
@@ -388,10 +388,7 @@ export function ProtectiveSystemList() {
                             {pagination.pageItems.map((psv) => (
                                 <TableRow
                                     key={psv.id}
-                                    hover
-                                    onClick={() => selectPsv(psv.id)}
                                     sx={{
-                                        cursor: 'pointer',
                                         '&:hover': {
                                             bgcolor: isDark ? 'rgba(56, 189, 248, 0.08)' : 'rgba(2, 132, 199, 0.04)',
                                         },
@@ -400,58 +397,57 @@ export function ProtectiveSystemList() {
                                         },
                                     }}
                                 >
-                                    <TableCell sx={{ width: 48 }}>
-                                        <Box
-                                            sx={{
-                                                width: 32,
-                                                height: 32,
-                                                borderRadius: '6px',
-                                                bgcolor: isDark ? 'rgba(56, 189, 248, 0.15)' : 'rgba(2, 132, 199, 0.1)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                color: 'primary.main',
-                                            }}
-                                        >
-                                            {getTypeIcon(psv.type)}
+                                    <TableCell sx={{ py: 1.5 }}>
+                                        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                                            <Box
+                                                sx={{
+                                                    width: 32,
+                                                    height: 32,
+                                                    borderRadius: '6px',
+                                                    bgcolor: isDark ? 'rgba(56, 189, 248, 0.15)' : 'rgba(2, 132, 199, 0.1)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: 'primary.main',
+                                                    flexShrink: 0,
+                                                }}
+                                            >
+                                                {getTypeIcon(psv.type)}
+                                            </Box>
+                                            <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                <Box
+                                                    component="a"
+                                                    onClick={(e) => {
+                                                        e.preventDefault();
+                                                        selectPsv(psv.id);
+                                                    }}
+                                                    sx={{
+                                                        color: 'text.primary',
+                                                        textDecoration: 'none',
+                                                        fontWeight: 600,
+                                                        fontSize: '0.95rem',
+                                                        cursor: 'pointer',
+                                                        '&:hover': {
+                                                            color: 'primary.main',
+                                                            textDecoration: 'underline',
+                                                        },
+                                                    }}
+                                                >
+                                                    {psv.tag} : {psv.name}
+                                                </Box>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
+                                                    <Chip
+                                                        label={getWorkflowStatusLabel(psv.status)}
+                                                        size="small"
+                                                        color={getWorkflowStatusColor(psv.status)}
+                                                        sx={{ textTransform: 'capitalize', height: 22, fontSize: '0.75rem' }}
+                                                    />
+                                                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                                                        {getTypeLabel(psv.type)}, {psv.fluidPhase?.toUpperCase() || 'N/A'}, Set Pressure: {formatPressureGauge(psv.setPressure, unitSystem, 1)}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
                                         </Box>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography fontWeight={600}>{psv.tag}</Typography>
-                                        <Typography variant="caption" color="text.secondary">
-                                            {psv.name}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
-                                        <Stack direction="row" spacing={0.5}>
-                                            <Chip
-                                                label={getTypeLabel(psv.type)}
-                                                size="small"
-                                                variant="outlined"
-                                            />
-                                            <Chip
-                                                label={psv.fluidPhase}
-                                                size="small"
-                                                variant="outlined"
-                                                sx={{ textTransform: 'capitalize' }}
-                                            />
-                                        </Stack>
-                                    </TableCell>
-                                    <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>
-                                        <Typography variant="body2" color="text.secondary">
-                                            {formatPressureGauge(psv.setPressure, unitSystem, 1)}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell align="right">
-                                        <Chip
-                                            label={getWorkflowStatusLabel(psv.status)}
-                                            size="small"
-                                            color={getWorkflowStatusColor(psv.status)}
-                                            sx={{ textTransform: 'capitalize' }}
-                                        />
-                                    </TableCell>
-                                    <TableCell align="right" sx={{ width: 48 }}>
-                                        <ChevronRight sx={{ color: 'text.secondary' }} />
                                     </TableCell>
                                 </TableRow>
                             ))}

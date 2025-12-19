@@ -28,7 +28,6 @@ import {
     Apartment,
     Domain,
     FolderSpecial,
-    ChevronRight,
     ArrowBack,
     Add,
     Search,
@@ -137,12 +136,12 @@ export function HierarchyBrowser() {
 
     const getIcon = (lvl: string) => {
         switch (lvl) {
-            case 'customer': return <Business />;
-            case 'plant': return <Factory />;
-            case 'unit': return <Apartment />;
-            case 'area': return <Domain />;
-            case 'project': return <FolderSpecial />;
-            default: return <Business />;
+            case 'customer': return <Business fontSize="small" />;
+            case 'plant': return <Factory fontSize="small" />;
+            case 'unit': return <Apartment fontSize="small" />;
+            case 'area': return <Domain fontSize="small" />;
+            case 'project': return <FolderSpecial fontSize="small" />;
+            default: return <Business fontSize="small" />;
         }
     };
 
@@ -376,6 +375,7 @@ export function HierarchyBrowser() {
                             borderRadius: '6px',
                             border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
                             overflow: 'hidden',
+                            boxShadow: 'none',
                         }}
                     >
                         <TextField
@@ -486,9 +486,9 @@ export function HierarchyBrowser() {
                                 anchorEl={sortMenuAnchor}
                                 open={Boolean(sortMenuAnchor)}
                                 onClose={() => setSortMenuAnchor(null)}
-                                sx={{ '& .MuiPaper-root': { minWidth: 200 } }}
+                                sx={{ '& .MuiPaper-root': { minWidth: 180 }, '& .MuiMenuItem-root': { fontSize: '0.875rem', minHeight: 36 } }}
                             >
-                                <Typography variant="caption" sx={{ px: 2, py: 1, display: 'block', color: 'text.secondary', fontWeight: 600 }}>
+                                <Typography variant="caption" sx={{ px: 2, py: 0.75, display: 'block', color: 'text.secondary', fontWeight: 600, fontSize: '0.75rem' }}>
                                     Sort by
                                 </Typography>
                                 {sortOptions.map((opt) => (
@@ -503,16 +503,16 @@ export function HierarchyBrowser() {
                                         }}
                                         sx={{ pl: 2 }}
                                     >
-                                        <Box sx={{ width: 24, display: 'flex', alignItems: 'center' }}>
+                                        <Box sx={{ width: 20, display: 'flex', alignItems: 'center' }}>
                                             {sortConfigByLevel[level].key === opt.key && (
-                                                <Check fontSize="small" />
+                                                <Check sx={{ fontSize: 16 }} />
                                             )}
                                         </Box>
                                         {opt.label}
                                     </MenuItem>
                                 ))}
-                                <Box sx={{ my: 1, borderTop: 1, borderColor: 'divider' }} />
-                                <Typography variant="caption" sx={{ px: 2, py: 1, display: 'block', color: 'text.secondary', fontWeight: 600 }}>
+                                <Box sx={{ my: 0.75, borderTop: 1, borderColor: 'divider' }} />
+                                <Typography variant="caption" sx={{ px: 2, py: 0.75, display: 'block', color: 'text.secondary', fontWeight: 600, fontSize: '0.75rem' }}>
                                     Order
                                 </Typography>
                                 <MenuItem
@@ -525,12 +525,12 @@ export function HierarchyBrowser() {
                                     }}
                                     sx={{ pl: 2 }}
                                 >
-                                    <Box sx={{ width: 24, display: 'flex', alignItems: 'center' }}>
+                                    <Box sx={{ width: 20, display: 'flex', alignItems: 'center' }}>
                                         {sortConfigByLevel[level].direction === 'asc' && (
-                                            <Check fontSize="small" />
+                                            <Check sx={{ fontSize: 16 }} />
                                         )}
                                     </Box>
-                                    <ArrowUpward fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                                    <ArrowUpward sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
                                     Ascending
                                 </MenuItem>
                                 <MenuItem
@@ -543,12 +543,12 @@ export function HierarchyBrowser() {
                                     }}
                                     sx={{ pl: 2 }}
                                 >
-                                    <Box sx={{ width: 24, display: 'flex', alignItems: 'center' }}>
+                                    <Box sx={{ width: 20, display: 'flex', alignItems: 'center' }}>
                                         {sortConfigByLevel[level].direction === 'desc' && (
-                                            <Check fontSize="small" />
+                                            <Check sx={{ fontSize: 16 }} />
                                         )}
                                     </Box>
-                                    <ArrowDownward fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                                    <ArrowDownward sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
                                     Descending
                                 </MenuItem>
                             </Menu>
@@ -563,10 +563,7 @@ export function HierarchyBrowser() {
                                 {pagination.pageItems.map((item) => (
                                     <TableRow
                                         key={item.id}
-                                        hover
-                                        onClick={() => handleSelect(item.id)}
                                         sx={{
-                                            cursor: 'pointer',
                                             '&:hover': {
                                                 bgcolor: isDark ? 'rgba(56, 189, 248, 0.08)' : 'rgba(2, 132, 199, 0.04)',
                                             },
@@ -575,50 +572,70 @@ export function HierarchyBrowser() {
                                             },
                                         }}
                                     >
-                                        <TableCell sx={{ width: 48 }}>
-                                            <Box
-                                                sx={{
-                                                    width: 32,
-                                                    height: 32,
-                                                    borderRadius: '6px',
-                                                    bgcolor: isDark ? 'rgba(56, 189, 248, 0.15)' : 'rgba(2, 132, 199, 0.1)',
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    color: 'primary.main',
-                                                }}
-                                            >
-                                                {getIcon(currentLevel.level)}
+                                        <TableCell sx={{ py: 1.5 }}>
+                                            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+                                                <Box
+                                                    sx={{
+                                                        width: 32,
+                                                        height: 32,
+                                                        borderRadius: '6px',
+                                                        bgcolor: isDark ? 'rgba(56, 189, 248, 0.15)' : 'rgba(2, 132, 199, 0.1)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        color: 'primary.main',
+                                                        flexShrink: 0,
+                                                    }}
+                                                >
+                                                    {getIcon(currentLevel.level)}
+                                                </Box>
+                                                <Box sx={{ flex: 1, minWidth: 0 }}>
+                                                    <Box
+                                                        component="a"
+                                                        onClick={(e) => {
+                                                            e.preventDefault();
+                                                            handleSelect(item.id);
+                                                        }}
+                                                        sx={{
+                                                            color: 'text.primary',
+                                                            textDecoration: 'none',
+                                                            fontWeight: 600,
+                                                            fontSize: '0.95rem',
+                                                            cursor: 'pointer',
+                                                            '&:hover': {
+                                                                color: 'primary.main',
+                                                                textDecoration: 'underline',
+                                                            },
+                                                        }}
+                                                    >
+                                                        {item.name}
+                                                    </Box>
+                                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
+                                                        {'status' in item && (() => {
+                                                            const statusStr = String(item.status);
+                                                            return (
+                                                                <Chip
+                                                                    label={
+                                                                        isWorkflowStatus(statusStr)
+                                                                            ? getWorkflowStatusLabel(statusStr)
+                                                                            : statusStr.replace('_', ' ')
+                                                                    }
+                                                                    size="small"
+                                                                    color={getStatusColor(statusStr)}
+                                                                    sx={{ textTransform: 'capitalize', height: 22, fontSize: '0.75rem' }}
+                                                                />
+                                                            );
+                                                        })()}
+                                                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                                                            {getSubtitle(item, currentLevel.level)}
+                                                        </Typography>
+                                                    </Box>
+                                                </Box>
                                             </Box>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Typography fontWeight={500}>{item.name}</Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {getSubtitle(item, currentLevel.level)}
-                                            </Typography>
-                                        </TableCell>
-                                        <TableCell align="right">
-                                            {'status' in item && (() => {
-                                                const statusStr = String(item.status);
-                                                return (
-                                                    <Chip
-                                                        label={
-                                                            isWorkflowStatus(statusStr)
-                                                                ? getWorkflowStatusLabel(statusStr)
-                                                                : statusStr.replace('_', ' ')
-                                                        }
-                                                        size="small"
-                                                        color={getStatusColor(statusStr)}
-                                                        sx={{ textTransform: 'capitalize' }}
-                                                    />
-                                                );
-                                            })()}
-                                        </TableCell>
-                                        <TableCell align="right" sx={{ width: 48 }}>
-                                            <ChevronRight sx={{ color: 'text.secondary' }} />
                                         </TableCell>
                                     </TableRow>
                                 ))}
+
 
                                 {pagination.pageItems.length === 0 && (
                                     <TableRow>
