@@ -1,7 +1,7 @@
 "use client";
 
 import { Box, Link, Typography, useTheme, Tooltip } from "@mui/material";
-import { ChevronRight, Home } from "@mui/icons-material";
+import { Home } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
 
 export function Breadcrumbs() {
@@ -141,14 +141,17 @@ export function Breadcrumbs() {
             {/* Breadcrumb Items */}
             {items.map((item, index) => (
                 <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-                    {/* Chevron Separator */}
-                    <ChevronRight
+                    {/* Separator */}
+                    <Typography
                         sx={{
-                            fontSize: 20,
+                            fontSize: '1.4rem',
                             color: 'text.disabled',
                             flexShrink: 0,
+                            userSelect: 'none',
                         }}
-                    />
+                    >
+                        /
+                    </Typography>
 
                     {/* Breadcrumb Label with Tooltip */}
                     <Tooltip title={item.label} arrow enterDelay={300}>
@@ -191,13 +194,16 @@ export function Breadcrumbs() {
             {/* Show Home label if no items */}
             {items.length === 0 && (
                 <>
-                    <ChevronRight
+                    <Typography
                         sx={{
-                            fontSize: 20,
+                            fontSize: '1rem',
                             color: 'text.disabled',
                             flexShrink: 0,
+                            userSelect: 'none',
                         }}
-                    />
+                    >
+                        /
+                    </Typography>
                     <Typography
                         sx={{
                             fontWeight: 600,
