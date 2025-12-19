@@ -3,10 +3,6 @@
 import { useState, useEffect, useMemo } from "react";
 import {
     Box,
-    List,
-    ListItemButton,
-    ListItemIcon,
-    ListItemText,
     Typography,
     Chip,
     useTheme,
@@ -17,6 +13,14 @@ import {
     InputAdornment,
     Stack,
     MenuItem,
+    Button,
+    Menu,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableHead,
+    TableRow,
 } from "@mui/material";
 import {
     Business,
@@ -25,9 +29,11 @@ import {
     Domain,
     FolderSpecial,
     ChevronRight,
-    ChevronLeft,
+    ArrowBack,
     Add,
     Search,
+    Sort,
+    Check,
     ArrowUpward,
     ArrowDownward,
 } from "@mui/icons-material";
@@ -41,6 +47,8 @@ import { ProjectDialog } from "./dashboard/ProjectDialog";
 import { getWorkflowStatusColor, getWorkflowStatusLabel, isWorkflowStatus } from "@/lib/statusColors";
 import type { Customer, Plant, Unit, Area, Project } from "@/data/types";
 import { sortByGetter, type SortConfig } from "@/lib/sortUtils";
+import { usePagination } from "@/hooks/usePagination";
+import { GitHubFooter, PaginationControls } from "./shared";
 
 export function HierarchyBrowser() {
     const theme = useTheme();
@@ -70,7 +78,6 @@ export function HierarchyBrowser() {
     } = usePsvStore();
 
     // Auth and permissions
-    const canEdit = useAuthStore((state) => state.canEdit());
     const canManageCustomer = useAuthStore((state) => state.canManageCustomer());
     const canManageHierarchy = useAuthStore((state) => state.canManageHierarchy());
 
@@ -82,6 +89,8 @@ export function HierarchyBrowser() {
     const [projectDialogOpen, setProjectDialogOpen] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
     const [searchText, setSearchText] = useState('');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+    const [sortMenuAnchor, setSortMenuAnchor] = useState<null | HTMLElement>(null);
 
     type Level = 'customer' | 'plant' | 'unit' | 'area' | 'project';
     type SortKey = 'name' | 'code' | 'status' | 'createdAt';
@@ -94,7 +103,6 @@ export function HierarchyBrowser() {
         project: { key: 'name', direction: 'asc' },
     });
 
-    // Fix hydration mismatch - defer auth-dependent UI until client mount
     useEffect(() => {
         setIsMounted(true);
     }, []);
@@ -102,19 +110,19 @@ export function HierarchyBrowser() {
     // Determine current level and items to display
     const getCurrentLevel = () => {
         if (!selection.customerId) {
-            return { level: 'customer', items: customerList, title: 'Customers' };
+            return { level: 'customer', items: customerList, title: 'Customers', parent: null };
         }
         if (!selection.plantId) {
-            return { level: 'plant', items: plantList, title: 'Plants' };
+            return { level: 'plant', items: plantList, title: 'Plants', parent: selectedCustomer };
         }
         if (!selection.unitId) {
-            return { level: 'unit', items: unitList, title: 'Units' };
+            return { level: 'unit', items: unitList, title: 'Units', parent: selectedPlant };
         }
         if (!selection.areaId) {
-            return { level: 'area', items: areaList, title: 'Areas' };
+            return { level: 'area', items: areaList, title: 'Areas', parent: selectedUnit };
         }
         if (!selection.projectId) {
-            return { level: 'project', items: projectList, title: 'Projects' };
+            return { level: 'project', items: projectList, title: 'Projects', parent: selectedArea };
         }
         return null;
     };
@@ -129,42 +137,27 @@ export function HierarchyBrowser() {
 
     useEffect(() => {
         setSearchText('');
+        setStatusFilter('all');
     }, [level]);
 
-    const getIcon = (level: string) => {
-        switch (level) {
-            case 'customer':
-                return <Business />;
-            case 'plant':
-                return <Factory />;
-            case 'unit':
-                return <Apartment />;
-            case 'area':
-                return <Domain />;
-            case 'project':
-                return <FolderSpecial />;
-            default:
-                return <Business />;
+    const getIcon = (lvl: string) => {
+        switch (lvl) {
+            case 'customer': return <Business />;
+            case 'plant': return <Factory />;
+            case 'unit': return <Apartment />;
+            case 'area': return <Domain />;
+            case 'project': return <FolderSpecial />;
+            default: return <Business />;
         }
     };
 
     const handleSelect = (id: string) => {
         switch (currentLevel.level) {
-            case 'customer':
-                selectCustomer(id);
-                break;
-            case 'plant':
-                selectPlant(id);
-                break;
-            case 'unit':
-                selectUnit(id);
-                break;
-            case 'area':
-                selectArea(id);
-                break;
-            case 'project':
-                selectProject(id);
-                break;
+            case 'customer': selectCustomer(id); break;
+            case 'plant': selectPlant(id); break;
+            case 'unit': selectUnit(id); break;
+            case 'area': selectArea(id); break;
+            case 'project': selectProject(id); break;
         }
     };
 
@@ -173,60 +166,38 @@ export function HierarchyBrowser() {
             return getWorkflowStatusColor(status);
         }
         switch (status) {
-            case 'active':
-                return 'success';
-            case 'inactive':
-                return 'error';
-            case 'construction':
-                return 'warning';
-            case 'design':
-                return 'default';
-            default:
-                return 'default';
+            case 'active': return 'success';
+            case 'inactive': return 'error';
+            case 'construction': return 'warning';
+            case 'design': return 'default';
+            default: return 'default';
         }
     };
 
-    // Check if user can add items at current level
     const canAddItem = () => {
-        // Don't show until mounted (avoids SSR hydration mismatch)
         if (!isMounted) return false;
         if (!currentLevel) return false;
         switch (currentLevel.level) {
-            case 'customer':
-                return canManageCustomer;
+            case 'customer': return canManageCustomer;
             case 'plant':
             case 'unit':
             case 'area':
-            case 'project':
-                return canManageHierarchy;
-            default:
-                return false;
+            case 'project': return canManageHierarchy;
+            default: return false;
         }
     };
 
-    // Open appropriate dialog
     const handleOpenDialog = () => {
         if (!currentLevel) return;
         switch (currentLevel.level) {
-            case 'customer':
-                setCustomerDialogOpen(true);
-                break;
-            case 'plant':
-                setPlantDialogOpen(true);
-                break;
-            case 'unit':
-                setUnitDialogOpen(true);
-                break;
-            case 'area':
-                setAreaDialogOpen(true);
-                break;
-            case 'project':
-                setProjectDialogOpen(true);
-                break;
+            case 'customer': setCustomerDialogOpen(true); break;
+            case 'plant': setPlantDialogOpen(true); break;
+            case 'unit': setUnitDialogOpen(true); break;
+            case 'area': setAreaDialogOpen(true); break;
+            case 'project': setProjectDialogOpen(true); break;
         }
     };
 
-    // Save handlers
     const handleSaveCustomer = (data: Omit<Parameters<typeof addCustomer>[0], 'id'>) => {
         addCustomer(data);
         setCustomerDialogOpen(false);
@@ -263,57 +234,25 @@ export function HierarchyBrowser() {
     const handleBack = () => {
         if (!currentLevel) return;
         switch (currentLevel.level) {
-            case 'plant':
-                selectCustomer(null);
-                break;
-            case 'unit':
-                selectPlant(null);
-                break;
-            case 'area':
-                selectUnit(null);
-                break;
-            case 'project':
-                selectArea(null);
-                break;
+            case 'plant': selectCustomer(null); break;
+            case 'unit': selectPlant(null); break;
+            case 'area': selectUnit(null); break;
+            case 'project': selectArea(null); break;
         }
     };
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const getSubtitle = (item: any, level: string): string => {
-        switch (level) {
-            case 'customer':
-                return `Code: ${item.code}`;
-            case 'plant':
-                return item.location;
-            case 'unit':
-                return item.service;
-            case 'area':
-                return `Code: ${item.code}`;
-            case 'project':
-                return `${item.phase} • ${item.code}`;
-            default:
-                return '';
+    const getSubtitle = (item: HierarchyItem, lvl: string): string => {
+        switch (lvl) {
+            case 'customer': return (item as Customer).code;
+            case 'plant': return (item as Plant).location;
+            case 'unit': return (item as Unit).service;
+            case 'area': return (item as Area).code;
+            case 'project': return `${(item as Project).phase} • ${(item as Project).code}`;
+            default: return '';
         }
     };
 
-    const getSearchPlaceholder = (level: Level): string => {
-        switch (level) {
-            case 'customer':
-                return 'Search by name, code, or status...';
-            case 'plant':
-                return 'Search by name, code, location, or status...';
-            case 'unit':
-                return 'Search by name, code, service, or status...';
-            case 'area':
-                return 'Search by name, code, or status...';
-            case 'project':
-                return 'Search by name, code, phase, or status...';
-            default:
-                return 'Search...';
-        }
-    };
-
-    const filterItem = (item: HierarchyItem, level: Level, query: string): boolean => {
+    const filterItem = (item: HierarchyItem, lvl: Level, query: string): boolean => {
         const q = query.trim().toLowerCase();
         if (!q) return true;
 
@@ -324,40 +263,37 @@ export function HierarchyBrowser() {
         ];
 
         const extra =
-            level === 'plant'
-                ? ['location' in item ? String(item.location) : '']
-                : level === 'unit'
-                    ? ['service' in item ? String(item.service) : '']
-                    : level === 'project'
-                        ? ['phase' in item ? String(item.phase) : '']
+            lvl === 'plant' ? ['location' in item ? String(item.location) : '']
+                : lvl === 'unit' ? ['service' in item ? String(item.service) : '']
+                    : lvl === 'project' ? ['phase' in item ? String(item.phase) : '']
                         : [];
 
-        return [...base, ...extra]
-            .filter(Boolean)
-            .join(' ')
-            .toLowerCase()
-            .includes(q);
+        return [...base, ...extra].filter(Boolean).join(' ').toLowerCase().includes(q);
     };
 
     const filteredItems = useMemo(() => {
         const items = currentLevel.items as HierarchyItem[];
-        return items.filter((item) => filterItem(item, level, searchText));
-    }, [currentLevel.items, level, searchText]);
+        let result = items.filter((item) => filterItem(item, level, searchText));
+
+        if (statusFilter !== 'all') {
+            result = result.filter((item) =>
+                'status' in item && String(item.status) === statusFilter
+            );
+        }
+
+        return result;
+    }, [currentLevel.items, level, searchText, statusFilter]);
 
     const getSortValue = (item: HierarchyItem, key: SortKey): string | number => {
         switch (key) {
-            case 'name':
-                return item.name.toLowerCase();
-            case 'code':
-                return ('code' in item ? String(item.code) : '').toLowerCase();
-            case 'status':
-                return ('status' in item ? String(item.status) : '').toLowerCase();
+            case 'name': return item.name.toLowerCase();
+            case 'code': return ('code' in item ? String(item.code) : '').toLowerCase();
+            case 'status': return ('status' in item ? String(item.status) : '').toLowerCase();
             case 'createdAt': {
                 const ts = Date.parse((item as { createdAt?: string }).createdAt ?? '');
                 return Number.isFinite(ts) ? ts : 0;
             }
-            default:
-                return '';
+            default: return '';
         }
     };
 
@@ -366,211 +302,345 @@ export function HierarchyBrowser() {
         return sortByGetter(filteredItems, sortConfig, getSortValue);
     }, [filteredItems, level, sortConfigByLevel]);
 
-    const filteredCountLabel =
-        sortedItems.length === currentLevel.items.length
-            ? `${currentLevel.items.length}`
-            : `${sortedItems.length} of ${currentLevel.items.length}`;
+    // Pagination
+    const pagination = usePagination(sortedItems, { totalItems: sortedItems.length, itemsPerPage: 10 });
+
+    // Status counts
+    const activeCount = (currentLevel.items as HierarchyItem[]).filter(
+        item => 'status' in item && String(item.status) === 'active'
+    ).length;
+    const inactiveCount = (currentLevel.items as HierarchyItem[]).filter(
+        item => 'status' in item && String(item.status) === 'inactive'
+    ).length;
+
+    const sortOptions: { key: SortKey; label: string }[] = [
+        { key: 'name', label: 'Name' },
+        { key: 'code', label: 'Code' },
+        { key: 'status', label: 'Status' },
+        { key: 'createdAt', label: 'Created' },
+    ];
+
+    const handleSortSelect = (key: SortKey) => {
+        const currentConfig = sortConfigByLevel[level];
+        const newDirection = currentConfig.key === key && currentConfig.direction === 'asc' ? 'desc' : 'asc';
+        setSortConfigByLevel(prev => ({
+            ...prev,
+            [level]: { key, direction: newDirection },
+        }));
+        setSortMenuAnchor(null);
+    };
 
     return (
         <>
-            <Paper
-                sx={{
-                    borderRadius: "14px",
-                    overflow: 'hidden',
-                }}
-            >
-                <Box
-                    sx={{
-                        px: 3,
-                        py: 2,
-                        borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                    }}
-                >
-                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                        {currentLevel.level !== 'customer' && (
-                            <Tooltip title="Go Back">
-                                <IconButton
-                                    onClick={handleBack}
-                                    size="small"
-                                    sx={{
-                                        color: 'text.secondary',
-                                        bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-                                        '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }
-                                    }}
-                                >
-                                    <ChevronLeft />
-                                </IconButton>
-                            </Tooltip>
-                        )}
-                        <Box>
-                            <Typography variant="h6" fontWeight={600}>
-                                {currentLevel.level !== 'customer' ? `${currentLevel.title}` : currentLevel.title}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                {filteredCountLabel} item{sortedItems.length !== 1 ? 's' : ''}
-                            </Typography>
-                        </Box>
-                    </Box>
-                    {canAddItem() && (
-                        <Tooltip title={`Add ${currentLevel.level}`}>
-                            <IconButton
-                                onClick={handleOpenDialog}
-                                sx={{
-                                    bgcolor: 'primary.main',
-                                    color: isDark ? 'common.black' : 'common.white',
-                                    '&:hover': { bgcolor: 'primary.dark' },
-                                }}
-                            >
-                                <Add />
+            <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+                {/* Context Block Header */}
+                {currentLevel.parent && (
+                    <Paper
+                        sx={{
+                            mb: 3,
+                            p: 2,
+                            borderRadius: '12px',
+                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                            bgcolor: isDark ? 'rgba(56, 189, 248, 0.05)' : 'rgba(2, 132, 199, 0.03)',
+                        }}
+                    >
+                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <IconButton onClick={handleBack} size="small" sx={{ mr: 2 }}>
+                                <ArrowBack />
                             </IconButton>
-                        </Tooltip>
-                    )}
-                </Box>
+                            <Box sx={{ flex: 1, textAlign: 'center' }}>
+                                <Typography variant="h6" fontWeight={600}>
+                                    {currentLevel.parent.name}
+                                </Typography>
+                                <Typography variant="body2" color="text.secondary">
+                                    {'code' in currentLevel.parent && currentLevel.parent.code}
+                                </Typography>
+                            </Box>
+                            <Box sx={{ width: 40 }} /> {/* Spacer for symmetry */}
+                        </Box>
+                    </Paper>
+                )}
 
-                <Box
-                    sx={{
-                        px: 3,
-                        py: 2,
-                        borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)'}`,
-                    }}
-                >
-                    <Stack
-                        direction={{ xs: 'column', md: 'row' }}
-                        spacing={2}
-                        alignItems={{ xs: 'stretch', md: 'center' }}
+                {/* Search Bar + New Button */}
+                <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+                    <Paper
+                        sx={{
+                            flex: 1,
+                            borderRadius: '6px',
+                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                            overflow: 'hidden',
+                        }}
                     >
                         <TextField
-                            placeholder={getSearchPlaceholder(level)}
+                            placeholder={`Search ${currentLevel.title.toLowerCase()}...`}
                             value={searchText}
                             onChange={(e) => setSearchText(e.target.value)}
                             size="small"
                             fullWidth
+                            sx={{
+                                '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                                '& .MuiInputBase-root': { borderRadius: '6px', height: 40 },
+                            }}
                             slotProps={{
                                 input: {
                                     startAdornment: (
                                         <InputAdornment position="start">
-                                            <Search fontSize="small" />
+                                            <Search fontSize="small" sx={{ color: 'text.secondary' }} />
                                         </InputAdornment>
                                     ),
                                 }
                             }}
                         />
-
-                        <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', md: 320 } }}>
-                            <TextField
-                                select
-                                label="Sort"
-                                size="small"
-                                value={sortConfigByLevel[level].key}
-                                onChange={(e) =>
-                                    setSortConfigByLevel((prev) => ({
-                                        ...prev,
-                                        [level]: { key: e.target.value as SortKey, direction: 'asc' },
-                                    }))
-                                }
-                                fullWidth
-                            >
-                                <MenuItem value="name">Name</MenuItem>
-                                <MenuItem value="code">Code</MenuItem>
-                                <MenuItem value="status">Status</MenuItem>
-                                <MenuItem value="createdAt">Created</MenuItem>
-                            </TextField>
-                            <Tooltip
-                                title={
-                                    sortConfigByLevel[level].direction === 'asc'
-                                        ? 'Ascending'
-                                        : 'Descending'
-                                }
-                            >
-                                <IconButton
-                                    size="small"
-                                    onClick={() =>
-                                        setSortConfigByLevel((prev) => ({
-                                            ...prev,
-                                            [level]: {
-                                                ...prev[level],
-                                                direction: prev[level].direction === 'asc' ? 'desc' : 'asc',
-                                            },
-                                        }))
-                                    }
-                                    sx={{ flexShrink: 0 }}
-                                >
-                                    {sortConfigByLevel[level].direction === 'asc' ? (
-                                        <ArrowUpward fontSize="small" />
-                                    ) : (
-                                        <ArrowDownward fontSize="small" />
-                                    )}
-                                </IconButton>
-                            </Tooltip>
-                        </Stack>
-                    </Stack>
-                </Box>
-
-                <List disablePadding>
-                    {sortedItems.map((item) => (
-                        <ListItemButton
-                            key={item.id}
-                            onClick={() => handleSelect(item.id)}
-                            sx={{
-                                py: 2,
-                                px: 3,
-                                borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.04)'}`,
-                                '&:hover': {
-                                    backgroundColor: isDark ? 'rgba(56, 189, 248, 0.08)' : 'rgba(2, 132, 199, 0.08)',
-                                },
-                            }}
+                    </Paper>
+                    {canAddItem() && (
+                        <Button
+                            variant="contained"
+                            startIcon={<Add />}
+                            onClick={handleOpenDialog}
+                            sx={{ textTransform: 'none', height: 40, whiteSpace: 'nowrap' }}
                         >
-                            <ListItemIcon
+                            New {currentLevel.level}
+                        </Button>
+                    )}
+                </Stack>
+
+                {/* Table Container */}
+                <Paper
+                    sx={{
+                        borderRadius: '6px',
+                        border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                        overflow: 'hidden',
+                    }}
+                >
+                    {/* Table Header Row */}
+                    <Box
+                        sx={{
+                            px: 2,
+                            py: 1.5,
+                            borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                            bgcolor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            flexWrap: 'wrap',
+                            gap: 1,
+                        }}
+                    >
+                        {/* Filter Tabs */}
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <Button
+                                size="small"
+                                variant={statusFilter === 'all' ? 'contained' : 'text'}
+                                onClick={() => setStatusFilter('all')}
                                 sx={{
-                                    minWidth: 48,
-                                    color: 'primary.main',
+                                    textTransform: 'none',
+                                    fontWeight: statusFilter === 'all' ? 600 : 400,
                                 }}
                             >
-                                {getIcon(currentLevel.level)}
-                            </ListItemIcon>
-                            <ListItemText
-                                primary={
-                                    <Typography fontWeight={500}>
-                                        {item.name}
-                                    </Typography>
-                                }
-                                secondary={getSubtitle(item, currentLevel.level)}
-                            />
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                {'status' in item && (() => {
-                                    const statusStr = String(item.status);
-                                    return (
-                                        <Chip
-                                            label={
-                                                isWorkflowStatus(statusStr)
-                                                    ? getWorkflowStatusLabel(statusStr)
-                                                    : statusStr.replace('_', ' ')
-                                            }
-                                            size="small"
-                                            color={getStatusColor(String(item.status))}
-                                            sx={{ textTransform: 'capitalize' }}
-                                        />
-                                    );
-                                })()}
-                                <ChevronRight sx={{ color: 'text.secondary' }} />
-                            </Box>
-                        </ListItemButton>
-                    ))}
+                                All {currentLevel.items.length}
+                            </Button>
+                            <Button
+                                size="small"
+                                variant={statusFilter === 'active' ? 'contained' : 'text'}
+                                color={statusFilter === 'active' ? 'success' : 'inherit'}
+                                onClick={() => setStatusFilter('active')}
+                                sx={{
+                                    textTransform: 'none',
+                                    fontWeight: statusFilter === 'active' ? 600 : 400,
+                                }}
+                            >
+                                Active {activeCount}
+                            </Button>
+                            <Button
+                                size="small"
+                                variant={statusFilter === 'inactive' ? 'contained' : 'text'}
+                                color={statusFilter === 'inactive' ? 'error' : 'inherit'}
+                                onClick={() => setStatusFilter('inactive')}
+                                sx={{
+                                    textTransform: 'none',
+                                    fontWeight: statusFilter === 'inactive' ? 600 : 400,
+                                }}
+                            >
+                                Inactive {inactiveCount}
+                            </Button>
+                        </Stack>
 
-                    {sortedItems.length === 0 && (
-                        <Box sx={{ py: 6, textAlign: 'center' }}>
-                            <Typography color="text.secondary">
-                                {searchText.trim()
-                                    ? `No ${currentLevel.title.toLowerCase()} match your search`
-                                    : `No ${currentLevel.title.toLowerCase()} found`}
-                            </Typography>
-                        </Box>
-                    )}
-                </List>
-            </Paper>
+                        {/* Sort & Add */}
+                        <Stack direction="row" spacing={1} alignItems="center">
+                            <Button
+                                size="small"
+                                startIcon={<Sort />}
+                                onClick={(e) => setSortMenuAnchor(e.currentTarget)}
+                                sx={{ textTransform: 'none' }}
+                            >
+                                {sortOptions.find(o => o.key === sortConfigByLevel[level].key)?.label}
+                            </Button>
+                            <Menu
+                                anchorEl={sortMenuAnchor}
+                                open={Boolean(sortMenuAnchor)}
+                                onClose={() => setSortMenuAnchor(null)}
+                                sx={{ '& .MuiPaper-root': { minWidth: 200 } }}
+                            >
+                                <Typography variant="caption" sx={{ px: 2, py: 1, display: 'block', color: 'text.secondary', fontWeight: 600 }}>
+                                    Sort by
+                                </Typography>
+                                {sortOptions.map((opt) => (
+                                    <MenuItem
+                                        key={opt.key}
+                                        onClick={() => {
+                                            setSortConfigByLevel(prev => ({
+                                                ...prev,
+                                                [level]: { ...prev[level], key: opt.key },
+                                            }));
+                                            setSortMenuAnchor(null);
+                                        }}
+                                        sx={{ pl: 2 }}
+                                    >
+                                        <Box sx={{ width: 24, display: 'flex', alignItems: 'center' }}>
+                                            {sortConfigByLevel[level].key === opt.key && (
+                                                <Check fontSize="small" />
+                                            )}
+                                        </Box>
+                                        {opt.label}
+                                    </MenuItem>
+                                ))}
+                                <Box sx={{ my: 1, borderTop: 1, borderColor: 'divider' }} />
+                                <Typography variant="caption" sx={{ px: 2, py: 1, display: 'block', color: 'text.secondary', fontWeight: 600 }}>
+                                    Order
+                                </Typography>
+                                <MenuItem
+                                    onClick={() => {
+                                        setSortConfigByLevel(prev => ({
+                                            ...prev,
+                                            [level]: { ...prev[level], direction: 'asc' },
+                                        }));
+                                        setSortMenuAnchor(null);
+                                    }}
+                                    sx={{ pl: 2 }}
+                                >
+                                    <Box sx={{ width: 24, display: 'flex', alignItems: 'center' }}>
+                                        {sortConfigByLevel[level].direction === 'asc' && (
+                                            <Check fontSize="small" />
+                                        )}
+                                    </Box>
+                                    <ArrowUpward fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                                    Ascending
+                                </MenuItem>
+                                <MenuItem
+                                    onClick={() => {
+                                        setSortConfigByLevel(prev => ({
+                                            ...prev,
+                                            [level]: { ...prev[level], direction: 'desc' },
+                                        }));
+                                        setSortMenuAnchor(null);
+                                    }}
+                                    sx={{ pl: 2 }}
+                                >
+                                    <Box sx={{ width: 24, display: 'flex', alignItems: 'center' }}>
+                                        {sortConfigByLevel[level].direction === 'desc' && (
+                                            <Check fontSize="small" />
+                                        )}
+                                    </Box>
+                                    <ArrowDownward fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                                    Descending
+                                </MenuItem>
+                            </Menu>
+
+                        </Stack>
+                    </Box>
+
+                    {/* Table */}
+                    <TableContainer>
+                        <Table>
+                            <TableBody>
+                                {pagination.pageItems.map((item) => (
+                                    <TableRow
+                                        key={item.id}
+                                        hover
+                                        onClick={() => handleSelect(item.id)}
+                                        sx={{
+                                            cursor: 'pointer',
+                                            '&:hover': {
+                                                bgcolor: isDark ? 'rgba(56, 189, 248, 0.08)' : 'rgba(2, 132, 199, 0.04)',
+                                            },
+                                        }}
+                                    >
+                                        <TableCell sx={{ width: 48 }}>
+                                            <Box
+                                                sx={{
+                                                    width: 32,
+                                                    height: 32,
+                                                    borderRadius: '6px',
+                                                    bgcolor: isDark ? 'rgba(56, 189, 248, 0.15)' : 'rgba(2, 132, 199, 0.1)',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    color: 'primary.main',
+                                                }}
+                                            >
+                                                {getIcon(currentLevel.level)}
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography fontWeight={500}>{item.name}</Typography>
+                                            <Typography variant="caption" color="text.secondary">
+                                                {getSubtitle(item, currentLevel.level)}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell align="right">
+                                            {'status' in item && (() => {
+                                                const statusStr = String(item.status);
+                                                return (
+                                                    <Chip
+                                                        label={
+                                                            isWorkflowStatus(statusStr)
+                                                                ? getWorkflowStatusLabel(statusStr)
+                                                                : statusStr.replace('_', ' ')
+                                                        }
+                                                        size="small"
+                                                        color={getStatusColor(statusStr)}
+                                                        sx={{ textTransform: 'capitalize' }}
+                                                    />
+                                                );
+                                            })()}
+                                        </TableCell>
+                                        <TableCell align="right" sx={{ width: 48 }}>
+                                            <ChevronRight sx={{ color: 'text.secondary' }} />
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+
+                                {pagination.pageItems.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={4}>
+                                            <Box sx={{ py: 6, textAlign: 'center' }}>
+                                                <Typography color="text.secondary">
+                                                    {searchText.trim()
+                                                        ? `No ${currentLevel.title.toLowerCase()} match your search`
+                                                        : `No ${currentLevel.title.toLowerCase()} found`}
+                                                </Typography>
+                                            </Box>
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                            </TableBody>
+                        </Table>
+                    </TableContainer>
+
+                    {/* Pagination */}
+                    <PaginationControls
+                        currentPage={pagination.currentPage}
+                        totalPages={pagination.totalPages}
+                        pageNumbers={pagination.pageNumbers}
+                        onPageChange={pagination.goToPage}
+                        hasNextPage={pagination.hasNextPage}
+                        hasPrevPage={pagination.hasPrevPage}
+                    />
+                </Paper>
+
+                {/* Footer */}
+                <GitHubFooter />
+            </Box>
 
             {/* Dialogs */}
             <CustomerDialog

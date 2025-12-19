@@ -2,11 +2,8 @@
 
 import {
     Box,
-    Card,
-    CardContent,
     Typography,
     Chip,
-    Grid,
     useTheme,
     IconButton,
     Tooltip,
@@ -17,39 +14,48 @@ import {
     InputAdornment,
     MenuItem,
     useMediaQuery,
+    Table,
+    TableBody,
+    TableCell,
+    TableContainer,
+    TableRow,
+    Menu,
 } from "@mui/material";
 import {
     Security,
     Adjust,
     Air,
-    Edit,
-    Visibility,
     Add,
     Search,
+    ArrowBack,
+    ChevronRight,
+    Sort,
+    Check,
     ArrowUpward,
     ArrowDownward,
-    ChevronLeft,
 } from "@mui/icons-material";
 import { useMemo, useState } from "react";
 import { usePsvStore } from "@/store/usePsvStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { ProtectiveSystemType, ProtectiveSystem } from "@/data/types";
 import { getWorkflowStatusColor, getWorkflowStatusLabel } from "@/lib/statusColors";
-import { glassCardStyles } from "./styles";
 import { SortConfig, sortByGetter } from "@/lib/sortUtils";
 import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
 import { formatPressureGauge } from "@/lib/projectUnits";
 import { PsvCreationWizard } from "./PsvCreationWizard";
+import { usePagination } from "@/hooks/usePagination";
+import { GitHubFooter, PaginationControls } from "./shared";
 
 export function ProtectiveSystemList() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const { unitSystem } = useProjectUnitSystem();
-    const { psvList, selectPsv, selectedProject, selectedArea, addProtectiveSystem, selectProject } = usePsvStore();
-    const currentUser = useAuthStore((state) => state.currentUser);
+    const { psvList, selectPsv, selectedProject, selectProject } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
     const [searchText, setSearchText] = useState('');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'approved' | 'issued'>('all');
+    const [sortMenuAnchor, setSortMenuAnchor] = useState<null | HTMLElement>(null);
 
     type SortKey = 'tag' | 'name' | 'status' | 'setPressure' | 'mawp' | 'designCode' | 'fluidPhase' | 'type';
     const [sortConfig, setSortConfig] = useState<SortConfig<SortKey>>({
@@ -58,51 +64,47 @@ export function ProtectiveSystemList() {
     });
     const [wizardOpen, setWizardOpen] = useState(false);
 
-
-
     const filteredPsvs = useMemo(() => {
         const query = searchText.trim().toLowerCase();
-        if (!query) return psvList;
+        let result = psvList;
 
-        return psvList.filter((psv) => {
-            const haystack = [
-                psv.tag,
-                psv.name,
-                psv.type,
-                psv.designCode,
-                psv.fluidPhase,
-                psv.status,
-                psv.serviceFluid,
-                ...(psv.tags ?? []),
-            ]
-                .filter(Boolean)
-                .join(' ')
-                .toLowerCase();
+        if (query) {
+            result = result.filter((psv) => {
+                const haystack = [
+                    psv.tag,
+                    psv.name,
+                    psv.type,
+                    psv.designCode,
+                    psv.fluidPhase,
+                    psv.status,
+                    psv.serviceFluid,
+                    ...(psv.tags ?? []),
+                ]
+                    .filter(Boolean)
+                    .join(' ')
+                    .toLowerCase();
+                return haystack.includes(query);
+            });
+        }
 
-            return haystack.includes(query);
-        });
-    }, [psvList, searchText]);
+        if (statusFilter !== 'all') {
+            result = result.filter((psv) => psv.status === statusFilter);
+        }
+
+        return result;
+    }, [psvList, searchText, statusFilter]);
 
     const getSortValue = (psv: ProtectiveSystem, key: SortKey): string | number => {
         switch (key) {
-            case 'tag':
-                return psv.tag;
-            case 'name':
-                return psv.name;
-            case 'status':
-                return psv.status;
-            case 'type':
-                return psv.type;
-            case 'designCode':
-                return psv.designCode;
-            case 'fluidPhase':
-                return psv.fluidPhase;
-            case 'setPressure':
-                return psv.setPressure;
-            case 'mawp':
-                return psv.mawp;
-            default:
-                return '';
+            case 'tag': return psv.tag;
+            case 'name': return psv.name;
+            case 'status': return psv.status;
+            case 'type': return psv.type;
+            case 'designCode': return psv.designCode;
+            case 'fluidPhase': return psv.fluidPhase;
+            case 'setPressure': return psv.setPressure;
+            case 'mawp': return psv.mawp;
+            default: return '';
         }
     };
 
@@ -111,64 +113,51 @@ export function ProtectiveSystemList() {
         [filteredPsvs, sortConfig]
     );
 
-    const filteredCountLabel =
-        sortedPsvs.length === psvList.length ? `${psvList.length}` : `${sortedPsvs.length} of ${psvList.length}`;
+    const pagination = usePagination(sortedPsvs, { totalItems: sortedPsvs.length, itemsPerPage: 10 });
+
+    // Status counts
+    const draftCount = psvList.filter(p => p.status === 'draft').length;
+    const approvedCount = psvList.filter(p => p.status === 'approved').length;
+    const issuedCount = psvList.filter(p => p.status === 'issued').length;
 
     const getTypeIcon = (type: ProtectiveSystemType) => {
         switch (type) {
-            case 'psv':
-                return <Security />;
-            case 'rupture_disc':
-                return <Adjust />;
+            case 'psv': return <Security fontSize="small" />;
+            case 'rupture_disc': return <Adjust fontSize="small" />;
             case 'vent_system':
             case 'tank_vent':
-            case 'breather_valve':
-                return <Air />;
-            case 'flame_arrestor':
-                return <Security />; // Placeholder
-            case 'control_valve':
-                return <Adjust />; // Placeholder
-            default:
-                return <Security />;
+            case 'breather_valve': return <Air fontSize="small" />;
+            default: return <Security fontSize="small" />;
         }
     };
 
     const getTypeLabel = (type: ProtectiveSystemType) => {
         switch (type) {
-            case 'psv':
-                return 'PSV';
-            case 'rupture_disc':
-                return 'Rupture Disc';
-            case 'vent_system':
-                return 'Vent System';
-            case 'tank_vent':
-                return 'Tank Vent';
-            case 'breather_valve':
-                return 'Breather Valve';
-            case 'flame_arrestor':
-                return 'Flame Arrestor';
-            case 'control_valve':
-                return 'Control Valve';
-            case 'prv':
-                return 'PRV';
-            default:
-                return (type as string).replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase());
+            case 'psv': return 'PSV';
+            case 'rupture_disc': return 'RD';
+            case 'vent_system': return 'Vent';
+            case 'tank_vent': return 'Tank Vent';
+            case 'breather_valve': return 'Breather';
+            case 'flame_arrestor': return 'Flame Arrestor';
+            case 'control_valve': return 'CV';
+            case 'prv': return 'PRV';
+            default: return (type as string).replace('_', ' ');
         }
     };
 
-    const getPhaseColor = (phase: string): "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" => {
-        switch (phase) {
-            case 'gas':
-                return 'info';
-            case 'liquid':
-                return 'primary';
-            case 'steam':
-                return 'warning';
-            case 'two_phase':
-                return 'secondary';
-            default:
-                return 'default';
-        }
+    const sortOptions: { key: SortKey; label: string }[] = [
+        { key: 'tag', label: 'Tag' },
+        { key: 'name', label: 'Name' },
+        { key: 'status', label: 'Status' },
+        { key: 'type', label: 'Type' },
+        { key: 'fluidPhase', label: 'Phase' },
+        { key: 'setPressure', label: 'Set Pressure' },
+    ];
+
+    const handleSortSelect = (key: SortKey) => {
+        const newDirection = sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc';
+        setSortConfig({ key, direction: newDirection });
+        setSortMenuAnchor(null);
     };
 
     if (!selectedProject) {
@@ -176,148 +165,234 @@ export function ProtectiveSystemList() {
     }
 
     return (
-        <Box>
-            <Box sx={{ mb: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                    <Tooltip title="Back to Projects">
-                        <IconButton
-                            onClick={() => selectProject(null)}
-                            sx={{
-                                color: 'text.secondary',
-                                bgcolor: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)',
-                                '&:hover': { bgcolor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)' }
-                            }}
-                        >
-                            <ChevronLeft />
-                        </IconButton>
-                    </Tooltip>
-                    <Box>
-                        <Typography variant="h5" fontWeight={600}>
-                            {selectedProject.code || "Project Code"} : {selectedProject.name || "Project Name"}
+        <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
+            {/* Context Block Header */}
+            <Paper
+                sx={{
+                    mb: 3,
+                    p: 2,
+                    borderRadius: '12px',
+                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                    bgcolor: isDark ? 'rgba(56, 189, 248, 0.05)' : 'rgba(2, 132, 199, 0.03)',
+                }}
+            >
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <IconButton onClick={() => selectProject(null)} size="small" sx={{ mr: 2 }}>
+                        <ArrowBack />
+                    </IconButton>
+                    <Box sx={{ flex: 1, textAlign: 'center' }}>
+                        <Typography variant="h6" fontWeight={600}>
+                            {selectedProject.name}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
-                            {filteredCountLabel} device{sortedPsvs.length !== 1 ? 's' : ''}
+                            {selectedProject.code} • {selectedProject.phase}
                         </Typography>
                     </Box>
+                    <Box sx={{ width: 40 }} />
                 </Box>
-                {canEdit && (
-                    <>
-                        {!isMobile ? (
-                            <Button
-                                variant="contained"
-                                startIcon={<Add />}
-                                size="small"
-                                onClick={() => setWizardOpen(true)}
-                                sx={{ display: { xs: 'none', md: 'inline-flex' } }}
-                            >
-                                New PSV/RD
-                            </Button>
-                        ) : (
-                            <Tooltip title="New PSV/RD">
-                                <IconButton
-                                    size="small"
-                                    onClick={() => setWizardOpen(true)}
-                                    sx={{
-                                        display: { xs: 'inline-flex', md: 'none' },
-                                        bgcolor: 'primary.main',
-                                        color: 'primary.contrastText',
-                                        '&:hover': { bgcolor: 'primary.dark' },
-                                    }}
-                                >
-                                    <Add />
-                                </IconButton>
-                            </Tooltip>
-                        )}
-                    </>
-                )}
-            </Box>
+            </Paper>
 
-            <Paper sx={{ ...glassCardStyles, p: 2, mb: 3 }}>
-                <Stack
-                    direction={{ xs: 'column', md: 'row' }}
-                    spacing={2}
-                    alignItems={{ xs: 'stretch', md: 'center' }}
+            {/* Search Bar + New Button */}
+            <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
+                <Paper
+                    sx={{
+                        flex: 1,
+                        borderRadius: '6px',
+                        border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                        overflow: 'hidden',
+                    }}
                 >
                     <TextField
-                        placeholder="Search by tag, name, type, fluid, or status..."
+                        placeholder="Search by tag, name, type, or fluid..."
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
                         size="small"
                         fullWidth
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position="start">
-                                    <Search fontSize="small" />
-                                </InputAdornment>
-                            ),
+                        sx={{
+                            '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                            '& .MuiInputBase-root': { borderRadius: '6px', height: 40 },
+                        }}
+                        slotProps={{
+                            input: {
+                                startAdornment: (
+                                    <InputAdornment position="start">
+                                        <Search fontSize="small" sx={{ color: 'text.secondary' }} />
+                                    </InputAdornment>
+                                ),
+                            }
                         }}
                     />
+                </Paper>
+                {canEdit && (
+                    <Button
+                        variant="contained"
+                        startIcon={<Add />}
+                        onClick={() => setWizardOpen(true)}
+                        sx={{ textTransform: 'none', height: 40, whiteSpace: 'nowrap' }}
+                    >
+                        New PSV/RD
+                    </Button>
+                )}
+            </Stack>
 
-                    <Stack direction="row" spacing={1} alignItems="center" sx={{ width: { xs: '100%', md: 360 } }}>
-                        <TextField
-                            select
-                            label="Sort"
+            {/* Table Container */}
+            <Paper
+                sx={{
+                    borderRadius: '6px',
+                    border: `1px solid ${isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.12)'}`,
+                    overflow: 'hidden',
+                }}
+            >
+                {/* Table Header Row */}
+                <Box
+                    sx={{
+                        px: 2,
+                        py: 1.5,
+                        borderBottom: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                        bgcolor: isDark ? 'rgba(255,255,255,0.02)' : 'rgba(0,0,0,0.02)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: 1,
+                    }}
+                >
+                    {/* Filter Tabs */}
+                    <Stack direction="row" spacing={1} alignItems="center" sx={{ flexWrap: 'wrap' }}>
+                        <Button
                             size="small"
-                            value={sortConfig.key}
-                            onChange={(e) =>
-                                setSortConfig({ key: e.target.value as SortKey, direction: 'asc' })
-                            }
-                            fullWidth
+                            variant={statusFilter === 'all' ? 'contained' : 'text'}
+                            onClick={() => setStatusFilter('all')}
+                            sx={{ textTransform: 'none', fontWeight: statusFilter === 'all' ? 600 : 400 }}
                         >
-                            <MenuItem value="tag">Tag</MenuItem>
-                            <MenuItem value="name">Name</MenuItem>
-                            <MenuItem value="status">Status</MenuItem>
-                            <MenuItem value="type">Type</MenuItem>
-                            <MenuItem value="fluidPhase">Phase</MenuItem>
-                            <MenuItem value="designCode">Design code</MenuItem>
-                            <MenuItem value="setPressure">Set pressure</MenuItem>
-                            <MenuItem value="mawp">MAWP</MenuItem>
-                        </TextField>
-                        <Tooltip title={sortConfig.direction === 'asc' ? 'Ascending' : 'Descending'}>
-                            <IconButton
-                                size="small"
-                                onClick={() =>
-                                    setSortConfig((prev) => ({
-                                        ...prev,
-                                        direction: prev.direction === 'asc' ? 'desc' : 'asc',
-                                    }))
-                                }
-                                sx={{ flexShrink: 0 }}
-                            >
-                                {sortConfig.direction === 'asc' ? (
-                                    <ArrowUpward fontSize="small" />
-                                ) : (
-                                    <ArrowDownward fontSize="small" />
-                                )}
-                            </IconButton>
-                        </Tooltip>
+                            All {psvList.length}
+                        </Button>
+                        <Button
+                            size="small"
+                            variant={statusFilter === 'draft' ? 'contained' : 'text'}
+                            onClick={() => setStatusFilter('draft')}
+                            sx={{ textTransform: 'none', fontWeight: statusFilter === 'draft' ? 600 : 400 }}
+                        >
+                            Draft {draftCount}
+                        </Button>
+                        <Button
+                            size="small"
+                            variant={statusFilter === 'approved' ? 'contained' : 'text'}
+                            color={statusFilter === 'approved' ? 'success' : 'inherit'}
+                            onClick={() => setStatusFilter('approved')}
+                            sx={{ textTransform: 'none', fontWeight: statusFilter === 'approved' ? 600 : 400 }}
+                        >
+                            Approved {approvedCount}
+                        </Button>
+                        <Button
+                            size="small"
+                            variant={statusFilter === 'issued' ? 'contained' : 'text'}
+                            color={statusFilter === 'issued' ? 'info' : 'inherit'}
+                            onClick={() => setStatusFilter('issued')}
+                            sx={{ textTransform: 'none', fontWeight: statusFilter === 'issued' ? 600 : 400 }}
+                        >
+                            Issued {issuedCount}
+                        </Button>
                     </Stack>
-                </Stack>
-            </Paper>
 
-            <Grid container spacing={2}>
-                {sortedPsvs.map((psv) => (
-                    <Grid size={{ xs: 12, md: 6, lg: 4 }} key={psv.id}>
-                        <Card
-                            sx={{
-                                cursor: 'pointer',
-                                height: '100%',
-                                '&:hover': {
-                                    borderColor: 'primary.main',
-                                },
-                                transition: 'all 0.2s ease',
-                            }}
-                            onClick={() => selectPsv(psv.id)}
+                    {/* Sort & Add */}
+                    <Stack direction="row" spacing={1} alignItems="center">
+                        <Button
+                            size="small"
+                            startIcon={<Sort />}
+                            onClick={(e) => setSortMenuAnchor(e.currentTarget)}
+                            sx={{ textTransform: 'none' }}
                         >
-                            <CardContent sx={{ p: { xs: 2, sm: 2.5 }, '&:last-child': { pb: { xs: 2, sm: 2.5 } } }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                            {sortOptions.find(o => o.key === sortConfig.key)?.label}
+                        </Button>
+                        <Menu
+                            anchorEl={sortMenuAnchor}
+                            open={Boolean(sortMenuAnchor)}
+                            onClose={() => setSortMenuAnchor(null)}
+                            sx={{ '& .MuiPaper-root': { minWidth: 200 } }}
+                        >
+                            <Typography variant="caption" sx={{ px: 2, py: 1, display: 'block', color: 'text.secondary', fontWeight: 600 }}>
+                                Sort by
+                            </Typography>
+                            {sortOptions.map((opt) => (
+                                <MenuItem
+                                    key={opt.key}
+                                    onClick={() => {
+                                        setSortConfig(prev => ({ ...prev, key: opt.key }));
+                                        setSortMenuAnchor(null);
+                                    }}
+                                    sx={{ pl: 2 }}
+                                >
+                                    <Box sx={{ width: 24, display: 'flex', alignItems: 'center' }}>
+                                        {sortConfig.key === opt.key && (
+                                            <Check fontSize="small" />
+                                        )}
+                                    </Box>
+                                    {opt.label}
+                                </MenuItem>
+                            ))}
+                            <Box sx={{ my: 1, borderTop: 1, borderColor: 'divider' }} />
+                            <Typography variant="caption" sx={{ px: 2, py: 1, display: 'block', color: 'text.secondary', fontWeight: 600 }}>
+                                Order
+                            </Typography>
+                            <MenuItem
+                                onClick={() => {
+                                    setSortConfig(prev => ({ ...prev, direction: 'asc' }));
+                                    setSortMenuAnchor(null);
+                                }}
+                                sx={{ pl: 2 }}
+                            >
+                                <Box sx={{ width: 24, display: 'flex', alignItems: 'center' }}>
+                                    {sortConfig.direction === 'asc' && (
+                                        <Check fontSize="small" />
+                                    )}
+                                </Box>
+                                <ArrowUpward fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                                Ascending
+                            </MenuItem>
+                            <MenuItem
+                                onClick={() => {
+                                    setSortConfig(prev => ({ ...prev, direction: 'desc' }));
+                                    setSortMenuAnchor(null);
+                                }}
+                                sx={{ pl: 2 }}
+                            >
+                                <Box sx={{ width: 24, display: 'flex', alignItems: 'center' }}>
+                                    {sortConfig.direction === 'desc' && (
+                                        <Check fontSize="small" />
+                                    )}
+                                </Box>
+                                <ArrowDownward fontSize="small" sx={{ mr: 1, color: 'text.secondary' }} />
+                                Descending
+                            </MenuItem>
+                        </Menu>
+
+                    </Stack>
+                </Box>
+
+                {/* Table */}
+                <TableContainer>
+                    <Table>
+                        <TableBody>
+                            {pagination.pageItems.map((psv) => (
+                                <TableRow
+                                    key={psv.id}
+                                    hover
+                                    onClick={() => selectPsv(psv.id)}
+                                    sx={{
+                                        cursor: 'pointer',
+                                        '&:hover': {
+                                            bgcolor: isDark ? 'rgba(56, 189, 248, 0.08)' : 'rgba(2, 132, 199, 0.04)',
+                                        },
+                                    }}
+                                >
+                                    <TableCell sx={{ width: 48 }}>
                                         <Box
                                             sx={{
-                                                width: 40,
-                                                height: 40,
-                                                borderRadius: 2,
-                                                backgroundColor: isDark ? 'rgba(56, 189, 248, 0.15)' : 'rgba(2, 132, 199, 0.1)',
+                                                width: 32,
+                                                height: 32,
+                                                borderRadius: '6px',
+                                                bgcolor: isDark ? 'rgba(56, 189, 248, 0.15)' : 'rgba(2, 132, 199, 0.1)',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
@@ -326,106 +401,81 @@ export function ProtectiveSystemList() {
                                         >
                                             {getTypeIcon(psv.type)}
                                         </Box>
-                                        <Box>
-                                            <Typography variant="h6" fontWeight={600}>
-                                                {psv.tag}
+                                    </TableCell>
+                                    <TableCell>
+                                        <Typography fontWeight={600}>{psv.tag}</Typography>
+                                        <Typography variant="caption" color="text.secondary">
+                                            {psv.name}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell sx={{ display: { xs: 'none', md: 'table-cell' } }}>
+                                        <Stack direction="row" spacing={0.5}>
+                                            <Chip
+                                                label={getTypeLabel(psv.type)}
+                                                size="small"
+                                                variant="outlined"
+                                            />
+                                            <Chip
+                                                label={psv.fluidPhase}
+                                                size="small"
+                                                variant="outlined"
+                                                sx={{ textTransform: 'capitalize' }}
+                                            />
+                                        </Stack>
+                                    </TableCell>
+                                    <TableCell sx={{ display: { xs: 'none', lg: 'table-cell' } }}>
+                                        <Typography variant="body2" color="text.secondary">
+                                            {formatPressureGauge(psv.setPressure, unitSystem, 1)}
+                                        </Typography>
+                                    </TableCell>
+                                    <TableCell align="right">
+                                        <Chip
+                                            label={getWorkflowStatusLabel(psv.status)}
+                                            size="small"
+                                            color={getWorkflowStatusColor(psv.status)}
+                                            sx={{ textTransform: 'capitalize' }}
+                                        />
+                                    </TableCell>
+                                    <TableCell align="right" sx={{ width: 48 }}>
+                                        <ChevronRight sx={{ color: 'text.secondary' }} />
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+
+                            {pagination.pageItems.length === 0 && (
+                                <TableRow>
+                                    <TableCell colSpan={6}>
+                                        <Box sx={{ py: 6, textAlign: 'center' }}>
+                                            <Security sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                                            <Typography variant="h6" color="text.secondary">
+                                                {searchText.trim() ? 'No devices match your search' : 'No protective systems found'}
                                             </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {getTypeLabel(psv.type)}
+                                            <Typography variant="body2" color="text.secondary">
+                                                {searchText.trim()
+                                                    ? 'Try a different search term'
+                                                    : 'Add a PSV or rupture disc to get started'}
                                             </Typography>
                                         </Box>
-                                    </Box>
-                                    <Chip
-                                        label={getWorkflowStatusLabel(psv.status)}
-                                        size="small"
-                                        color={getWorkflowStatusColor(psv.status)}
-                                        sx={{ textTransform: 'capitalize' }}
-                                    />
-                                </Box>
+                                    </TableCell>
+                                </TableRow>
+                            )}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
 
-                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5, minHeight: { xs: 'auto', sm: 40 }, lineHeight: 1.4 }}>
-                                    {psv.name}
-                                </Typography>
+                {/* Pagination */}
+                <PaginationControls
+                    currentPage={pagination.currentPage}
+                    totalPages={pagination.totalPages}
+                    pageNumbers={pagination.pageNumbers}
+                    onPageChange={pagination.goToPage}
+                    hasNextPage={pagination.hasNextPage}
+                    hasPrevPage={pagination.hasPrevPage}
+                />
+            </Paper>
 
-                                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1.5 }}>
-                                    <Chip
-                                        label={psv.fluidPhase}
-                                        size="small"
-                                        variant="outlined"
-                                        color={getPhaseColor(psv.fluidPhase)}
-                                        sx={{ textTransform: 'capitalize' }}
-                                    />
-                                    <Chip
-                                        label={psv.designCode}
-                                        size="small"
-                                        variant="outlined"
-                                    />
-                                </Box>
-
-                                <Box
-                                    sx={{
-                                        display: 'grid',
-                                        gridTemplateColumns: '1fr 1fr',
-                                        gap: 1,
-                                        p: { xs: 1.25, sm: 1.5 },
-                                        borderRadius: "14px",
-                                        backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
-                                    }}
-                                >
-                                    <Box>
-                                        <Typography variant="caption" color="text.secondary">
-                                            Set Pressure
-                                        </Typography>
-                                        <Typography variant="body2" fontWeight={600}>
-                                            {formatPressureGauge(psv.setPressure, unitSystem, 2)}
-                                        </Typography>
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="caption" color="text.secondary">
-                                            MAWP
-                                        </Typography>
-                                        <Typography variant="body2" fontWeight={600}>
-                                            {formatPressureGauge(psv.mawp, unitSystem, 2)}
-                                        </Typography>
-                                    </Box>
-                                </Box>
-
-                                <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 1.5, gap: 0.5 }}>
-                                    {canEdit ? (
-                                        <Tooltip title="Edit">
-                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); selectPsv(psv.id); }}>
-                                                <Edit fontSize="small" />
-                                            </IconButton>
-                                        </Tooltip>
-                                    ) : (
-                                        <Tooltip title="View Details">
-                                            <IconButton size="small" onClick={(e) => { e.stopPropagation(); selectPsv(psv.id); }}>
-                                                <Visibility fontSize="small" />
-                                            </IconButton>
-                                        </Tooltip>
-                                    )}
-                                </Box>
-                            </CardContent>
-                        </Card>
-                    </Grid>
-                ))}
-
-                {sortedPsvs.length === 0 && (
-                    <Grid size={{ xs: 12 }}>
-                        <Box sx={{ py: 8, textAlign: 'center' }}>
-                            <Security sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                            <Typography variant="h6" color="text.secondary">
-                                {searchText.trim() ? 'No devices match your search' : 'No protective systems found'}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                {searchText.trim()
-                                    ? 'Try a different search term'
-                                    : 'Add a PSV or rupture disc to get started'}
-                            </Typography>
-                        </Box>
-                    </Grid>
-                )}
-            </Grid>
+            {/* Footer */}
+            <GitHubFooter />
 
             {/* PSV Creation Wizard */}
             {selectedProject && (

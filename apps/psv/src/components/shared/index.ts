@@ -6,3 +6,5 @@ export { EquipmentTypeIcon } from './EquipmentTypeIcon';
 export { HierarchyBreadcrumb } from './HierarchyBreadcrumb';
 export { TableSortButton } from './TableSortButton';
 export { UnitSelector } from './UnitSelector';
+export { GitHubFooter } from './GitHubFooter';
+export { PaginationControls } from './PaginationControls';
