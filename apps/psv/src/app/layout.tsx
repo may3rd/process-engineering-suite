@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import { Providers } from "./providers";
 import { TopToolbar } from "@/components/TopToolbar";
+import { GlobalConflictHandler } from "@/components/GlobalConflictHandler";
 import { Box } from "@mui/material";
 
 const inter = localFont({
@@ -42,8 +43,11 @@ export default function RootLayout({
                     {/* Spacer to account for fixed toolbar height */}
                     <Box className="print-hide" sx={{ height: 72 }} />
                     {children}
+                    {/* Global conflict detection dialogs */}
+                    <GlobalConflictHandler />
                 </Providers>
             </body>
         </html>
     );
 }
+

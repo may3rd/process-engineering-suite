@@ -388,7 +388,9 @@ export function ProtectiveSystemList() {
                             {pagination.pageItems.map((psv) => (
                                 <TableRow
                                     key={psv.id}
+                                    onClick={() => selectPsv(psv.id)}
                                     sx={{
+                                        cursor: 'pointer',
                                         '&:hover': {
                                             bgcolor: isDark ? 'rgba(56, 189, 248, 0.08)' : 'rgba(2, 132, 199, 0.04)',
                                         },
@@ -415,26 +417,15 @@ export function ProtectiveSystemList() {
                                                 {getTypeIcon(psv.type)}
                                             </Box>
                                             <Box sx={{ flex: 1, minWidth: 0 }}>
-                                                <Box
-                                                    component="a"
-                                                    onClick={(e) => {
-                                                        e.preventDefault();
-                                                        selectPsv(psv.id);
-                                                    }}
+                                                <Typography
                                                     sx={{
                                                         color: 'text.primary',
-                                                        textDecoration: 'none',
                                                         fontWeight: 600,
                                                         fontSize: '0.95rem',
-                                                        cursor: 'pointer',
-                                                        '&:hover': {
-                                                            color: 'primary.main',
-                                                            textDecoration: 'underline',
-                                                        },
                                                     }}
                                                 >
                                                     {psv.tag} : {psv.name}
-                                                </Box>
+                                                </Typography>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
                                                     <Chip
                                                         label={getWorkflowStatusLabel(psv.status)}
@@ -451,6 +442,7 @@ export function ProtectiveSystemList() {
                                     </TableCell>
                                 </TableRow>
                             ))}
+
 
                             {pagination.pageItems.length === 0 && (
                                 <TableRow>

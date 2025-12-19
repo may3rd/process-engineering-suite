@@ -104,6 +104,9 @@ import { sortRevisionsByOriginatedAtDesc } from "@/lib/revisionSort";
 import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
 import { convertValue, formatLocaleNumber, formatNumber, formatPressureGauge, formatTemperatureC, formatMassFlowKgH } from "@/lib/projectUnits";
 import { getDefaultUnitPreferences } from "@/lib/unitPreferences";
+import { ActivityPanel } from "./ActivityPanel";
+import { ActiveViewers } from "./ActiveViewers";
+
 
 interface TabPanelProps {
     children?: React.ReactNode;
@@ -146,18 +149,19 @@ function OverviewTab() {
         >
             {/* Left Column */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-                <BasicInfoCard psv={selectedPsv} />
-                <EquipmentCard psv={selectedPsv} />
+                <BasicInfoCard key={`basic-${selectedPsv.id}-${selectedPsv.version || 0}`} psv={selectedPsv} />
+                <EquipmentCard key={`equip-${selectedPsv.id}-${selectedPsv.version || 0}`} psv={selectedPsv} />
             </Box>
 
             {/* Right Column */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, minWidth: 0 }}>
-                <OperatingConditionsCard psv={selectedPsv} />
-                <TagsCard psv={selectedPsv} />
+                <OperatingConditionsCard key={`ops-${selectedPsv.id}-${selectedPsv.version || 0}`} psv={selectedPsv} />
+                <TagsCard key={`tags-${selectedPsv.id}-${selectedPsv.version || 0}`} psv={selectedPsv} />
             </Box>
         </Box>
     );
 }
+
 
 // Scenarios Tab Content
 type ScenarioSortKey = 'cause' | 'rate' | 'created';
@@ -2377,6 +2381,11 @@ export function ProtectiveSystemDetail() {
                                     revisionCode={displayedRevisionCode}
                                     onClick={handleRevisionMenuOpen}
                                 />
+                                <ActiveViewers
+                                    entityType="protective_system"
+                                    entityId={selectedPsv.id}
+                                />
+
                                 <Menu
                                     anchorEl={revisionMenuAnchor}
                                     open={Boolean(revisionMenuAnchor)}
@@ -2658,6 +2667,7 @@ export function ProtectiveSystemDetail() {
                             'Notes',
                             'Attachments',
                             'Revisions Control',
+                            'Activity',
                             'Summary',
                         ].map((label, index) => {
                             const isSelected = activeTab === index;
@@ -2744,6 +2754,14 @@ export function ProtectiveSystemDetail() {
                 <RevisionsTab entityId={selectedPsv.id} currentRevisionId={selectedPsv.currentRevisionId} />
             </TabPanel>
             <TabPanel value={activeTab} index={6}>
+                <ActivityPanel
+                    entityType="protective_system"
+                    entityId={selectedPsv.id}
+                    title={`Activity for ${selectedPsv.tag}`}
+                    maxHeight="calc(100vh - 400px)"
+                />
+            </TabPanel>
+            <TabPanel value={activeTab} index={7}>
                 <SummaryTab />
             </TabPanel>
 

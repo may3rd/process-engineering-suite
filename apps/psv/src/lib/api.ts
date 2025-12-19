@@ -22,6 +22,7 @@ import {
     ProjectNote,
     RevisionHistory,
     RevisionEntityType,
+    AuditLog,
 } from '@/data/types';
 
 export interface LoginResponse {
@@ -264,6 +265,10 @@ class ApiClient {
 
     async getScenarios(psvId: string): Promise<Scenario[]> {
         return this.request<Scenario[]>(`/psv/${psvId}/scenarios`);
+    }
+
+    async getScenario(id: string): Promise<Scenario> {
+        return this.request<Scenario>(`/psv/scenarios/${id}`);
     }
 
     async createScenario(psvId: string, data: Partial<Scenario>): Promise<Scenario> {
@@ -562,6 +567,54 @@ class ApiClient {
         } catch {
             return undefined;
         }
+    }
+
+    // --- Audit Logs ---
+
+    async getAuditLogs(filters?: {
+        entityType?: string;
+        entityId?: string;
+        userId?: string;
+        projectId?: string;
+        action?: string;
+        limit?: number;
+        offset?: number;
+    }): Promise<{ items: AuditLog[]; total: number; limit: number; offset: number }> {
+        const params = new URLSearchParams();
+        if (filters?.entityType) params.set('entityType', filters.entityType);
+        if (filters?.entityId) params.set('entityId', filters.entityId);
+        if (filters?.userId) params.set('userId', filters.userId);
+        if (filters?.projectId) params.set('projectId', filters.projectId);
+        if (filters?.action) params.set('action', filters.action);
+        if (filters?.limit) params.set('limit', String(filters.limit));
+        if (filters?.offset) params.set('offset', String(filters.offset));
+
+        const queryString = params.toString();
+        const url = queryString ? `/audit-logs?${queryString}` : '/audit-logs';
+        return this.request(url);
+    }
+
+    async createAuditLog(data: {
+        action: string;
+        entityType: string;
+        entityId: string;
+        entityName: string;
+        userId: string;
+        userName: string;
+        userRole?: string;
+        changes?: { field: string; oldValue: unknown; newValue: unknown }[];
+        description?: string;
+        projectId?: string;
+        projectName?: string;
+    }): Promise<AuditLog> {
+        return this.request<AuditLog>('/audit-logs', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        });
+    }
+
+    async clearAuditLogs(): Promise<{ message: string }> {
+        return this.request('/audit-logs', { method: 'DELETE' });
     }
 }
 

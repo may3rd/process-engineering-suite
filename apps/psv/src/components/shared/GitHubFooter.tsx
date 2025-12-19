@@ -47,10 +47,10 @@ export function GitHubFooter() {
                         fontWeight: 700,
                     }}
                 >
-                    PE
+                    EPT
                 </Box>
                 <Typography variant="caption" color="text.secondary">
-                    © 2025 Process Engineering Suite
+                    © 2025 Process Technology
                 </Typography>
             </Box>
 

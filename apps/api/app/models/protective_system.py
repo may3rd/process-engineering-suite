@@ -64,6 +64,9 @@ class ProtectiveSystem(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixi
     )
     tags: Mapped[List[str]] = mapped_column(ARRAY(String), default=list, nullable=False)
     project_tags: Mapped[Optional[List[str]]] = mapped_column(ARRAY(UUID(as_uuid=False)), nullable=True)
+    
+    # Version for optimistic locking (concurrent editing detection)
+    version: Mapped[int] = mapped_column(Integer, default=1, server_default="1", nullable=False)
 
     # Current revision reference
     current_revision_id: Mapped[Optional[str]] = mapped_column(

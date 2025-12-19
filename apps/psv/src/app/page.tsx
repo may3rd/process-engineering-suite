@@ -10,6 +10,7 @@ import { ProtectiveSystemDetail } from "@/components/ProtectiveSystemDetail";
 import { DashboardPage } from "@/components/DashboardPage";
 import { AccountSettingsPage } from "@/components/AccountSettingsPage";
 import { CaseConsiderationPage } from "@/components/CaseConsiderationPage";
+import { GlobalActivityPage } from "@/components/GlobalActivityPage";
 import { usePsvStore } from "@/store/usePsvStore";
 
 export default function PsvApp() {
@@ -24,7 +25,7 @@ export default function PsvApp() {
     return (
         <Box sx={{ minHeight: '100vh - 72px', pb: 4 }}>
             <Container maxWidth="xl" sx={{ pt: 4 }}>
-                {currentPage !== 'dashboard' && currentPage !== 'account' && (
+                {currentPage !== 'dashboard' && currentPage !== 'account' && currentPage !== 'activity' && (
                     <Box className="print-hide" sx={{ mb: 3 }}>
                         <Breadcrumbs />
                     </Box>
@@ -38,14 +39,15 @@ export default function PsvApp() {
                     <>
                         {currentPage === 'dashboard' && <DashboardPage key="dashboard" />}
                         {currentPage === 'account' && <AccountSettingsPage key="account" />}
+                        {currentPage === 'activity' && <GlobalActivityPage key="activity" />}
                         {currentPage === 'scenario_consideration' && <CaseConsiderationPage key="scenario" />}
-                        {currentPage !== 'dashboard' && currentPage !== 'account' && currentPage !== 'scenario_consideration' && selectedPsv && (
+                        {currentPage !== 'dashboard' && currentPage !== 'account' && currentPage !== 'activity' && currentPage !== 'scenario_consideration' && selectedPsv && (
                             <ProtectiveSystemDetail key={`psv-${selectedPsv.id}`} />
                         )}
-                        {currentPage !== 'dashboard' && currentPage !== 'account' && currentPage !== 'scenario_consideration' && !selectedPsv && selectedProject && (
+                        {currentPage !== 'dashboard' && currentPage !== 'account' && currentPage !== 'activity' && currentPage !== 'scenario_consideration' && !selectedPsv && selectedProject && (
                             <ProtectiveSystemList key={`project-${selectedProject.id}`} />
                         )}
-                        {currentPage !== 'dashboard' && currentPage !== 'account' && currentPage !== 'scenario_consideration' && !selectedPsv && !selectedProject && (
+                        {currentPage !== 'dashboard' && currentPage !== 'account' && currentPage !== 'activity' && currentPage !== 'scenario_consideration' && !selectedPsv && !selectedProject && (
                             <HierarchyBrowser key={`hierarchy-${selection.customerId ?? 'root'}-${selection.plantId ?? ''}-${selection.unitId ?? ''}-${selection.areaId ?? ''}`} />
                         )}
                     </>

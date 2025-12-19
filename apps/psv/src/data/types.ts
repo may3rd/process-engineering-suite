@@ -124,9 +124,12 @@ export interface ProtectiveSystem {
     // Shared piping networks (one physical install per device)
     inletNetwork?: PipelineNetwork;
     outletNetwork?: PipelineNetwork;
+    // Version tracking for optimistic locking
+    version?: number;
     createdAt: string;
     updatedAt: string;
 }
+
 
 // Overpressure scenario types
 export type ScenarioCause =
@@ -180,6 +183,7 @@ export interface OverpressureScenario {
 
     createdAt: string;
     updatedAt: string;
+    version?: number;
 }
 
 // Sizing case types
@@ -566,4 +570,56 @@ export interface MockCredential {
     userId: string;
     username: string;
     password: string; // Plain text for mock purposes only
+}
+
+// Audit Log types
+export type AuditAction = 'create' | 'update' | 'delete' | 'status_change' | 'calculate';
+export type AuditEntityType =
+    | 'protective_system'
+    | 'scenario'
+    | 'sizing_case'
+    | 'project'
+    | 'revision'
+    | 'comment'
+    | 'attachment'
+    | 'note'
+    | 'todo';
+
+export interface AuditFieldChange {
+    field: string;
+    oldValue: unknown;
+    newValue: unknown;
+}
+
+export interface AuditLog {
+    id: string;
+
+    // What happened
+    action: AuditAction;
+    entityType: AuditEntityType;
+    entityId: string;
+    entityName: string; // Human-readable identifier (e.g., "PSV-105")
+
+    // Who did it
+    userId: string;
+    userName: string;
+    userRole?: string;
+
+    // What changed (for updates)
+    changes?: AuditFieldChange[];
+    description?: string; // Optional description of what was done
+
+    // Context
+    projectId?: string;
+    projectName?: string;
+
+    // Timestamps
+    createdAt: string;
+}
+
+// Version tracking for optimistic locking
+export interface VersionedEntity {
+    version: number;
+    updatedAt: string;
+    updatedBy?: string;
 }

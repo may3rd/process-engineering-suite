@@ -422,3 +422,59 @@ class MockService(DataAccessLayer):
                 del equipment[i]
                 return True
         return False
+
+    # --- Audit Logs (mock in-memory) ---
+    
+    async def get_audit_logs(self, filters: dict, limit: int, offset: int) -> tuple[list, int]:
+        """Get audit logs with filters, returns (logs, total_count)."""
+        logs = self._data.get("auditLogs", [])
+        
+        # Apply filters
+        if filters.get("entity_type"):
+            logs = [l for l in logs if l.get("entityType") == filters["entity_type"]]
+        if filters.get("entity_id"):
+            logs = [l for l in logs if l.get("entityId") == filters["entity_id"]]
+        if filters.get("user_id"):
+            logs = [l for l in logs if l.get("userId") == filters["user_id"]]
+        if filters.get("project_id"):
+            logs = [l for l in logs if l.get("projectId") == filters["project_id"]]
+        if filters.get("action"):
+            logs = [l for l in logs if l.get("action") == filters["action"]]
+        
+        total = len(logs)
+        # Sort by createdAt descending
+        logs = sorted(logs, key=lambda x: x.get("createdAt", ""), reverse=True)
+        return logs[offset:offset + limit], total
+    
+    async def get_audit_log_by_id(self, log_id: str) -> Optional[dict]:
+        """Get a single audit log by ID."""
+        for log in self._data.get("auditLogs", []):
+            if log.get("id") == log_id:
+                return log
+        return None
+    
+    async def create_audit_log(self, data: dict) -> dict:
+        """Create a new audit log entry."""
+        log = {
+            "id": str(uuid4()),
+            "action": data.get("action"),
+            "entityType": data.get("entityType"),
+            "entityId": data.get("entityId"),
+            "entityName": data.get("entityName"),
+            "userId": data.get("userId"),
+            "userName": data.get("userName"),
+            "userRole": data.get("userRole"),
+            "changes": data.get("changes"),
+            "description": data.get("description"),
+            "projectId": data.get("projectId"),
+            "projectName": data.get("projectName"),
+            "createdAt": datetime.utcnow().isoformat(),
+        }
+        self._data.setdefault("auditLogs", []).insert(0, log)
+        return log
+    
+    async def clear_audit_logs(self) -> int:
+        """Clear all audit logs. Returns count of deleted logs."""
+        count = len(self._data.get("auditLogs", []))
+        self._data["auditLogs"] = []
+        return count

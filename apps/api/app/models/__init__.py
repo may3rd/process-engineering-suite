@@ -17,6 +17,7 @@ from .comment import Comment
 from .todo import Todo
 from .project_note import ProjectNote
 from .revision_history import RevisionHistory
+from .audit_log import AuditLog
 
 __all__ = [
     # Base
@@ -44,5 +45,7 @@ __all__ = [
     "Comment",
     "Todo",
     "ProjectNote",
+    # Audit
+    "AuditLog",
 ]
 

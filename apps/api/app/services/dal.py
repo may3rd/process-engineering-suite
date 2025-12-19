@@ -272,3 +272,25 @@ class DataAccessLayer(ABC):
     async def delete_revision(self, revision_id: str) -> bool:
         """Delete a revision."""
         pass
+
+    # --- Audit Logs ---
+    
+    @abstractmethod
+    async def get_audit_logs(self, filters: dict, limit: int, offset: int) -> tuple[List[dict], int]:
+        """Get audit logs with filters, returns (logs, total_count)."""
+        pass
+    
+    @abstractmethod
+    async def get_audit_log_by_id(self, log_id: str) -> Optional[dict]:
+        """Get a single audit log by ID."""
+        pass
+    
+    @abstractmethod
+    async def create_audit_log(self, data: dict) -> dict:
+        """Create a new audit log entry."""
+        pass
+    
+    @abstractmethod
+    async def clear_audit_logs(self) -> int:
+        """Clear all audit logs. Returns count of deleted logs."""
+        pass

@@ -32,6 +32,7 @@ class ProtectiveSystemResponse(BaseModel):
     current_revision_id: Optional[str] = Field(default=None, serialization_alias="currentRevisionId")
     inlet_network: Optional[dict] = Field(default=None, serialization_alias="inletNetwork")
     outlet_network: Optional[dict] = Field(default=None, serialization_alias="outletNetwork")
+    version: int = 1  # For optimistic locking / conflict detection
     created_at: datetime = Field(serialization_alias="createdAt")
     updated_at: datetime = Field(serialization_alias="updatedAt")
 
@@ -89,6 +90,7 @@ class ProtectiveSystemUpdate(BaseModel):
     inletNetwork: Optional[dict] = None
     outletNetwork: Optional[dict] = None
     projectIds: Optional[List[str]] = None
+    version: Optional[int] = None  # For optimistic locking / conflict detection
 
 
 class ScenarioResponse(BaseModel):
@@ -218,7 +220,13 @@ async def update_protective_system(psv_id: str, data: ProtectiveSystemUpdate, da
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         return await dal.update_protective_system(psv_id, update_data)
     except ValueError as e:
-        raise HTTPException(status_code=404, detail=str(e))
+        error_message = str(e)
+        # Return 409 Conflict for version mismatch
+        if "Conflict: Version mismatch" in error_message:
+            raise HTTPException(status_code=409, detail=error_message)
+        # Return 404 for not found
+        raise HTTPException(status_code=404, detail=error_message)
+
 
 
 @router.delete("/{psv_id}")

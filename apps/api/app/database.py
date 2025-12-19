@@ -55,15 +55,20 @@ async def get_db_optional() -> AsyncGenerator[AsyncSession | None, None]:
         yield None
         return
 
+    # Try to create a session
     try:
-        async with async_session_factory() as session:
-            try:
-                yield session
-            finally:
-                await session.close()
+        session = async_session_factory()
     except Exception as e:
         logger.error(f"Failed to create DB session: {e}")
         yield None
+        return
+
+    # Use the session
+    try:
+        async with session:
+            yield session
+    finally:
+        await session.close()
 
 
 async def is_db_available() -> bool:

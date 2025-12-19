@@ -223,6 +223,17 @@ class DatabaseService(DataAccessLayer):
         if not instance:
             raise ValueError(f"PSV {psv_id} not found")
         
+        # Optimistic locking: Check version if provided
+        incoming_version = clean_data.pop('version', None)
+        if incoming_version is not None:
+            current_version = instance.version or 1
+            if incoming_version < current_version:
+                # Version mismatch - another user updated this record
+                raise ValueError(f"Conflict: Version mismatch. Your version: {incoming_version}, Current version: {current_version}")
+        
+        # Increment version on successful update
+        instance.version = (instance.version or 1) + 1
+        
         # Update scalar fields directly on instance
         for key, value in clean_data.items():
             if hasattr(instance, key):
@@ -558,6 +569,11 @@ class DatabaseService(DataAccessLayer):
             "approvedBy": "approved_by",
             "approvedAt": "approved_at",
             "issuedAt": "issued_at",
+            # Audit log fields
+            "entityName": "entity_name",
+            "userName": "user_name",
+            "userRole": "user_role",
+            "projectName": "project_name",
         }
         new_data = data.copy()
         
@@ -751,3 +767,77 @@ class DatabaseService(DataAccessLayer):
         counts["revisionHistory"] = len(revisions)
 
         return counts
+
+    # --- Audit Logs ---
+    
+    async def get_audit_logs(self, filters: dict, limit: int, offset: int) -> tuple[list, int]:
+        """Get audit logs with filters, returns (logs, total_count)."""
+        from ..models import AuditLog
+        
+        # Build filter conditions
+        conditions = []
+        if filters.get("entity_type"):
+            conditions.append(AuditLog.entity_type == filters["entity_type"])
+        if filters.get("entity_id"):
+            conditions.append(AuditLog.entity_id == filters["entity_id"])
+        if filters.get("user_id"):
+            conditions.append(AuditLog.user_id == filters["user_id"])
+        if filters.get("project_id"):
+            conditions.append(AuditLog.project_id == filters["project_id"])
+        if filters.get("action"):
+            conditions.append(AuditLog.action == filters["action"])
+        
+        # Count total
+        from sqlalchemy import func
+        count_stmt = select(func.count(AuditLog.id))
+        if conditions:
+            count_stmt = count_stmt.where(*conditions)
+        count_result = await self.session.execute(count_stmt)
+        total = count_result.scalar() or 0
+        
+        # Get paginated results, ordered by created_at descending
+        stmt = select(AuditLog)
+        if conditions:
+            stmt = stmt.where(*conditions)
+        stmt = stmt.order_by(AuditLog.created_at.desc()).offset(offset).limit(limit)
+        result = await self.session.execute(stmt)
+        logs = list(result.scalars().all())
+        
+        return logs, total
+    
+    async def get_audit_log_by_id(self, log_id: str):
+        """Get a single audit log by ID."""
+        from ..models import AuditLog
+        return await self._get_by_id(AuditLog, log_id)
+    
+    async def create_audit_log(self, data: dict):
+        """Create a new audit log entry."""
+        from ..models import AuditLog
+        from uuid import uuid4
+        
+        # Convert camelCase to snake_case
+        db_data = self._convert_keys(data)
+        db_data["id"] = str(uuid4())
+        
+        log = AuditLog(**db_data)
+        self.session.add(log)
+        await self.session.commit()
+        await self.session.refresh(log)
+        return log
+    
+    async def clear_audit_logs(self) -> int:
+        """Clear all audit logs. Returns count of deleted logs."""
+        from ..models import AuditLog
+        
+        # Count before delete
+        from sqlalchemy import func
+        count_stmt = select(func.count(AuditLog.id))
+        count_result = await self.session.execute(count_stmt)
+        total = count_result.scalar() or 0
+        
+        # Delete all
+        stmt = delete(AuditLog)
+        await self.session.execute(stmt)
+        await self.session.commit()
+        
+        return total

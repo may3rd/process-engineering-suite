@@ -20,6 +20,10 @@ import type {
 } from '@/data/types';
 import { getDataService } from '@/lib/api';
 import { toast } from '@/lib/toast';
+import { createAuditLog, detectChanges } from '@/lib/auditLogService';
+import { useAuthStore } from '@/store/useAuthStore';
+import { useConflictStore, checkVersionConflict } from '@/store/useConflictStore';
+
 
 // Get the appropriate data service based on environment
 const dataService = getDataService();
@@ -87,7 +91,7 @@ interface PsvStore {
     // UI state
     activeTab: number;
     sidebarOpen: boolean;
-    currentPage: 'hierarchy' | 'dashboard' | 'account' | 'scenario_consideration' | null;
+    currentPage: 'hierarchy' | 'dashboard' | 'account' | 'scenario_consideration' | 'activity' | null;
     dashboardTab: 'Customers' | 'Plants' | 'Units' | 'Areas' | 'Projects' | 'Equipment' | 'PSVs' | 'Users' | null;
     editingScenarioId: string | null;
     isLoading: boolean;
@@ -104,7 +108,7 @@ interface PsvStore {
     selectProject: (id: string | null) => Promise<void>;
     selectPsv: (id: string | null) => Promise<void>;
     setActiveTab: (tab: number) => void;
-    setCurrentPage: (page: 'hierarchy' | 'dashboard' | 'account' | null) => void;
+    setCurrentPage: (page: 'hierarchy' | 'dashboard' | 'account' | 'scenario_consideration' | 'activity' | null) => void;
     setDashboardTab: (tab: PsvStore['dashboardTab']) => void;
     toggleSidebar: () => void;
     clearSelection: () => void;
@@ -639,7 +643,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     setActiveTab: (tab) => set({ activeTab: tab }),
 
-    setCurrentPage: (page) => set({
+    setCurrentPage: (page: 'hierarchy' | 'dashboard' | 'account' | 'scenario_consideration' | 'activity' | null) => set({
         currentPage: page,
         selectedPsv: page ? null : get().selectedPsv
     }),
@@ -712,7 +716,31 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     updateSizingCase: async (updatedCase) => {
         try {
+            const state = get();
+            const existing = state.sizingCaseList.find(c => c.id === updatedCase.id);
             const updated = await dataService.updateSizingCase(updatedCase.id, updatedCase);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser && existing) {
+                const changes = detectChanges(existing, updatedCase, ['standard', 'method', 'status']);
+                if (changes.length > 0) {
+                    createAuditLog(
+                        'update',
+                        'sizing_case',
+                        updated.id,
+                        `Case: ${updated.standard} (${state.selectedPsv?.tag || 'Unknown'})`,
+                        currentUser.id,
+                        currentUser.name,
+                        {
+                            userRole: currentUser.role,
+                            changes,
+                            projectId: state.selectedProject?.id,
+                        }
+                    );
+                }
+            }
+
             set((state) => ({
                 sizingCaseList: state.sizingCaseList.map((c) =>
                     c.id === updated.id ? updated : c
@@ -728,8 +756,27 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     addSizingCase: async (newCase) => {
         try {
-            if (!get().selectedPsv) throw new Error('No PSV selected');
-            const created = await dataService.createSizingCase(get().selectedPsv!.id, newCase);
+            const state = get();
+            if (!state.selectedPsv) throw new Error('No PSV selected');
+            const created = await dataService.createSizingCase(state.selectedPsv!.id, newCase);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'create',
+                    'sizing_case',
+                    created.id,
+                    `Case: ${created.standard} (${state.selectedPsv.tag})`,
+                    currentUser.id,
+                    currentUser.name,
+                    {
+                        userRole: currentUser.role,
+                        projectId: state.selectedProject?.id,
+                    }
+                );
+            }
+
             set((state) => ({
                 sizingCaseList: [...state.sizingCaseList, created],
             }));
@@ -745,17 +792,55 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         try {
             const state = get();
             const existing = state.protectiveSystems.find((p) => p.id === updatedPsv.id) ?? state.selectedPsv;
+
+            // If we are retrying a force save or merge, we might already have the latest version in updatedPsv
+            const currentVersion = updatedPsv.version ?? existing?.version ?? 1;
+
             const currentRevisionChanged =
                 updatedPsv.currentRevisionId !== undefined
                 && updatedPsv.currentRevisionId !== existing?.currentRevisionId;
 
             const nextPayload = { ...updatedPsv };
+
+            // Ensure version is included in payload for optimistic locking
+            if (nextPayload.version === undefined) {
+                nextPayload.version = currentVersion;
+            }
+
             if (currentRevisionChanged && (existing?.status ?? nextPayload.status) !== 'issued') {
                 const rev = state.revisionHistory.find((r) => r.id === updatedPsv.currentRevisionId);
                 nextPayload.status = derivePsvStatusFromRevision(rev, existing?.status ?? nextPayload.status);
             }
 
             const updated = await dataService.updateProtectiveSystem(updatedPsv.id, nextPayload);
+
+            // Audit logging
+            if (existing) {
+                const currentUser = useAuthStore.getState().currentUser;
+                const changes = detectChanges(existing, updatedPsv, [
+                    'name', 'tag', 'type', 'designCode', 'serviceFluid', 'fluidPhase',
+                    'setPressure', 'mawp', 'status', 'valveType'
+                ]);
+                if (changes.length > 0 && currentUser) {
+
+                    const isStatusChange = changes.some(c => c.field === 'status');
+                    createAuditLog(
+                        isStatusChange ? 'status_change' : 'update',
+                        'protective_system',
+                        updated.id,
+                        `${updated.tag} : ${updated.name}`,
+                        currentUser.id,
+                        currentUser.name,
+                        {
+                            userRole: currentUser.role,
+                            changes,
+                            projectId: state.selectedProject?.id,
+                            projectName: state.selectedProject?.name,
+                        }
+                    );
+                }
+            }
+
             set((state) => {
                 const newList = state.psvList.map(p => p.id === updated.id ? updated : p);
                 return {
@@ -767,14 +852,88 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             toast.success('PSV updated');
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to update PSV';
+
+            if (message.includes('Conflict: Version mismatch')) {
+                // Handle conflict
+                const state = get();
+                const existing = state.protectiveSystems.find((p) => p.id === updatedPsv.id) ?? state.selectedPsv;
+
+                if (existing) {
+                    try {
+                        const serverData = await dataService.getProtectiveSystem(updatedPsv.id);
+
+                        const conflict = checkVersionConflict(existing, serverData, updatedPsv);
+
+                        if (conflict) {
+                            useConflictStore.getState().setConflict(conflict);
+                            useConflictStore.getState().setCallbacks({
+                                onReloadDiscard: async () => {
+                                    // Reload just the selected PSV with fresh data from server
+                                    try {
+                                        const freshData = await dataService.getProtectiveSystem(updatedPsv.id);
+
+                                        // Update the store with fresh data
+                                        set((state) => ({
+                                            protectiveSystems: state.protectiveSystems.map(p =>
+                                                p.id === freshData.id ? freshData : p
+                                            ),
+                                            selectedPsv: state.selectedPsv?.id === freshData.id ? freshData : state.selectedPsv,
+                                            psvList: state.psvList.map(p =>
+                                                p.id === freshData.id ? freshData : p
+                                            ),
+                                        }));
+
+                                        toast.info('Data reloaded from server');
+                                    } catch (err) {
+                                        console.error('Failed to reload PSV:', err);
+                                        // Fallback to full initialize
+                                        state.initialize();
+                                    }
+                                },
+                                onForceSave: () => {
+                                    // Retry the save with the server's version to "win"
+                                    state.updatePsv({ ...updatedPsv, version: serverData.version } as ProtectiveSystem);
+                                },
+                                onMergeComplete: (mergedData) => {
+                                    // Retry the save with merged data
+                                    state.updatePsv({ ...mergedData, id: updatedPsv.id } as ProtectiveSystem);
+                                }
+                            });
+                            return; // Don't show generic error toast
+                        }
+                    } catch (fetchError) {
+                        console.error('Failed to fetch latest PSV data for conflict resolution', fetchError);
+                    }
+                }
+            }
+
+
             toast.error('Failed to update PSV', { description: message });
             throw error;
         }
+
     },
 
     deleteSizingCase: async (id) => {
         try {
+            const state = get();
+            const existing = state.sizingCaseList.find(c => c.id === id);
             await dataService.deleteSizingCase(id);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser && existing) {
+                createAuditLog(
+                    'delete',
+                    'sizing_case',
+                    id,
+                    `Case: ${existing.standard} (${state.selectedPsv?.tag || 'Unknown'})`,
+                    currentUser.id,
+                    currentUser.name,
+                    { userRole: currentUser.role }
+                );
+            }
+
             set((state) => ({
                 sizingCaseList: state.sizingCaseList.filter((c) => c.id !== id),
             }));
@@ -789,10 +948,29 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     addScenario: async (newScenario) => {
         try {
             if (!get().selectedPsv) throw new Error('No PSV selected');
-            const created = await dataService.createScenario(get().selectedPsv!.id, newScenario);
+            const psv = get().selectedPsv!;
+            const created = await dataService.createScenario(psv.id, newScenario);
             set((state) => ({
                 scenarioList: [...state.scenarioList, created],
             }));
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'create',
+                    'scenario',
+                    created.id,
+                    `${created.cause} - ${psv.tag}`,
+                    currentUser.id,
+                    currentUser.name,
+                    {
+                        userRole: currentUser.role,
+                        description: created.description,
+                    }
+                );
+            }
+
             toast.success('Scenario added');
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to add scenario';
@@ -803,26 +981,128 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     updateScenario: async (updatedScenario) => {
         try {
-            const updated = await dataService.updateScenario(updatedScenario.id, updatedScenario);
+            const state = get();
+            const existing = state.scenarioList.find(s => s.id === updatedScenario.id);
+
+            // If we are retrying a force save or merge, we might already have the latest version in updatedScenario
+            const currentVersion = updatedScenario.version ?? existing?.version ?? 1;
+
+            const nextPayload = { ...updatedScenario };
+
+            // Ensure version is included in payload for optimistic locking
+            if (nextPayload.version === undefined) {
+                nextPayload.version = currentVersion;
+            }
+
+            const updated = await dataService.updateScenario(updatedScenario.id, nextPayload);
             set((state) => ({
                 scenarioList: state.scenarioList.map((s) =>
                     s.id === updated.id ? updated : s
                 ),
             }));
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            const psv = state.selectedPsv;
+            if (currentUser && existing) {
+                const changes = detectChanges(existing, updatedScenario, [
+                    'cause', 'description', 'relievingTemp', 'relievingPressure',
+                    'phase', 'relievingRate', 'isGoverning'
+                ]);
+                if (changes.length > 0) {
+                    const isGoverningChange = changes.some(c => c.field === 'isGoverning');
+                    createAuditLog(
+                        isGoverningChange ? 'status_change' : 'update',
+                        'scenario',
+                        updated.id,
+                        `${updated.cause} - ${psv?.tag || 'Unknown'}`,
+                        currentUser.id,
+                        currentUser.name,
+                        {
+                            userRole: currentUser.role,
+                            changes,
+                            description: isGoverningChange && updatedScenario.isGoverning ? 'Set as governing case' : undefined,
+                        }
+                    );
+                }
+            }
+
             toast.success('Scenario updated');
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to update scenario';
+
+            if (message.includes('Conflict: Version mismatch')) {
+                // Handle conflict
+                const state = get();
+                const existing = state.scenarioList.find(s => s.id === updatedScenario.id);
+
+                if (existing) {
+                    try {
+                        const serverData = await dataService.getScenario(updatedScenario.id);
+
+
+                        if (serverData) {
+                            // Convert to ConflictInfo (using partial ProtectiveSystem mapping for dialog)
+                            // checkVersionConflict usually takes ProtectiveSystem, let's cast or adjust
+                            // For simplicity, we use the same check but might need to adjust for Scenario fields
+                            const conflict = checkVersionConflict(
+                                existing as any as ProtectiveSystem,
+                                serverData as any as ProtectiveSystem,
+                                updatedScenario as any as ProtectiveSystem
+                            );
+
+                            if (conflict) {
+                                conflict.entityType = 'scenario';
+                                useConflictStore.getState().setConflict(conflict);
+                                useConflictStore.getState().setCallbacks({
+                                    onReloadDiscard: () => {
+                                        state.initialize();
+                                    },
+                                    onForceSave: () => {
+                                        state.updateScenario({ ...updatedScenario, version: serverData.version } as OverpressureScenario);
+                                    },
+                                    onMergeComplete: (mergedData) => {
+                                        state.updateScenario({ ...mergedData, id: updatedScenario.id } as any as OverpressureScenario);
+                                    }
+                                });
+                                return;
+                            }
+                        }
+                    } catch (fetchError) {
+                        console.error('Failed to resolve scenario conflict', fetchError);
+                    }
+                }
+            }
+
             toast.error('Failed to update scenario', { description: message });
             throw error;
         }
+
     },
 
     deleteScenario: async (id) => {
         try {
+            const state = get();
+            const existing = state.scenarioList.find(s => s.id === id);
             await dataService.deleteScenario(id);
             set((state) => ({
                 scenarioList: state.scenarioList.filter((s) => s.id !== id),
             }));
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser && existing) {
+                createAuditLog(
+                    'delete',
+                    'scenario',
+                    id,
+                    `${existing.cause} - ${state.selectedPsv?.tag || 'Unknown'}`,
+                    currentUser.id,
+                    currentUser.name,
+                    { userRole: currentUser.role }
+                );
+            }
+
             toast.success('Scenario deleted');
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to delete scenario';
@@ -836,9 +1116,25 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             const psv = get().psvList.find(p => p.id === psvId);
             if (!psv) return;
 
-            // Optimistic update logic was flawed. Now using API response.
-            // But API update requires just the tags array usually if using Partial.
             const updated = await dataService.updateProtectiveSystem(psvId, { tags: [...psv.tags, tag] });
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'update',
+                    'protective_system',
+                    psvId,
+                    `${updated.tag} : ${updated.name}`,
+                    currentUser.id,
+                    currentUser.name,
+                    {
+                        userRole: currentUser.role,
+                        description: `Added tag: ${tag}`,
+                        changes: [{ field: 'tags', oldValue: psv.tags.join(', '), newValue: updated.tags.join(', ') }]
+                    }
+                );
+            }
 
             set((state) => {
                 const newPsvList = state.psvList.map(p => p.id === psvId ? updated : p);
@@ -862,6 +1158,24 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             if (!psv) return;
 
             const updated = await dataService.updateProtectiveSystem(psvId, { tags: psv.tags.filter(t => t !== tag) });
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'update',
+                    'protective_system',
+                    psvId,
+                    `${updated.tag} : ${updated.name}`,
+                    currentUser.id,
+                    currentUser.name,
+                    {
+                        userRole: currentUser.role,
+                        description: `Removed tag: ${tag}`,
+                        changes: [{ field: 'tags', oldValue: psv.tags.join(', '), newValue: updated.tags.join(', ') }]
+                    }
+                );
+            }
 
             set((state) => {
                 const newPsvList = state.psvList.map(p => p.id === psvId ? updated : p);
@@ -969,6 +1283,21 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     addTodo: async (todo) => {
         try {
             const created = await dataService.createTodo(todo);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'create',
+                    'todo',
+                    created.id,
+                    `Todo: ${created.text.slice(0, 30)}...`,
+                    currentUser.id,
+                    currentUser.name,
+                    { userRole: currentUser.role }
+                );
+            }
+
             set((state) => ({
                 todoList: [...state.todoList, created]
             }));
@@ -982,7 +1311,24 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deleteTodo: async (id) => {
         try {
+            const state = get();
+            const existing = state.todoList.find(t => t.id === id);
             await dataService.deleteTodo(id);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser && existing) {
+                createAuditLog(
+                    'delete',
+                    'todo',
+                    id,
+                    `Todo: ${existing.text.slice(0, 30)}...`,
+                    currentUser.id,
+                    currentUser.name,
+                    { userRole: currentUser.role }
+                );
+            }
+
             set((state) => ({
                 todoList: state.todoList.filter((t) => t.id !== id)
             }));
@@ -996,10 +1342,30 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     toggleTodo: async (id) => {
         try {
-            const todo = get().todoList.find((t) => t.id === id);
+            const state = get();
+            const todo = state.todoList.find((t) => t.id === id);
             if (!todo) return;
 
             const updated = await dataService.updateTodo(id, { completed: !todo.completed });
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'update',
+                    'todo',
+                    id,
+                    `Todo: ${updated.text.slice(0, 30)}...`,
+                    currentUser.id,
+                    currentUser.name,
+                    {
+                        userRole: currentUser.role,
+                        description: updated.completed ? 'Marked as completed' : 'Marked as active',
+                        changes: [{ field: 'completed', oldValue: todo.completed, newValue: updated.completed }]
+                    }
+                );
+            }
+
             set((state) => ({
                 todoList: state.todoList.map((t) =>
                     t.id === id ? updated : t
@@ -1030,6 +1396,24 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     addNote: async (note) => {
         try {
             const created = await dataService.createNote(note);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'create',
+                    'note',
+                    created.id,
+                    'Note added',
+                    currentUser.id,
+                    currentUser.name,
+                    {
+                        userRole: currentUser.role,
+                        description: created.body.slice(0, 50) + (created.body.length > 50 ? '...' : ''),
+                    }
+                );
+            }
+
             set((state) => ({
                 noteList: [...state.noteList, created]
             }));
@@ -1047,7 +1431,30 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             updatedAt: updates.updatedAt || new Date().toISOString(),
         };
         try {
+            const state = get();
+            const existing = state.noteList.find(n => n.id === id);
             const updated = await dataService.updateNote(id, payload);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser && existing) {
+                const changes = detectChanges(existing, updates, ['body']);
+                if (changes.length > 0) {
+                    createAuditLog(
+                        'update',
+                        'note',
+                        id,
+                        'Note updated',
+                        currentUser.id,
+                        currentUser.name,
+                        {
+                            userRole: currentUser.role,
+                            changes,
+                        }
+                    );
+                }
+            }
+
             set((state) => ({
                 noteList: state.noteList.map((n) => n.id === id ? updated : n)
             }));
@@ -1061,7 +1468,24 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deleteNote: async (id) => {
         try {
+            const state = get();
+            const existing = state.noteList.find(n => n.id === id);
             await dataService.deleteNote(id);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser && existing) {
+                createAuditLog(
+                    'delete',
+                    'note',
+                    id,
+                    'Note deleted',
+                    currentUser.id,
+                    currentUser.name,
+                    { userRole: currentUser.role }
+                );
+            }
+
             set((state) => ({
                 noteList: state.noteList.filter((n) => n.id !== id)
             }));
@@ -1147,9 +1571,24 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     addCustomer: async (customer) => {
         try {
             const created = await dataService.createCustomer(customer);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'create',
+                    'project', // Using 'project' entity for high-level hierarchy if specific type missing
+                    created.id,
+                    `Customer: ${created.name}`,
+                    currentUser.id,
+                    currentUser.name,
+                    { userRole: currentUser.role }
+                );
+            }
+
             set((state) => ({
                 customers: [...state.customers, created],
-                customerList: [...state.customerList, created], // Assuming customerList follows customers
+                customerList: [...state.customerList, created],
             }));
             toast.success('Customer added');
         } catch (error) {
@@ -1160,7 +1599,27 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     updateCustomer: async (id, updates) => {
         try {
+            const state = get();
+            const existing = state.customers.find(c => c.id === id);
             const updated = await dataService.updateCustomer(id, updates);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser && existing) {
+                const changes = detectChanges(existing, updates, ['name', 'code']);
+                if (changes.length > 0) {
+                    createAuditLog(
+                        'update',
+                        'project',
+                        id,
+                        `Customer: ${updated.name}`,
+                        currentUser.id,
+                        currentUser.name,
+                        { userRole: currentUser.role, changes }
+                    );
+                }
+            }
+
             set((state) => ({
                 customers: state.customers.map(c => c.id === id ? updated : c),
                 customerList: state.customerList.map(c => c.id === id ? updated : c),
@@ -1175,7 +1634,24 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deleteCustomer: async (id) => {
         try {
+            const state = get();
+            const existing = state.customers.find(c => c.id === id);
             await dataService.deleteCustomer(id);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser && existing) {
+                createAuditLog(
+                    'delete',
+                    'project',
+                    id,
+                    `Customer: ${existing.name}`,
+                    currentUser.id,
+                    currentUser.name,
+                    { userRole: currentUser.role }
+                );
+            }
+
             set((state) => ({
                 customers: state.customers.filter(c => c.id !== id),
                 customerList: state.customerList.filter(c => c.id !== id),
@@ -1191,6 +1667,21 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     addPlant: async (plant) => {
         try {
             const created = await dataService.createPlant(plant);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'create',
+                    'project',
+                    created.id,
+                    `Plant: ${created.name}`,
+                    currentUser.id,
+                    currentUser.name,
+                    { userRole: currentUser.role }
+                );
+            }
+
             set((state) => ({
                 plants: [...state.plants, created],
                 plantList: state.selectedCustomer?.id === created.customerId ? [...state.plantList, created] : state.plantList,
@@ -1204,7 +1695,27 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     updatePlant: async (id, updates) => {
         try {
+            const state = get();
+            const existing = state.plants.find(p => p.id === id);
             const updated = await dataService.updatePlant(id, updates);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser && existing) {
+                const changes = detectChanges(existing, updates, ['name', 'code']);
+                if (changes.length > 0) {
+                    createAuditLog(
+                        'update',
+                        'project',
+                        id,
+                        `Plant: ${updated.name}`,
+                        currentUser.id,
+                        currentUser.name,
+                        { userRole: currentUser.role, changes }
+                    );
+                }
+            }
+
             set((state) => ({
                 plants: state.plants.map(p => p.id === id ? updated : p),
                 plantList: state.plantList.map(p => p.id === id ? updated : p),
@@ -1219,7 +1730,24 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deletePlant: async (id) => {
         try {
+            const state = get();
+            const existing = state.plants.find(p => p.id === id);
             await dataService.deletePlant(id);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser && existing) {
+                createAuditLog(
+                    'delete',
+                    'project',
+                    id,
+                    `Plant: ${existing.name}`,
+                    currentUser.id,
+                    currentUser.name,
+                    { userRole: currentUser.role }
+                );
+            }
+
             set((state) => ({
                 plants: state.plants.filter(p => p.id !== id),
                 plantList: state.plantList.filter(p => p.id !== id),
@@ -1235,6 +1763,21 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     addUnit: async (unit) => {
         try {
             const created = await dataService.createUnit(unit);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'create',
+                    'project',
+                    created.id,
+                    `Unit: ${created.name}`,
+                    currentUser.id,
+                    currentUser.name,
+                    { userRole: currentUser.role }
+                );
+            }
+
             set((state) => ({
                 units: [...state.units, created],
                 unitList: state.selectedPlant?.id === created.plantId ? [...state.unitList, created] : state.unitList,
@@ -1248,7 +1791,27 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     updateUnit: async (id, updates) => {
         try {
+            const state = get();
+            const existing = state.units.find(u => u.id === id);
             const updated = await dataService.updateUnit(id, updates);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser && existing) {
+                const changes = detectChanges(existing, updates, ['name', 'code']);
+                if (changes.length > 0) {
+                    createAuditLog(
+                        'update',
+                        'project',
+                        id,
+                        `Unit: ${updated.name}`,
+                        currentUser.id,
+                        currentUser.name,
+                        { userRole: currentUser.role, changes }
+                    );
+                }
+            }
+
             set((state) => ({
                 units: state.units.map(u => u.id === id ? updated : u),
                 unitList: state.unitList.map(u => u.id === id ? updated : u),
@@ -1263,7 +1826,24 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deleteUnit: async (id) => {
         try {
+            const state = get();
+            const existing = state.units.find(u => u.id === id);
             await dataService.deleteUnit(id);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser && existing) {
+                createAuditLog(
+                    'delete',
+                    'project',
+                    id,
+                    `Unit: ${existing.name}`,
+                    currentUser.id,
+                    currentUser.name,
+                    { userRole: currentUser.role }
+                );
+            }
+
             set((state) => ({
                 units: state.units.filter(u => u.id !== id),
                 unitList: state.unitList.filter(u => u.id !== id),
@@ -1279,6 +1859,21 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     addArea: async (area) => {
         try {
             const created = await dataService.createArea(area);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'create',
+                    'project',
+                    created.id,
+                    `Area: ${created.name}`,
+                    currentUser.id,
+                    currentUser.name,
+                    { userRole: currentUser.role }
+                );
+            }
+
             set((state) => ({
                 areas: [...state.areas, created],
                 areaList: state.selectedUnit?.id === created.unitId ? [...state.areaList, created] : state.areaList,
@@ -1292,7 +1887,27 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     updateArea: async (id, updates) => {
         try {
+            const state = get();
+            const existing = state.areas.find(a => a.id === id);
             const updated = await dataService.updateArea(id, updates);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser && existing) {
+                const changes = detectChanges(existing, updates, ['name', 'code']);
+                if (changes.length > 0) {
+                    createAuditLog(
+                        'update',
+                        'project',
+                        id,
+                        `Area: ${updated.name}`,
+                        currentUser.id,
+                        currentUser.name,
+                        { userRole: currentUser.role, changes }
+                    );
+                }
+            }
+
             set((state) => ({
                 areas: state.areas.map(a => a.id === id ? updated : a),
                 areaList: state.areaList.map(a => a.id === id ? updated : a),
@@ -1307,7 +1922,24 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deleteArea: async (id) => {
         try {
+            const state = get();
+            const existing = state.areas.find(a => a.id === id);
             await dataService.deleteArea(id);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser && existing) {
+                createAuditLog(
+                    'delete',
+                    'project',
+                    id,
+                    `Area: ${existing.name}`,
+                    currentUser.id,
+                    currentUser.name,
+                    { userRole: currentUser.role }
+                );
+            }
+
             set((state) => ({
                 areas: state.areas.filter(a => a.id !== id),
                 areaList: state.areaList.filter(a => a.id !== id),
@@ -1323,6 +1955,21 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     addProject: async (project) => {
         try {
             const created = await dataService.createProject(project);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'create',
+                    'project',
+                    created.id,
+                    `Project: ${created.name}`,
+                    currentUser.id,
+                    currentUser.name,
+                    { userRole: currentUser.role }
+                );
+            }
+
             set((state) => ({
                 projects: [...state.projects, created],
                 projectList: state.selectedArea?.id === created.areaId ? [...state.projectList, created] : state.projectList,
@@ -1336,7 +1983,27 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     updateProject: async (id, updates) => {
         try {
+            const state = get();
+            const existing = state.projects.find(p => p.id === id);
             const updated = await dataService.updateProject(id, updates);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser && existing) {
+                const changes = detectChanges(existing, updates, ['name', 'code']);
+                if (changes.length > 0) {
+                    createAuditLog(
+                        'update',
+                        'project',
+                        id,
+                        `Project: ${updated.name}`,
+                        currentUser.id,
+                        currentUser.name,
+                        { userRole: currentUser.role, changes }
+                    );
+                }
+            }
+
             set((state) => ({
                 projects: state.projects.map(p => p.id === id ? updated : p),
                 projectList: state.projectList.map(p => p.id === id ? updated : p),
@@ -1351,7 +2018,24 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deleteProject: async (id) => {
         try {
+            const state = get();
+            const existing = state.projects.find(p => p.id === id);
             await dataService.deleteProject(id);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser && existing) {
+                createAuditLog(
+                    'delete',
+                    'project',
+                    id,
+                    `Project: ${existing.name}`,
+                    currentUser.id,
+                    currentUser.name,
+                    { userRole: currentUser.role }
+                );
+            }
+
             set((state) => ({
                 projects: state.projects.filter(p => p.id !== id),
                 projectList: state.projectList.filter(p => p.id !== id),
@@ -1367,6 +2051,24 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     addProtectiveSystem: async (psv) => {
         try {
             const created = await dataService.createProtectiveSystem(psv);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'create',
+                    'protective_system',
+                    created.id,
+                    `${created.tag} : ${created.name}`,
+                    currentUser.id,
+                    currentUser.name,
+                    {
+                        userRole: currentUser.role,
+                        projectId: created.projectIds?.[0], // Best effort
+                    }
+                );
+            }
+
             set((state) => ({
                 psvList: [...state.psvList, created],
                 protectiveSystems: [...state.protectiveSystems, created],
@@ -1397,7 +2099,24 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
 
     deleteProtectiveSystem: async (id) => {
         try {
+            const state = get();
+            const existing = state.psvList.find(p => p.id === id);
             await dataService.deleteProtectiveSystem(id);
+
+            // Audit logging
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser && existing) {
+                createAuditLog(
+                    'delete',
+                    'protective_system',
+                    id,
+                    `${existing.tag} : ${existing.name}`,
+                    currentUser.id,
+                    currentUser.name,
+                    { userRole: currentUser.role }
+                );
+            }
+
             set((state) => ({
                 psvList: state.psvList.filter(p => p.id !== id),
                 protectiveSystems: state.protectiveSystems.filter(p => p.id !== id),

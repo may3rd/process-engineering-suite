@@ -28,6 +28,7 @@ import {
     Computer,
     Person,
     Login,
+    History,
 } from '@mui/icons-material';
 import { useAuthStore } from '@/store/useAuthStore';
 import { usePsvStore } from '@/store/usePsvStore';
@@ -67,6 +68,8 @@ export function UserMenu() {
                 return theme.palette.secondary.main; // Amber/Gold
             case 'approver':
                 return '#9333ea'; // Purple
+            case 'division_manager':
+                return '#0284c7'; // Blue
             case 'lead':
                 return '#059669'; // Green
             case 'engineer':
@@ -82,6 +85,8 @@ export function UserMenu() {
                 return 'Admin ⭐';
             case 'approver':
                 return 'Approver ✓';
+            case 'division_manager':
+                return 'Division Manager 👨‍💼';
             case 'lead':
                 return 'Lead 👤';
             case 'engineer':
@@ -216,6 +221,19 @@ export function UserMenu() {
                             <Settings fontSize="small" />
                         </ListItemIcon>
                         <ListItemText>Account Settings</ListItemText>
+                    </MenuItem>
+                )}
+
+                {/* Activity Feed for privileged roles */}
+                {isAuthenticated && (currentUser?.role === 'admin' || currentUser?.role === 'division_manager') && (
+                    <MenuItem onClick={() => {
+                        handleClose();
+                        setCurrentPage('activity');
+                    }}>
+                        <ListItemIcon>
+                            <History fontSize="small" />
+                        </ListItemIcon>
+                        <ListItemText>Activity Feed</ListItemText>
                     </MenuItem>
                 )}
                 {isAuthenticated && <Divider />}

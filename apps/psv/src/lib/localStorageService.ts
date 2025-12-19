@@ -475,6 +475,7 @@ class LocalStorageService {
             tags: data.tags || [],
             inletNetwork: data.inletNetwork,
             outletNetwork: data.outletNetwork,
+            version: 1,
             createdAt: now(),
             updatedAt: now(),
         };
@@ -483,6 +484,7 @@ class LocalStorageService {
         return newPsv;
     }
 
+
     async updateProtectiveSystem(id: string, data: Partial<ProtectiveSystem>): Promise<ProtectiveSystem> {
         console.log('localStorage updateProtectiveSystem called with id:', id, 'and data:', data);
         const psvs = await this.getProtectiveSystems();
@@ -490,11 +492,25 @@ class LocalStorageService {
         if (index === -1) throw new Error('PSV not found');
 
         console.log('Before update:', psvs[index]);
-        psvs[index] = { ...psvs[index], ...data, updatedAt: now() };
+        const currentVersion = psvs[index].version || 1;
+
+        // Version check
+        if (data.version !== undefined && data.version !== currentVersion) {
+            console.error('[localStorage] Version mismatch for PSV:', id, 'Expected:', currentVersion, 'Got:', data.version);
+            throw new Error('Conflict: Version mismatch. The record has been modified by another user.');
+        }
+
+        psvs[index] = {
+            ...psvs[index],
+            ...data,
+            version: currentVersion + 1,
+            updatedAt: now()
+        };
         console.log('After update:', psvs[index]);
         setItem(STORAGE_KEYS.PSVS, psvs);
         return psvs[index];
     }
+
 
     async deleteProtectiveSystem(id: string): Promise<void> {
         const psvs = await this.getProtectiveSystems();
@@ -506,6 +522,13 @@ class LocalStorageService {
     async getScenarios(psvId: string): Promise<Scenario[]> {
         const scenarios = getItem<Scenario>(STORAGE_KEYS.SCENARIOS, mockScenarios);
         return scenarios.filter(s => s.protectiveSystemId === psvId);
+    }
+
+    async getScenario(id: string): Promise<Scenario> {
+        const scenarios = getItem<Scenario>(STORAGE_KEYS.SCENARIOS, mockScenarios);
+        const scenario = scenarios.find(s => s.id === id);
+        if (!scenario) throw new Error('Scenario not found');
+        return scenario;
     }
 
     async createScenario(psvId: string, data: Partial<Scenario>): Promise<Scenario> {
@@ -526,6 +549,7 @@ class LocalStorageService {
             codeRefs: data.codeRefs || [],
             isGoverning: data.isGoverning || false,
             caseConsideration: data.caseConsideration,
+            version: 1,
             createdAt: now(),
             updatedAt: now(),
         };
@@ -543,7 +567,20 @@ class LocalStorageService {
         const index = scenarios.findIndex(s => s.id === id);
         if (index === -1) throw new Error('Scenario not found');
 
-        scenarios[index] = { ...scenarios[index], ...data, updatedAt: now() };
+        const currentVersion = scenarios[index].version || 1;
+
+        // Version check
+        if (data.version !== undefined && data.version !== currentVersion) {
+            console.error('[localStorage] Version mismatch for Scenario:', id, 'Expected:', currentVersion, 'Got:', data.version);
+            throw new Error('Conflict: Version mismatch. The record has been modified by another user.');
+        }
+
+        scenarios[index] = {
+            ...scenarios[index],
+            ...data,
+            version: currentVersion + 1,
+            updatedAt: now()
+        };
         console.log('[localStorage] Updated scenario caseConsideration:', scenarios[index].caseConsideration?.substring(0, 50));
         setItem(STORAGE_KEYS.SCENARIOS, scenarios);
         return scenarios[index];
