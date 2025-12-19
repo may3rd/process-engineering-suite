@@ -563,6 +563,9 @@ export function HierarchyBrowser() {
                                             '&:hover': {
                                                 bgcolor: isDark ? 'rgba(56, 189, 248, 0.08)' : 'rgba(2, 132, 199, 0.04)',
                                             },
+                                            '&:last-child td': {
+                                                borderBottom: 'none',
+                                            },
                                         }}
                                     >
                                         <TableCell sx={{ width: 48 }}>

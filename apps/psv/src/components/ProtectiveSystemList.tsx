@@ -54,7 +54,7 @@ export function ProtectiveSystemList() {
     const { psvList, selectPsv, selectedProject, selectProject } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
     const [searchText, setSearchText] = useState('');
-    const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'approved' | 'issued'>('all');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'in_review' | 'approved' | 'issued'>('all');
     const [sortMenuAnchor, setSortMenuAnchor] = useState<null | HTMLElement>(null);
 
     type SortKey = 'tag' | 'name' | 'status' | 'setPressure' | 'mawp' | 'designCode' | 'fluidPhase' | 'type';
@@ -117,6 +117,7 @@ export function ProtectiveSystemList() {
 
     // Status counts
     const draftCount = psvList.filter(p => p.status === 'draft').length;
+    const inReviewCount = psvList.filter(p => p.status === 'in_review').length;
     const approvedCount = psvList.filter(p => p.status === 'approved').length;
     const issuedCount = psvList.filter(p => p.status === 'issued').length;
 
@@ -270,10 +271,20 @@ export function ProtectiveSystemList() {
                         <Button
                             size="small"
                             variant={statusFilter === 'draft' ? 'contained' : 'text'}
+                            color={statusFilter === 'draft' ? 'primary' : 'inherit'}
                             onClick={() => setStatusFilter('draft')}
                             sx={{ textTransform: 'none', fontWeight: statusFilter === 'draft' ? 600 : 400 }}
                         >
                             Draft {draftCount}
+                        </Button>
+                        <Button
+                            size="small"
+                            variant={statusFilter === 'in_review' ? 'contained' : 'text'}
+                            color={statusFilter === 'in_review' ? 'warning' : 'inherit'}
+                            onClick={() => setStatusFilter('in_review')}
+                            sx={{ textTransform: 'none', fontWeight: statusFilter === 'in_review' ? 600 : 400 }}
+                        >
+                            In Review {inReviewCount}
                         </Button>
                         <Button
                             size="small"
@@ -383,6 +394,9 @@ export function ProtectiveSystemList() {
                                         cursor: 'pointer',
                                         '&:hover': {
                                             bgcolor: isDark ? 'rgba(56, 189, 248, 0.08)' : 'rgba(2, 132, 199, 0.04)',
+                                        },
+                                        '&:last-child td': {
+                                            borderBottom: 'none',
                                         },
                                     }}
                                 >
