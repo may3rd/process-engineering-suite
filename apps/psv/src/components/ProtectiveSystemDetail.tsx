@@ -2197,6 +2197,33 @@ export function ProtectiveSystemDetail() {
         handleRevisionMenuClose();
     };
 
+    useEffect(() => {
+        const toolbarHeightPx = 72;
+        const update = () => {
+            const header = fullHeaderRef.current;
+            if (!header) return;
+            const rect = header.getBoundingClientRect();
+            // Show compact header only when the full header is completely hidden behind the fixed toolbar.
+            setShowCompactHeader(rect.bottom <= toolbarHeightPx + 1);
+        };
+
+        update();
+
+        let raf = 0;
+        const scheduleUpdate = () => {
+            cancelAnimationFrame(raf);
+            raf = requestAnimationFrame(update);
+        };
+
+        window.addEventListener('scroll', scheduleUpdate, { passive: true });
+        window.addEventListener('resize', scheduleUpdate);
+        return () => {
+            cancelAnimationFrame(raf);
+            window.removeEventListener('scroll', scheduleUpdate);
+            window.removeEventListener('resize', scheduleUpdate);
+        };
+    }, []);
+
     // If editing a case, show the workspace
     if (editingCaseId) {
         const caseToEdit = sizingCaseList.find(c => c.id === editingCaseId);
@@ -2326,33 +2353,6 @@ export function ProtectiveSystemDetail() {
             default: return <Drafts fontSize="small" />;
         }
     };
-
-    useEffect(() => {
-        const toolbarHeightPx = 72;
-        const update = () => {
-            const header = fullHeaderRef.current;
-            if (!header) return;
-            const rect = header.getBoundingClientRect();
-            // Show compact header only when the full header is completely hidden behind the fixed toolbar.
-            setShowCompactHeader(rect.bottom <= toolbarHeightPx + 1);
-        };
-
-        update();
-
-        let raf = 0;
-        const scheduleUpdate = () => {
-            cancelAnimationFrame(raf);
-            raf = requestAnimationFrame(update);
-        };
-
-        window.addEventListener('scroll', scheduleUpdate, { passive: true });
-        window.addEventListener('resize', scheduleUpdate);
-        return () => {
-            cancelAnimationFrame(raf);
-            window.removeEventListener('scroll', scheduleUpdate);
-            window.removeEventListener('resize', scheduleUpdate);
-        };
-    }, []);
 
     return (
         <Box>

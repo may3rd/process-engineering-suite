@@ -128,12 +128,7 @@ export function HierarchyBrowser() {
     };
 
     const currentLevel = getCurrentLevel();
-
-    if (!currentLevel) {
-        return null;
-    }
-
-    const level = currentLevel.level as Level;
+    const level = (currentLevel?.level ?? 'customer') as Level;
 
     useEffect(() => {
         setSearchText('');
@@ -152,7 +147,7 @@ export function HierarchyBrowser() {
     };
 
     const handleSelect = (id: string) => {
-        switch (currentLevel.level) {
+        switch (currentLevel?.level) {
             case 'customer': selectCustomer(id); break;
             case 'plant': selectPlant(id); break;
             case 'unit': selectUnit(id); break;
@@ -252,7 +247,7 @@ export function HierarchyBrowser() {
         }
     };
 
-    const filterItem = (item: HierarchyItem, lvl: Level, query: string): boolean => {
+    const filterItemFn = (item: HierarchyItem, lvl: Level, query: string): boolean => {
         const q = query.trim().toLowerCase();
         if (!q) return true;
 
@@ -271,20 +266,7 @@ export function HierarchyBrowser() {
         return [...base, ...extra].filter(Boolean).join(' ').toLowerCase().includes(q);
     };
 
-    const filteredItems = useMemo(() => {
-        const items = currentLevel.items as HierarchyItem[];
-        let result = items.filter((item) => filterItem(item, level, searchText));
-
-        if (statusFilter !== 'all') {
-            result = result.filter((item) =>
-                'status' in item && String(item.status) === statusFilter
-            );
-        }
-
-        return result;
-    }, [currentLevel.items, level, searchText, statusFilter]);
-
-    const getSortValue = (item: HierarchyItem, key: SortKey): string | number => {
+    const getSortValueFn = (item: HierarchyItem, key: SortKey): string | number => {
         switch (key) {
             case 'name': return item.name.toLowerCase();
             case 'code': return ('code' in item ? String(item.code) : '').toLowerCase();
@@ -297,21 +279,46 @@ export function HierarchyBrowser() {
         }
     };
 
+    const filteredItems = useMemo(() => {
+        if (!currentLevel) return [];
+        const items = currentLevel.items as HierarchyItem[];
+        let result = items.filter((item) => filterItemFn(item, level, searchText));
+
+        if (statusFilter !== 'all') {
+            result = result.filter((item) =>
+                'status' in item && String(item.status) === statusFilter
+            );
+        }
+
+        return result;
+    }, [currentLevel?.items, level, searchText, statusFilter]);
+
     const sortedItems = useMemo(() => {
         const sortConfig = sortConfigByLevel[level];
-        return sortByGetter(filteredItems, sortConfig, getSortValue);
+        return sortByGetter(filteredItems, sortConfig, getSortValueFn);
     }, [filteredItems, level, sortConfigByLevel]);
 
     // Pagination
     const pagination = usePagination(sortedItems, { totalItems: sortedItems.length, itemsPerPage: 10 });
 
     // Status counts
-    const activeCount = (currentLevel.items as HierarchyItem[]).filter(
-        item => 'status' in item && String(item.status) === 'active'
-    ).length;
-    const inactiveCount = (currentLevel.items as HierarchyItem[]).filter(
-        item => 'status' in item && String(item.status) === 'inactive'
-    ).length;
+    const activeCount = useMemo(() => {
+        if (!currentLevel) return 0;
+        return (currentLevel.items as HierarchyItem[]).filter(
+            item => 'status' in item && String(item.status) === 'active'
+        ).length;
+    }, [currentLevel?.items]);
+
+    const inactiveCount = useMemo(() => {
+        if (!currentLevel) return 0;
+        return (currentLevel.items as HierarchyItem[]).filter(
+            item => 'status' in item && String(item.status) === 'inactive'
+        ).length;
+    }, [currentLevel?.items]);
+
+    if (!currentLevel) {
+        return null;
+    }
 
     const sortOptions: { key: SortKey; label: string }[] = [
         { key: 'name', label: 'Name' },

@@ -20,32 +20,6 @@ export default function PsvApp() {
         initialize();
     }, [initialize]);
 
-    // Determine what to render based on selection state
-    const renderContent = () => {
-        // Check for special pages first
-        if (currentPage === 'dashboard') {
-            return <DashboardPage />;
-        }
-        if (currentPage === 'account') {
-            return <AccountSettingsPage />;
-        }
-        if (currentPage === 'scenario_consideration') {
-            return <CaseConsiderationPage />;
-        }
-
-        // If a PSV is selected, show the detail view
-        if (selectedPsv) {
-            return <ProtectiveSystemDetail />;
-        }
-
-        // If a project is selected, show the protective systems list
-        if (selectedProject) {
-            return <ProtectiveSystemList />;
-        }
-
-        // Otherwise, show the hierarchy browser
-        return <HierarchyBrowser />;
-    };
 
     return (
         <Box sx={{ minHeight: '100vh - 72px', pb: 4 }}>
@@ -61,7 +35,20 @@ export default function PsvApp() {
                         <CircularProgress />
                     </Box>
                 ) : (
-                    renderContent()
+                    <>
+                        {currentPage === 'dashboard' && <DashboardPage key="dashboard" />}
+                        {currentPage === 'account' && <AccountSettingsPage key="account" />}
+                        {currentPage === 'scenario_consideration' && <CaseConsiderationPage key="scenario" />}
+                        {currentPage !== 'dashboard' && currentPage !== 'account' && currentPage !== 'scenario_consideration' && selectedPsv && (
+                            <ProtectiveSystemDetail key={`psv-${selectedPsv.id}`} />
+                        )}
+                        {currentPage !== 'dashboard' && currentPage !== 'account' && currentPage !== 'scenario_consideration' && !selectedPsv && selectedProject && (
+                            <ProtectiveSystemList key={`project-${selectedProject.id}`} />
+                        )}
+                        {currentPage !== 'dashboard' && currentPage !== 'account' && currentPage !== 'scenario_consideration' && !selectedPsv && !selectedProject && (
+                            <HierarchyBrowser key={`hierarchy-${selection.customerId ?? 'root'}-${selection.plantId ?? ''}-${selection.unitId ?? ''}-${selection.areaId ?? ''}`} />
+                        )}
+                    </>
                 )}
             </Container>
         </Box>
