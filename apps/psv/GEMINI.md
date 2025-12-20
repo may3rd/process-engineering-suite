@@ -32,7 +32,11 @@ PSV (Pressure Safety Valve) sizing application within the Process Engineering Su
 - `HydraulicReportTable.tsx` - Segment-by-segment hydraulic results table
 - `HydraulicReportDialog.tsx` - Detailed hydraulic report export
 
+## Other Document MD fils
+- `docs/` - Documentation files for the project
+
 ## Unit Conventions (CRITICAL)
+- Use `convertUnit()` from `@eng-suite/physics` for conversions
 
 ### Storage (SI Units)
 All values are stored in SI units for consistency:
@@ -50,6 +54,7 @@ Converted to user-friendly units for display:
 - **Temperature**: °C
 - **Mass Flow**: kg/h
 - Use `convertUnit()` from `@eng-suite/physics` for conversions
+- User's preferences for display units
 
 ### Key Conversion Points
 1. **`applyHydraulicSegmentsToNetwork()`** in `SizingWorkspace.tsx`:
@@ -95,6 +100,14 @@ Converted to user-friendly units for display:
 9. Workflow status management (Draft → In Review → Checked → Approved → Issued)
 10. Theme toggle and dashboard integration
 11. Local storage persistence for demo/offline mode
+12. Activity tracking and logging
+13. Unit conversion system for display preferences
+14. Equipment linked fire case calculations
+15. PDF export for summary reports
+16. Edit / Save conflict resolution
+
+### Pending Features
+1. Integration with Network-editor tool for hydraulic network visualizatio
 
 ### Configuration Notes
 - `tsconfig.json` extends `../../packages/tsconfig/base.json`
@@ -110,9 +123,3 @@ Converted to user-friendly units for display:
 - **Validation**: `inputValidation.ts` for form validation, `hydraulicValidation.ts` for physics
 
 ## Next Tasks
-1. Backend API integration (Python FastAPI)
-2. Database connectivity with PostgreSQL
-3. Data migration scripts if needed (barg → Pa for existing records)
-4. PDF export for summary reports
-5. Equipment linked fire case calculations
-
