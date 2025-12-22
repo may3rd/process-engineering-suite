@@ -119,7 +119,7 @@ const getDesignTokens = (mode: 'light' | 'dark') => {
 
     return {
         typography: {
-            fontFamily: 'var(--font-inter), "Inter", "Roboto", "Helvetica", "Arial", sans-serif',
+            fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji"',
             h1: { fontWeight: 700 },
             h2: { fontWeight: 700 },
             h3: { fontWeight: 600 },

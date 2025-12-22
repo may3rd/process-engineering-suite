@@ -1,4 +1,4 @@
-"""Reports API router."""
+import logging
 from typing import Dict, Any, Optional
 from fastapi import APIRouter, HTTPException
 from fastapi.responses import StreamingResponse
@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from ..dependencies import REPORT_SERVICE
 
 router = APIRouter(prefix="/reports", tags=["reports"])
+logger = logging.getLogger(__name__)
 
 class PsvReportRequest(BaseModel):
     """Request model for PSV report generation."""
@@ -58,7 +59,6 @@ async def generate_psv_report(
         )
     except Exception as e:
         import traceback
-        import logging
-        logging.getLogger(__name__).error(f"Error generating PDF report: {e}")
-        logging.getLogger(__name__).error(traceback.format_exc())
+        logger.error(f"Error generating PDF report: {e}")
+        logger.error(traceback.format_exc())
         raise HTTPException(status_code=500, detail=f"Failed to generate PDF report: {str(e)}")
