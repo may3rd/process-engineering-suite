@@ -25,7 +25,17 @@ def test_render_psv_report():
     results_data = {
         "required_area": 120.5,
         "selected_orifice": "G",
-        "rated_capacity": 5500.0
+        "rated_capacity": 5500.0,
+        "sizing_case": {
+            "standard": "API-520",
+            "method": "gas",
+            "status": "calculated",
+            "outputs": {
+                "Kd": 0.975,
+                "Kb": 1.0,
+                "Kc": 1.0
+            }
+        }
     }
     hierarchy_data = {
         "customer": {"name": "Global Energy"},

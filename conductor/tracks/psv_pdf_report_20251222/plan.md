@@ -15,7 +15,7 @@ Focus on setting up the PDF generation engine and creating the report layout.
 Implement the actual content of the report.
 
 - [x] Task: Implement the "Process Data & Scenario" section in the PDF [commit: c7788d1]
-- [ ] Task: Implement the "Sizing Calculations" section (API 520 results)
+- [~] Task: Implement the "Sizing Calculations" section (API 520 results)
 - [ ] Task: Implement the "Hydraulic Results" section (Inlet/Outlet pressure drops)
 - [ ] Task: Add branding (logo) and professional styling to the PDF
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Detailed Report Sections' (Protocol in workflow.md)

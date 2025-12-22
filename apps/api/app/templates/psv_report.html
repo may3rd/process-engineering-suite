@@ -92,7 +92,16 @@
 </div>
 {% endif %}
 
-<h2>Sizing Results (API 520)</h2>
+<h2>Sizing Results ({{ results.sizing_case.standard | default("API 520") }})</h2>
+<table>
+    <tr>
+        <td class="label-cell">Sizing Method</td>
+        <td class="value-cell">{{ results.sizing_case.method | title }}</td>
+        <td class="label-cell">Status</td>
+        <td class="value-cell">{{ results.sizing_case.status | title }}</td>
+    </tr>
+</table>
+
 <table>
     <thead>
         <tr>
@@ -119,6 +128,49 @@
         </tr>
     </tbody>
 </table>
+
+{% if results.sizing_case.outputs %}
+<h3>Calculation Factors</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Factor</th>
+            <th>Value</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if results.sizing_case.outputs.Kd %}
+        <tr>
+            <td>Kd</td>
+            <td>{{ results.sizing_case.outputs.Kd }}</td>
+            <td>Effective coefficient of discharge</td>
+        </tr>
+        {% endif %}
+        {% if results.sizing_case.outputs.Kb %}
+        <tr>
+            <td>Kb</td>
+            <td>{{ results.sizing_case.outputs.Kb }}</td>
+            <td>Back pressure correction factor</td>
+        </tr>
+        {% endif %}
+        {% if results.sizing_case.outputs.Kc %}
+        <tr>
+            <td>Kc</td>
+            <td>{{ results.sizing_case.outputs.Kc }}</td>
+            <td>Combination correction factor</td>
+        </tr>
+        {% endif %}
+        {% if results.sizing_case.outputs.Kn %}
+        <tr>
+            <td>Kn</td>
+            <td>{{ results.sizing_case.outputs.Kn }}</td>
+            <td>Napier correction factor</td>
+        </tr>
+        {% endif %}
+    </tbody>
+</table>
+{% endif %}
 
 <h2>Hydraulic Results</h2>
 <p>Inlet and Outlet pressure drop calculations.</p>
