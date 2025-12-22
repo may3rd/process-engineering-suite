@@ -18,57 +18,57 @@ class CustomerResponse(BaseModel):
     name: str
     code: str
     status: str
-    owner_id: str = Field(serialization_alias="ownerId")
-    created_at: datetime = Field(serialization_alias="createdAt")
+    owner_id: str = Field(alias="ownerId")
+    created_at: datetime = Field(alias="createdAt")
 
 
 class PlantResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     id: str
-    customer_id: str = Field(serialization_alias="customerId")
+    customer_id: str = Field(alias="customerId")
     name: str
     code: str
     location: str | None = None
     status: str
-    owner_id: str = Field(serialization_alias="ownerId")
-    created_at: datetime = Field(serialization_alias="createdAt")
+    owner_id: str = Field(alias="ownerId")
+    created_at: datetime = Field(alias="createdAt")
 
 
 class UnitResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     id: str
-    plant_id: str = Field(serialization_alias="plantId")
+    plant_id: str = Field(alias="plantId")
     name: str
     code: str
     service: str | None = None
     status: str
-    owner_id: str = Field(serialization_alias="ownerId")
-    created_at: datetime = Field(serialization_alias="createdAt")
+    owner_id: str = Field(alias="ownerId")
+    created_at: datetime = Field(alias="createdAt")
 
 
 class AreaResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     id: str
-    unit_id: str = Field(serialization_alias="unitId")
+    unit_id: str = Field(alias="unitId")
     name: str
     code: str
     status: str
-    created_at: datetime = Field(serialization_alias="createdAt")
+    created_at: datetime = Field(alias="createdAt")
 
 
 class ProjectResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     id: str
-    area_id: str = Field(serialization_alias="areaId")
+    area_id: str = Field(alias="areaId")
     name: str
     code: str
     phase: str
     status: str
-    unit_system: str = Field(default="metric", serialization_alias="unitSystem")
-    start_date: date = Field(serialization_alias="startDate")
-    end_date: date | None = Field(default=None, serialization_alias="endDate")
-    lead_id: str = Field(serialization_alias="leadId")
-    created_at: datetime = Field(serialization_alias="createdAt")
+    unit_system: str = Field(default="metric", alias="unitSystem")
+    start_date: date = Field(alias="startDate")
+    end_date: date | None = Field(default=None, alias="endDate")
+    lead_id: str = Field(alias="leadId")
+    created_at: datetime = Field(alias="createdAt")
 
 
 
