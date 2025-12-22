@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
     Box,
     Button,
@@ -40,8 +40,17 @@ export function AreasTab() {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
-    const { addArea, updateArea, deleteArea } = usePsvStore();
+    const { addArea, updateArea, deleteArea, fetchAllAreas, areAreasLoaded } = usePsvStore();
     const selectedUnit = usePsvStore((state) => state.selectedUnit);
+
+    const [isLoadingInit, setIsLoadingInit] = useState(false);
+
+    useEffect(() => {
+        if (!areAreasLoaded) {
+            setIsLoadingInit(true);
+            fetchAllAreas().finally(() => setIsLoadingInit(false));
+        }
+    }, [areAreasLoaded, fetchAllAreas]);
     const areas = usePsvStore((state) => state.areas);
     const units = usePsvStore((state) => state.units);
     const projects = usePsvStore((state) => state.projects);

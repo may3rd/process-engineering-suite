@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
     Box,
     Button,
@@ -40,8 +40,17 @@ export function PlantsTab() {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
-    const { addPlant, updatePlant, deletePlant } = usePsvStore();
+    const { addPlant, updatePlant, deletePlant, fetchAllPlants, arePlantsLoaded } = usePsvStore();
     const selectedCustomer = usePsvStore((state) => state.selectedCustomer);
+
+    const [isLoadingInit, setIsLoadingInit] = useState(false);
+
+    useEffect(() => {
+        if (!arePlantsLoaded) {
+            setIsLoadingInit(true);
+            fetchAllPlants().finally(() => setIsLoadingInit(false));
+        }
+    }, [arePlantsLoaded, fetchAllPlants]);
     const plants = usePsvStore((state) => state.plants);
     const units = usePsvStore((state) => state.units);
     const areas = usePsvStore((state) => state.areas);

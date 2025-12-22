@@ -88,6 +88,13 @@ interface PsvStore {
     sizingCaseList: SizingCase[];
     equipmentLinkList: EquipmentLink[];
 
+    // List Loading State
+    arePlantsLoaded: boolean;
+    areUnitsLoaded: boolean;
+    areAreasLoaded: boolean;
+    areProjectsLoaded: boolean;
+    arePsvsLoaded: boolean;
+
     // UI state
     activeTab: number;
     sidebarOpen: boolean;
@@ -99,6 +106,13 @@ interface PsvStore {
 
     // Initialize data
     initialize: () => Promise<void>;
+
+    // Optimized Fetch Actions (Lazy Loading)
+    fetchAllPlants: () => Promise<void>;
+    fetchAllUnits: () => Promise<void>;
+    fetchAllAreas: () => Promise<void>;
+    fetchAllProjects: () => Promise<void>;
+    fetchAllProtectiveSystems: () => Promise<void>;
 
     // Actions (now async)
     selectCustomer: (id: string | null) => Promise<void>;
@@ -248,6 +262,13 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     // Warnings state
     warnings: new Map(),
 
+    // List Loading State
+    arePlantsLoaded: false,
+    areUnitsLoaded: false,
+    areAreasLoaded: false,
+    areProjectsLoaded: false,
+    arePsvsLoaded: false,
+
     // UI state
     activeTab: 0,
     sidebarOpen: true,
@@ -261,65 +282,10 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     initialize: async () => {
         set({ isLoading: true, error: null });
         try {
-            // Fetch customers
+            // Fetch customers (root level)
             const customers = await dataService.getCustomers();
 
-            // Fetch FULL Hierarchy for Dashboard counts
-            // Cascade: Customers -> Plants -> Units -> Areas -> Projects
-
-            // 1. All Plants
-            let allPlants: Plant[] = [];
-            try {
-                const plantsResults = await Promise.all(
-                    customers.map(c => dataService.getPlantsByCustomer(c.id))
-                );
-                allPlants = plantsResults.flat();
-            } catch (err) {
-                console.error("Failed to fetch plants:", err);
-            }
-
-            // 2. All Units
-            let allUnits: Unit[] = [];
-            try {
-                const unitsResults = await Promise.all(
-                    allPlants.map(p => dataService.getUnitsByPlant(p.id))
-                );
-                allUnits = unitsResults.flat();
-            } catch (err) {
-                console.error("Failed to fetch units:", err);
-            }
-
-            // 3. All Areas
-            let allAreas: Area[] = [];
-            try {
-                const areasResults = await Promise.all(
-                    allUnits.map(u => dataService.getAreasByUnit(u.id))
-                );
-                allAreas = areasResults.flat();
-            } catch (err) {
-                console.error("Failed to fetch areas:", err);
-            }
-
-            // 4. All Projects
-            let allProjects: Project[] = [];
-            try {
-                const projectsResults = await Promise.all(
-                    allAreas.map(a => dataService.getProjectsByArea(a.id))
-                );
-                allProjects = projectsResults.flat();
-            } catch (err) {
-                console.error("Failed to fetch projects:", err);
-            }
-
-            // 5. All Protective Systems (Global fetch supported)
-            let allPsvs: ProtectiveSystem[] = [];
-            try {
-                allPsvs = await dataService.getProtectiveSystems();
-            } catch (err) {
-                console.error("Failed to fetch PSVs:", err);
-            }
-
-            // Fetch equipment (fallback to empty if API fails)
+            // Fetch equipment (lightweight enough to keep for now, or could happen lazily too)
             let equipmentList: Equipment[] = [];
             try {
                 equipmentList = await dataService.getEquipment();
@@ -332,23 +298,134 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             set({
                 customers,
                 customerList: customers,
-                plants: allPlants,
-                plantList: allPlants,
-                units: allUnits,
-                unitList: allUnits,
-                areas: allAreas,
-                areaList: allAreas,
-                projects: allProjects,
-                projectList: allProjects,
-                protectiveSystems: allPsvs,
-                psvList: allPsvs,
-                equipment: equipmentList,
+                equipment: equipmentList, // Keep this globally available for now
                 isLoading: false
+                // Other lists remain empty until requested by Dashboard or Hierarchy interactions
             });
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to load data';
             set({ error: message, isLoading: false });
             toast.error('Failed to load data', { description: message });
+        }
+    },
+
+    // Optimized Fetch Actions (Lazy Loading)
+    fetchAllPlants: async () => {
+        if (get().arePlantsLoaded) return; // Cache hit
+        set({ isLoading: true });
+        try {
+            // We need ALL plants across all customers for the dashboard view
+            const customers = get().customers;
+            const plantsResults = await Promise.all(
+                customers.map(c => dataService.getPlantsByCustomer(c.id))
+            );
+            const allPlants = plantsResults.flat();
+            set({
+                plants: allPlants,
+                plantList: allPlants,
+                arePlantsLoaded: true,
+                isLoading: false
+            });
+        } catch (error) {
+            console.error("Failed to fetch all plants:", error);
+            set({ isLoading: false });
+            toast.error("Failed to load plants");
+        }
+    },
+
+    fetchAllUnits: async () => {
+        if (get().areUnitsLoaded) return;
+        set({ isLoading: true });
+        try {
+            // Units depend on Plants being loaded? Not necessarily if we use a direct API,
+            // but the current API structure is hierarchical: getUnitsByPlant(plantId).
+            // So we need plants first.
+            if (!get().arePlantsLoaded) {
+                await get().fetchAllPlants();
+            }
+            const allPlants = get().plants;
+            const unitsResults = await Promise.all(
+                allPlants.map(p => dataService.getUnitsByPlant(p.id))
+            );
+            const allUnits = unitsResults.flat();
+            set({
+                units: allUnits,
+                unitList: allUnits,
+                areUnitsLoaded: true,
+                isLoading: false
+            });
+        } catch (error) {
+            console.error("Failed to fetch all units:", error);
+            set({ isLoading: false });
+            toast.error("Failed to load units");
+        }
+    },
+
+    fetchAllAreas: async () => {
+        if (get().areAreasLoaded) return;
+        set({ isLoading: true });
+        try {
+            if (!get().areUnitsLoaded) {
+                await get().fetchAllUnits();
+            }
+            const allUnits = get().units;
+            const areasResults = await Promise.all(
+                allUnits.map(u => dataService.getAreasByUnit(u.id))
+            );
+            const allAreas = areasResults.flat();
+            set({
+                areas: allAreas,
+                areaList: allAreas,
+                areAreasLoaded: true,
+                isLoading: false
+            });
+        } catch (error) {
+            console.error("Failed to fetch all areas:", error);
+            set({ isLoading: false });
+            toast.error("Failed to load areas");
+        }
+    },
+
+    fetchAllProjects: async () => {
+        if (get().areProjectsLoaded) return;
+        set({ isLoading: true });
+        try {
+            if (!get().areAreasLoaded) {
+                await get().fetchAllAreas();
+            }
+            const allAreas = get().areas;
+            const projectsResults = await Promise.all(
+                allAreas.map(a => dataService.getProjectsByArea(a.id))
+            );
+            const allProjects = projectsResults.flat();
+            set({
+                projects: allProjects,
+                projectList: allProjects,
+                areProjectsLoaded: true,
+                isLoading: false
+            });
+        } catch (error) {
+            console.error("Failed to fetch all projects:", error);
+            set({ isLoading: false });
+            toast.error("Failed to load projects");
+        }
+    },
+
+    fetchAllProtectiveSystems: async () => {
+        if (get().arePsvsLoaded) return;
+        set({ isLoading: true });
+        try {
+            const allPsvs = await dataService.getProtectiveSystems();
+            set({
+                protectiveSystems: allPsvs,
+                psvList: allPsvs,
+                arePsvsLoaded: true,
+                isLoading: false
+            });
+        } catch (error) {
+            console.error("Failed to fetch all PSVs:", error);
+            set({ isLoading: false });
+            toast.error("Failed to load PSVs");
         }
     },
 

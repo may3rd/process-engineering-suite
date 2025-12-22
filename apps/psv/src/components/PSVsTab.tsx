@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
     Box,
     Button,
@@ -44,8 +44,16 @@ export function PSVsTab() {
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const { unitSystem } = useProjectUnitSystem();
-    const { addProtectiveSystem, updateProtectiveSystem, deleteProtectiveSystem } = usePsvStore();
+    const { addProtectiveSystem, updateProtectiveSystem, deleteProtectiveSystem, fetchAllProtectiveSystems, arePsvsLoaded } = usePsvStore();
     const protectiveSystems = usePsvStore((state) => state.protectiveSystems);
+    const [isLoadingInit, setIsLoadingInit] = useState(false);
+
+    useEffect(() => {
+        if (!arePsvsLoaded) {
+            setIsLoadingInit(true);
+            fetchAllProtectiveSystems().finally(() => setIsLoadingInit(false));
+        }
+    }, [arePsvsLoaded, fetchAllProtectiveSystems]);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
