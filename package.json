@@ -2,11 +2,11 @@
   "name": "process-engineering-suite",
   "private": true,
   "scripts": {
-    "build": "turbo run build",
-    "dev": "turbo run dev --parallel",
-    "lint": "turbo run lint",
+    "build": "bun turbo run build",
+    "dev": "bun turbo run dev --parallel",
+    "lint": "bun turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "turbo run check-types"
+    "check-types": "bun turbo run check-types"
   },
   "devDependencies": {
     "prettier": "^3.6.2",
