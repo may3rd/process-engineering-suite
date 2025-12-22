@@ -514,7 +514,7 @@ class LocalStorageService {
 
     async deleteProtectiveSystem(id: string): Promise<void> {
         const psvs = await this.getProtectiveSystems();
-        this.saveData('protectiveSystems', psvs.filter(p => p.id !== id));
+        setItem(STORAGE_KEYS.PSVS, psvs.filter(p => p.id !== id));
     }
 
     getPsvReportUrl(psvId: string): string {

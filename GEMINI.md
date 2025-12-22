@@ -48,6 +48,7 @@ This is a monorepo containing a suite of tools for process engineering, built wi
   - Background: Slate (`#f8fafc` / `#0f172a`)
 
 ## Development Notes
+- **Package Management**: Use `bun` instead of `npm` or `yarn`.
 - **State Management**: The Network Editor uses `zustand` for complex state. Avoid prop drilling.
 - **Type Safety**: Strict TypeScript is enforced. Be careful with shared types between `network-editor` and `physics-engine`.
 - **Styling**: Use MUI `sx` prop with theme-aware values for consistency.
