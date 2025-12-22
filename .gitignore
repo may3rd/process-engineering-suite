@@ -4,6 +4,10 @@
 node_modules
 .pnp
 .pnp.js
+package-lock.json
+
+# Bun
+.bun
 
 # Local env files
 .env
