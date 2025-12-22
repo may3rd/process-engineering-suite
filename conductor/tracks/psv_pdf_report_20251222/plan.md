@@ -2,14 +2,14 @@
 
 This plan outlines the steps to implement PDF report generation for PSV sizing cases.
 
-## Phase 1: Backend Infrastructure & Template
+## Phase 1: Backend Infrastructure & Template [checkpoint: cacae7b]
 Focus on setting up the PDF generation engine and creating the report layout.
 
 - [x] Task: Research and select a PDF generation library for the FastAPI backend (e.g., WeasyPrint or ReportLab) [commit: 6c74226]
 - [x] Task: Create a base PDF template following the professional design guidelines [commit: 1af65b8]
 - [x] Task: Implement a data fetching service to aggregate PSV data for the report [commit: 959a087]
 - [x] Task: Create a basic PDF generation endpoint `GET /psv/{psv_id}/report` [commit: e0efa5f]
-- [ ] Task: Conductor - User Manual Verification 'Phase 1: Backend Infrastructure & Template' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 1: Backend Infrastructure & Template' (Protocol in workflow.md) [commit: cacae7b]
 
 ## Phase 2: Detailed Report Sections
 Implement the actual content of the report.
