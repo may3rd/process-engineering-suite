@@ -1,26 +1,72 @@
 import { useState } from 'react';
-import { getDataService, API_BASE_URL } from '@/lib/api';
+import { API_BASE_URL } from '@/lib/api';
 import { toast } from '@/lib/toast';
+import { usePsvStore } from '@/store/usePsvStore';
 
 export function useReport() {
     const [isGenerating, setIsGenerating] = useState(false);
+    
+    const {
+        selectedPsv,
+        selectedProject,
+        selectedCustomer,
+        selectedPlant,
+        selectedUnit,
+        selectedArea,
+        scenarioList,
+        sizingCaseList,
+    } = usePsvStore();
 
-    const downloadPsvReport = async (psvId: string, tag: string) => {
+    const downloadPsvReport = async () => {
+        if (!selectedPsv) {
+            toast.error('No PSV selected');
+            return;
+        }
+
         setIsGenerating(true);
-        const dataService = getDataService();
         
         try {
-            // For the API client, we use fetch to ensure the Authorization header is included
-            // and then create a blob for download.
-            const url = `${API_BASE_URL}/psv/${psvId}/report`;
+            // 1. Gather Data (Robustly handling camelCase/snake_case via the Pydantic model on backend)
+            const governingScenario = scenarioList.find(s => s.isGoverning && s.protectiveSystemId === selectedPsv.id);
+            const activeCase = governingScenario 
+                ? sizingCaseList.find(c => c.scenarioId === governingScenario.id && c.status === 'calculated') 
+                : null;
+            
+            const payload = {
+                psv: selectedPsv,
+                scenario: governingScenario || {},
+                results: activeCase ? {
+                    requiredArea: activeCase.outputs?.requiredArea,
+                    selectedOrifice: activeCase.outputs?.selectedOrifice,
+                    ratedCapacity: activeCase.outputs?.ratedCapacity,
+                    sizing_case: activeCase
+                } : {},
+                hierarchy: {
+                    customer: selectedCustomer || {},
+                    plant: selectedPlant || {},
+                    unit: selectedUnit || {},
+                    area: selectedArea || {},
+                },
+                projectName: selectedProject?.name,
+                inletNetwork: selectedPsv.inletNetwork,
+                outletNetwork: selectedPsv.outletNetwork,
+                warnings: [] 
+            };
+
+            // 2. Send POST Request to the new stateless endpoint
+            const url = `${API_BASE_URL}/reports/psv`;
             const token = localStorage.getItem('accessToken');
             
-            // Add a timeout to the request
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
             const response = await fetch(url, {
-                headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+                },
+                body: JSON.stringify(payload),
                 signal: controller.signal
             });
 
@@ -32,14 +78,13 @@ export function useReport() {
             }
 
             const blob = await response.blob();
-            if (blob.size === 0) {
-                throw new Error('Received an empty report from the server');
-            }
+            if (blob.size === 0) throw new Error('Received empty report');
 
+            // 3. Download
             const downloadUrl = window.URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = downloadUrl;
-            link.setAttribute('download', `PSV_Report_${tag}.pdf`);
+            link.setAttribute('download', `PSV_Report_${selectedPsv.tag}.pdf`);
             document.body.appendChild(link);
             link.click();
             link.remove();
@@ -49,7 +94,7 @@ export function useReport() {
         } catch (error) {
             console.error('Report generation error:', error);
             if (error instanceof Error && error.name === 'AbortError') {
-                toast.error('Report generation timed out. Please try again.');
+                toast.error('Report generation timed out.');
             } else {
                 toast.error(error instanceof Error ? error.message : 'Failed to generate report');
             }
@@ -58,8 +103,5 @@ export function useReport() {
         }
     };
 
-    return {
-        isGenerating,
-        downloadPsvReport
-    };
+    return { isGenerating, downloadPsvReport };
 }

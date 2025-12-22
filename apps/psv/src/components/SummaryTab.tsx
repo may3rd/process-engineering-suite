@@ -492,7 +492,7 @@ export function SummaryTab() {
                     color="secondary"
                     startIcon={isGenerating ? <CircularProgress size={16} color="inherit" /> : <Download />}
                     size="small"
-                    onClick={() => downloadPsvReport(selectedPsv.id, selectedPsv.tag)}
+                    onClick={() => downloadPsvReport()}
                     disabled={isGenerating}
                     sx={{ ml: 1 }}
                 >
