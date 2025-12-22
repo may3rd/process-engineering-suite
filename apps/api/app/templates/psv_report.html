@@ -1,0 +1,78 @@
+{% extends "base_report.html" %}
+
+{% block content %}
+<h1>PSV Sizing Report - {{ psv.tag }}</h1>
+
+<div class="summary-box">
+    <table>
+        <tr>
+            <td class="label-cell">Tag Number</td>
+            <td class="value-cell">{{ psv.tag }}</td>
+            <td class="label-cell">Service</td>
+            <td class="value-cell">{{ psv.service }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Manufacturer</td>
+            <td class="value-cell">{{ psv.manufacturer | default("N/A") }}</td>
+            <td class="label-cell">Model</td>
+            <td class="value-cell">{{ psv.model | default("N/A") }}</td>
+        </tr>
+    </table>
+</div>
+
+<h2>Overpressure Scenario</h2>
+<table>
+    <tr>
+        <td class="label-cell">Governing Case</td>
+        <td class="value-cell">{{ scenario.name }}</td>
+    </tr>
+    <tr>
+        <td class="label-cell">Fluid Name</td>
+        <td class="value-cell">{{ scenario.fluid_name }}</td>
+    </tr>
+    <tr>
+        <td class="label-cell">Required Flow Rate</td>
+        <td class="value-cell">{{ scenario.required_flow }} kg/h</td>
+    </tr>
+</table>
+
+<h2>Sizing Results (API 520)</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Parameter</th>
+            <th>Calculated Value</th>
+            <th>Unit</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Required Area</td>
+            <td>{{ results.required_area }}</td>
+            <td>mm²</td>
+        </tr>
+        <tr>
+            <td>Selected Orifice</td>
+            <td>{{ results.selected_orifice }}</td>
+            <td>-</td>
+        </tr>
+        <tr>
+            <td>Calculated Capacity</td>
+            <td>{{ results.rated_capacity }}</td>
+            <td>kg/h</td>
+        </tr>
+    </tbody>
+</table>
+
+<h2>Hydraulic Results</h2>
+<p>Inlet and Outlet pressure drop calculations.</p>
+<!-- Detailed hydraulics will be added in Phase 2 -->
+
+{% if warnings %}
+<h2>Warnings</h2>
+{% for warning in warnings %}
+<div class="warning">{{ warning }}</div>
+{% endfor %}
+{% endif %}
+
+{% endblock %}
