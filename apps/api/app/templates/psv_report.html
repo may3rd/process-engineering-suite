@@ -173,8 +173,62 @@
 {% endif %}
 
 <h2>Hydraulic Results</h2>
-<p>Inlet and Outlet pressure drop calculations.</p>
-<!-- Detailed hydraulics will be added in Phase 2 -->
+
+{% if inlet_network %}
+<h3>Inlet Piping</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Segment</th>
+            <th>Diameter (mm)</th>
+            <th>Length (m)</th>
+            <th>dP (bar)</th>
+            <th>Mach No.</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for segment in inlet_network.segments %}
+        <tr>
+            <td>{{ segment.description or segment.id }}</td>
+            <td>{{ segment.diameter }}</td>
+            <td>{{ segment.length }}</td>
+            <td>{{ segment.pressure_drop | default(segment.pressureDrop) }}</td>
+            <td>{{ segment.mach_number | default(segment.machNumber) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No inlet hydraulic data available.</p>
+{% endif %}
+
+{% if outlet_network %}
+<h3>Outlet Piping</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Segment</th>
+            <th>Diameter (mm)</th>
+            <th>Length (m)</th>
+            <th>dP (bar)</th>
+            <th>Mach No.</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for segment in outlet_network.segments %}
+        <tr>
+            <td>{{ segment.description or segment.id }}</td>
+            <td>{{ segment.diameter }}</td>
+            <td>{{ segment.length }}</td>
+            <td>{{ segment.pressure_drop | default(segment.pressureDrop) }}</td>
+            <td>{{ segment.mach_number | default(segment.machNumber) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No outlet hydraulic data available.</p>
+{% endif %}
 
 {% if warnings %}
 <h2>Warnings</h2>

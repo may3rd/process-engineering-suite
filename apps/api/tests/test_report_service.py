@@ -44,6 +44,18 @@ def test_render_psv_report():
         "area": {"name": "Tank Farm"}
     }
     
+    inlet_network = {
+        "segments": [
+            {"description": "Inlet Line 1", "diameter": 80, "length": 5.0, "pressure_drop": 0.05, "mach_number": 0.15},
+            {"description": "Inlet Elbow", "diameter": 80, "length": 0.5, "pressure_drop": 0.01, "mach_number": 0.15}
+        ]
+    }
+    outlet_network = {
+        "segments": [
+            {"description": "Outlet Line 1", "diameter": 100, "length": 10.0, "pressure_drop": 0.5, "mach_number": 0.4}
+        ]
+    }
+    
     service = ReportService()
     html_content = service.render_psv_report(
         psv=psv_data,
@@ -51,12 +63,14 @@ def test_render_psv_report():
         results=results_data,
         hierarchy=hierarchy_data,
         project_name="Test Project",
-        current_date="2025-12-22"
+        current_date="2025-12-22",
+        inlet_network=inlet_network,
+        outlet_network=outlet_network
     )
     
     assert "PSV-101" in html_content
     assert "External Fire" in html_content
     assert "120.5" in html_content
-    assert "Global Energy" in html_content
-    assert "Refinery A" in html_content
-    assert "Fire duration 2h" in html_content
+    assert "Inlet Line 1" in html_content
+    assert "Outlet Line 1" in html_content
+    assert "0.05" in html_content

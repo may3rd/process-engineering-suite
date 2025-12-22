@@ -13,7 +13,7 @@ class ReportService:
             autoescape=select_autoescape(['html', 'xml'])
         )
 
-    def render_psv_report(self, psv, scenario, results, project_name=None, current_date=None, warnings=None, hierarchy=None):
+    def render_psv_report(self, psv, scenario, results, project_name=None, current_date=None, warnings=None, hierarchy=None, inlet_network=None, outlet_network=None):
         if not current_date:
             current_date = datetime.now().strftime("%Y-%m-%d")
             
@@ -25,7 +25,9 @@ class ReportService:
             project_name=project_name,
             current_date=current_date,
             warnings=warnings,
-            hierarchy=hierarchy
+            hierarchy=hierarchy,
+            inlet_network=inlet_network,
+            outlet_network=outlet_network
         )
 
     def generate_pdf(self, html_content: str) -> BytesIO:

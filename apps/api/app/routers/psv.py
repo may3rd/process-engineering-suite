@@ -224,7 +224,9 @@ async def get_psv_report(
             scenario=report_data["scenario"],
             results=report_data["results"],
             hierarchy=report_data["hierarchy"],
-            project_name=report_data["project_name"]
+            project_name=report_data["project_name"],
+            inlet_network=report_data.get("inlet_network"),
+            outlet_network=report_data.get("outlet_network")
         )
         
         # 3. Generate PDF

@@ -42,7 +42,9 @@ class PsvDataService:
                 "sizing_case": active_case
             },
             "hierarchy": hierarchy,
-            "project_name": hierarchy.get("project", {}).get("name") if hierarchy.get("project") else hierarchy.get("plant", {}).get("name")
+            "project_name": hierarchy.get("project", {}).get("name") if hierarchy.get("project") else hierarchy.get("plant", {}).get("name"),
+            "inlet_network": psv.get("inlet_network") or psv.get("inletNetwork"),
+            "outlet_network": psv.get("outlet_network") or psv.get("outletNetwork")
         }
 
     async def _fetch_hierarchy(self, area_id: str) -> dict[str, Any]:
