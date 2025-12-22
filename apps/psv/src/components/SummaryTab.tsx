@@ -26,8 +26,11 @@ import {
     AttachFile,
     Star,
     PictureAsPdf,
+    Download,
 } from "@mui/icons-material";
+import { CircularProgress } from "@mui/material";
 import { generatePsvSummaryPdf } from "@/lib/export/pdfExport";
+import { useReport } from "@/hooks/useReport";
 import { usePsvStore } from "@/store/usePsvStore";
 import { getUserById } from "@/data/mockData";
 import { PipelineNetwork, OverpressureScenario, PipeProps } from "@/data/types";
@@ -249,6 +252,7 @@ function summarizePipeline(
 export function SummaryTab() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
+    const { isGenerating, downloadPsvReport } = useReport();
     const {
         selectedCustomer,
         selectedPlant,
@@ -482,6 +486,17 @@ export function SummaryTab() {
                     sx={{ ml: 1 }}
                 >
                     Export PDF
+                </Button>
+                <Button
+                    variant="contained"
+                    color="secondary"
+                    startIcon={isGenerating ? <CircularProgress size={16} color="inherit" /> : <Download />}
+                    size="small"
+                    onClick={() => downloadPsvReport()}
+                    disabled={isGenerating}
+                    sx={{ ml: 1 }}
+                >
+                    {isGenerating ? 'Generating...' : 'Download Report'}
                 </Button>
             </Box>
 

@@ -514,7 +514,12 @@ class LocalStorageService {
 
     async deleteProtectiveSystem(id: string): Promise<void> {
         const psvs = await this.getProtectiveSystems();
-        setItem(STORAGE_KEYS.PSVS, psvs.filter(p => p.id !== id));
+        this.saveData('protectiveSystems', psvs.filter(p => p.id !== id));
+    }
+
+    getPsvReportUrl(psvId: string): string {
+        // Local storage doesn't have a backend endpoint
+        return '#';
     }
 
     // --- Scenarios ---

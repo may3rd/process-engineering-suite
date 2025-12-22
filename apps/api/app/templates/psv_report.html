@@ -1,0 +1,169 @@
+{% extends "base_report.html" %}
+
+{% block content %}
+<h1>PSV Sizing Report - {{ psv.tag }}</h1>
+
+<h2>Project Information</h2>
+<table class="table-4-col">
+    <tr>
+        <td class="label-cell">Customer</td>
+...
+<div class="summary-box">
+    <h2>Protective System Details</h2>
+    <table class="table-4-col">
+        <tr>
+            <td class="label-cell">Tag Number</td>
+...
+<h2>Overpressure Scenario</h2>
+<table class="table-4-col">
+    <tr>
+        <td class="label-cell">Governing Case</td>
+...
+{% set sizing_case = results.get('sizing_case') or results.get('sizingCase') or {} %}
+<h2>Sizing Results ({{ sizing_case.get('standard') or 'API 520' }})</h2>
+<table class="table-4-col">
+    <tr>
+        <td class="label-cell">Sizing Method</td>
+        <td class="value-cell">{{ (sizing_case.get('method') or 'N/A') | title }}</td>
+        <td class="label-cell">Status</td>
+        <td class="value-cell">{{ (sizing_case.get('status') or 'N/A') | title }}</td>
+    </tr>
+</table>
+
+<table>
+    <thead>
+        <tr>
+            <th>Parameter</th>
+            <th>Calculated Value</th>
+            <th>Unit</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Required Area</td>
+            <td>{{ results.get('required_area') or results.get('requiredArea') }}</td>
+            <td>mm²</td>
+        </tr>
+        <tr>
+            <td>Selected Orifice</td>
+            <td>{{ results.get('selected_orifice') or results.get('selectedOrifice') }}</td>
+            <td>-</td>
+        </tr>
+        <tr>
+            <td>Calculated Capacity</td>
+            <td>{{ results.get('rated_capacity') or results.get('ratedCapacity') }}</td>
+            <td>kg/h</td>
+        </tr>
+    </tbody>
+</table>
+
+{% set outputs = sizing_case.get('outputs') or {} %}
+{% if outputs %}
+<h3>Calculation Factors</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Factor</th>
+            <th>Value</th>
+            <th>Description</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% if outputs.get('Kd') %}
+        <tr>
+            <td>Kd</td>
+            <td>{{ outputs.get('Kd') }}</td>
+            <td>Effective coefficient of discharge</td>
+        </tr>
+        {% endif %}
+        {% if outputs.get('Kb') %}
+        <tr>
+            <td>Kb</td>
+            <td>{{ outputs.get('Kb') }}</td>
+            <td>Back pressure correction factor</td>
+        </tr>
+        {% endif %}
+        {% if outputs.get('Kc') %}
+        <tr>
+            <td>Kc</td>
+            <td>{{ outputs.get('Kc') }}</td>
+            <td>Combination correction factor</td>
+        </tr>
+        {% endif %}
+        {% if outputs.get('Kn') %}
+        <tr>
+            <td>Kn</td>
+            <td>{{ outputs.get('Kn') }}</td>
+            <td>Napier correction factor</td>
+        </tr>
+        {% endif %}
+    </tbody>
+</table>
+{% endif %}
+
+<h2>Hydraulic Results</h2>
+
+{% if inlet_network %}
+<h3>Inlet Piping</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Segment</th>
+            <th>Diameter (mm)</th>
+            <th>Length (m)</th>
+            <th>dP (bar)</th>
+            <th>Mach No.</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for segment in inlet_network.segments %}
+        <tr>
+            <td>{{ segment.description or segment.id }}</td>
+            <td>{{ segment.diameter }}</td>
+            <td>{{ segment.length }}</td>
+            <td>{{ segment.pressure_drop | default(segment.pressureDrop) }}</td>
+            <td>{{ segment.mach_number | default(segment.machNumber) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No inlet hydraulic data available.</p>
+{% endif %}
+
+{% if outlet_network %}
+<h3>Outlet Piping</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Segment</th>
+            <th>Diameter (mm)</th>
+            <th>Length (m)</th>
+            <th>dP (bar)</th>
+            <th>Mach No.</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for segment in outlet_network.segments %}
+        <tr>
+            <td>{{ segment.description or segment.id }}</td>
+            <td>{{ segment.diameter }}</td>
+            <td>{{ segment.length }}</td>
+            <td>{{ segment.pressure_drop | default(segment.pressureDrop) }}</td>
+            <td>{{ segment.mach_number | default(segment.machNumber) }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% else %}
+<p>No outlet hydraulic data available.</p>
+{% endif %}
+
+{% if warnings %}
+<h2>Warnings</h2>
+{% for warning in warnings %}
+<div class="warning">{{ warning }}</div>
+{% endfor %}
+{% endif %}
+
+{% endblock %}

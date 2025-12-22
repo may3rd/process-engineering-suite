@@ -261,6 +261,17 @@ class ApiClient {
         await this.request(`/psv/${id}`, { method: 'DELETE' });
     }
 
+    getPsvReportUrl(psvId: string): string {
+        const url = `${API_BASE_URL}/psv/${psvId}/report`;
+        if (this.token) {
+            // Append token as query param if needed for direct browser download, 
+            // though standard is header. For StreamingResponse, browser usually 
+            // needs a link or we use blob.
+            return `${url}?token=${this.token}`;
+        }
+        return url;
+    }
+
     // --- Scenarios ---
 
     async getScenarios(psvId: string): Promise<Scenario[]> {

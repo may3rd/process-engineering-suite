@@ -1,0 +1,8 @@
+{
+  "track_id": "psv_pdf_report_20251222",
+  "type": "feature",
+  "status": "new",
+  "created_at": "2025-12-22T10:00:00Z",
+  "updated_at": "2025-12-22T10:00:00Z",
+  "description": "Implement PDF report generation for PSV sizing cases, including summary tables and hydraulic results."
+}
