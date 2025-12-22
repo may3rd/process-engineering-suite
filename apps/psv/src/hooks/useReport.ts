@@ -53,6 +53,8 @@ export function useReport() {
                 warnings: [] 
             };
 
+            console.log('DEBUG: Report Payload:', payload);
+
             // 2. Send POST Request to the new stateless endpoint
             const url = `${API_BASE_URL}/reports/psv`;
             const token = localStorage.getItem('accessToken');

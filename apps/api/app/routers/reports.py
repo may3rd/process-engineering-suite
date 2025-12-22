@@ -28,6 +28,8 @@ async def generate_psv_report(
     report_service: REPORT_SERVICE
 ):
     """Generate a PSV report PDF from provided data."""
+    logger.info(f"DEBUG: Received report request for tag: {request.psv.get('tag')}")
+    logger.debug(f"DEBUG: Full Request Data: {request.model_dump()}")
     try:
         # Render HTML
         html_content = report_service.render_psv_report(
