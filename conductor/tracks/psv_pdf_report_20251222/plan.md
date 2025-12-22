@@ -23,7 +23,7 @@ Implement the actual content of the report.
 ## Phase 3: Frontend Integration
 Connect the UI to the backend endpoint.
 
-- [ ] Task: Create a `useReport` hook for handling report generation state
+- [~] Task: Create a `useReport` hook for handling report generation state
 - [ ] Task: Add the "Download Report" button to the `SummaryTab` in the PSV application
 - [ ] Task: Implement error handling and loading indicators for the download process
 - [ ] Task: Perform final verification of data consistency between UI and PDF
