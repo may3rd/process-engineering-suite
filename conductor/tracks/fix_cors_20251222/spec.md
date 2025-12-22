@@ -12,5 +12,5 @@ The user is encountering CORS errors when accessing the API from the frontend ap
 
 ## Requirements
 - Update `allow_origins` to include all relevant ports.
-- Consider allowing all origins (`*`) for local development to prevent future friction, or stick to specific ports if strictness is required (but it's local dev).
-- Confirm middleware placement.
+- Add `127.0.0.1` variants.
+- Ensure middleware is applied correctly.
