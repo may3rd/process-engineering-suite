@@ -25,6 +25,6 @@ Connect the UI to the backend endpoint.
 
 - [x] Task: Create a `useReport` hook for handling report generation state [commit: 3170e47]
 - [x] Task: Add the "Download Report" button to the `SummaryTab` in the PSV application [commit: 832bb98]
-- [ ] Task: Implement error handling and loading indicators for the download process
+- [~] Task: Implement error handling and loading indicators for the download process
 - [ ] Task: Perform final verification of data consistency between UI and PDF
 - [ ] Task: Conductor - User Manual Verification 'Phase 3: Frontend Integration' (Protocol in workflow.md)
