@@ -19,25 +19,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 
-from .schemas import (
-    PipeSectionRequest,
-    CalculationResponse,
-    PressureDropResponse,
-    ResultSummaryResponse,
-    StatePointResponse,
-    FittingBreakdownResponse,
-    LengthEstimationRequest,
-    LengthEstimationResponse,
-)
-from packages.hydraulics.src.models.pipe_section import Fitting, PipeSection
-from packages.hydraulics.src.models.components import ControlValve, Orifice
-from packages.hydraulics.src.models.fluid import Fluid
-from packages.hydraulics.src.models.network import Network
-from packages.hydraulics.src.solver.network_solver import NetworkSolver
-from packages.hydraulics.src.utils.units import convert
-from packages.hydraulics.src.models.results import CalculationOutput, ResultSummary, StatePoint, PressureDropDetails
-from packages.hydraulics.src.single_edge import EdgeCalculationInput, calculate_single_edge
-from .schemas import (
+from apps.api.schemas import (
     PipeSectionRequest,
     CalculationResponse,
     PressureDropResponse,
@@ -52,7 +34,14 @@ from .schemas import (
     InletValidationResponse,
     FluidRequest,
 )
-
+from packages.hydraulics.src.models.pipe_section import Fitting, PipeSection
+from packages.hydraulics.src.models.components import ControlValve, Orifice
+from packages.hydraulics.src.models.fluid import Fluid
+from packages.hydraulics.src.models.network import Network
+from packages.hydraulics.src.solver.network_solver import NetworkSolver
+from packages.hydraulics.src.utils.units import convert
+from packages.hydraulics.src.models.results import CalculationOutput, ResultSummary, StatePoint, PressureDropDetails
+from packages.hydraulics.src.single_edge import EdgeCalculationInput, calculate_single_edge
 
 app = FastAPI(
     title="Process Engineering Suite API",
@@ -61,7 +50,7 @@ app = FastAPI(
 )
 
 # Include data routers (PSV data, hierarchy, auth, etc.)
-from .app.routers import hierarchy_router, psv_router, supporting_router, admin_router, auth_router, revisions_router, audit_router
+from apps.api.app.routers import hierarchy_router, psv_router, supporting_router, admin_router, auth_router, revisions_router, audit_router
 
 app.include_router(hierarchy_router)
 app.include_router(psv_router)
