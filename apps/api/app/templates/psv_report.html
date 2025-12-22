@@ -3,19 +3,42 @@
 {% block content %}
 <h1>PSV Sizing Report - {{ psv.tag }}</h1>
 
+<h2>Project Information</h2>
+<table>
+    <tr>
+        <td class="label-cell">Customer</td>
+        <td class="value-cell">{{ hierarchy.customer.name }}</td>
+        <td class="label-cell">Plant</td>
+        <td class="value-cell">{{ hierarchy.plant.name }}</td>
+    </tr>
+    <tr>
+        <td class="label-cell">Unit</td>
+        <td class="value-cell">{{ hierarchy.unit.name }}</td>
+        <td class="label-cell">Area</td>
+        <td class="value-cell">{{ hierarchy.area.name }}</td>
+    </tr>
+</table>
+
 <div class="summary-box">
+    <h2>Protective System Details</h2>
     <table>
         <tr>
             <td class="label-cell">Tag Number</td>
             <td class="value-cell">{{ psv.tag }}</td>
             <td class="label-cell">Service</td>
-            <td class="value-cell">{{ psv.service }}</td>
+            <td class="value-cell">{{ psv.service or psv.service_fluid }}</td>
         </tr>
         <tr>
             <td class="label-cell">Manufacturer</td>
             <td class="value-cell">{{ psv.manufacturer | default("N/A") }}</td>
             <td class="label-cell">Model</td>
             <td class="value-cell">{{ psv.model | default("N/A") }}</td>
+        </tr>
+        <tr>
+            <td class="label-cell">Set Pressure</td>
+            <td class="value-cell">{{ psv.set_pressure }} barg</td>
+            <td class="label-cell">Status</td>
+            <td class="value-cell">{{ psv.status | upper }}</td>
         </tr>
     </table>
 </div>
@@ -24,17 +47,50 @@
 <table>
     <tr>
         <td class="label-cell">Governing Case</td>
-        <td class="value-cell">{{ scenario.name }}</td>
+        <td class="value-cell" colspan="3">{{ scenario.name or scenario.cause }}</td>
+    </tr>
+    <tr>
+        <td class="label-cell">Description</td>
+        <td class="value-cell" colspan="3">{{ scenario.description | default("N/A") }}</td>
     </tr>
     <tr>
         <td class="label-cell">Fluid Name</td>
-        <td class="value-cell">{{ scenario.fluid_name }}</td>
+        <td class="value-cell">{{ scenario.fluid_name or scenario.service_fluid }}</td>
+        <td class="label-cell">Fluid Phase</td>
+        <td class="value-cell">{{ scenario.phase | title }}</td>
+    </tr>
+    <tr>
+        <td class="label-cell">Relieving Temp</td>
+        <td class="value-cell">{{ scenario.relieving_temp or scenario.relievingTemp }} °C</td>
+        <td class="label-cell">Relieving Pressure</td>
+        <td class="value-cell">{{ scenario.relieving_pressure or scenario.relievingPressure }} barg</td>
     </tr>
     <tr>
         <td class="label-cell">Required Flow Rate</td>
-        <td class="value-cell">{{ scenario.required_flow }} kg/h</td>
+        <td class="value-cell">{{ scenario.relieving_rate or scenario.relievingRate }} kg/h</td>
+        <td class="label-cell">Accumulation</td>
+        <td class="value-cell">{{ scenario.accumulation_pct or scenario.accumulationPct }} %</td>
     </tr>
 </table>
+
+{% if scenario.assumptions %}
+<h3>Assumptions & Code References</h3>
+<ul>
+    {% for assumption in scenario.assumptions %}
+    <li>{{ assumption }}</li>
+    {% endfor %}
+    {% for ref in scenario.code_refs or scenario.codeRefs %}
+    <li>Reference: {{ ref }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+
+{% if scenario.case_consideration or scenario.caseConsideration %}
+<h3>Case Consideration</h3>
+<div style="font-style: italic; background-color: #fcfcfc; padding: 10px; border: 1px solid #eee;">
+    {{ scenario.case_consideration or scenario.caseConsideration }}
+</div>
+{% endif %}
 
 <h2>Sizing Results (API 520)</h2>
 <table>
