@@ -20,11 +20,11 @@ Implement the actual content of the report.
 - [x] Task: Add branding (logo) and professional styling to the PDF [commit: f47abc3]
 - [x] Task: Conductor - User Manual Verification 'Phase 2: Detailed Report Sections' (Protocol in workflow.md) [commit: d09f329]
 
-## Phase 3: Frontend Integration
+## Phase 3: Frontend Integration [checkpoint: 6a3a8a6]
 Connect the UI to the backend endpoint.
 
 - [x] Task: Create a `useReport` hook for handling report generation state [commit: 3170e47]
 - [x] Task: Add the "Download Report" button to the `SummaryTab` in the PSV application [commit: 832bb98]
 - [x] Task: Implement error handling and loading indicators for the download process [commit: c1454cd]
-- [ ] Task: Perform final verification of data consistency between UI and PDF
-- [ ] Task: Conductor - User Manual Verification 'Phase 3: Frontend Integration' (Protocol in workflow.md)
+- [x] Task: Perform final verification of data consistency between UI and PDF [commit: ccd9720]
+- [x] Task: Conductor - User Manual Verification 'Phase 3: Frontend Integration' (Protocol in workflow.md) [commit: 6a3a8a6]
