@@ -105,6 +105,18 @@ class DatabaseService(DataAccessLayer):
     async def get_projects_by_area(self, area_id: str) -> List[dict]:
         return await self._get_all(Project, Project.area_id == area_id)
 
+    async def get_area_by_id(self, area_id: str) -> Optional[dict]:
+        return await self._get_by_id(Area, area_id)
+
+    async def get_unit_by_id(self, unit_id: str) -> Optional[dict]:
+        return await self._get_by_id(Unit, unit_id)
+
+    async def get_plant_by_id(self, plant_id: str) -> Optional[dict]:
+        return await self._get_by_id(Plant, plant_id)
+
+    async def get_customer_by_id(self, customer_id: str) -> Optional[dict]:
+        return await self._get_by_id(Customer, customer_id)
+
     async def create_customer(self, data: dict) -> dict:
         converted_data = self._convert_keys(data)
         return await self._create(Customer, converted_data)

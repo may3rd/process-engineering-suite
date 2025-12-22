@@ -101,6 +101,30 @@ class MockService(DataAccessLayer):
     
     async def get_projects_by_area(self, area_id: str) -> List[dict]:
         return [p for p in self._data.get("projects", []) if p["areaId"] == area_id]
+
+    async def get_area_by_id(self, area_id: str) -> Optional[dict]:
+        for area in self._data.get("areas", []):
+            if area["id"] == area_id:
+                return area
+        return None
+
+    async def get_unit_by_id(self, unit_id: str) -> Optional[dict]:
+        for unit in self._data.get("units", []):
+            if unit["id"] == unit_id:
+                return unit
+        return None
+
+    async def get_plant_by_id(self, plant_id: str) -> Optional[dict]:
+        for plant in self._data.get("plants", []):
+            if plant["id"] == plant_id:
+                return plant
+        return None
+
+    async def get_customer_by_id(self, customer_id: str) -> Optional[dict]:
+        for customer in self._data.get("customers", []):
+            if customer["id"] == customer_id:
+                return customer
+        return None
     
     # --- Protective Systems (PSV) ---
     

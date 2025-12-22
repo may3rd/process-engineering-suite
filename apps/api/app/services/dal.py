@@ -64,6 +64,26 @@ class DataAccessLayer(ABC):
     async def get_projects_by_area(self, area_id: str) -> List[dict]:
         """Get projects for an area."""
         pass
+
+    @abstractmethod
+    async def get_area_by_id(self, area_id: str) -> Optional[dict]:
+        """Get area by ID."""
+        pass
+
+    @abstractmethod
+    async def get_unit_by_id(self, unit_id: str) -> Optional[dict]:
+        """Get unit by ID."""
+        pass
+
+    @abstractmethod
+    async def get_plant_by_id(self, plant_id: str) -> Optional[dict]:
+        """Get plant by ID."""
+        pass
+
+    @abstractmethod
+    async def get_customer_by_id(self, customer_id: str) -> Optional[dict]:
+        """Get customer by ID."""
+        pass
     
     # --- Protective Systems (PSV) ---
     
