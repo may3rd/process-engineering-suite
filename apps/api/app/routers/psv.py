@@ -2,10 +2,11 @@
 from typing import List, Optional, Literal
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
-from ..dependencies import DAL
+from ..dependencies import DAL, REPORT_SERVICE, PSV_DATA_SERVICE
 
 router = APIRouter(prefix="/psv", tags=["psv"])
 
@@ -204,6 +205,46 @@ async def get_protective_system(psv_id: str, dal: DAL):
     if not psv:
         raise HTTPException(status_code=404, detail="PSV not found")
     return psv
+
+
+@router.get("/{psv_id}/report")
+async def get_psv_report(
+    psv_id: str,
+    data_service: PSV_DATA_SERVICE,
+    report_service: REPORT_SERVICE
+):
+    """Generate and download a professional PSV sizing report as PDF."""
+    try:
+        # 1. Aggregate data
+        report_data = await data_service.get_psv_report_data(psv_id)
+        
+        # 2. Render HTML
+        html_content = report_service.render_psv_report(
+            psv=report_data["psv"],
+            scenario=report_data["scenario"],
+            results=report_data["results"],
+            hierarchy=report_data["hierarchy"],
+            project_name=report_data["project_name"]
+        )
+        
+        # 3. Generate PDF
+        pdf_buffer = report_service.generate_pdf(html_content)
+        
+        # 4. Return as StreamingResponse
+        filename = f"PSV_Report_{report_data['psv'].get('tag', psv_id)}.pdf"
+        return StreamingResponse(
+            pdf_buffer,
+            media_type="application/pdf",
+            headers={"Content-Disposition": f"attachment; filename={filename}"}
+        )
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+    except Exception as e:
+        import traceback
+        import logging
+        logging.error(f"Error generating PDF report: {e}")
+        logging.error(traceback.format_exc())
+        raise HTTPException(status_code=500, detail="Failed to generate PDF report")
 
 
 @router.post("", response_model=ProtectiveSystemResponse)

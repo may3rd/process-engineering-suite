@@ -1,6 +1,8 @@
 import os
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from datetime import datetime
+from weasyprint import HTML, CSS
+from io import BytesIO
 
 class ReportService:
     def __init__(self):
@@ -11,7 +13,7 @@ class ReportService:
             autoescape=select_autoescape(['html', 'xml'])
         )
 
-    def render_psv_report(self, psv, scenario, results, project_name=None, current_date=None, warnings=None):
+    def render_psv_report(self, psv, scenario, results, project_name=None, current_date=None, warnings=None, hierarchy=None):
         if not current_date:
             current_date = datetime.now().strftime("%Y-%m-%d")
             
@@ -22,5 +24,16 @@ class ReportService:
             results=results,
             project_name=project_name,
             current_date=current_date,
-            warnings=warnings
+            warnings=warnings,
+            hierarchy=hierarchy
         )
+
+    def generate_pdf(self, html_content: str) -> BytesIO:
+        """Convert HTML content to a professional PDF using WeasyPrint."""
+        pdf_buffer = BytesIO()
+        # Create HTML object from string
+        html = HTML(string=html_content)
+        # Generate PDF into the buffer
+        html.write_pdf(pdf_buffer)
+        pdf_buffer.seek(0)
+        return pdf_buffer
