@@ -4,13 +4,14 @@ FROM python:3.10-slim as builder
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
+    unzip \
     gnupg \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js 20
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
-    apt-get install -y nodejs
+# Install Bun
+RUN curl -fsSL https://bun.sh/install | bash
+ENV PATH="/root/.bun/bin:${PATH}"
 
 # Install Supervisor
 RUN pip install supervisor
@@ -19,33 +20,38 @@ WORKDIR /app
 
 # 1. Install Dependencies
 # Copy package manifests first for caching
-COPY package.json package-lock.json turbo.json ./
+COPY package.json bun.lock turbo.json ./
 # Copy minimal app/package structure for turbo pruning (simplified here: copy config files)
 COPY apps/web/package.json apps/web/
 COPY apps/network-editor/package.json apps/network-editor/
+COPY apps/psv/package.json apps/psv/
+COPY apps/docs/package.json apps/docs/
 COPY apps/api/requirements.txt apps/api/
 COPY packages/ui-kit/package.json packages/ui-kit/
 COPY packages/physics-engine/package.json packages/physics-engine/
+COPY packages/api-std/package.json packages/api-std/
+COPY packages/vessels/package.json packages/vessels/
+COPY packages/tsconfig/ packages/tsconfig/
 # Note: In a real robust setup we'd use 'turbo prune', but for now we copy manifests manually 
 # or just copy everything if the repo isn't huge. Given context constraints, let's copy root manifests.
-# To be safe and simple: Copy everything now, npm install, then build.
+# To be safe and simple: Copy everything now, bun install, then build.
 # Optimization: Just copy root deps first if possible, but monorepo linking requires packages.
 
 # Copy entire repo
 COPY . .
 
-# Install Node Dependencies
-RUN npm install
+# Install Node Dependencies with Bun
+RUN bun install --frozen-lockfile
 
 # Install Python Dependencies
 RUN pip install --no-cache-dir -r apps/api/requirements.txt
 
 # 2. Build Apps
 # Build all apps/packages via Turbo
-RUN npm run build
+RUN bun run build
 
 # 3. Cleanup (Optional - remove devDependencies if we want smaller image, but turbo needs some)
-# RUN npm prune --production # Pruning in monorepos can be tricky, skipping for safety.
+# RUN bun prune --production # Pruning in monorepos can be tricky, skipping for safety.
 
 # Expose ports
 EXPOSE 3000 3001 3002 3003 8000
