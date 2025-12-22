@@ -11,14 +11,14 @@ Focus on setting up the PDF generation engine and creating the report layout.
 - [x] Task: Create a basic PDF generation endpoint `GET /psv/{psv_id}/report` [commit: e0efa5f]
 - [x] Task: Conductor - User Manual Verification 'Phase 1: Backend Infrastructure & Template' (Protocol in workflow.md) [commit: cacae7b]
 
-## Phase 2: Detailed Report Sections
+## Phase 2: Detailed Report Sections [checkpoint: d09f329]
 Implement the actual content of the report.
 
 - [x] Task: Implement the "Process Data & Scenario" section in the PDF [commit: c7788d1]
 - [x] Task: Implement the "Sizing Calculations" section (API 520 results) [commit: 91414b2]
 - [x] Task: Implement the "Hydraulic Results" section (Inlet/Outlet pressure drops) [commit: fe7e834]
 - [x] Task: Add branding (logo) and professional styling to the PDF [commit: f47abc3]
-- [ ] Task: Conductor - User Manual Verification 'Phase 2: Detailed Report Sections' (Protocol in workflow.md)
+- [x] Task: Conductor - User Manual Verification 'Phase 2: Detailed Report Sections' (Protocol in workflow.md) [commit: d09f329]
 
 ## Phase 3: Frontend Integration
 Connect the UI to the backend endpoint.
