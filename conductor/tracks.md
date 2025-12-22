@@ -4,5 +4,5 @@ This file tracks all major tracks for the project. Each track has its own detail
 
 ---
 
-## [ ] Track: Implement PDF report generation for PSV sizing cases
-*Link: [./conductor/tracks/psv_pdf_report_20251222/](./conductor/tracks/psv_pdf_report_20251222/)*
+## [ ] Track: Fix CORS issues for local development
+*Link: [./conductor/tracks/fix_cors_20251222/](./conductor/tracks/fix_cors_20251222/)*
