@@ -17,7 +17,7 @@ Implement the actual content of the report.
 - [x] Task: Implement the "Process Data & Scenario" section in the PDF [commit: c7788d1]
 - [x] Task: Implement the "Sizing Calculations" section (API 520 results) [commit: 91414b2]
 - [x] Task: Implement the "Hydraulic Results" section (Inlet/Outlet pressure drops) [commit: fe7e834]
-- [ ] Task: Add branding (logo) and professional styling to the PDF
+- [~] Task: Add branding (logo) and professional styling to the PDF
 - [ ] Task: Conductor - User Manual Verification 'Phase 2: Detailed Report Sections' (Protocol in workflow.md)
 
 ## Phase 3: Frontend Integration
