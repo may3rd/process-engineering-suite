@@ -16,26 +16,26 @@ router = APIRouter(prefix="/psv", tags=["psv"])
 class ProtectiveSystemResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     id: str
-    area_id: str = Field(serialization_alias="areaId")
+    area_id: str = Field(serialization_alias="areaId", alias="areaId")
     project_ids: Optional[List[str]] = Field(default=None, serialization_alias="projectIds", alias="projectIds")
     name: str
     tag: str
     type: str
-    design_code: str = Field(serialization_alias="designCode")
-    service_fluid: Optional[str] = Field(default=None, serialization_alias="serviceFluid")
-    fluid_phase: str = Field(serialization_alias="fluidPhase")
-    set_pressure: float = Field(serialization_alias="setPressure")
-    mawp: float
-    owner_id: str = Field(serialization_alias="ownerId")
-    status: str
-    valve_type: Optional[str] = Field(default=None, serialization_alias="valveType")
+    design_code: Optional[str] = Field(default=None, serialization_alias="designCode", alias="designCode")
+    service_fluid: Optional[str] = Field(default=None, serialization_alias="serviceFluid", alias="serviceFluid")
+    fluid_phase: Optional[str] = Field(default=None, serialization_alias="fluidPhase", alias="fluidPhase")
+    set_pressure: Optional[float] = Field(default=None, serialization_alias="setPressure", alias="setPressure")
+    mawp: Optional[float] = Field(default=None)
+    owner_id: Optional[str] = Field(default=None, serialization_alias="ownerId", alias="ownerId")
+    status: Optional[str] = Field(default="draft")
+    valve_type: Optional[str] = Field(default=None, serialization_alias="valveType", alias="valveType")
     tags: List[str] = []
-    current_revision_id: Optional[str] = Field(default=None, serialization_alias="currentRevisionId")
-    inlet_network: Optional[dict] = Field(default=None, serialization_alias="inletNetwork")
-    outlet_network: Optional[dict] = Field(default=None, serialization_alias="outletNetwork")
+    current_revision_id: Optional[str] = Field(default=None, serialization_alias="currentRevisionId", alias="currentRevisionId")
+    inlet_network: Optional[dict] = Field(default=None, serialization_alias="inletNetwork", alias="inletNetwork")
+    outlet_network: Optional[dict] = Field(default=None, serialization_alias="outletNetwork", alias="outletNetwork")
     version: int = 1  # For optimistic locking / conflict detection
-    created_at: datetime = Field(serialization_alias="createdAt")
-    updated_at: datetime = Field(serialization_alias="updatedAt")
+    created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
+    updated_at: Optional[datetime] = Field(default=None, serialization_alias="updatedAt", alias="updatedAt")
 
 
 class ProtectiveSystemCreate(BaseModel):
@@ -97,23 +97,24 @@ class ProtectiveSystemUpdate(BaseModel):
 class ScenarioResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     id: str
-    protective_system_id: str = Field(serialization_alias="protectiveSystemId")
+    protective_system_id: str = Field(serialization_alias="protectiveSystemId", alias="protectiveSystemId")
     cause: str
     description: Optional[str] = None
-    relieving_temp: float = Field(serialization_alias="relievingTemp")
-    relieving_pressure: float = Field(serialization_alias="relievingPressure")
-    phase: str
-    relieving_rate: float = Field(serialization_alias="relievingRate")
-    accumulation_pct: float = Field(serialization_alias="accumulationPct")
-    required_capacity: float = Field(serialization_alias="requiredCapacity")
+    relieving_temp: Optional[float] = Field(default=None, serialization_alias="relievingTemp", alias="relievingTemp")
+    relieving_pressure: Optional[float] = Field(default=None, serialization_alias="relievingPressure", alias="relievingPressure")
+    phase: Optional[str] = Field(default=None)
+    relieving_rate: Optional[float] = Field(default=None, serialization_alias="relievingRate", alias="relievingRate")
+    accumulation_pct: Optional[float] = Field(default=None, serialization_alias="accumulationPct", alias="accumulationPct")
+    required_capacity: Optional[float] = Field(default=None, serialization_alias="requiredCapacity", alias="requiredCapacity")
     assumptions: List[str] = []
-    code_refs: List[str] = Field(default=[], serialization_alias="codeRefs")
-    is_governing: bool = Field(default=False, serialization_alias="isGoverning")
-    current_revision_id: Optional[str] = Field(default=None, serialization_alias="currentRevisionId")
+    code_refs: List[str] = Field(default=[], serialization_alias="codeRefs", alias="codeRefs")
+    is_governing: bool = Field(default=False, serialization_alias="isGoverning", alias="isGoverning")
+    current_revision_id: Optional[str] = Field(default=None, serialization_alias="currentRevisionId", alias="currentRevisionId")
     # Markdown-formatted case consideration notes shown in PSV Detail -> Scenario Section.
-    case_consideration: Optional[str] = Field(default=None, serialization_alias="caseConsideration")
-    created_at: datetime = Field(serialization_alias="createdAt")
-    updated_at: datetime = Field(serialization_alias="updatedAt")
+    case_consideration: Optional[str] = Field(default=None, serialization_alias="caseConsideration", alias="caseConsideration")
+    fire_calculation: Optional[dict] = Field(default=None, serialization_alias="fireCalculation", alias="fireCalculation")
+    created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
+    updated_at: Optional[datetime] = Field(default=None, serialization_alias="updatedAt", alias="updatedAt")
 
 
 class ScenarioCreate(BaseModel):
@@ -156,18 +157,18 @@ class ScenarioUpdate(BaseModel):
 class SizingCaseResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     id: str
-    protective_system_id: str = Field(serialization_alias="protectiveSystemId")
-    scenario_id: Optional[str] = Field(default=None, serialization_alias="scenarioId")
-    standard: str
-    method: str
+    protective_system_id: str = Field(serialization_alias="protectiveSystemId", alias="protectiveSystemId")
+    scenario_id: Optional[str] = Field(default=None, serialization_alias="scenarioId", alias="scenarioId")
+    standard: Optional[str] = Field(default=None)
+    method: Optional[str] = Field(default=None)
     inputs: dict = {}
     outputs: dict = {}
-    current_revision_id: Optional[str] = Field(default=None, serialization_alias="currentRevisionId")
-    status: str
-    created_by: str = Field(serialization_alias="createdBy")
-    approved_by: Optional[str] = Field(default=None, serialization_alias="approvedBy")
-    created_at: datetime = Field(serialization_alias="createdAt")
-    updated_at: datetime = Field(serialization_alias="updatedAt")
+    current_revision_id: Optional[str] = Field(default=None, serialization_alias="currentRevisionId", alias="currentRevisionId")
+    status: Optional[str] = Field(default="draft")
+    created_by: Optional[str] = Field(default=None, serialization_alias="createdBy", alias="createdBy")
+    approved_by: Optional[str] = Field(default=None, serialization_alias="approvedBy", alias="approvedBy")
+    created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
+    updated_at: Optional[datetime] = Field(default=None, serialization_alias="updatedAt", alias="updatedAt")
 
 
 class SizingCaseCreate(BaseModel):

@@ -24,17 +24,17 @@ class AuditLogResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     id: str
     action: str
-    entity_type: str = Field(serialization_alias="entityType")
-    entity_id: str = Field(serialization_alias="entityId")
-    entity_name: str = Field(serialization_alias="entityName")
-    user_id: str = Field(serialization_alias="userId")
-    user_name: str = Field(serialization_alias="userName")
-    user_role: Optional[str] = Field(default=None, serialization_alias="userRole")
+    entity_type: str = Field(serialization_alias="entityType", alias="entityType")
+    entity_id: str = Field(serialization_alias="entityId", alias="entityId")
+    entity_name: str = Field(serialization_alias="entityName", alias="entityName")
+    user_id: str = Field(serialization_alias="userId", alias="userId")
+    user_name: str = Field(serialization_alias="userName", alias="userName")
+    user_role: Optional[str] = Field(default=None, serialization_alias="userRole", alias="userRole")
     changes: Optional[List[dict]] = None
     description: Optional[str] = None
-    project_id: Optional[str] = Field(default=None, serialization_alias="projectId")
-    project_name: Optional[str] = Field(default=None, serialization_alias="projectName")
-    created_at: datetime = Field(serialization_alias="createdAt")
+    project_id: Optional[str] = Field(default=None, serialization_alias="projectId", alias="projectId")
+    project_name: Optional[str] = Field(default=None, serialization_alias="projectName", alias="projectName")
+    created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
 
 
 class AuditLogCreate(BaseModel):

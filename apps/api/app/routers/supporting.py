@@ -15,35 +15,35 @@ router = APIRouter(tags=["supporting"])
 class EquipmentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     id: str
-    area_id: str = Field(serialization_alias="areaId")
+    area_id: str = Field(serialization_alias="areaId", alias="areaId")
     type: str
     tag: str
     name: str
     description: Optional[str] = None
-    design_pressure: Optional[float] = Field(default=None, serialization_alias="designPressure")
-    design_pressure_unit: Optional[str] = Field(default="barg", serialization_alias="designPressureUnit")
+    design_pressure: Optional[float] = Field(default=None, serialization_alias="designPressure", alias="designPressure")
+    design_pressure_unit: Optional[str] = Field(default="barg", serialization_alias="designPressureUnit", alias="designPressureUnit")
     mawp: Optional[float] = None
-    mawp_unit: Optional[str] = Field(default="barg", serialization_alias="mawpUnit")
-    design_temp: Optional[float] = Field(default=None, serialization_alias="designTemperature")
-    design_temp_unit: Optional[str] = Field(default="C", serialization_alias="designTempUnit")
-    owner_id: str = Field(serialization_alias="ownerId")
-    status: str
-    location_ref: Optional[str] = Field(default=None, serialization_alias="locationRef")
+    mawp_unit: Optional[str] = Field(default="barg", serialization_alias="mawpUnit", alias="mawpUnit")
+    design_temp: Optional[float] = Field(default=None, serialization_alias="designTemperature", alias="designTemperature")
+    design_temp_unit: Optional[str] = Field(default="C", serialization_alias="designTempUnit", alias="designTempUnit")
+    owner_id: Optional[str] = Field(default=None, serialization_alias="ownerId", alias="ownerId")
+    status: Optional[str] = Field(default="active")
+    location_ref: Optional[str] = Field(default=None, serialization_alias="locationRef", alias="locationRef")
     details: Optional[dict] = None
-    created_at: datetime = Field(serialization_alias="createdAt")
-    updated_at: datetime = Field(serialization_alias="updatedAt")
+    created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
+    updated_at: Optional[datetime] = Field(default=None, serialization_alias="updatedAt", alias="updatedAt")
 
 
 class EquipmentLinkResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     id: str
-    protective_system_id: str = Field(serialization_alias="protectiveSystemId")
-    equipment_id: str = Field(serialization_alias="equipmentId")
-    is_primary: bool = Field(default=False, serialization_alias="isPrimary")
-    scenario_id: Optional[str] = Field(default=None, serialization_alias="scenarioId")
-    relationship_type: str = Field(serialization_alias="relationship")
+    protective_system_id: str = Field(serialization_alias="protectiveSystemId", alias="protectiveSystemId")
+    equipment_id: str = Field(serialization_alias="equipmentId", alias="equipmentId")
+    is_primary: bool = Field(default=False, serialization_alias="isPrimary", alias="isPrimary")
+    scenario_id: Optional[str] = Field(default=None, serialization_alias="scenarioId", alias="scenarioId")
+    relationship_type: str = Field(default="protects", serialization_alias="relationship", alias="relationship")
     notes: Optional[str] = None
-    created_at: datetime = Field(serialization_alias="createdAt")
+    created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
 
 
 class EquipmentLinkCreate(BaseModel):
@@ -61,13 +61,13 @@ class EquipmentLinkCreate(BaseModel):
 class AttachmentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     id: str
-    protective_system_id: str = Field(serialization_alias="protectiveSystemId")
-    file_uri: str = Field(serialization_alias="fileUri")
-    file_name: str = Field(serialization_alias="fileName")
-    mime_type: str = Field(serialization_alias="mimeType")
+    protective_system_id: str = Field(serialization_alias="protectiveSystemId", alias="protectiveSystemId")
+    file_uri: str = Field(serialization_alias="fileUri", alias="fileUri")
+    file_name: str = Field(serialization_alias="fileName", alias="fileName")
+    mime_type: str = Field(serialization_alias="mimeType", alias="mimeType")
     size: int
-    uploaded_by: str = Field(serialization_alias="uploadedBy")
-    created_at: datetime = Field(serialization_alias="createdAt")
+    uploaded_by: str = Field(serialization_alias="uploadedBy", alias="uploadedBy")
+    created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
 
 
 class AttachmentCreate(BaseModel):
@@ -85,12 +85,12 @@ class AttachmentCreate(BaseModel):
 class CommentResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     id: str
-    protective_system_id: str = Field(serialization_alias="protectiveSystemId")
+    protective_system_id: str = Field(serialization_alias="protectiveSystemId", alias="protectiveSystemId")
     body: str
-    created_by: str = Field(serialization_alias="createdBy")
-    created_at: datetime = Field(serialization_alias="createdAt")
-    updated_at: Optional[datetime] = Field(default=None, serialization_alias="updatedAt")
-    updated_by: Optional[str] = Field(default=None, serialization_alias="updatedBy")
+    created_by: str = Field(serialization_alias="createdBy", alias="createdBy")
+    created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
+    updated_at: Optional[datetime] = Field(default=None, serialization_alias="updatedAt", alias="updatedAt")
+    updated_by: Optional[str] = Field(default=None, serialization_alias="updatedBy", alias="updatedBy")
 
 
 class CommentCreate(BaseModel):
@@ -111,12 +111,12 @@ class CommentUpdate(BaseModel):
 class ProjectNoteResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     id: str
-    protective_system_id: str = Field(serialization_alias="protectiveSystemId")
+    protective_system_id: str = Field(serialization_alias="protectiveSystemId", alias="protectiveSystemId")
     body: str
-    created_by: str = Field(serialization_alias="createdBy")
-    created_at: datetime = Field(serialization_alias="createdAt")
-    updated_by: Optional[str] = Field(default=None, serialization_alias="updatedBy")
-    updated_at: Optional[datetime] = Field(default=None, serialization_alias="updatedAt")
+    created_by: str = Field(serialization_alias="createdBy", alias="createdBy")
+    created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
+    updated_by: Optional[str] = Field(default=None, serialization_alias="updatedBy", alias="updatedBy")
+    updated_at: Optional[datetime] = Field(default=None, serialization_alias="updatedAt", alias="updatedAt")
 
 
 class ProjectNoteCreate(BaseModel):
@@ -137,13 +137,13 @@ class ProjectNoteUpdate(BaseModel):
 class TodoResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
     id: str
-    protective_system_id: str = Field(serialization_alias="protectiveSystemId")
+    protective_system_id: str = Field(serialization_alias="protectiveSystemId", alias="protectiveSystemId")
     text: str
     completed: bool = False
-    assigned_to: Optional[str] = Field(default=None, serialization_alias="assignedTo")
-    due_date: Optional[date] = Field(default=None, serialization_alias="dueDate")
-    created_by: str = Field(serialization_alias="createdBy")
-    created_at: datetime = Field(serialization_alias="createdAt")
+    assigned_to: Optional[str] = Field(default=None, serialization_alias="assignedTo", alias="assignedTo")
+    due_date: Optional[date] = Field(default=None, serialization_alias="dueDate", alias="dueDate")
+    created_by: str = Field(serialization_alias="createdBy", alias="createdBy")
+    created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
 
 
 class TodoCreate(BaseModel):
