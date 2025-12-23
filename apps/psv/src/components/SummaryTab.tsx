@@ -21,16 +21,12 @@ import {
     Alert,
 } from "@mui/material";
 import {
-    Print,
     Business,
     AttachFile,
     Star,
     PictureAsPdf,
-    Download,
 } from "@mui/icons-material";
-import { CircularProgress } from "@mui/material";
 import { generatePsvSummaryPdf } from "@/lib/export/pdfExport";
-import { useReport } from "@/hooks/useReport";
 import { usePsvStore } from "@/store/usePsvStore";
 import { getUserById } from "@/data/mockData";
 import { PipelineNetwork, OverpressureScenario, PipeProps } from "@/data/types";
@@ -252,7 +248,6 @@ function summarizePipeline(
 export function SummaryTab() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
-    const { isGenerating, downloadPsvReport } = useReport();
     const {
         selectedCustomer,
         selectedPlant,
@@ -362,9 +357,7 @@ export function SummaryTab() {
         ? 'No governing scenario selected. Mark a scenario as governing to evaluate inlet/outlet hydraulics.'
         : 'Governing scenario has not been sized. Calculate a sizing case for the governing scenario to evaluate inlet/outlet hydraulics.';
 
-    const handlePrint = () => {
-        window.print();
-    };
+
 
     const handleExportPdf = () => {
         // Format revisions for export
@@ -472,31 +465,11 @@ export function SummaryTab() {
             <Box className="no-print" sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
                 <Button
                     variant="contained"
-                    startIcon={<Print />}
-                    size="small"
-                    onClick={handlePrint}
-                >
-                    Print Summary
-                </Button>
-                <Button
-                    variant="contained"
                     startIcon={<PictureAsPdf />}
                     size="small"
                     onClick={handleExportPdf}
-                    sx={{ ml: 1 }}
                 >
                     Export PDF
-                </Button>
-                <Button
-                    variant="contained"
-                    color="secondary"
-                    startIcon={isGenerating ? <CircularProgress size={16} color="inherit" /> : <Download />}
-                    size="small"
-                    onClick={() => downloadPsvReport()}
-                    disabled={isGenerating}
-                    sx={{ ml: 1 }}
-                >
-                    {isGenerating ? 'Generating...' : 'Download Report'}
                 </Button>
             </Box>
 
@@ -786,7 +759,7 @@ export function SummaryTab() {
                             <TableHead>
                                 <TableRow>
                                     <TableCell>Scenario</TableCell>
-                                    <TableCell>Method</TableCell>
+                                    <TableCell>Method / Flow Type</TableCell>
                                     <TableCell align="right">Required Area (mm²)</TableCell>
                                     <TableCell>Selected Orifice</TableCell>
                                     <TableCell align="right">% Used</TableCell>
@@ -802,7 +775,14 @@ export function SummaryTab() {
                                         <TableRow key={sizingCase.id}>
                                             <TableCell>{formatScenarioCause(scenario?.cause)}</TableCell>
                                             <TableCell sx={{ textTransform: 'capitalize' }}>
-                                                {sizingCase.method.replace('_', ' ')}
+                                                {(() => {
+                                                    if (sizingCase.method === 'liquid') return 'Liquid Relief';
+                                                    if (sizingCase.method === 'steam') return 'Steam Relief';
+                                                    if (sizingCase.method === 'gas') {
+                                                        return sizingCase.outputs?.isCriticalFlow ? 'Gas - Critical' : 'Gas - Subcritical';
+                                                    }
+                                                    return sizingCase.method.replace('_', ' ');
+                                                })()}
                                             </TableCell>
                                             <TableCell align="right">
                                                 {sizingCase.outputs?.requiredArea?.toFixed(1) ?? '—'}

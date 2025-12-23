@@ -77,7 +77,8 @@ export function CaseConsiderationPage() {
         // Navigate back and clear editing state
         usePsvStore.setState({
             currentPage: null,
-            editingScenarioId: null
+            editingScenarioId: null,
+            activeTab: 1, // Return to Scenarios tab
         });
     };
 
@@ -97,7 +98,7 @@ export function CaseConsiderationPage() {
     }
 
     return (
-        <Box sx={{ height: "calc(100vh - 120px)", display: "flex", flexDirection: "column" }}>
+        <Box sx={{ height: "calc(100vh - 210px)", display: "flex", flexDirection: "column" }}>
             {/* Header */}
             <Paper
                 elevation={0}
@@ -183,8 +184,7 @@ Reference P&IDs, datasheets, and other source documents...
 ### Conclusions
 Summary of findings and recommendations...`}
                     disabled={!canEdit}
-                    minRows={20}
-                    maxRows={40}
+                    fullHeight
                 />
             </Box>
         </Box>

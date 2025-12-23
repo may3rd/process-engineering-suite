@@ -6,14 +6,14 @@ from fastapi import Depends
 
 from .config import get_settings, Settings
 from .database import is_db_available, get_db_optional
-from .services import DataAccessLayer, MockService, DatabaseService, ReportService, PsvDataService
+from .services import DataAccessLayer, MockService, DatabaseService
 from sqlalchemy.ext.asyncio import AsyncSession
 
 logger = logging.getLogger(__name__)
 
 # Singleton instances
 _mock_service: MockService | None = None
-_report_service: ReportService | None = None
+
 
 
 async def get_dal(
@@ -52,14 +52,7 @@ async def get_dal(
 # Type alias for dependency injection
 DAL = Annotated[DataAccessLayer, Depends(get_dal)]
 
-def get_report_service() -> ReportService:
-    global _report_service
-    if _report_service is None:
-        _report_service = ReportService()
-    return _report_service
 
-def get_psv_data_service(dal: DAL) -> PsvDataService:
-    return PsvDataService(dal)
 
-REPORT_SERVICE = Annotated[ReportService, Depends(get_report_service)]
-PSV_DATA_SERVICE = Annotated[PsvDataService, Depends(get_psv_data_service)]
+
+

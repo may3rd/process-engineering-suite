@@ -400,7 +400,7 @@ export function ActivityPanel({
                                                         </Box>
                                                     )}
                                                     {log.description && !log.changes?.length && (
-                                                        <Typography variant="caption" component="span" color="text.secondary">
+                                                        <Typography variant="caption" component="span" color="text.secondary" sx={{ ml: 1 }}>
                                                             {log.description}
                                                         </Typography>
                                                     )}

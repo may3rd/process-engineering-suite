@@ -1308,11 +1308,21 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                                             </Box>
                                             <Box>
                                                 <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>Flow Type</Typography>
-                                                <Chip
-                                                    label={sizing.outputs?.isCriticalFlow ? 'Critical' : 'Subcritical'}
-                                                    size="small"
-                                                    color={sizing.outputs?.isCriticalFlow ? 'success' : 'info'}
-                                                />
+                                                {(() => {
+                                                    if (sizing.method === 'liquid') {
+                                                        return <Chip label="Liquid Relief" size="small" color="info" />;
+                                                    }
+                                                    if (sizing.method === 'steam') {
+                                                        return <Chip label="Steam Relief" size="small" color="warning" />;
+                                                    }
+                                                    return (
+                                                        <Chip
+                                                            label={sizing.outputs?.isCriticalFlow ? 'Critical' : 'Subcritical'}
+                                                            size="small"
+                                                            color={sizing.outputs?.isCriticalFlow ? 'success' : 'info'}
+                                                        />
+                                                    );
+                                                })()}
                                             </Box>
                                         </Box>
                                     </Box>
@@ -2123,13 +2133,15 @@ export function ProtectiveSystemDetail() {
         deleteSizingCase,
         getCurrentRevision,
         loadRevisionHistory,
+        activeTab,
+        setActiveTab,
     } = usePsvStore();
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const canCheck = useAuthStore((state) => ['lead', 'approver', 'admin'].includes(state.currentUser?.role || ''));
     const canIssue = canCheck || canApprove;
-    const [activeTab, setActiveTab] = useState(0);
+    // const [activeTab, setActiveTab] = useState(0); // Removed local state
     const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");

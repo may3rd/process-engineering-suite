@@ -297,7 +297,15 @@ export function generatePsvSummaryPdf(data: PsvSummaryData) {
 
         return [
             cause,
-            c.method,
+            (() => {
+                if (c.method === 'liquid') return 'Liquid Relief';
+                if (c.method === 'steam') return 'Steam Relief';
+                if (c.method === 'gas') {
+                    // Check outputs safely
+                    return c.outputs && c.outputs.isCriticalFlow ? 'Gas - Critical' : 'Gas - Subcritical';
+                }
+                return c.method.replace('_', ' ');
+            })(),
             numValves.toString(), // Valve Count
             `${c.outputs?.selectedOrifice || '-'} (${c.outputs?.orificeArea || '-'} mm2)`,
             `${percentUsed.toFixed(1)} %`,
@@ -307,7 +315,7 @@ export function generatePsvSummaryPdf(data: PsvSummaryData) {
 
     autoTable(doc, {
         startY: finalY + 4,
-        head: [['Scenario', 'Method', 'Qty', 'Selected Orifice', 'Capacity Used', 'Status']],
+        head: [['Scenario', 'Method / Flow Type', 'Qty', 'Selected Orifice', 'Capacity Used', 'Status']],
         body: sizingRows,
         theme: 'striped',
         headStyles: { fillColor: [52, 73, 94], fontSize: 9 },

@@ -2484,10 +2484,20 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                     <Box>
                                         <Typography variant="caption" color="text.secondary">Flow Type</Typography>
                                         <Box sx={{ mt: 0.5 }}>
-                                            <Chip
-                                                label={currentCase.outputs.isCriticalFlow ? 'Critical Flow' : 'Subcritical Flow'}
-                                                color={currentCase.outputs.isCriticalFlow ? 'success' : 'info'}
-                                            />
+                                            {(() => {
+                                                if (currentCase.method === 'liquid') {
+                                                    return <Chip label="Liquid Relief" color="info" />;
+                                                }
+                                                if (currentCase.method === 'steam') {
+                                                    return <Chip label="Steam Relief" color="warning" />;
+                                                }
+                                                return (
+                                                    <Chip
+                                                        label={currentCase.outputs.isCriticalFlow ? 'Critical Flow' : 'Subcritical Flow'}
+                                                        color={currentCase.outputs.isCriticalFlow ? 'success' : 'info'}
+                                                    />
+                                                );
+                                            })()}
                                         </Box>
                                     </Box>
                                     <Box>

@@ -23,7 +23,15 @@ import { toast } from '@/lib/toast';
 import { createAuditLog, detectChanges } from '@/lib/auditLogService';
 import { useAuthStore } from '@/store/useAuthStore';
 import { useConflictStore, checkVersionConflict } from '@/store/useConflictStore';
+import { users } from '@/data/mockData';
 
+// Helper to resolve user name from ID
+const getUserName = (userId: string | null | undefined, currentUser?: any) => {
+    if (!userId) return '(empty)';
+    if (currentUser && currentUser.id === userId) return currentUser.name;
+    const user = users.find(u => u.id === userId);
+    return user ? user.name : 'User';
+};
 
 // Get the appropriate data service based on environment
 const dataService = getDataService();
@@ -2383,7 +2391,26 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             }));
         }
 
-        toast.success(`Created revision ${revisionCode} `);
+        toast.success(`Created revision ${revisionCode}`);
+
+        // Audit logging
+        const currentUser = useAuthStore.getState().currentUser;
+        if (currentUser) {
+            createAuditLog(
+                'create',
+                'protective_system',
+                state.selectedPsv?.id || newRevision.id,
+                `${state.selectedPsv?.tag || 'PSV'} : ${state.selectedPsv?.name || 'Unknown'}`,
+                currentUser.id,
+                currentUser.name,
+                {
+                    userRole: currentUser.role,
+                    projectId: state.selectedProject?.id,
+                    description: `Created Revision ${revisionCode}: ${description}`
+                }
+            );
+        }
+
         return newRevision;
     },
 
@@ -2402,7 +2429,27 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         }));
 
         const action = field === 'checkedBy' ? 'Checked' : 'Approved';
-        toast.success(`Revision ${action} `);
+        toast.success(`Revision ${action}`);
+
+        // Audit logging
+        const currentUser = useAuthStore.getState().currentUser;
+        const psv = get().selectedPsv;
+        if (currentUser) {
+            const r = get().revisionHistory.find(r => r.id === revisionId);
+            createAuditLog(
+                'status_change',
+                'protective_system',
+                psv?.id || revisionId,
+                `${psv?.tag || 'PSV'} : ${psv?.name || 'Unknown'}`,
+                currentUser.id,
+                currentUser.name,
+                {
+                    userRole: currentUser.role,
+                    description: `Revision ${r?.revisionCode}: Signed as ${action}`,
+                    projectId: get().selectedProject?.id,
+                }
+            );
+        }
     },
 
     updateRevision: async (revisionId: string, updates: Partial<RevisionHistory>) => {
@@ -2448,6 +2495,43 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
         }
 
         toast.success('Revision updated');
+
+        // Audit logging
+        const currentUser = useAuthStore.getState().currentUser;
+        if (currentUser && existing) {
+            const changes = detectChanges(existing, updates, ['revisionCode', 'description', 'checkedBy', 'approvedBy', 'originatedBy']);
+
+            // Resolve names in changes for readability
+            const readableChanges = changes.map(c => {
+                if (c.field === 'checkedBy' || c.field === 'approvedBy' || c.field === 'originatedBy') {
+                    return {
+                        ...c,
+                        oldValue: getUserName(c.oldValue as string, currentUser),
+                        newValue: getUserName(c.newValue as string, currentUser)
+                    };
+                }
+                return c;
+            });
+
+            if (changes.length > 0) {
+                const psv = get().selectedPsv;
+                createAuditLog(
+                    'update',
+                    'protective_system',
+                    psv?.id || revisionId,
+                    `${psv?.tag || 'PSV'} : ${psv?.name || 'Unknown'}`,
+                    currentUser.id,
+                    currentUser.name,
+                    {
+                        userRole: currentUser.role,
+                        changes: readableChanges,
+                        description: changes.some(c => (c.field === 'checkedBy' || c.field === 'approvedBy') && !c.newValue)
+                            ? `Revision ${existing.revisionCode}: Revoked ${changes.find(c => (c.field === 'checkedBy' || c.field === 'approvedBy') && !c.newValue)?.field === 'checkedBy' ? 'Check' : 'Approval'}`
+                            : `Updated Revision ${existing.revisionCode}`
+                    }
+                );
+            }
+        }
     },
 
     deleteRevision: async (revisionId: string) => {
@@ -2456,6 +2540,26 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             revisionHistory: state.revisionHistory.filter((r) => r.id !== revisionId),
         }));
         toast.success('Revision deleted');
+
+        // Audit logging
+        const currentUser = useAuthStore.getState().currentUser;
+        const existing = get().revisionHistory.find((r) => r.id === revisionId);
+
+        if (currentUser && existing) {
+            const psv = get().selectedPsv;
+            createAuditLog(
+                'delete',
+                'protective_system',
+                psv?.id || revisionId,
+                `${psv?.tag || 'PSV'} : ${psv?.name || 'Unknown'}`,
+                currentUser.id,
+                currentUser.name,
+                {
+                    userRole: currentUser.role,
+                    description: `Deleted Revision ${existing.revisionCode}`
+                }
+            );
+        }
     },
 
     getCurrentRevision: (entityType, entityId) => {

@@ -39,6 +39,7 @@ interface MarkdownEditorProps {
     disabled?: boolean;
     minRows?: number;
     maxRows?: number;
+    fullHeight?: boolean;
 }
 
 interface ToolbarAction {
@@ -70,6 +71,7 @@ export function MarkdownEditor({
     disabled = false,
     minRows = 10,
     maxRows = 30,
+    fullHeight = false,
 }: MarkdownEditorProps) {
     const theme = useTheme();
     const isDark = theme.palette.mode === "dark";
@@ -112,7 +114,15 @@ export function MarkdownEditor({
     }, [value, onChange, disabled]);
 
     return (
-        <Box sx={{ border: 1, borderColor: "divider", borderRadius: 1, overflow: "hidden" }}>
+        <Box sx={{
+            border: 1,
+            borderColor: "divider",
+            borderRadius: 1,
+            overflow: "hidden",
+            height: fullHeight ? '100%' : 'auto',
+            display: fullHeight ? 'flex' : 'block',
+            flexDirection: fullHeight ? 'column' : undefined
+        }}>
             {/* Header with Tabs and Toolbar */}
             <Box
                 sx={{
@@ -153,7 +163,13 @@ export function MarkdownEditor({
             </Box>
 
             {/* Content Area */}
-            <Box sx={{ minHeight: 200 }}>
+            <Box sx={{
+                minHeight: fullHeight ? 0 : 200,
+                flex: fullHeight ? 1 : undefined,
+                overflow: "hidden",
+                display: fullHeight ? 'flex' : 'block',
+                flexDirection: 'column'
+            }}>
                 {activeTab === 0 ? (
                     <TextField
                         inputRef={textFieldRef}
@@ -163,17 +179,23 @@ export function MarkdownEditor({
                         disabled={disabled}
                         fullWidth
                         multiline
-                        minRows={minRows}
-                        maxRows={maxRows}
+                        minRows={fullHeight ? undefined : minRows}
+                        maxRows={fullHeight ? undefined : maxRows}
                         sx={{
+                            height: fullHeight ? '100%' : undefined,
                             "& .MuiOutlinedInput-root": {
+                                height: fullHeight ? '100%' : undefined,
                                 border: "none",
                                 "& fieldset": { border: "none" },
+                                alignItems: "flex-start", // align text to top
+                                p: 0,
                             },
                             "& .MuiInputBase-input": {
                                 fontFamily: "monospace",
                                 fontSize: "0.875rem",
                                 p: 2,
+                                height: fullHeight ? '100% !important' : undefined,
+                                overflow: 'auto !important',
                             },
                         }}
                     />
@@ -181,8 +203,9 @@ export function MarkdownEditor({
                     <Box
                         sx={{
                             p: 2,
-                            minHeight: minRows * 24,
-                            maxHeight: maxRows * 24,
+                            height: fullHeight ? '100%' : undefined,
+                            minHeight: fullHeight ? 0 : minRows * 24,
+                            maxHeight: fullHeight ? undefined : maxRows * 24,
                             overflow: "auto",
                             // KaTeX display equations can be wider than the container; allow horizontal scrolling.
                             "& .katex-display": { overflowX: "auto", overflowY: "hidden" },

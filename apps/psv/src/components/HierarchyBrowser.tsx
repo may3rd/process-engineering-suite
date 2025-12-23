@@ -340,32 +340,30 @@ export function HierarchyBrowser() {
         <>
             <Box sx={{ maxWidth: 1200, mx: 'auto' }}>
                 {/* Context Block Header */}
-                {currentLevel.parent && (
-                    <Paper
-                        sx={{
-                            mb: 3,
-                            p: 2,
-                            borderRadius: '12px',
-                            border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
-                            bgcolor: isDark ? 'rgba(56, 189, 248, 0.05)' : 'rgba(2, 132, 199, 0.03)',
-                        }}
-                    >
-                        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                            <IconButton onClick={handleBack} size="small" sx={{ mr: 2 }}>
-                                <ArrowBack />
-                            </IconButton>
-                            <Box sx={{ flex: 1, textAlign: 'center' }}>
-                                <Typography variant="h6" fontWeight={600}>
-                                    {currentLevel.parent.name}
-                                </Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    {'code' in currentLevel.parent && currentLevel.parent.code}
-                                </Typography>
-                            </Box>
-                            <Box sx={{ width: 40 }} /> {/* Spacer for symmetry */}
+                <Paper
+                    sx={{
+                        mb: 3,
+                        p: 2,
+                        borderRadius: '12px',
+                        border: `1px solid ${isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'}`,
+                        bgcolor: isDark ? 'rgba(56, 189, 248, 0.05)' : 'rgba(2, 132, 199, 0.03)',
+                    }}
+                >
+                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                        {currentLevel.parent && (<IconButton onClick={handleBack} size="small" sx={{ mr: 2 }}>
+                            <ArrowBack />
+                        </IconButton>)}
+                        <Box sx={{ flex: 1, textAlign: 'center' }}>
+                            <Typography variant="h6" fontWeight={600}>
+                                {currentLevel.parent?.name || 'Process Engineering Suite - PSV Browser'}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                {currentLevel.parent && 'code' in currentLevel.parent ? currentLevel.parent.code : 'Select customer to start browsing.'}
+                            </Typography>
                         </Box>
-                    </Paper>
-                )}
+                        <Box sx={{ width: 40 }} /> {/* Spacer for symmetry */}
+                    </Box>
+                </Paper>
 
                 {/* Search Bar + New Button */}
                 <Stack direction="row" spacing={1} sx={{ mb: 2 }}>
