@@ -144,7 +144,6 @@ export type ScenarioCause =
     | 'reflux_failure'
     | 'abnormal_heat_input'
     | 'check_valve_failure'
-    | 'external_fire'
     | 'other';
 
 export interface OverpressureScenario {

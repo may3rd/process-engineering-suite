@@ -174,7 +174,15 @@ export function createAuditLog(
             description: log.description,
             projectId: log.projectId,
             projectName: log.projectName,
-        }).catch(err => console.error('Failed to create audit log:', err));
+        }).catch(err => {
+            console.error('Failed to create audit log:', err);
+            // Dynamic import to avoid circular dependencies if any
+            import('@/lib/toast').then(({ toast }) => {
+                toast.error('Failed to create audit log', {
+                    description: err instanceof Error ? err.message : String(err)
+                });
+            });
+        });
     }
 
     return log;

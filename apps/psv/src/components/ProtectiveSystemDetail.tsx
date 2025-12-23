@@ -192,7 +192,6 @@ function ScenariosTab() {
             case 'blocked_outlet':
                 return <Block />;
             case 'fire_case':
-            case 'external_fire':
                 return <LocalFireDepartment />;
             case 'tube_rupture':
                 return <BrokenImage />;
@@ -361,7 +360,6 @@ function ScenariosTab() {
     const ALL_SCENARIO_CAUSES: { cause: ScenarioCause; label: string }[] = [
         { cause: 'blocked_outlet', label: 'Blocked Outlet' },
         { cause: 'fire_case', label: 'Fire Case' },
-        { cause: 'external_fire', label: 'External Fire' },
         { cause: 'tube_rupture', label: 'Tube Rupture' },
         { cause: 'thermal_expansion', label: 'Thermal Expansion' },
         { cause: 'utility_failure', label: 'Utility Failure' },

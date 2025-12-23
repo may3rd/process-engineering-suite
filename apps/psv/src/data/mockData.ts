@@ -718,7 +718,7 @@ export const scenarios: OverpressureScenario[] = [
     {
         id: 'aa033994-d80b-415c-ac95-44304bb8e827',
         protectiveSystemId: '66666666-6666-6666-6666-666666666666',
-        cause: 'external_fire',
+        cause: 'fire_case',
         description: 'External fire on vaporizer equipment',
         relievingTemp: 50,
         relievingPressure: 75.0,
@@ -878,7 +878,7 @@ export const scenarios: OverpressureScenario[] = [
     {
         id: '21a8c7b4-45b3-43f5-8339-1c4010690176',
         protectiveSystemId: '975b85bb-2677-4888-b90f-cbcbe1eefe69',
-        cause: 'external_fire',
+        cause: 'fire_case',
         description: 'Fire case on heater tubes',
         relievingTemp: 400,
         relievingPressure: 25.0,
@@ -896,7 +896,7 @@ export const scenarios: OverpressureScenario[] = [
     {
         id: '74eb3513-ecbd-490a-ae9c-8d61cfad460d',
         protectiveSystemId: '74edbded-2339-4467-83c7-1d11f7c320d3',
-        cause: 'external_fire',
+        cause: 'fire_case',
         description: 'Fire exposure on HP steam drum',
         relievingTemp: 320,
         relievingPressure: 120.0,
@@ -964,7 +964,7 @@ export const scenarios: OverpressureScenario[] = [
     {
         id: 'f8fd97c2-7e95-46ba-8ef4-9efafa7dc7e0',
         protectiveSystemId: 'f146bc84-934c-473d-88b6-963d76b1cc4b',
-        cause: 'external_fire',
+        cause: 'fire_case',
         description: 'Fire exposure on fuel gas KO drum',
         relievingTemp: 80,
         relievingPressure: 10.0,
@@ -981,7 +981,7 @@ export const scenarios: OverpressureScenario[] = [
     {
         id: '97ba30bf-a35f-48ad-af75-8b8108cc49e5',
         protectiveSystemId: '475039ea-a4c7-44b7-97ed-e0331fb497f1',
-        cause: 'external_fire',
+        cause: 'fire_case',
         description: 'Fire exposure on deaerator',
         relievingTemp: 150,
         relievingPressure: 7.0,
@@ -999,7 +999,7 @@ export const scenarios: OverpressureScenario[] = [
     {
         id: 'b1c5773b-d1db-46d8-81cf-da9e7f042c68',
         protectiveSystemId: '16705733-2581-468c-9912-127501c8e636',
-        cause: 'external_fire',
+        cause: 'fire_case',
         description: 'Fire exposure on LNG storage tank',
         relievingTemp: -100,
         relievingPressure: 0.8,
@@ -1153,7 +1153,7 @@ export const scenarios: OverpressureScenario[] = [
     {
         id: '92a56d6f-2a4b-41e5-9ac8-0345e9e00794',
         protectiveSystemId: '652f416d-3174-4b47-b353-0661ca3fb65e',
-        cause: 'external_fire',
+        cause: 'fire_case',
         description: 'Fire exposure on stabilizer column',
         relievingTemp: 120,
         relievingPressure: 12.0,

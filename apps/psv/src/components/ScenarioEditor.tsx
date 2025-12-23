@@ -56,7 +56,6 @@ interface ScenarioEditorProps {
 const CAUSE_OPTIONS: { value: ScenarioCause; label: string }[] = [
     { value: 'blocked_outlet', label: 'Blocked Outlet' },
     { value: 'fire_case', label: 'Fire Case' },
-    { value: 'external_fire', label: 'External Fire' },
     { value: 'tube_rupture', label: 'Tube Rupture' },
     { value: 'thermal_expansion', label: 'Thermal Expansion' },
     { value: 'utility_failure', label: 'Utility Failure' },

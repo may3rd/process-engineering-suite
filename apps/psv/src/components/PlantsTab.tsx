@@ -40,7 +40,7 @@ export function PlantsTab() {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
-    const { addPlant, updatePlant, deletePlant, fetchAllPlants, arePlantsLoaded } = usePsvStore();
+    const { addPlant, updatePlant, deletePlant, fetchAllPlants, arePlantsLoaded, summaryCounts } = usePsvStore();
     const selectedCustomer = usePsvStore((state) => state.selectedCustomer);
 
     const [isLoadingInit, setIsLoadingInit] = useState(false);
@@ -192,10 +192,15 @@ export function PlantsTab() {
 
     const summaryCards = useMemo(() => {
         const activePlants = plants.filter(plant => plant.status === 'active').length;
+        // Use summaryCounts if available (lightweight); fallback to entity counts
+        const totalPlants = summaryCounts?.plants ?? plants.length;
+        const totalUnits = summaryCounts?.units ?? units.length;
+        const totalAreas = summaryCounts?.areas ?? areas.length;
+        const totalProjects = summaryCounts?.projects ?? projects.length;
         return [
             {
                 label: 'Plants',
-                value: plants.length,
+                value: totalPlants,
                 helper: 'Across all customers',
                 icon: <Apartment color="primary" />,
             },
@@ -207,12 +212,12 @@ export function PlantsTab() {
             },
             {
                 label: 'Units',
-                value: units.length,
-                helper: `${areas.length} areas • ${projects.length} projects`,
+                value: totalUnits,
+                helper: `${totalAreas} areas • ${totalProjects} projects`,
                 icon: <Category color="secondary" />,
             },
         ];
-    }, [areas.length, plants.length, projects.length, units.length]);
+    }, [summaryCounts, areas.length, plants, projects.length, units.length]);
 
     return (
         <Box>

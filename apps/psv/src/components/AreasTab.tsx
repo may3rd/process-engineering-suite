@@ -40,7 +40,7 @@ export function AreasTab() {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
-    const { addArea, updateArea, deleteArea, fetchAllAreas, areAreasLoaded } = usePsvStore();
+    const { addArea, updateArea, deleteArea, fetchAllAreas, areAreasLoaded, summaryCounts } = usePsvStore();
     const selectedUnit = usePsvStore((state) => state.selectedUnit);
 
     const [isLoadingInit, setIsLoadingInit] = useState(false);
@@ -186,13 +186,15 @@ export function AreasTab() {
     );
 
     const summaryCards = useMemo(() => {
-        const totalProjects = projects.length;
-        const totalPsvs = protectiveSystems.length;
-        const totalEquipment = equipment.length;
+        // Use summaryCounts if available (lightweight); fallback to entity counts
+        const totalProjects = summaryCounts?.projects ?? projects.length;
+        const totalPsvs = summaryCounts?.psvs ?? protectiveSystems.length;
+        const totalEquipment = summaryCounts?.equipment ?? equipment.length;
+        const totalAreas = summaryCounts?.areas ?? areas.length;
         return [
             {
                 label: 'Areas',
-                value: areas.length,
+                value: totalAreas,
                 helper: 'Across all units',
                 icon: <Map color="primary" />,
             },
@@ -209,7 +211,7 @@ export function AreasTab() {
                 icon: <Build color="warning" />,
             },
         ];
-    }, [areas.length, equipment.length, protectiveSystems.length, projects.length]);
+    }, [summaryCounts, areas.length, equipment.length, protectiveSystems.length, projects.length]);
 
     return (
         <Box>

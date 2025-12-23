@@ -898,6 +898,28 @@ class LocalStorageService {
 
     // --- Utility: Reset demo data ---
 
+    // --- Summary Counts (Lazy Loading) ---
+
+    async getSummaryCounts(): Promise<{
+        customers: number;
+        plants: number;
+        units: number;
+        areas: number;
+        projects: number;
+        psvs: number;
+        equipment: number;
+    }> {
+        return {
+            customers: getItem<Customer>(STORAGE_KEYS.CUSTOMERS, mockCustomers).length,
+            plants: getItem<Plant>(STORAGE_KEYS.PLANTS, mockPlants).length,
+            units: getItem<Unit>(STORAGE_KEYS.UNITS, mockUnits).length,
+            areas: getItem<Area>(STORAGE_KEYS.AREAS, mockAreas).length,
+            projects: getItem<Project>(STORAGE_KEYS.PROJECTS, mockProjects).length,
+            psvs: getItem<ProtectiveSystem>(STORAGE_KEYS.PSVS, mockPsvs).length,
+            equipment: getItem<Equipment>(STORAGE_KEYS.EQUIPMENT, mockEquipment).length,
+        };
+    }
+
     resetDemoData(): void {
         // Clear all demo data keys
         Object.values(STORAGE_KEYS).forEach((key) => {

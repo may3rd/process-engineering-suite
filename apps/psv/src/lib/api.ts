@@ -627,6 +627,39 @@ class ApiClient {
     async clearAuditLogs(): Promise<{ message: string }> {
         return this.request('/audit-logs', { method: 'DELETE' });
     }
+
+    // --- Summary Counts (Lazy Loading) ---
+
+    async getSummaryCounts(): Promise<{
+        customers: number;
+        plants: number;
+        units: number;
+        areas: number;
+        projects: number;
+        psvs: number;
+        equipment: number;
+    }> {
+        // API endpoint for summary counts - fallback to individual counts if not available
+        try {
+            return await this.request('/hierarchy/summary-counts');
+        } catch {
+            // Fallback: fetch counts individually (less efficient but works)
+            const [customers, psvs, equipment] = await Promise.all([
+                this.getCustomers(),
+                this.getProtectiveSystems(),
+                this.getEquipment(),
+            ]);
+            return {
+                customers: customers.length,
+                plants: 0, // Would need additional requests
+                units: 0,
+                areas: 0,
+                projects: 0,
+                psvs: psvs.length,
+                equipment: equipment.length,
+            };
+        }
+    }
 }
 
 // Environment variable to toggle between API and localStorage

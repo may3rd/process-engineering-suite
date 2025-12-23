@@ -60,11 +60,18 @@ export function MultiEquipmentSelector({
     selectedEquipment,
     onChange,
 }: MultiEquipmentSelectorProps) {
-    const { getEquipmentByArea, addEquipment, updateEquipment, equipment: storeEquipment } = usePsvStore();
+    const { getEquipmentByArea, addEquipment, updateEquipment, equipment: storeEquipment, fetchAllEquipment, areEquipmentLoaded } = usePsvStore();
     const [availableEquipment, setAvailableEquipment] = useState<Equipment[]>([]);
     const [searchValue, setSearchValue] = useState<Equipment | null>(null);
     const [editorOpen, setEditorOpen] = useState(false);
     const [editingEquipment, setEditingEquipment] = useState<Equipment | undefined>();
+
+    // Ensure equipment is loaded on mount
+    useEffect(() => {
+        if (!areEquipmentLoaded) {
+            fetchAllEquipment();
+        }
+    }, [areEquipmentLoaded, fetchAllEquipment]);
 
     useEffect(() => {
         // Load equipment from area

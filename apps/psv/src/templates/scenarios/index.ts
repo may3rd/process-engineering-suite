@@ -821,24 +821,23 @@ Summary of findings and recommendations:
  * Map of scenario causes to their markdown templates
  */
 export const scenarioTemplates: Record<ScenarioCause, string> = {
-    blocked_outlet: blockedOutletTemplate,
-    fire_case: fireCaseTemplate,
-    external_fire: externalFireTemplate,
-    tube_rupture: tubeRuptureTemplate,
-    thermal_expansion: thermalExpansionTemplate,
-    utility_failure: utilityFailureTemplate,
-    control_valve_failure: controlValveFailureTemplate,
-    power_failure: powerFailureTemplate,
-    cooling_water_failure: coolingWaterFailureTemplate,
-    reflux_failure: refluxFailureTemplate,
-    abnormal_heat_input: abnormalHeatInputTemplate,
-    check_valve_failure: checkValveFailureTemplate,
-    other: otherTemplate,
+   blocked_outlet: blockedOutletTemplate,
+   fire_case: fireCaseTemplate,
+   tube_rupture: tubeRuptureTemplate,
+   thermal_expansion: thermalExpansionTemplate,
+   utility_failure: utilityFailureTemplate,
+   control_valve_failure: controlValveFailureTemplate,
+   power_failure: powerFailureTemplate,
+   cooling_water_failure: coolingWaterFailureTemplate,
+   reflux_failure: refluxFailureTemplate,
+   abnormal_heat_input: abnormalHeatInputTemplate,
+   check_valve_failure: checkValveFailureTemplate,
+   other: otherTemplate,
 };
 
 /**
  * Get the markdown template for a given scenario cause
  */
 export function getScenarioTemplate(cause: ScenarioCause): string {
-    return scenarioTemplates[cause] || otherTemplate;
+   return scenarioTemplates[cause] || otherTemplate;
 }

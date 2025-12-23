@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
     Box,
     Button,
@@ -40,8 +40,17 @@ export function EquipmentTab() {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
-    const { addEquipment, updateEquipment, deleteEquipment } = usePsvStore();
+    const { addEquipment, updateEquipment, deleteEquipment, fetchAllEquipment, areEquipmentLoaded } = usePsvStore();
     const equipment = usePsvStore((state) => state.equipment);
+
+    const [isLoadingInit, setIsLoadingInit] = useState(false);
+
+    useEffect(() => {
+        if (!areEquipmentLoaded) {
+            setIsLoadingInit(true);
+            fetchAllEquipment().finally(() => setIsLoadingInit(false));
+        }
+    }, [areEquipmentLoaded, fetchAllEquipment]);
 
     const [dialogOpen, setDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

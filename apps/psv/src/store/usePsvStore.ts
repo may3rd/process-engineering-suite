@@ -94,6 +94,7 @@ interface PsvStore {
     areAreasLoaded: boolean;
     areProjectsLoaded: boolean;
     arePsvsLoaded: boolean;
+    areEquipmentLoaded: boolean;
 
     // UI state
     activeTab: number;
@@ -113,6 +114,7 @@ interface PsvStore {
     fetchAllAreas: () => Promise<void>;
     fetchAllProjects: () => Promise<void>;
     fetchAllProtectiveSystems: () => Promise<void>;
+    fetchAllEquipment: () => Promise<void>;
 
     // Actions (now async)
     selectCustomer: (id: string | null) => Promise<void>;
@@ -214,6 +216,18 @@ interface PsvStore {
 
     // Equipment query
     getEquipmentByArea: (areaId: string) => Equipment[];
+
+    // Summary Counts (Lazy Loading)
+    summaryCounts: {
+        customers: number;
+        plants: number;
+        units: number;
+        areas: number;
+        projects: number;
+        psvs: number;
+        equipment: number;
+    } | null;
+    fetchSummaryCounts: () => Promise<void>;
 }
 
 export const usePsvStore = create<PsvStore>((set, get) => ({
@@ -268,6 +282,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     areAreasLoaded: false,
     areProjectsLoaded: false,
     arePsvsLoaded: false,
+    areEquipmentLoaded: false,
 
     // UI state
     activeTab: 0,
@@ -278,34 +293,37 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
     isLoading: false,
     error: null,
 
+    // Summary Counts (Lazy Loading)
+    summaryCounts: null,
+
     // Initialize - fetch initial data from API
     initialize: async () => {
         set({ isLoading: true, error: null });
         try {
-            // Fetch customers (root level)
+            // Fetch customers (root level) - this is the only thing needed on startup
             const customers = await dataService.getCustomers();
-
-            // Fetch equipment (lightweight enough to keep for now, or could happen lazily too)
-            let equipmentList: Equipment[] = [];
-            try {
-                equipmentList = await dataService.getEquipment();
-            } catch {
-                // If API fails, import mock data as fallback
-                const mockData = await import('@/data/mockData');
-                equipmentList = mockData.equipment;
-            }
 
             set({
                 customers,
                 customerList: customers,
-                equipment: equipmentList, // Keep this globally available for now
                 isLoading: false
-                // Other lists remain empty until requested by Dashboard or Hierarchy interactions
+                // Equipment and other data will be loaded lazily when requested
             });
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to load data';
             set({ error: message, isLoading: false });
             toast.error('Failed to load data', { description: message });
+        }
+    },
+
+    // Fetch summary counts for dashboard (lightweight)
+    fetchSummaryCounts: async () => {
+        try {
+            const counts = await dataService.getSummaryCounts();
+            set({ summaryCounts: counts });
+        } catch (error) {
+            console.warn('Failed to fetch summary counts:', error);
+            // Fallback: counts will remain null, tabs will use entity counts
         }
     },
 
@@ -426,6 +444,23 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             console.error("Failed to fetch all PSVs:", error);
             set({ isLoading: false });
             toast.error("Failed to load PSVs");
+        }
+    },
+
+    fetchAllEquipment: async () => {
+        if (get().areEquipmentLoaded) return; // Cache hit
+        set({ isLoading: true });
+        try {
+            const allEquipment = await dataService.getEquipment();
+            set({
+                equipment: allEquipment,
+                areEquipmentLoaded: true,
+                isLoading: false
+            });
+        } catch (error) {
+            console.error("Failed to fetch all equipment:", error);
+            set({ isLoading: false });
+            toast.error("Failed to load equipment");
         }
     },
 
@@ -797,25 +832,38 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             const existing = state.sizingCaseList.find(c => c.id === updatedCase.id);
             const updated = await dataService.updateSizingCase(updatedCase.id, updatedCase);
 
-            // Audit logging
+            // Audit logging - always log sizing case updates when user saves
             const currentUser = useAuthStore.getState().currentUser;
-            if (currentUser && existing) {
-                const changes = detectChanges(existing, updatedCase, ['standard', 'method', 'status']);
-                if (changes.length > 0) {
-                    createAuditLog(
-                        'update',
-                        'sizing_case',
-                        updated.id,
-                        `Case: ${updated.standard} (${state.selectedPsv?.tag || 'Unknown'})`,
-                        currentUser.id,
-                        currentUser.name,
-                        {
-                            userRole: currentUser.role,
-                            changes,
-                            projectId: state.selectedProject?.id,
-                        }
-                    );
+            if (currentUser) {
+                // Track key fields for detailed change logging
+                const changes = existing
+                    ? detectChanges(existing, updatedCase, ['standard', 'method', 'status'])
+                    : [];
+
+                // Build description based on case status
+                let description: string;
+                if (updatedCase.status === 'calculated') {
+                    description = 'Saved sizing calculation';
+                } else if (changes.length > 0) {
+                    description = `Updated: ${changes.map(c => c.field).join(', ')}`;
+                } else {
+                    description = 'Saved sizing case';
                 }
+
+                createAuditLog(
+                    updatedCase.status === 'calculated' ? 'calculate' : 'update',
+                    'protective_system',
+                    state.selectedPsv?.id || updated.id,
+                    `Case: ${updated.standard} (${state.selectedPsv?.tag || 'Unknown'})`,
+                    currentUser.id,
+                    currentUser.name,
+                    {
+                        userRole: currentUser.role,
+                        changes: changes.length > 0 ? changes : undefined,
+                        description,
+                        projectId: state.selectedProject?.id,
+                    }
+                );
             }
 
             set((state) => ({
@@ -842,13 +890,14 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             if (currentUser) {
                 createAuditLog(
                     'create',
-                    'sizing_case',
-                    created.id,
+                    'protective_system',
+                    state.selectedPsv.id,
                     `Case: ${created.standard} (${state.selectedPsv.tag})`,
                     currentUser.id,
                     currentUser.name,
                     {
                         userRole: currentUser.role,
+                        description: 'Created new sizing case',
                         projectId: state.selectedProject?.id,
                     }
                 );
@@ -1002,12 +1051,16 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             if (currentUser && existing) {
                 createAuditLog(
                     'delete',
-                    'sizing_case',
-                    id,
+                    'protective_system',
+                    state.selectedPsv?.id || id,
                     `Case: ${existing.standard} (${state.selectedPsv?.tag || 'Unknown'})`,
                     currentUser.id,
                     currentUser.name,
-                    { userRole: currentUser.role }
+                    {
+                        userRole: currentUser.role,
+                        description: 'Deleted sizing case',
+                        projectId: state.selectedProject?.id,
+                    }
                 );
             }
 
@@ -1036,14 +1089,15 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             if (currentUser) {
                 createAuditLog(
                     'create',
-                    'scenario',
-                    created.id,
+                    'protective_system',
+                    psv.id,
                     `${created.cause} - ${psv.tag}`,
                     currentUser.id,
                     currentUser.name,
                     {
                         userRole: currentUser.role,
-                        description: created.description,
+                        description: created.description || 'Created new scenario',
+                        projectId: get().selectedProject?.id,
                     }
                 );
             }
@@ -1090,8 +1144,8 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
                     const isGoverningChange = changes.some(c => c.field === 'isGoverning');
                     createAuditLog(
                         isGoverningChange ? 'status_change' : 'update',
-                        'scenario',
-                        updated.id,
+                        'protective_system',
+                        psv?.id || updated.id,
                         `${updated.cause} - ${psv?.tag || 'Unknown'}`,
                         currentUser.id,
                         currentUser.name,
@@ -1099,6 +1153,7 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
                             userRole: currentUser.role,
                             changes,
                             description: isGoverningChange && updatedScenario.isGoverning ? 'Set as governing case' : undefined,
+                            projectId: state.selectedProject?.id,
                         }
                     );
                 }
@@ -1171,12 +1226,16 @@ export const usePsvStore = create<PsvStore>((set, get) => ({
             if (currentUser && existing) {
                 createAuditLog(
                     'delete',
-                    'scenario',
-                    id,
+                    'protective_system',
+                    state.selectedPsv?.id || id,
                     `${existing.cause} - ${state.selectedPsv?.tag || 'Unknown'}`,
                     currentUser.id,
                     currentUser.name,
-                    { userRole: currentUser.role }
+                    {
+                        userRole: currentUser.role,
+                        description: 'Deleted scenario',
+                        projectId: state.selectedProject?.id,
+                    }
                 );
             }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Box,
     Paper,
@@ -40,13 +40,20 @@ interface EquipmentCardProps {
 }
 
 export function EquipmentCard({ psv }: EquipmentCardProps) {
-    const { equipmentLinkList, linkEquipment, unlinkEquipment, equipment: allEquipment, areas } = usePsvStore();
+    const { equipmentLinkList, linkEquipment, unlinkEquipment, equipment: allEquipment, areas, fetchAllEquipment, areEquipmentLoaded } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
     const { unitSystem, units } = useProjectUnitSystem();
     const [open, setOpen] = useState(false);
     const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]);
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [editingEquipment, setEditingEquipment] = useState<Equipment | null>(null);
+
+    // Ensure equipment is loaded on mount
+    useEffect(() => {
+        if (!areEquipmentLoaded) {
+            fetchAllEquipment();
+        }
+    }, [areEquipmentLoaded, fetchAllEquipment]);
 
     // Determine currently linked equipment IDs to exclude/disable them in list
     const linksForPsv = equipmentLinkList.filter(link => link.psvId === psv.id);

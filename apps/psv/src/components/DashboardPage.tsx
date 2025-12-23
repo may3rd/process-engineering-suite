@@ -71,7 +71,7 @@ export function DashboardPage() {
     const isDark = theme.palette.mode === 'dark';
     const selectedTabBg = theme.palette.background.default;
     const { currentUser, canManageHierarchy, canManageCustomer, canManageUsers } = useAuthStore();
-    const { setCurrentPage, dashboardTab, setDashboardTab } = usePsvStore();
+    const { setCurrentPage, dashboardTab, setDashboardTab, fetchSummaryCounts } = usePsvStore();
     const [activeTab, setActiveTab] = useState(0);
 
     // Determine visible tabs based on role
@@ -88,6 +88,11 @@ export function DashboardPage() {
     ]), [canManageCustomer, canManageHierarchy, canManageUsers]);
 
     const visibleTabs = useMemo(() => tabs.filter(tab => tab.visible), [tabs]);
+
+    // Fetch summary counts on mount (lightweight)
+    useEffect(() => {
+        fetchSummaryCounts();
+    }, [fetchSummaryCounts]);
 
     useEffect(() => {
         if (!dashboardTab) return;
@@ -132,30 +137,30 @@ export function DashboardPage() {
 
             {/* Tabs - Folder Tab Style */}
             <Box sx={{ px: { xs: 2, sm: 3 }, pt: 2 }}>
-	                <Box
-	                    sx={{
-	                        display: 'flex',
-	                        gap: 0.5,
-	                        flexWrap: 'nowrap',
-	                        overflowX: 'auto',
-	                        overflowY: 'visible',
-	                        WebkitOverflowScrolling: 'touch',
-	                        scrollbarWidth: 'none',
-	                        '&::-webkit-scrollbar': { display: 'none' },
-	                        position: 'relative',
-	                        '&::after': {
-	                            content: '""',
-	                            position: 'absolute',
-	                            left: 0,
-	                            right: 0,
-	                            bottom: 0,
-	                            height: '2px',
-	                            backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)',
-	                            pointerEvents: 'none',
-	                            zIndex: 0,
-	                        },
-	                    }}
-	                >
+                <Box
+                    sx={{
+                        display: 'flex',
+                        gap: 0.5,
+                        flexWrap: 'nowrap',
+                        overflowX: 'auto',
+                        overflowY: 'visible',
+                        WebkitOverflowScrolling: 'touch',
+                        scrollbarWidth: 'none',
+                        '&::-webkit-scrollbar': { display: 'none' },
+                        position: 'relative',
+                        '&::after': {
+                            content: '""',
+                            position: 'absolute',
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            height: '2px',
+                            backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)',
+                            pointerEvents: 'none',
+                            zIndex: 0,
+                        },
+                    }}
+                >
                     {visibleTabs.map((tab, index) => {
                         const isSelected = activeTab === index;
                         return (
@@ -165,29 +170,29 @@ export function DashboardPage() {
                                     setActiveTab(index);
                                     if (dashboardTab) setDashboardTab(null);
                                 }}
-	                                sx={{
-	                                    display: 'flex',
-	                                    alignItems: 'center',
-	                                    gap: 0.75,
-	                                    px: 2,
-	                                    py: 1.2,
-	                                    cursor: 'pointer',
-	                                    position: 'relative',
-	                                    transition: 'all 0.15s ease',
-	                                    flexShrink: 0, // Prevent shrinking in single line
-	                                    whiteSpace: 'nowrap',
-	                                    zIndex: isSelected ? 2 : 1,
+                                sx={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 0.75,
+                                    px: 2,
+                                    py: 1.2,
+                                    cursor: 'pointer',
+                                    position: 'relative',
+                                    transition: 'all 0.15s ease',
+                                    flexShrink: 0, // Prevent shrinking in single line
+                                    whiteSpace: 'nowrap',
+                                    zIndex: isSelected ? 2 : 1,
 
-	                                    // Borders
-	                                    border: '1px solid transparent',
-	                                    borderBottom: 'none',
+                                    // Borders
+                                    border: '1px solid transparent',
+                                    borderBottom: 'none',
 
-	                                    ...(isSelected && {
-	                                        borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
-	                                        borderBottom: 'none',
-	                                        borderRadius: '8px 8px 0 0',
-	                                        backgroundColor: selectedTabBg,
-	                                    }),
+                                    ...(isSelected && {
+                                        borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
+                                        borderBottom: 'none',
+                                        borderRadius: '8px 8px 0 0',
+                                        backgroundColor: selectedTabBg,
+                                    }),
 
                                     '&:hover': !isSelected ? {
                                         color: isDark ? '#fff' : '#000',
@@ -213,16 +218,16 @@ export function DashboardPage() {
                                 </Box>
                                 <Typography
                                     variant="body2"
-	                                    sx={{
-	                                        fontWeight: isSelected ? 600 : 500,
-	                                        fontSize: '0.875rem',
-	                                        whiteSpace: 'nowrap',
-	                                        color: isSelected
-	                                            ? (isDark ? '#fff' : '#000')
-	                                            : (isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)'),
-	                                        transition: 'color 0.2s',
-	                                    }}
-	                                >
+                                    sx={{
+                                        fontWeight: isSelected ? 600 : 500,
+                                        fontSize: '0.875rem',
+                                        whiteSpace: 'nowrap',
+                                        color: isSelected
+                                            ? (isDark ? '#fff' : '#000')
+                                            : (isDark ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.45)'),
+                                        transition: 'color 0.2s',
+                                    }}
+                                >
                                     {tab.label}
                                 </Typography>
                             </Box>
