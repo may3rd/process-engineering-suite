@@ -56,3 +56,11 @@ yarn-error.log*
 # Misc
 .DS_Store
 *.pem
+.kilocode
+
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
