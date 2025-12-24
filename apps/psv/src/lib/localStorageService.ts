@@ -636,6 +636,7 @@ class LocalStorageService {
             area: 'mm²',
             density: 'kg/m³',
             viscosity: 'cP',
+            backpressure: 'barg',
         };
         const newCase: SizingCase = {
             id: uuidv4(),
