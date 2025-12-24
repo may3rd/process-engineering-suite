@@ -337,7 +337,7 @@ function ScenariosTab() {
             cause: 'fire_case',
             description: fireScenario.description || 'External fire exposure',
             relievingTemp: fireScenario.relievingTemp || 50,
-            relievingPressure: fireScenario.relievingPressure || selectedPsv.setPressure * 1.1,
+            relievingPressure: fireScenario.relievingPressure || selectedPsv.setPressure * 1.21, // 21% accumulation for fire case
             phase: fireScenario.phase || 'gas',
             relievingRate: fireScenario.relievingRate || 0,
             accumulationPct: fireScenario.accumulationPct ?? 21, // API-521 allows 21% for fire case
