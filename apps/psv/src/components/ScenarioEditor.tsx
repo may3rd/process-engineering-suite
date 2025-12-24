@@ -410,6 +410,13 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                         label="Accumulation"
                         value={formData.accumulationPct}
                         onChange={(val) => handleInputChange('accumulationPct', val)}
+                        onBlur={() => {
+                            // Recalculate relieving pressure when accumulation changes
+                            const setPressure = formData.setPressure ?? 0;
+                            const accumulation = formData.accumulationPct ?? 10;
+                            const newRelievingPressure = setPressure * (1 + accumulation / 100);
+                            handleInputChange('relievingPressure', newRelievingPressure);
+                        }}
                         endAdornment="%"
                         disabled={!canEdit}
                     />

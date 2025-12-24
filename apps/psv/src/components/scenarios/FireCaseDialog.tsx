@@ -235,7 +235,7 @@ export function FireCaseDialog({
             relievingTemp: baseTemp,
             relievingRate: baseRate,
             relievingPressure: basePressure,
-            // ... other fields
+            accumulationPct: 21, // API-521 allows 21% accumulation for fire case
         };
 
         onSave(scenario);

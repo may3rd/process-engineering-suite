@@ -4,6 +4,7 @@ import { TextField, InputAdornment } from '@mui/material';
 interface NumericInputProps {
     value: number | undefined | null;
     onChange: (value: number | undefined) => void;
+    onBlur?: () => void;
     label: string;
     endAdornment?: React.ReactNode;
     min?: number;
@@ -20,6 +21,7 @@ interface NumericInputProps {
 export function NumericInput({
     value,
     onChange,
+    onBlur,
     label,
     endAdornment,
     min,
@@ -73,7 +75,10 @@ export function NumericInput({
             type="number"
             value={displayValue}
             onChange={(e) => setDisplayValue(e.target.value)}
-            onBlur={commitValue}
+            onBlur={() => {
+                commitValue();
+                onBlur?.();
+            }}
             onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                     commitValue();
