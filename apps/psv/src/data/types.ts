@@ -196,6 +196,7 @@ export interface UnitPreferences {
     area: string;
     density: string;
     viscosity: string;
+    backpressure: string;
 }
 
 export interface PipelineNetwork {

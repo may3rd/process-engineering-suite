@@ -25,6 +25,7 @@ import {
     getTemperatureValidationError,
     getPositiveNumberError,
 } from '@/lib/physicsValidation';
+import { convertUnit } from '@eng-suite/physics';
 
 interface FireCaseDialogProps {
     open: boolean;
@@ -72,15 +73,15 @@ interface FireCaseFormData {
     };
 
     // Manual input
-        manualInput: {
-            relievingRate: string;
-            rateUnit: string;
-            relievingTemp: string;
-            tempUnit: string;
-            relievingPressure: string;
-            pressureUnit: string;
-            basis: string;
-        };
+    manualInput: {
+        relievingRate: string;
+        rateUnit: string;
+        relievingTemp: string;
+        tempUnit: string;
+        relievingPressure: string;
+        pressureUnit: string;
+        basis: string;
+    };
 
     // Common
     description: string;
@@ -187,16 +188,52 @@ export function FireCaseDialog({
             setConfigureErrors(errors);
             return;
         }
+        // Convert to Base Units (C, kg/h, etc) before saving
+        // Base units defined in useUnitConversion: Temp='C', Flow='kg/h', Pressure='barg'
+
+        let baseTemp: number;
+        if (formData.calculationMethod === 'api521') {
+            baseTemp = convertUnit(
+                formData.api521Config.relievingTemp ?? 0,
+                formData.api521Config.relievingTempUnit,
+                'C'
+            );
+        } else {
+            baseTemp = convertUnit(
+                parseFloat(formData.manualInput.relievingTemp) || 0,
+                formData.manualInput.tempUnit,
+                'C'
+            );
+        }
+
+        let baseRate: number;
+        if (formData.calculationMethod === 'api521') {
+            // API-521 Calculator returns results in kg/h (Base)
+            baseRate = formData.calculationResults?.reliefRate || 0;
+        } else {
+            baseRate = convertUnit(
+                parseFloat(formData.manualInput.relievingRate) || 0,
+                formData.manualInput.rateUnit,
+                'kg/h'
+            );
+        }
+
+        let basePressure: number | undefined;
+        if (formData.calculationMethod === 'manual') {
+            basePressure = convertUnit(
+                parseFloat(formData.manualInput.relievingPressure) || 0,
+                formData.manualInput.pressureUnit,
+                'barg'
+            );
+        }
+
         const scenario: Partial<OverpressureScenario> = {
             protectiveSystemId: psvId,
             cause: 'fire_case',
             description: formData.description,
-            relievingTemp: formData.calculationMethod === 'api521'
-                ? formData.api521Config.relievingTemp ?? 0
-                : parseFloat(formData.manualInput.relievingTemp) || 0,
-            relievingRate: formData.calculationMethod === 'api521'
-                ? formData.calculationResults?.reliefRate || 0
-                : parseFloat(formData.manualInput.relievingRate) || 0,
+            relievingTemp: baseTemp,
+            relievingRate: baseRate,
+            relievingPressure: basePressure,
             // ... other fields
         };
 

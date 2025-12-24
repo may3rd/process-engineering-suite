@@ -37,39 +37,59 @@ export function UnitSelector({
     helperText,
     disabled = false,
     error = false,
-}: UnitSelectorProps) {
+    fullWidth = false,
+}: UnitSelectorProps & { fullWidth?: boolean }) {
     const [displayValue, setDisplayValue] = useState<string>(value?.toString() || '');
 
-    // Update display value when prop changes
+    // Update display value when prop changes, but only if it's significantly different
+    // from our current local state to avoid "fighting" the user's input
     useEffect(() => {
-        setDisplayValue(value?.toString() || '');
+        if (value === null || value === undefined) {
+            if (displayValue !== '') setDisplayValue('');
+            return;
+        }
+
+        const currentNum = parseFloat(displayValue);
+        // If the current input is a valid number, check if the prop value is effectively the same
+        if (!isNaN(currentNum)) {
+            const epsilon = 1e-10;
+            if (Math.abs(currentNum - value) < epsilon) {
+                return; // Ignore update, it's just floating point noise or round trip echo
+            }
+        }
+
+        // Prop value is different, update display
+        setDisplayValue(value.toString());
     }, [value]);
 
-    const handleValueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const newValue = event.target.value;
-        setDisplayValue(newValue);
-
-        // Parse and update
-        const numValue = newValue === '' ? null : parseFloat(newValue);
+    const commitValue = () => {
+        const numValue = displayValue === '' ? null : parseFloat(displayValue);
         if (numValue !== null && !isNaN(numValue)) {
             onChange(numValue, unit);
-        } else if (newValue === '') {
+        } else if (displayValue === '') {
             onChange(null, unit);
+        } else {
+            // Invalid number (e.g. "5..5"), revert
+            setDisplayValue(value?.toString() || '');
         }
+    };
+
+    const handleValueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        setDisplayValue(event.target.value);
     };
 
     const handleUnitChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const newUnit = event.target.value;
+        const currentNum = parseFloat(displayValue);
 
-        if (value !== null) {
+        if (!isNaN(currentNum) && displayValue !== '') {
             try {
-                // Convert value from old unit to new unit
-                const convertedValue = convertUnit(value, unit, newUnit);
+                // Convert current visible value from old unit to new unit
+                const convertedValue = convertUnit(currentNum, unit, newUnit);
                 onChange(convertedValue, newUnit);
             } catch (error) {
                 console.error('Unit conversion error:', error);
-                // If conversion fails, just change unit without converting value
-                onChange(value, newUnit);
+                onChange(currentNum, newUnit);
             }
         } else {
             onChange(null, newUnit);
@@ -84,9 +104,20 @@ export function UnitSelector({
             type="number"
             value={displayValue}
             onChange={handleValueChange}
+            onBlur={commitValue}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                    commitValue();
+                    (e.target as HTMLElement).blur();
+                } else if (e.key === 'Escape') {
+                    // Revert to original value
+                    setDisplayValue(value?.toString() || '');
+                    (e.target as HTMLElement).blur();
+                }
+            }}
             required={required}
             helperText={helperText}
-            fullWidth
+            fullWidth={fullWidth}
             disabled={disabled}
             error={error}
             slotProps={{

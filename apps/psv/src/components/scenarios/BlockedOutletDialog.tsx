@@ -6,9 +6,9 @@ import {
     Typography,
     TextField,
     MenuItem,
-    InputAdornment,
     Alert,
 } from '@mui/material';
+import { UnitSelector } from '../shared/UnitSelector';
 import { Block as BlockIcon } from '@mui/icons-material';
 import { ScenarioWizardLayout } from './ScenarioWizardLayout';
 import { OverpressureScenario, FluidPhase } from '@/data/types';
@@ -50,12 +50,6 @@ export function BlockedOutletDialog({
         ],
     });
 
-    // Local display state for inputs
-    const [displayValues, setDisplayValues] = useState({
-        sourcePressure: 0,
-        normalFlow: 0,
-        tripPressure: 0,
-    });
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
     const handleNext = () => {
@@ -73,11 +67,16 @@ export function BlockedOutletDialog({
 
     const validateSourceStep = () => {
         const errors: string[] = [];
-        const sourcePressureError = getPressureValidationError(displayValues.sourcePressure, preferences.pressure, 'Source pressure');
+        const sourcePressureDisp = toDisplay(formData.sourcePressure, 'pressure');
+        const sourcePressureError = getPressureValidationError(sourcePressureDisp, preferences.pressure, 'Source pressure');
         if (sourcePressureError) errors.push(sourcePressureError);
-        const tripPressureError = getPressureValidationError(displayValues.tripPressure, preferences.pressure, 'Trip pressure');
+
+        const tripPressureDisp = toDisplay(formData.tripPressure, 'pressure');
+        const tripPressureError = getPressureValidationError(tripPressureDisp, preferences.pressure, 'Trip pressure');
         if (tripPressureError) errors.push(tripPressureError);
-        const flowError = getPositiveNumberError(displayValues.normalFlow, 'Normal flow');
+
+        const flowDisp = toDisplay(formData.normalFlow, 'flow');
+        const flowError = getPositiveNumberError(flowDisp, 'Normal flow');
         if (flowError) errors.push(flowError);
         return errors;
     };
@@ -107,9 +106,9 @@ export function BlockedOutletDialog({
 ${formData.description}
 
 ### Source Analysis
-- **Source Pressure**: ${displayValues.sourcePressure} ${preferences.pressure}
-- **Normal Flow**: ${displayValues.normalFlow} ${preferences.flow}
-- **Trip Pressure**: ${displayValues.tripPressure} ${preferences.pressure}
+- **Source Pressure**: ${toDisplay(formData.sourcePressure, 'pressure')} ${preferences.pressure}
+- **Normal Flow**: ${toDisplay(formData.normalFlow, 'flow')} ${preferences.flow}
+- **Trip Pressure**: ${toDisplay(formData.tripPressure, 'pressure')} ${preferences.pressure}
 
 ### Methodology
 Evaluated as a blocked outlet case per API-521. 
@@ -168,75 +167,42 @@ Required relief rate is taken as the maximum normal flow capability of the upstr
                             Define the upstream source (e.g., Pump, Compressor, or High Pressure Header)
                         </Typography>
 
-                        <TextField
+                        <UnitSelector
                             label="Max Source Pressure (Deadhead)"
-                            type="number"
-                            value={displayValues.sourcePressure}
-                            onChange={(e) => {
-                                const val = parseFloat(e.target.value) || 0;
-                                setDisplayValues({ ...displayValues, sourcePressure: val });
-                                setFormData({ ...formData, sourcePressure: toBase(val, 'pressure') });
-                            }}
-                            InputProps={{
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <TextField
-                                            select
-                                            variant="standard"
-                                            value={preferences.pressure}
-                                            onChange={(e) => setUnit('pressure', e.target.value)}
-                                            sx={{ minWidth: 60 }}
-                                        >
-                                            {['barg', 'psig', 'kPag'].map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                        </TextField>
-                                    </InputAdornment>
-                                ),
+                            value={toDisplay(formData.sourcePressure, 'pressure')}
+                            unit={preferences.pressure}
+                            availableUnits={['barg', 'psig', 'kPag']}
+                            onChange={(val, unit) => {
+                                if (unit !== preferences.pressure) setUnit('pressure' as any, unit);
+                                setFormData({ ...formData, sourcePressure: toBase(val || 0, 'pressure', unit) });
                             }}
                             fullWidth
                         />
 
-                        <TextField
+                        <UnitSelector
                             label="Normal Flow Rate"
-                            type="number"
-                            value={displayValues.normalFlow}
-                            onChange={(e) => {
-                                const val = parseFloat(e.target.value) || 0;
-                                setDisplayValues({ ...displayValues, normalFlow: val });
-                                setFormData({ ...formData, normalFlow: toBase(val, 'flow') });
-                            }}
-                            InputProps={{
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <TextField
-                                            select
-                                            variant="standard"
-                                            value={preferences.flow}
-                                            onChange={(e) => setUnit('flow', e.target.value)}
-                                            sx={{ minWidth: 60 }}
-                                        >
-                                            {['kg/h', 'lb/h'].map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                        </TextField>
-                                    </InputAdornment>
-                                ),
+                            value={toDisplay(formData.normalFlow, 'flow')}
+                            unit={preferences.flow}
+                            availableUnits={['kg/h', 'lb/h']}
+                            onChange={(val, unit) => {
+                                if (unit !== preferences.flow) setUnit('flow' as any, unit);
+                                setFormData({ ...formData, normalFlow: toBase(val || 0, 'flow', unit) });
                             }}
                             helperText="This will be used as the preliminary required relief rate."
                             fullWidth
                         />
 
-                        <TextField
+                        <UnitSelector
                             label="High Pressure Trip (PAHH)"
-                            type="number"
-                            value={displayValues.tripPressure}
-                            onChange={(e) => {
-                                const val = parseFloat(e.target.value) || 0;
-                                setDisplayValues({ ...displayValues, tripPressure: val });
-                                setFormData({ ...formData, tripPressure: toBase(val, 'pressure') });
+                            value={toDisplay(formData.tripPressure, 'pressure')}
+                            unit={preferences.pressure}
+                            availableUnits={['barg', 'psig', 'kPag']}
+                            onChange={(val, unit) => {
+                                if (unit !== preferences.pressure) setUnit('pressure' as any, unit);
+                                setFormData({ ...formData, tripPressure: toBase(val || 0, 'pressure', unit) });
                             }}
-                            InputProps={{
-                                endAdornment: <InputAdornment position="end">{preferences.pressure}</InputAdornment>
-                            }}
-                            fullWidth
                             helperText="Credit for trips is usually not taken without SIL analysis (per API-521)."
+                            fullWidth
                         />
                     </Box>
                 );
@@ -256,13 +222,13 @@ Required relief rate is taken as the maximum normal flow capability of the upstr
                             <Box>
                                 <Typography variant="caption" color="text.secondary">Calculated Rate</Typography>
                                 <Typography variant="body1" fontWeight={600} color="primary.main">
-                                    {displayValues.normalFlow} {preferences.flow}
+                                    {toDisplay(formData.normalFlow, 'flow')} {preferences.flow}
                                 </Typography>
                             </Box>
                             <Box>
                                 <Typography variant="caption" color="text.secondary">Source Pressure</Typography>
                                 <Typography variant="body1">
-                                    {displayValues.sourcePressure} {preferences.pressure}
+                                    {toDisplay(formData.sourcePressure, 'pressure')} {preferences.pressure}
                                 </Typography>
                             </Box>
                         </Box>

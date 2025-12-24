@@ -41,6 +41,8 @@ import { MarkdownEditor } from "@/components/shared/MarkdownEditor";
 import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
 import { useUnitConversion } from "@/hooks/useUnitConversion";
 import { getDefaultUnitPreferences } from "@/lib/unitPreferences";
+import { UnitSelector } from "@/components/shared/UnitSelector";
+import { NumericInput } from "@/components/shared/NumericInput";
 import { useDisplaySettings } from "@/hooks/useDisplaySettings";
 import { getPressureValidationError, getTemperatureValidationError, getPositiveNumberError } from "@/lib/physicsValidation";
 import { getScenarioTemplate } from '@/templates/scenarios';
@@ -355,126 +357,53 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                     Relieving Conditions
                 </Typography>
                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 2 }}>
-                    <TextField
+                    <UnitSelector
                         label="Relieving Rate"
-                        type="number"
-                        value={relievingRateDisplay}
-                        onChange={(e) => {
-                            const raw = e.target.value;
-                            if (raw === "") {
-                                handleInputChange("relievingRate", undefined);
-                                return;
-                            }
-                            const parsed = parseFloat(raw);
-                            const base = toBase(parsed, 'flow');
+                        value={relievingRateDisplay === '' ? null : relievingRateDisplay}
+                        unit={preferences.flow}
+                        availableUnits={FLOW_UNITS}
+                        onChange={(val, unit) => {
+                            if (unit !== preferences.flow) setUnit('flow', unit);
+                            const base = val !== null ? toBase(val, 'flow', unit) : undefined;
                             handleInputChange("relievingRate", base);
-                        }}
-                        slotProps={{
-                            input: {
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <TextField
-                                            select
-                                            variant="standard"
-                                            value={preferences.flow}
-                                            onChange={(e) => setUnit('flow', e.target.value)}
-                                            sx={{ minWidth: 55 }}
-                                            disabled={!canEdit}
-                                        >
-                                            {FLOW_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                        </TextField>
-                                    </InputAdornment>
-                                ),
-                            }
                         }}
                         error={!!errors.relievingRate}
                         helperText={errors.relievingRate}
-                        fullWidth
                         disabled={!canEdit}
                     />
-                    <TextField
+                    <UnitSelector
                         label="Relieving Pressure"
-                        type="number"
-                        value={relievingPressureDisplay}
-                        onChange={(e) => {
-                            const raw = e.target.value;
-                            if (raw === "") {
-                                handleInputChange("relievingPressure", undefined);
-                                return;
-                            }
-                            const parsed = parseFloat(raw);
-                            const base = toBase(parsed, 'pressure');
+                        value={relievingPressureDisplay === '' ? null : relievingPressureDisplay}
+                        unit={preferences.pressure}
+                        availableUnits={PRESSURE_UNITS}
+                        onChange={(val, unit) => {
+                            if (unit !== preferences.pressure) setUnit('pressure', unit);
+                            const base = val !== null ? toBase(val, 'pressure', unit) : undefined;
                             handleInputChange("relievingPressure", base);
-                        }}
-                        slotProps={{
-                            input: {
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <TextField
-                                            select
-                                            variant="standard"
-                                            value={preferences.pressure}
-                                            onChange={(e) => setUnit('pressure', e.target.value)}
-                                            sx={{ minWidth: 60 }}
-                                            disabled={!canEdit}
-                                        >
-                                            {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                        </TextField>
-                                    </InputAdornment>
-                                ),
-                            }
                         }}
                         error={!!errors.relievingPressure}
                         helperText={errors.relievingPressure}
-                        fullWidth
                         disabled={!canEdit}
                     />
-                    <TextField
+                    <UnitSelector
                         label="Relieving Temp"
-                        type="number"
-                        value={relievingTempDisplay}
-                        onChange={(e) => {
-                            const raw = e.target.value;
-                            if (raw === "") {
-                                handleInputChange("relievingTemp", undefined);
-                                return;
-                            }
-                            const parsed = parseFloat(raw);
-                            const base = toBase(parsed, 'temperature');
+                        value={relievingTempDisplay === '' ? null : relievingTempDisplay}
+                        unit={preferences.temperature}
+                        availableUnits={TEMPERATURE_UNITS}
+                        onChange={(val, unit) => {
+                            if (unit !== preferences.temperature) setUnit('temperature', unit);
+                            const base = val !== null ? toBase(val, 'temperature', unit) : undefined;
                             handleInputChange("relievingTemp", base);
-                        }}
-                        slotProps={{
-                            input: {
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <TextField
-                                            select
-                                            variant="standard"
-                                            value={preferences.temperature}
-                                            onChange={(e) => setUnit('temperature', e.target.value)}
-                                            sx={{ minWidth: 45 }}
-                                            disabled={!canEdit}
-                                        >
-                                            {TEMPERATURE_UNITS.map(u => <MenuItem key={u} value={u}>{u === 'C' ? '°C' : u === 'F' ? '°F' : u}</MenuItem>)}
-                                        </TextField>
-                                    </InputAdornment>
-                                ),
-                            }
                         }}
                         error={!!errors.relievingTemp}
                         helperText={errors.relievingTemp}
-                        fullWidth
                         disabled={!canEdit}
                     />
-                    <TextField
+                    <NumericInput
                         label="Accumulation"
-                        type="number"
                         value={formData.accumulationPct}
-                        onChange={(e) => handleInputChange('accumulationPct', parseFloat(e.target.value))}
-                        InputProps={{
-                            endAdornment: <InputAdornment position="end">%</InputAdornment>,
-                        }}
-                        fullWidth
+                        onChange={(val) => handleInputChange('accumulationPct', val)}
+                        endAdornment="%"
                         disabled={!canEdit}
                     />
                 </Box>

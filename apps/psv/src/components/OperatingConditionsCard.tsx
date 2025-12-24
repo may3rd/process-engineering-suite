@@ -24,6 +24,7 @@ import { Edit, Settings as SettingsIcon } from "@mui/icons-material";
 import { ProtectiveSystem, FluidPhase, ValveOperatingType, UnitSystem } from "@/data/types";
 import { usePsvStore } from "../store/usePsvStore";
 import { glassCardStyles } from "./styles";
+import { NumericInput } from "./shared/NumericInput";
 import { useAuthStore } from "@/store/useAuthStore";
 import { formatPressureGauge } from "@/lib/projectUnits";
 
@@ -223,20 +224,18 @@ export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
                                 <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                             ))}
                         </TextField>
-                        <TextField
+                        <NumericInput
                             label="Set Pressure"
-                            type="number"
                             value={formData.setPressure}
-                            onChange={(e) => setFormData({ ...formData, setPressure: parseFloat(e.target.value) })}
-                            InputProps={{ endAdornment: <InputAdornment position="end">barg</InputAdornment> }}
+                            onChange={(val) => setFormData({ ...formData, setPressure: val || 0 })}
+                            endAdornment="barg"
                             fullWidth
                         />
-                        <TextField
+                        <NumericInput
                             label="MAWP"
-                            type="number"
                             value={formData.mawp}
-                            onChange={(e) => setFormData({ ...formData, mawp: parseFloat(e.target.value) })}
-                            InputProps={{ endAdornment: <InputAdornment position="end">barg</InputAdornment> }}
+                            onChange={(val) => setFormData({ ...formData, mawp: val || 0 })}
+                            endAdornment="barg"
                             fullWidth
                         />
                     </Stack>

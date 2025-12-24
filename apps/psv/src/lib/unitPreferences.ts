@@ -11,6 +11,7 @@ export function getDefaultUnitPreferences(unitSystem: UnitSystem): UnitPreferenc
                 area: "in²",
                 density: "lb/ft³",
                 viscosity: "cP",
+                backpressure: "psig",
             };
         case "metric_kgcm2":
             return {
@@ -21,6 +22,7 @@ export function getDefaultUnitPreferences(unitSystem: UnitSystem): UnitPreferenc
                 area: "mm²",
                 density: "kg/m³",
                 viscosity: "cP",
+                backpressure: "kg/cm2g",
             };
         case "fieldSI":
             return {
@@ -31,6 +33,7 @@ export function getDefaultUnitPreferences(unitSystem: UnitSystem): UnitPreferenc
                 area: "mm²",
                 density: "kg/m³",
                 viscosity: "cP",
+                backpressure: "kPag",
             };
         case "metric":
         default:
@@ -42,6 +45,7 @@ export function getDefaultUnitPreferences(unitSystem: UnitSystem): UnitPreferenc
                 area: "mm²",
                 density: "kg/m³",
                 viscosity: "cP",
+                backpressure: "barg",
             };
     }
 }

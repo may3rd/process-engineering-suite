@@ -6,9 +6,10 @@ import {
     Typography,
     TextField,
     MenuItem,
-    InputAdornment,
     Alert,
 } from '@mui/material';
+import { UnitSelector } from '../shared/UnitSelector';
+import { NumericInput } from '../shared/NumericInput';
 import { BrokenImage as BrokenImageIcon } from '@mui/icons-material';
 import { ScenarioWizardLayout } from './ScenarioWizardLayout';
 import { OverpressureScenario, FluidPhase } from '@/data/types';
@@ -55,23 +56,23 @@ export function TubeRuptureDialog({
         ],
     });
 
-    const [displayValues, setDisplayValues] = useState({
-        hpDesignPressure: 0,
-        lpDesignPressure: 0,
-        lpTestPressure: 0,
-        holeDiameter: 0,
-    });
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
     const validatePressureStep = () => {
         const errors: string[] = [];
-        const hpError = getPressureValidationError(displayValues.hpDesignPressure, preferences.pressure, 'HP design pressure');
+        const hpDisp = toDisplay(formData.hpDesignPressure, 'pressure');
+        const hpError = getPressureValidationError(hpDisp, preferences.pressure, 'HP design pressure');
         if (hpError) errors.push(hpError);
-        const lpError = getPressureValidationError(displayValues.lpDesignPressure, preferences.pressure, 'LP design pressure');
+
+        const lpDisp = toDisplay(formData.lpDesignPressure, 'pressure');
+        const lpError = getPressureValidationError(lpDisp, preferences.pressure, 'LP design pressure');
         if (lpError) errors.push(lpError);
-        const lpTestError = getPressureValidationError(displayValues.lpTestPressure, preferences.pressure, 'LP test pressure');
+
+        const lpTestDisp = toDisplay(formData.lpTestPressure, 'pressure');
+        const lpTestError = getPressureValidationError(lpTestDisp, preferences.pressure, 'LP test pressure');
         if (lpTestError) errors.push(lpTestError);
-        const holeError = getPositiveNumberError(displayValues.holeDiameter, 'Hole diameter');
+
+        const holeError = getPositiveNumberError(formData.holeDiameter, 'Hole diameter');
         if (holeError) errors.push(holeError);
         return errors;
     };
@@ -111,7 +112,7 @@ export function TubeRuptureDialog({
         // Q ~ C * A * sqrt(2 * rho * dP) ... simplified
         // Just return a dummy value based on hole size for now
         // Assume 25mm hole -> ~ 20,000 kg/h for liquid
-        const area = Math.PI * Math.pow((displayValues.holeDiameter || 25) / 2 / 1000, 2); // m2
+        const area = Math.PI * Math.pow((formData.holeDiameter || 25) / 2 / 1000, 2); // m2
         // Dummy factor
         return area * 10000000;
     };
@@ -139,11 +140,11 @@ export function TubeRuptureDialog({
 ### Exchanger
 - **Tag**: ${formData.exchangerTag}
 - **HP Side**: ${formData.hpSide.toUpperCase()}
-- **Rupture Size**: ${displayValues.holeDiameter} mm
+- **Rupture Size**: ${formData.holeDiameter} mm
 
 ### Pressure Check (10/13 Rule)
-- **HP Design**: ${displayValues.hpDesignPressure} ${preferences.pressure}
-- **LP Test**: ${displayValues.lpTestPressure} ${preferences.pressure}
+- **HP Design**: ${toDisplay(formData.hpDesignPressure, 'pressure')} ${preferences.pressure}
+- **LP Test**: ${toDisplay(formData.lpTestPressure, 'pressure')} ${preferences.pressure}
 - **Ratio**: ${checkRule().ratio.toFixed(2)} vs 0.77 threshold
 - **Conclusion**: ${checkRule().excluded ? 'Case may be EXCLUDED' : 'Case is CREDIBLE'}
 
@@ -195,16 +196,11 @@ Evaluated as a full bore tube rupture scenario.
                             </TextField>
                         </Box>
 
-                        <TextField
+                        <NumericInput
                             label="Tube Internal Diameter (Rupture Size)"
-                            type="number"
-                            value={displayValues.holeDiameter}
-                            onChange={(e) => {
-                                const val = parseFloat(e.target.value) || 0;
-                                setDisplayValues({ ...displayValues, holeDiameter: val });
-                                setFormData({ ...formData, holeDiameter: val });
-                            }}
-                            InputProps={{ endAdornment: <InputAdornment position="end">mm</InputAdornment> }}
+                            value={formData.holeDiameter}
+                            onChange={(val) => setFormData({ ...formData, holeDiameter: val || 0 })}
+                            endAdornment="mm"
                             fullWidth
                             helperText="Typically the ID of a single tube"
                         />
@@ -217,57 +213,43 @@ Evaluated as a full bore tube rupture scenario.
                             Enter design pressures to check scenario credibility (API-521 10/13ths rule).
                         </Typography>
 
-                        <TextField
+                        <UnitSelector
                             label="High Pressure Side Design Pressure"
-                            type="number"
-                            value={displayValues.hpDesignPressure}
-                            onChange={(e) => {
-                                const val = parseFloat(e.target.value) || 0;
-                                setDisplayValues({ ...displayValues, hpDesignPressure: val });
-                                setFormData({ ...formData, hpDesignPressure: toBase(val, 'pressure') });
-                            }}
-                            InputProps={{
-                                endAdornment: (
-                                    <InputAdornment position="end">
-                                        <TextField
-                                            select
-                                            variant="standard"
-                                            value={preferences.pressure}
-                                            onChange={(e) => setUnit('pressure', e.target.value)}
-                                            sx={{ minWidth: 60 }}
-                                        >
-                                            {['barg', 'psig', 'kPag'].map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                        </TextField>
-                                    </InputAdornment>
-                                ),
+                            value={toDisplay(formData.hpDesignPressure, 'pressure')}
+                            unit={preferences.pressure}
+                            availableUnits={['barg', 'psig', 'kPag']}
+                            onChange={(val, unit) => {
+                                if (unit !== preferences.pressure) setUnit('pressure' as any, unit);
+                                setFormData({ ...formData, hpDesignPressure: toBase(val || 0, 'pressure', unit) });
                             }}
                             fullWidth
                         />
 
-                        <TextField
+                        <UnitSelector
                             label="Low Pressure Side Corrected Hydrotest Pressure"
-                            type="number"
-                            value={displayValues.lpTestPressure}
-                            onChange={(e) => {
-                                const val = parseFloat(e.target.value) || 0;
-                                setDisplayValues({ ...displayValues, lpTestPressure: val });
-                                setFormData({ ...formData, lpTestPressure: toBase(val, 'pressure') });
+                            value={toDisplay(formData.lpTestPressure, 'pressure')}
+                            unit={preferences.pressure}
+                            availableUnits={['barg', 'psig', 'kPag']}
+                            onChange={(val, unit) => {
+                                if (unit !== preferences.pressure) setUnit('pressure' as any, unit);
+                                setFormData({ ...formData, lpTestPressure: toBase(val || 0, 'pressure', unit) });
                             }}
-                            InputProps={{ endAdornment: <InputAdornment position="end">{preferences.pressure}</InputAdornment> }}
                             fullWidth
                             helperText="Usually 1.3 or 1.5 x LP Design Pressure"
                         />
 
-                        {ruleResult.excluded ? (
-                            <Alert severity="success" variant="outlined">
-                                CASE EXCLUDED: LP Test Pressure is &gt; 10/13 of HP Design Pressure.
-                                Tube rupture is conventionally considered not credible.
-                            </Alert>
-                        ) : (
-                            <Alert severity="warning" variant="outlined">
-                                CASE CREDIBLE: LP Side is vulnerable to overpressure from HP side.
-                            </Alert>
-                        )}
+                        {
+                            ruleResult.excluded ? (
+                                <Alert severity="success" variant="outlined">
+                                    CASE EXCLUDED: LP Test Pressure is &gt; 10/13 of HP Design Pressure.
+                                    Tube rupture is conventionally considered not credible.
+                                </Alert>
+                            ) : (
+                                <Alert severity="warning" variant="outlined">
+                                    CASE CREDIBLE: LP Side is vulnerable to overpressure from HP side.
+                                </Alert>
+                            )
+                        }
                     </Box>
                 );
             case 2:

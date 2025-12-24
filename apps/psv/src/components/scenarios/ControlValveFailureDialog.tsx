@@ -6,9 +6,10 @@ import {
     Typography,
     TextField,
     MenuItem,
-    InputAdornment,
     Alert,
 } from '@mui/material';
+import { UnitSelector } from '../shared/UnitSelector';
+import { NumericInput } from '../shared/NumericInput';
 import { Settings as SettingsIcon } from '@mui/icons-material';
 import { ScenarioWizardLayout } from './ScenarioWizardLayout';
 import { OverpressureScenario, FluidPhase } from '@/data/types';
@@ -51,19 +52,15 @@ export function ControlValveFailureDialog({
         ],
     });
 
-    // Local display state
-    const [displayValues, setDisplayValues] = useState({
-        ratedCv: 0,
-        upstreamPressure: 0,
-        upstreamTemp: 25, // C
-    });
     const [validationErrors, setValidationErrors] = useState<string[]>([]);
 
     const validateValveStep = () => {
         const errors: string[] = [];
-        const cvError = getPositiveNumberError(displayValues.ratedCv, 'Rated Cv');
+        const cvError = getPositiveNumberError(formData.ratedCv, 'Rated Cv');
         if (cvError) errors.push(cvError);
-        const pressureError = getPressureValidationError(displayValues.upstreamPressure, preferences.pressure, 'Upstream pressure');
+
+        const pressureDisp = toDisplay(formData.upstreamPressure, 'pressure');
+        const pressureError = getPressureValidationError(pressureDisp, preferences.pressure, 'Upstream pressure');
         if (pressureError) errors.push(pressureError);
         return errors;
     };
@@ -87,7 +84,7 @@ export function ControlValveFailureDialog({
         // Just return a dummy calculated value based on Cv for now to show the concept.
         // In real app, we'd use the physics engine here.
         // Let's assume 1 Cv ~ 500 kg/h for a placeholder high pressure gas case.
-        return displayValues.ratedCv * 500;
+        return formData.ratedCv * 500;
     };
 
     const handleSave = () => {
@@ -116,8 +113,8 @@ ${formData.description.replace('[Tag]', formData.cvTag || 'Unknown Tag')}
 
 ### Valve Parameters
 - **Tag**: ${formData.cvTag}
-- **Rated Cv**: ${displayValues.ratedCv}
-- **Upstream Pressure**: ${displayValues.upstreamPressure} ${preferences.pressure}
+- **Rated Cv**: ${formData.ratedCv}
+- **Upstream Pressure**: ${toDisplay(formData.upstreamPressure, 'pressure')} ${preferences.pressure}
 
 ### Methodology
 Evaluated assuming the control valve fails to the fully open position.
@@ -142,45 +139,25 @@ Rate estimated based on rated Cv and maximum upstream pressure.
                             placeholder="e.g. FV-1001"
                         />
 
-                <TextField
-                    label="Rated Cv (Valve Coefficient)"
-                    type="number"
-                    value={displayValues.ratedCv}
-                    onChange={(e) => {
-                        const val = parseFloat(e.target.value) || 0;
-                        setDisplayValues({ ...displayValues, ratedCv: val });
-                        setFormData({ ...formData, ratedCv: val });
-                    }}
-                    fullWidth
-                    helperText="Enter the full open Cv of the valve"
-                />
+                        <NumericInput
+                            label="Rated Cv (Valve Coefficient)"
+                            value={formData.ratedCv}
+                            onChange={(val) => setFormData({ ...formData, ratedCv: val || 0 })}
+                            fullWidth
+                            helperText="Enter the full open Cv of the valve"
+                        />
 
-                <TextField
-                    label="Max Upstream Pressure (P1)"
-                    type="number"
-                    value={displayValues.upstreamPressure}
-                    onChange={(e) => {
-                        const val = parseFloat(e.target.value) || 0;
-                        setDisplayValues({ ...displayValues, upstreamPressure: val });
-                        setFormData({ ...formData, upstreamPressure: toBase(val, 'pressure') });
-                    }}
-                    InputProps={{
-                        endAdornment: (
-                            <InputAdornment position="end">
-                                <TextField
-                                    select
-                                    variant="standard"
-                                    value={preferences.pressure}
-                                    onChange={(e) => setUnit('pressure', e.target.value)}
-                                    sx={{ minWidth: 60 }}
-                                >
-                                    {['barg', 'psig', 'kPag'].map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                </TextField>
-                            </InputAdornment>
-                        ),
-                    }}
-                    fullWidth
-                />
+                        <UnitSelector
+                            label="Max Upstream Pressure (P1)"
+                            value={toDisplay(formData.upstreamPressure, 'pressure')}
+                            unit={preferences.pressure}
+                            availableUnits={['barg', 'psig', 'kPag']}
+                            onChange={(val, unit) => {
+                                if (unit !== preferences.pressure) setUnit('pressure' as any, unit);
+                                setFormData({ ...formData, upstreamPressure: toBase(val || 0, 'pressure', unit) });
+                            }}
+                            fullWidth
+                        />
                         <TextField
                             select
                             label="Fluid Phase"
@@ -237,7 +214,7 @@ Rate estimated based on rated Cv and maximum upstream pressure.
                             <Box>
                                 <Typography variant="caption" color="text.secondary">Rated Cv</Typography>
                                 <Typography variant="body1">
-                                    {displayValues.ratedCv}
+                                    {formData.ratedCv}
                                 </Typography>
                             </Box>
                         </Box>

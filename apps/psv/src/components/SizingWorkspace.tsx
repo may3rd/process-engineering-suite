@@ -59,6 +59,8 @@ import { calculateSizing } from "@eng-suite/api/psv";
 import { useUnitConversion, UnitType } from "@/hooks/useUnitConversion";
 import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
 import { getDefaultUnitPreferences } from "@/lib/unitPreferences";
+import { UnitSelector } from "@/components/shared/UnitSelector";
+import { NumericInput } from "@/components/shared/NumericInput";
 import type { FluidProperties } from "@/lib/apiClient";
 import {
     validateInletPressureDrop,
@@ -441,7 +443,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
     };
 
     // Handle input changes for SizingInputs (converts Display Value -> Base Value)
-    const handleInputChange = (field: keyof SizingInputs, displayValue: number | string, unitType?: UnitType) => {
+    const handleInputChange = (field: keyof SizingInputs, displayValue: number | string, unitType?: UnitType, explicitUnit?: string) => {
         // Handle strings (non-numeric fields)
         if (typeof displayValue === 'string' && !unitType) {
             setCurrentCase({
@@ -470,7 +472,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
         }
 
         // Convert to base unit if type is provided
-        const baseValue = unitType && safeValue !== undefined ? toBase(safeValue, unitType) : safeValue;
+        const baseValue = unitType && safeValue !== undefined ? toBase(safeValue, unitType, explicitUnit) : safeValue;
 
         setCurrentCase({
             ...currentCase,
@@ -1173,29 +1175,20 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                     Flow Conditions
                                 </Typography>
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-                                    <TextField
+                                    <UnitSelector
                                         label="Mass Flow Rate"
-                                        type="number"
-                                        value={currentCase.inputs.massFlowRate !== undefined ? toDisplay(currentCase.inputs.massFlowRate, 'flow') : ''}
-                                        onChange={(e) => handleInputChange('massFlowRate', e.target.value, 'flow')}
-                                        slotProps={{
-                                            input: {
-                                                endAdornment: (
-                                                    <InputAdornment position="end">
-                                                        <TextField
-                                                            select
-                                                            variant="standard"
-                                                            value={preferences.flow}
-                                                            onChange={(e) => setUnit('flow', e.target.value)}
-                                                            sx={{ minWidth: 60 }}
-                                                        >
-                                                            {FLOW_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                        </TextField>
-                                                    </InputAdornment>
-                                                ),
+                                        value={currentCase.inputs.massFlowRate !== undefined ? toDisplay(currentCase.inputs.massFlowRate, 'flow') : null}
+                                        unit={preferences.flow}
+                                        availableUnits={FLOW_UNITS}
+                                        onChange={(val, unit) => {
+                                            if (unit !== preferences.flow) {
+                                                setUnit('flow', unit);
                                             }
+                                            // val is in DISPLAY units. handleInputChange handles conversion to base.
+                                            // BUT handleInputChange expects a raw value and manual unit handling for non-string
+                                            // Let's reuse handleInputChange logic but be careful about the type
+                                            handleInputChange('massFlowRate', val !== null ? val : '', 'flow', unit);
                                         }}
-                                        fullWidth
                                     />
                                     <TextField
                                         label="Sizing Method"
@@ -1244,53 +1237,25 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                     Pressure & Temperature
                                 </Typography>
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-                                    <TextField
+                                    <UnitSelector
                                         label="Relieving Pressure"
-                                        type="number"
                                         value={toDisplay(currentCase.inputs.pressure, 'pressure')}
-                                        onChange={(e) => handleInputChange('pressure', e.target.value, 'pressure')}
-                                        slotProps={{
-                                            input: {
-                                                endAdornment: (
-                                                    <InputAdornment position="end">
-                                                        <TextField
-                                                            select
-                                                            variant="standard"
-                                                            value={preferences.pressure}
-                                                            onChange={(e) => setUnit('pressure', e.target.value)}
-                                                            sx={{ minWidth: 60 }}
-                                                        >
-                                                            {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                        </TextField>
-                                                    </InputAdornment>
-                                                ),
-                                            }
+                                        unit={preferences.pressure}
+                                        availableUnits={PRESSURE_UNITS}
+                                        onChange={(val, unit) => {
+                                            if (unit !== preferences.pressure) setUnit('pressure', unit);
+                                            handleInputChange('pressure', val !== null ? val : '', 'pressure', unit);
                                         }}
-                                        fullWidth
                                     />
-                                    <TextField
+                                    <UnitSelector
                                         label="Relieving Temperature"
-                                        type="number"
                                         value={toDisplay(currentCase.inputs.temperature, 'temperature')}
-                                        onChange={(e) => handleInputChange('temperature', e.target.value, 'temperature')}
-                                        slotProps={{
-                                            input: {
-                                                endAdornment: (
-                                                    <InputAdornment position="end">
-                                                        <TextField
-                                                            select
-                                                            variant="standard"
-                                                            value={preferences.temperature}
-                                                            onChange={(e) => setUnit('temperature', e.target.value)}
-                                                            sx={{ minWidth: 60 }}
-                                                        >
-                                                            {TEMPERATURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                        </TextField>
-                                                    </InputAdornment>
-                                                ),
-                                            }
+                                        unit={preferences.temperature}
+                                        availableUnits={TEMPERATURE_UNITS}
+                                        onChange={(val, unit) => {
+                                            if (unit !== preferences.temperature) setUnit('temperature', unit);
+                                            handleInputChange('temperature', val !== null ? val : '', 'temperature', unit);
                                         }}
-                                        fullWidth
                                     />
                                 </Box>
                             </CardContent>
@@ -1305,59 +1270,39 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                         Gas/Vapor Phase Properties
                                     </Typography>
                                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
-                                        <TextField
+                                        <NumericInput
                                             label="Molecular Weight"
-                                            type="number"
                                             value={currentCase.inputs.molecularWeight}
-                                            onChange={(e) => handleInputChange('molecularWeight', parseFloat(e.target.value))}
-                                            slotProps={{
-                                                input: {
-                                                    endAdornment: <InputAdornment position="end">g/mol</InputAdornment>
-                                                }
-                                            }}
-                                            fullWidth
+                                            onChange={(val) => handleInputChange('molecularWeight', val !== undefined ? val : '')}
+                                            endAdornment="g/mol"
                                         />
-                                        <TextField
+                                        <NumericInput
                                             label="Compressibility (Z)"
-                                            type="number"
                                             value={currentCase.inputs.compressibilityZ}
-                                            onChange={(e) => handleInputChange('compressibilityZ', parseFloat(e.target.value))}
-                                            slotProps={{ htmlInput: { step: 0.01, min: 0, max: 2 } }}
-                                            fullWidth
+                                            onChange={(val) => handleInputChange('compressibilityZ', val !== undefined ? val : '')}
+                                            step={0.01}
+                                            min={0}
+                                            max={2}
                                         />
-                                        <TextField
+                                        <NumericInput
                                             label="Specific Heat Ratio (k)"
-                                            type="number"
                                             value={currentCase.inputs.specificHeatRatio}
-                                            onChange={(e) => handleInputChange('specificHeatRatio', parseFloat(e.target.value))}
-                                            slotProps={{ htmlInput: { step: 0.01, min: 1, max: 2 } }}
-                                            fullWidth
+                                            onChange={(val) => handleInputChange('specificHeatRatio', val !== undefined ? val : '')}
+                                            step={0.01}
+                                            min={1}
+                                            max={2}
                                         />
                                     </Box>
                                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mt: 2 }}>
-                                        <TextField
+                                        <UnitSelector
                                             label="Gas Viscosity"
-                                            type="number"
                                             value={toDisplay(currentCase.inputs.gasViscosity || currentCase.inputs.viscosity, 'viscosity')}
-                                            onChange={(e) => handleInputChange('gasViscosity', e.target.value, 'viscosity')}
-                                            slotProps={{
-                                                input: {
-                                                    endAdornment: (
-                                                        <InputAdornment position="end">
-                                                            <TextField
-                                                                select
-                                                                variant="standard"
-                                                                value={preferences.viscosity}
-                                                                onChange={(e) => setUnit('viscosity', e.target.value)}
-                                                                sx={{ minWidth: 60 }}
-                                                            >
-                                                                {VISCOSITY_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                            </TextField>
-                                                        </InputAdornment>
-                                                    ),
-                                                }
+                                            unit={preferences.viscosity}
+                                            availableUnits={VISCOSITY_UNITS}
+                                            onChange={(val, unit) => {
+                                                if (unit !== preferences.viscosity) setUnit('viscosity', unit);
+                                                handleInputChange('gasViscosity', val !== null ? val : '', 'viscosity', unit);
                                             }}
-                                            fullWidth
                                         />
                                         <Box /> {/* Empty space */}
                                     </Box>
@@ -1373,53 +1318,25 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                         Liquid Phase Properties
                                     </Typography>
                                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-                                        <TextField
+                                        <UnitSelector
                                             label="Liquid Density"
-                                            type="number"
                                             value={toDisplay(currentCase.inputs.liquidDensity || currentCase.inputs.density, 'density')}
-                                            onChange={(e) => handleInputChange('liquidDensity', e.target.value, 'density')}
-                                            slotProps={{
-                                                input: {
-                                                    endAdornment: (
-                                                        <InputAdornment position="end">
-                                                            <TextField
-                                                                select
-                                                                variant="standard"
-                                                                value={preferences.density}
-                                                                onChange={(e) => setUnit('density', e.target.value)}
-                                                                sx={{ minWidth: 70 }}
-                                                            >
-                                                                {DENSITY_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                            </TextField>
-                                                        </InputAdornment>
-                                                    ),
-                                                }
+                                            unit={preferences.density}
+                                            availableUnits={DENSITY_UNITS}
+                                            onChange={(val, unit) => {
+                                                if (unit !== preferences.density) setUnit('density', unit);
+                                                handleInputChange('liquidDensity', val !== null ? val : '', 'density', unit);
                                             }}
-                                            fullWidth
                                         />
-                                        <TextField
+                                        <UnitSelector
                                             label="Liquid Viscosity"
-                                            type="number"
                                             value={toDisplay(currentCase.inputs.liquidViscosity || currentCase.inputs.viscosity, 'viscosity')}
-                                            onChange={(e) => handleInputChange('liquidViscosity', e.target.value, 'viscosity')}
-                                            slotProps={{
-                                                input: {
-                                                    endAdornment: (
-                                                        <InputAdornment position="end">
-                                                            <TextField
-                                                                select
-                                                                variant="standard"
-                                                                value={preferences.viscosity}
-                                                                onChange={(e) => setUnit('viscosity', e.target.value)}
-                                                                sx={{ minWidth: 60 }}
-                                                            >
-                                                                {VISCOSITY_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                            </TextField>
-                                                        </InputAdornment>
-                                                    ),
-                                                }
+                                            unit={preferences.viscosity}
+                                            availableUnits={VISCOSITY_UNITS}
+                                            onChange={(val, unit) => {
+                                                if (unit !== preferences.viscosity) setUnit('viscosity', unit);
+                                                handleInputChange('liquidViscosity', val !== null ? val : '', 'viscosity', unit);
                                             }}
-                                            fullWidth
                                         />
                                     </Box>
                                 </CardContent>
@@ -1480,29 +1397,15 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                 {/* Manual Backpressure Input */}
                                 {currentCase.inputs.backpressureSource !== 'calculated' && (
                                     <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 2 }}>
-                                        <TextField
+                                        <UnitSelector
                                             label="Backpressure"
-                                            type="number"
-                                            value={toDisplay(currentCase.inputs.backpressure, 'pressure')}
-                                            onChange={(e) => handleInputChange('backpressure', e.target.value, 'pressure')}
-                                            slotProps={{
-                                                input: {
-                                                    endAdornment: (
-                                                        <InputAdornment position="end">
-                                                            <TextField
-                                                                select
-                                                                variant="standard"
-                                                                value={preferences.pressure}
-                                                                onChange={(e) => setUnit('pressure', e.target.value)}
-                                                                sx={{ minWidth: 60 }}
-                                                            >
-                                                                {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                            </TextField>
-                                                        </InputAdornment>
-                                                    ),
-                                                }
+                                            value={toDisplay(currentCase.inputs.backpressure, 'backpressure')}
+                                            unit={preferences.backpressure}
+                                            availableUnits={PRESSURE_UNITS}
+                                            onChange={(val, unit) => {
+                                                if (unit !== preferences.backpressure) setUnit('backpressure', unit);
+                                                handleInputChange('backpressure', val !== null ? val : '', 'backpressure', unit);
                                             }}
-                                            fullWidth
                                         />
                                         <TextField
                                             label="Backpressure Type"
@@ -1959,42 +1862,36 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                     Valve Parameters
                                 </Typography>
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-                                    <TextField
+                                    <NumericInput
                                         label="Discharge Coefficient (Kd)"
-                                        type="number"
-                                        value={currentCase.inputs?.dischargeCoefficient ?? currentCase.outputs?.dischargeCoefficient ?? ''}
-                                        onChange={(e) => {
-                                            const val = parseFloat(e.target.value);
+                                        value={currentCase.inputs?.dischargeCoefficient ?? (currentCase.outputs?.dischargeCoefficient as number | undefined)}
+                                        onChange={(val) => {
                                             setCurrentCase({
                                                 ...currentCase,
                                                 inputs: {
                                                     ...currentCase.inputs,
-                                                    dischargeCoefficient: isNaN(val) ? undefined : val
+                                                    dischargeCoefficient: val
                                                 }
                                             });
                                             setIsDirty(true);
                                             setIsCalculated(false);
                                         }}
-                                        fullWidth
                                         helperText="Per API-520 (0.975 for gas, 0.65 for liquid)"
                                     />
-                                    <TextField
+                                    <NumericInput
                                         label="Backpressure Correction (Kb)"
-                                        type="number"
-                                        value={currentCase.inputs?.backpressureCorrectionFactor ?? currentCase.outputs?.backpressureCorrectionFactor ?? ''}
-                                        onChange={(e) => {
-                                            const val = parseFloat(e.target.value);
+                                        value={currentCase.inputs?.backpressureCorrectionFactor ?? (currentCase.outputs?.backpressureCorrectionFactor as number | undefined)}
+                                        onChange={(val) => {
                                             setCurrentCase({
                                                 ...currentCase,
                                                 inputs: {
                                                     ...currentCase.inputs,
-                                                    backpressureCorrectionFactor: isNaN(val) ? undefined : val
+                                                    backpressureCorrectionFactor: val
                                                 }
                                             });
                                             setIsDirty(true);
                                             setIsCalculated(false);
                                         }}
-                                        fullWidth
                                         helperText="Calculated from backpressure ratio"
                                     />
                                 </Box>

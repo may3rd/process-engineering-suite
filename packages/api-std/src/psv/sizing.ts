@@ -177,6 +177,22 @@ export function calculateGasArea(inputs: SizingInputs): SizingResult {
     let A_in2: number;
 
     if (critical) {
+        console.log('Critical flow conditions');
+    } else {
+        console.log('Subcritical flow conditions');
+    }
+    console.log('W', W);
+    console.log('C', C);
+    console.log('Kd', Kd);
+    console.log('P1', P1);
+    console.log('P2', P2);
+    console.log('Kb', Kb);
+    console.log('Kc', Kc);
+    console.log('T', T);
+    console.log('Z', Z);
+    console.log('M', M);
+
+    if (critical) {
         // Critical flow equation
         A_in2 = (W / (C * Kd * P1 * Kb * Kc)) * Math.sqrt((T * Z) / M);
         messages.push('Critical (choked) flow conditions');
@@ -184,6 +200,8 @@ export function calculateGasArea(inputs: SizingInputs): SizingResult {
         // Subcritical flow equation
         const r = P2 / P1;
         const F2 = calculateF2(k, r);
+        console.log('r', r);
+        console.log('F2', F2);
         A_in2 = (W / (735 * F2 * Kd * Kb * Kc)) * Math.sqrt((T * Z) / (M * P1 * (P1 - P2)));
         messages.push('Subcritical flow conditions');
         messages.push(`Pressure ratio P2/P1 = ${(r * 100).toFixed(1)}%`);
@@ -290,10 +308,25 @@ export function calculateSteamArea(inputs: SizingInputs): SizingResult {
     const Kd = inputs.dischargeCoefficient ?? DEFAULT_KD_GAS;
     const Kb = inputs.backpressureCorrectionFactor ?? calculateKb(P2 / P1, 'conventional');
     const Kc = DEFAULT_KC;
-    const Kn = 1.0; // Napier correction (for P1 > 1500 psia)
-    const Ksh = 1.0; // Superheat correction (1.0 for saturated steam)
+    let Kn = 1.0; // Napier correction (for P1 > 1500 psia)
+    let Ksh = 1.0; // Superheat correction (1.0 for saturated steam)
 
     messages.push('Steam sizing assuming saturated conditions (Ksh = 1.0)');
+
+    if (P1 <= 1500) {
+        messages.push('Napier correction applied: Kn = 1.0');
+    } else {
+        Kn = (0.1906 * P1 - 1000) / (0.2292 * P1 - 1061);
+        messages.push(`Napier correction applied: Kn = ${Kn.toFixed(3)}`);
+    }
+
+    console.log('W', W);
+    console.log('Kd', Kd);
+    console.log('P1', P1);
+    console.log('Kb', Kb);
+    console.log('Kc', Kc);
+    console.log('Kn', Kn);
+    console.log('Ksh', Ksh);
 
     const A_in2 = W / (51.5 * Kd * P1 * Kb * Kc * Kn * Ksh);
 

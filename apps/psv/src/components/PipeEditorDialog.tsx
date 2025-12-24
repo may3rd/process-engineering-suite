@@ -27,6 +27,7 @@ import {
 } from "@mui/material";
 import { Delete, Add } from "@mui/icons-material";
 import { UnitSelector } from "@/components/shared";
+import { NumericInput } from "@/components/shared/NumericInput";
 import { PipeProps } from "@/data/types";
 import type { FittingType } from "@eng-suite/physics";
 
@@ -508,15 +509,12 @@ export function PipeEditorDialog({
                         />
 
                         {/* K-Safety Factor */}
-                        <TextField
+                        <NumericInput
                             label="K-Safety Factor"
-                            type="number"
                             value={kSafetyFactor}
-                            onChange={(e) => setKSafetyFactor(parseFloat(e.target.value) || 0)}
+                            onChange={(val) => setKSafetyFactor(val || 0)}
                             size="small"
-                            slotProps={{
-                                input: { endAdornment: <InputAdornment position="end">%</InputAdornment> }
-                            }}
+                            endAdornment="%"
                         />
 
                         {/* User Specified Loss */}
@@ -577,15 +575,15 @@ export function PipeEditorDialog({
                                 </MenuItem>
                             )}
                         </TextField>
-                        <TextField
-                            label="Count"
-                            type="number"
-                            value={newFittingCount}
-                            onChange={(e) => setNewFittingCount(parseInt(e.target.value) || 1)}
-                            size="small"
-                            sx={{ width: 80 }}
-                            slotProps={{ htmlInput: { min: 1 } }}
-                        />
+                        <Box sx={{ width: 80 }}>
+                            <NumericInput
+                                label="Count"
+                                value={newFittingCount}
+                                onChange={(val) => setNewFittingCount(Math.floor(val || 1))}
+                                size="small"
+                                min={1}
+                            />
+                        </Box>
                         <Button
                             variant="outlined"
                             onClick={handleAddFitting}

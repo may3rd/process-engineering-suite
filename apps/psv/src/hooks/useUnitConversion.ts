@@ -11,6 +11,7 @@ const BASE_UNITS = {
     area: 'mm2',
     density: 'kg/m3',
     viscosity: 'cP',
+    backpressure: 'barg',
 } as const;
 
 // Normalize UI-friendly unit labels to the ASCII values accepted by convertUnit
@@ -91,9 +92,10 @@ export function useUnitConversion(initialPreferences: UnitPreferences) {
 
     /**
      * Convert a value from Display Unit -> Base Unit
+     * @param overrideSourceUnit Optional unit to use instead of the current preference (fixes race conditions during switching)
      */
-    const toBase = useCallback((value: number, type: UnitType): number => {
-        const sourceUnit = normalizeUnit(preferences[type]) || preferences[type];
+    const toBase = useCallback((value: number, type: UnitType, overrideSourceUnit?: string): number => {
+        const sourceUnit = overrideSourceUnit || normalizeUnit(preferences[type]) || preferences[type];
         return convertUnit(value, sourceUnit, BASE_UNITS[type]);
     }, [preferences, normalizeUnit]);
 

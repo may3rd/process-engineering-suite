@@ -9,14 +9,13 @@ import React from 'react';
 import {
     Box,
     TextField,
-    MenuItem,
     Typography,
-    Select,
     Card,
     CardContent,
     Stack,
     Alert,
 } from '@mui/material';
+import { UnitSelector } from '../shared/UnitSelector';
 import {
     getPressureValidationError,
     getTemperatureValidationError,
@@ -65,96 +64,42 @@ export function ManualRateInput({ input, onChange }: ManualRateInputProps) {
 
                     <Stack spacing={3}>
                         <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                                Relieving Rate
-                            </Typography>
-                            <Stack direction="row" spacing={1} alignItems="center">
-                                <TextField
-                                    required
-                                    type="number"
-                                    value={input.relievingRate}
-                                    onChange={(e) =>
-                                        updateInput({ relievingRate: e.target.value })
-                                    }
-                                    error={!!rateErrorMessage}
-                                    helperText={rateErrorMessage || ''}
-                                    sx={{ flex: 1 }}
-                                    size="small"
-                                />
-                                <Select
-                                    value={input.rateUnit}
-                                    onChange={(e) => updateInput({ rateUnit: e.target.value })}
-                                    size="small"
-                                    sx={{ minWidth: 100 }}
-                                >
-                                    <MenuItem value="kg/h">kg/h</MenuItem>
-                                    <MenuItem value="lb/h">lb/h</MenuItem>
-                                    <MenuItem value="kg/s">kg/s</MenuItem>
-                                    <MenuItem value="ton/day">ton/day</MenuItem>
-                                </Select>
-                            </Stack>
+                            <UnitSelector
+                                label="Relieving Rate"
+                                value={input.relievingRate ? parseFloat(input.relievingRate) : null}
+                                unit={input.rateUnit}
+                                availableUnits={['kg/h', 'lb/h', 'kg/s', 'ton/day']}
+                                onChange={(val, unit) => updateInput({ relievingRate: val?.toString() ?? '', rateUnit: unit })}
+                                error={!!rateErrorMessage}
+                                helperText={rateErrorMessage || ''}
+                                fullWidth
+                            />
                         </Box>
 
                         <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                                Relieving Temperature
-                            </Typography>
-                            <Stack direction="row" spacing={1} alignItems="center">
-                                <TextField
-                                    required
-                                    type="number"
-                                    value={input.relievingTemp}
-                                    onChange={(e) =>
-                                        updateInput({ relievingTemp: e.target.value })
-                                    }
-                                    error={!!temperatureErrorMessage}
-                                    helperText={temperatureErrorMessage || ''}
-                                    sx={{ flex: 1 }}
-                                    size="small"
-                                />
-                                <Select
-                                    value={input.tempUnit}
-                                    onChange={(e) => updateInput({ tempUnit: e.target.value })}
-                                    size="small"
-                                    sx={{ minWidth: 80 }}
-                                >
-                                    <MenuItem value="°C">°C</MenuItem>
-                                    <MenuItem value="°F">°F</MenuItem>
-                                    <MenuItem value="K">K</MenuItem>
-                                </Select>
-                            </Stack>
+                            <UnitSelector
+                                label="Relieving Temperature"
+                                value={input.relievingTemp ? parseFloat(input.relievingTemp) : null}
+                                unit={input.tempUnit}
+                                availableUnits={['C', 'F', 'K']}
+                                onChange={(val, unit) => updateInput({ relievingTemp: val?.toString() ?? '', tempUnit: unit })}
+                                error={!!temperatureErrorMessage}
+                                helperText={temperatureErrorMessage || ''}
+                                fullWidth
+                            />
                         </Box>
 
                         <Box>
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                                Relieving Pressure
-                            </Typography>
-                            <Stack direction="row" spacing={1} alignItems="center">
-                                <TextField
-                                    required
-                                    type="number"
-                                    value={input.relievingPressure}
-                                    onChange={(e) =>
-                                        updateInput({ relievingPressure: e.target.value })
-                                    }
-                                    error={!!pressureErrorMessage}
-                                    helperText={pressureErrorMessage || "Set pressure + accumulation"}
-                                    sx={{ flex: 1 }}
-                                    size="small"
-                                />
-                                <Select
-                                    value={input.pressureUnit}
-                                    onChange={(e) => updateInput({ pressureUnit: e.target.value })}
-                                    size="small"
-                                    sx={{ minWidth: 100 }}
-                                >
-                                    <MenuItem value="barg">barg</MenuItem>
-                                    <MenuItem value="psig">psig</MenuItem>
-                                    <MenuItem value="kPag">kPag</MenuItem>
-                                    <MenuItem value="bar">bar (abs)</MenuItem>
-                                    <MenuItem value="psia">psia</MenuItem>
-                                </Select>
-                            </Stack>
+                            <UnitSelector
+                                label="Relieving Pressure"
+                                value={input.relievingPressure ? parseFloat(input.relievingPressure) : null}
+                                unit={input.pressureUnit}
+                                availableUnits={['barg', 'psig', 'kPag', 'bar', 'psia']}
+                                onChange={(val, unit) => updateInput({ relievingPressure: val?.toString() ?? '', pressureUnit: unit })}
+                                error={!!pressureErrorMessage}
+                                helperText={pressureErrorMessage || "Set pressure + accumulation"}
+                                fullWidth
+                            />
                         </Box>
                     </Stack>
                 </CardContent>
