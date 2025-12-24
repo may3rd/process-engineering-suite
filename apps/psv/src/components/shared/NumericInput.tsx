@@ -77,7 +77,15 @@ export function NumericInput({
             label={label}
             type="number"
             value={displayValue}
-            onChange={(e) => setDisplayValue(e.target.value)}
+            onChange={(e) => {
+                const newValue = e.target.value;
+                setDisplayValue(newValue);
+                // Immediately notify parent of the new value
+                const numValue = newValue === '' ? undefined : parseFloat(newValue);
+                if (numValue === undefined || !isNaN(numValue)) {
+                    onChange(numValue);
+                }
+            }}
             onBlur={() => {
                 const committed = commitValue();
                 onBlur?.(committed);
