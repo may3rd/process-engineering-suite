@@ -74,3 +74,14 @@ export function getPositiveNumberError(value: string | number | null | undefined
     }
     return null;
 }
+
+export function getNonNegativeNumberError(value: string | number | null | undefined, label: string): string | null {
+    const numeric = parseNumber(value);
+    if (!Number.isFinite(numeric)) {
+        return `${label} is required`;
+    }
+    if (numeric < 0) {
+        return `${label} must be 0 or greater`;
+    }
+    return null;
+}

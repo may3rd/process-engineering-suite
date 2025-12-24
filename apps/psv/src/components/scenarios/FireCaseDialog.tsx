@@ -24,6 +24,7 @@ import {
     getPressureValidationError,
     getTemperatureValidationError,
     getPositiveNumberError,
+    getNonNegativeNumberError,
 } from '@/lib/physicsValidation';
 import { convertUnit } from '@eng-suite/physics';
 
@@ -139,7 +140,7 @@ export function FireCaseDialog({
                 'Relieving temperature'
             );
             if (tempError) errors.push(tempError);
-            const heightError = getPositiveNumberError(
+            const heightError = getNonNegativeNumberError(
                 formData.api521Config.heightAboveGrade,
                 'Height above grade'
             );
