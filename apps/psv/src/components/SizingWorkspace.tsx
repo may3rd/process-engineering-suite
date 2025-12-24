@@ -1879,7 +1879,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                         helperText="Per API-520 (0.975 for gas, 0.65 for liquid)"
                                     />
                                     <NumericInput
-                                        label="Backpressure Correction (Kb)"
+                                        label={currentCase.method === 'liquid' ? "Backpressure Correction (Kw)" : "Backpressure Correction (Kb)"}
                                         value={currentCase.inputs?.backpressureCorrectionFactor ?? (currentCase.outputs?.backpressureCorrectionFactor as number | undefined)}
                                         onChange={(val) => {
                                             setCurrentCase({
@@ -1892,7 +1892,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                             setIsDirty(true);
                                             setIsCalculated(false);
                                         }}
-                                        helperText="Calculated from backpressure ratio"
+                                        helperText={currentCase.method === 'liquid' ? "Per API-520 Figure 32 (balanced bellows)" : "Calculated from backpressure ratio"}
                                     />
                                 </Box>
                             </CardContent>

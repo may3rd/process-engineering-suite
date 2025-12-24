@@ -35,6 +35,7 @@ import {
     Close,
 } from "@mui/icons-material";
 import { OverpressureScenario, ScenarioCause, FluidPhase, UnitPreferences } from "@/data/types";
+import { usePsvStore } from "@/store/usePsvStore";
 import { v4 as uuidv4 } from "uuid";
 import { useAuthStore } from "@/store/useAuthStore";
 import { MarkdownEditor } from "@/components/shared/MarkdownEditor";
@@ -90,19 +91,27 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
     const defaultPreferences: UnitPreferences = getDefaultUnitPreferences(unitSystem);
     const { preferences, setUnit, toDisplay, toBase } = useUnitConversion(defaultPreferences);
 
-    const [formData, setFormData] = useState<Partial<OverpressureScenario>>({
-        protectiveSystemId: psvId,
-        cause: 'blocked_outlet',
-        description: '',
-        relievingTemp: 0,
-        relievingPressure: 0,
-        phase: 'gas',
-        relievingRate: 0,
-        accumulationPct: 10,
-        requiredCapacity: 0,
-        assumptions: [],
-        codeRefs: ['API-521'],
-        isGoverning: false,
+    const [formData, setFormData] = useState<Partial<OverpressureScenario>>(() => {
+        // Get PSV's set pressure for default
+        const state = usePsvStore.getState();
+        const psv = state.selectedPsv;
+        const defaultSetPressure = psv?.setPressure ?? 0;
+
+        return {
+            protectiveSystemId: psvId,
+            cause: 'blocked_outlet',
+            description: '',
+            relievingTemp: 0,
+            relievingPressure: defaultSetPressure * 1.1, // Default to 110% of set pressure
+            phase: 'gas',
+            relievingRate: 0,
+            accumulationPct: 10,
+            requiredCapacity: 0,
+            assumptions: [],
+            codeRefs: ['API-521'],
+            isGoverning: false,
+            setPressure: defaultSetPressure, // Cascade from PSV
+        };
     });
 
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -114,7 +123,15 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
     // Initialize form data if editing
     useEffect(() => {
         if (initialData) {
-            setFormData(initialData);
+            // If editing an existing scenario without setPressure, cascade from PSV
+            const state = usePsvStore.getState();
+            const psv = state.selectedPsv;
+            const defaultSetPressure = psv?.setPressure ?? 0;
+
+            setFormData({
+                ...initialData,
+                setPressure: initialData.setPressure ?? defaultSetPressure,
+            });
             setTouched({});
             setErrors({});
             setDismissedValidationWarning(false);
@@ -240,6 +257,11 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
         ? Number(relievingTempBase.toFixed(decimalPlaces.temperature))
         : '';
 
+    const setPressureBase = toDisplay(formData.setPressure ?? 0, 'pressure');
+    const setPressureDisplay: number | '' = Number.isFinite(setPressureBase)
+        ? Number(setPressureBase.toFixed(decimalPlaces.pressure))
+        : '';
+
     useEffect(() => {
         if (isFormValid) setDismissedValidationWarning(false);
     }, [isFormValid]);
@@ -356,19 +378,18 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                 <Typography variant="subtitle2" color="text.secondary" gutterBottom>
                     Relieving Conditions
                 </Typography>
-                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(4, 1fr)' }, gap: 2 }}>
+                {/* Row 1: Set Pressure, Relieving Pressure, Accumulation */}
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(3, 1fr)' }, gap: 2, mb: 2 }}>
                     <UnitSelector
-                        label="Relieving Rate"
-                        value={relievingRateDisplay === '' ? null : relievingRateDisplay}
-                        unit={preferences.flow}
-                        availableUnits={FLOW_UNITS}
+                        label="Set Pressure"
+                        value={setPressureDisplay === '' ? null : setPressureDisplay}
+                        unit={preferences.pressure}
+                        availableUnits={PRESSURE_UNITS}
                         onChange={(val, unit) => {
-                            if (unit !== preferences.flow) setUnit('flow', unit);
-                            const base = val !== null ? toBase(val, 'flow', unit) : undefined;
-                            handleInputChange("relievingRate", base);
+                            if (unit !== preferences.pressure) setUnit('pressure', unit);
+                            const base = val !== null ? toBase(val, 'pressure', unit) : undefined;
+                            handleInputChange("setPressure", base);
                         }}
-                        error={!!errors.relievingRate}
-                        helperText={errors.relievingRate}
                         disabled={!canEdit}
                     />
                     <UnitSelector
@@ -385,6 +406,30 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                         helperText={errors.relievingPressure}
                         disabled={!canEdit}
                     />
+                    <NumericInput
+                        label="Accumulation"
+                        value={formData.accumulationPct}
+                        onChange={(val) => handleInputChange('accumulationPct', val)}
+                        endAdornment="%"
+                        disabled={!canEdit}
+                    />
+                </Box>
+                {/* Row 2: Relieving Rate, Relieving Temp */}
+                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(3, 1fr)' }, gap: 2 }}>
+                    <UnitSelector
+                        label="Relieving Rate"
+                        value={relievingRateDisplay === '' ? null : relievingRateDisplay}
+                        unit={preferences.flow}
+                        availableUnits={FLOW_UNITS}
+                        onChange={(val, unit) => {
+                            if (unit !== preferences.flow) setUnit('flow', unit);
+                            const base = val !== null ? toBase(val, 'flow', unit) : undefined;
+                            handleInputChange("relievingRate", base);
+                        }}
+                        error={!!errors.relievingRate}
+                        helperText={errors.relievingRate}
+                        disabled={!canEdit}
+                    />
                     <UnitSelector
                         label="Relieving Temp"
                         value={relievingTempDisplay === '' ? null : relievingTempDisplay}
@@ -397,13 +442,6 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
                         }}
                         error={!!errors.relievingTemp}
                         helperText={errors.relievingTemp}
-                        disabled={!canEdit}
-                    />
-                    <NumericInput
-                        label="Accumulation"
-                        value={formData.accumulationPct}
-                        onChange={(val) => handleInputChange('accumulationPct', val)}
-                        endAdornment="%"
                         disabled={!canEdit}
                     />
                 </Box>

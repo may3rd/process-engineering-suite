@@ -6,6 +6,7 @@
 
 import { convertUnit } from '@eng-suite/physics';
 import { ORIFICE_SIZES, SizingInputs, SizingMethod, SizingOutputs } from './types';
+import { calculateKsh, APIEdition } from './kshLookup';
 
 /** Default discharge coefficient for gas/vapor PRV (API-520) */
 export const DEFAULT_KD_GAS = 0.975;
@@ -43,6 +44,10 @@ export function bargToBara(barg: number): number {
 /** Convert pressure from barg to psia */
 export function bargToPsia(barg: number): number {
     return convertUnit(barg, 'barg', 'psi');
+}
+
+export function bargToPsig(barg: number): number {
+    return convertUnit(barg, 'barg', 'psig');
 }
 
 /** Convert mass flow from kg/h to lb/h */
@@ -113,6 +118,77 @@ export function calculateKb(backpressureRatio: number, valveType: 'conventional'
     if (backpressureRatio >= 0.5) return 0.7;
 
     return 1.0 - (backpressureRatio - 0.3) * 1.5;
+}
+
+/**
+ * Kw lookup table based on API-520 Figure 32
+ * For balanced bellows valves in liquid service
+ * X: Percent of Gauge Backpressure = (PB/PS) × 100
+ * Y: Kw correction factor
+ */
+const KW_LIQUID_TABLE: { percent: number; kw: number }[] = [
+    { percent: 0, kw: 1.0 },
+    { percent: 5, kw: 1.0 },
+    { percent: 10, kw: 1.0 },
+    { percent: 15, kw: 1.0 },
+    { percent: 16, kw: 0.995 },
+    { percent: 20, kw: 0.97 },
+    { percent: 25, kw: 0.92 },
+    { percent: 30, kw: 0.865 },
+    { percent: 35, kw: 0.795 },
+    { percent: 40, kw: 0.71 },
+    { percent: 45, kw: 0.60 },
+    { percent: 50, kw: 0.50 },
+];
+
+/**
+ * Calculate backpressure correction factor Kw for liquid service (API-520 Figure 32)
+ * 
+ * @param backpressureGauge - Backpressure in gauge units (e.g., barg, psig)
+ * @param setPressureGauge - Set pressure in same gauge units
+ * @param valveType - Valve operating type
+ * @returns Kw correction factor (1.0 for conventional/pilot, interpolated for balanced bellows)
+ * 
+ * NOTE: For conventional valves, backpressure does not affect liquid flow capacity,
+ * so Kw = 1.0. For balanced bellows valves, use Figure 32 curve.
+ */
+export function calculateKw(
+    backpressureGauge: number,
+    setPressureGauge: number,
+    valveType: 'conventional' | 'balanced' | 'pilot' = 'conventional'
+): number {
+    console.log('calculateKw');
+    console.log('backpressureGauge', backpressureGauge);
+    console.log('setPressureGauge', setPressureGauge);
+    console.log('valveType', valveType);
+
+    // Conventional and pilot valves: Kw = 1.0 (no correction needed)
+    if (valveType === 'conventional' || valveType === 'pilot') {
+        return 1.0;
+    }
+
+    // Calculate percent of gauge backpressure
+    if (setPressureGauge <= 0) return 1.0;
+    const percentBackpressure = (backpressureGauge / setPressureGauge) * 100;
+    console.log('percentBackpressure', percentBackpressure);
+
+    // Clamp to table bounds
+    if (percentBackpressure <= 15) return 1.0;
+    if (percentBackpressure >= 50) return 0.5;
+
+    // Linear interpolation within table
+    for (let i = 0; i < KW_LIQUID_TABLE.length - 1; i++) {
+        const lower = KW_LIQUID_TABLE[i];
+        const upper = KW_LIQUID_TABLE[i + 1];
+        if (percentBackpressure >= lower.percent && percentBackpressure <= upper.percent) {
+            const t = (percentBackpressure - lower.percent) / (upper.percent - lower.percent);
+            const Kw = lower.kw + t * (upper.kw - lower.kw);
+            console.log('Kw', Kw);
+            return Kw;
+        }
+    }
+
+    return 1.0; // Fallback
 }
 
 /**
@@ -254,12 +330,40 @@ export function calculateLiquidArea(inputs: SizingInputs): SizingResult {
     const Q = inputs.massFlowRate / (density * 0.2271);
 
     const Kd = inputs.dischargeCoefficient ?? DEFAULT_KD_LIQUID;
-    const Kw = inputs.backpressureCorrectionFactor ?? 1.0; // Backpressure correction for balanced valves (assume conventional)
+
+    // Calculate Kw based on valve type and backpressure ratio (API-520 Figure 32)
+    // Use set pressure if provided, otherwise use relieving pressure as approximation
+    const setPressure = bargToPsig(inputs.setPressure ?? inputs.pressure);
+    const backpressure = bargToPsig(inputs.backpressure);
+    const valveType = inputs.valveType ?? 'conventional';
+
+    console.log('backpressure', backpressure);
+    console.log('setPressure', setPressure);
+    console.log('valveType', valveType);
+
+    const Kw = calculateKw(backpressure, setPressure, valveType);
+
+    if (valveType === 'balanced' && Kw < 1.0) {
+        messages.push(`Balanced bellows valve: Kw = ${Kw.toFixed(3)} (BP/PS = ${((backpressure / setPressure) * 100).toFixed(1)}%)`);
+    }
+
     const Kc = DEFAULT_KC;
     let Kv = 1.0; // Initial viscosity correction
 
+    console.log('Q', Q);
+    console.log('Kd', Kd);
+    console.log('Kw', Kw);
+    console.log('Kc', Kc);
+    console.log('Kv', Kv);
+    console.log('G', G);
+    console.log('P1', P1);
+    console.log('P2', P2);
+    console.log('deltaP', deltaP);
+
     // First pass - calculate preliminary area with Kv = 1.0
     let A_in2 = (Q / (38 * Kd * Kw * Kc * Kv)) * Math.sqrt(G / deltaP);
+
+    console.log('A_in2', A_in2);
 
     // Calculate viscosity correction if viscosity is provided
     const viscosity = inputs.viscosity ?? inputs.liquidViscosity;
@@ -280,6 +384,10 @@ export function calculateLiquidArea(inputs: SizingInputs): SizingResult {
         }
     }
 
+    console.log('Viscosity', viscosity);
+    console.log('Kv', Kv);
+    console.log('A_in2', A_in2);
+
     messages.push('Liquid service sizing per API-520');
 
     return {
@@ -298,37 +406,60 @@ export function calculateLiquidArea(inputs: SizingInputs): SizingResult {
 /**
  * Calculate required orifice area for steam service (API-520)
  */
-export function calculateSteamArea(inputs: SizingInputs): SizingResult {
+export function calculateSteamArea(inputs: SizingInputs, edition: APIEdition = '10E'): SizingResult {
     const messages: string[] = [];
 
     const W = kghToLbh(inputs.massFlowRate);
-    const P1 = bargToPsia(inputs.pressure);
+    const P1_psia = bargToPsia(inputs.pressure);
     const P2 = bargToPsia(inputs.backpressure);
 
+    // Convert pressure to Pa absolute for Ksh lookup
+    const P1_Pa = convertUnit(inputs.pressure, 'barg', 'Pa');
+    // Convert temperature to K for Ksh lookup
+    const T1_K = celsiusToKelvin(inputs.temperature);
+
     const Kd = inputs.dischargeCoefficient ?? DEFAULT_KD_GAS;
-    const Kb = inputs.backpressureCorrectionFactor ?? calculateKb(P2 / P1, 'conventional');
+    const Kb = inputs.backpressureCorrectionFactor ?? calculateKb(P2 / P1_psia, 'conventional');
     const Kc = DEFAULT_KC;
     let Kn = 1.0; // Napier correction (for P1 > 1500 psia)
     let Ksh = 1.0; // Superheat correction (1.0 for saturated steam)
 
-    messages.push('Steam sizing assuming saturated conditions (Ksh = 1.0)');
-
-    if (P1 <= 1500) {
-        messages.push('Napier correction applied: Kn = 1.0');
+    // Calculate Napier correction
+    if (P1_psia <= 1500) {
+        messages.push('Napier correction: Kn = 1.0 (P1 ≤ 1500 psia)');
     } else {
-        Kn = (0.1906 * P1 - 1000) / (0.2292 * P1 - 1061);
+        Kn = (0.1906 * P1_psia - 1000) / (0.2292 * P1_psia - 1061);
         messages.push(`Napier correction applied: Kn = ${Kn.toFixed(3)}`);
+    }
+
+    // Calculate superheat correction (Ksh)
+    // Ksh < 1.0 for superheated steam, = 1.0 for saturated steam
+    try {
+        Ksh = calculateKsh(T1_K, P1_Pa, edition);
+        if (Ksh < 1.0) {
+            messages.push(`Superheated steam: Ksh = ${Ksh.toFixed(3)} (API-520 ${edition})`);
+        } else {
+            messages.push('Saturated steam conditions (Ksh = 1.0)');
+        }
+    } catch (error) {
+        // If Ksh calculation fails (e.g., out of range), default to 1.0
+        Ksh = 1.0;
+        messages.push('Steam sizing assuming saturated conditions (Ksh = 1.0)');
+        if (error instanceof Error) {
+            messages.push(`NOTE: ${error.message}`);
+        }
     }
 
     console.log('W', W);
     console.log('Kd', Kd);
-    console.log('P1', P1);
+    console.log('P1_psia', P1_psia);
+    console.log('T1_K', T1_K);
     console.log('Kb', Kb);
     console.log('Kc', Kc);
     console.log('Kn', Kn);
     console.log('Ksh', Ksh);
 
-    const A_in2 = W / (51.5 * Kd * P1 * Kb * Kc * Kn * Ksh);
+    const A_in2 = W / (51.5 * Kd * P1_psia * Kb * Kc * Kn * Ksh);
 
     return {
         requiredArea: sqinToSqmm(A_in2),

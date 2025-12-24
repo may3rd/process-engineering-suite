@@ -161,6 +161,7 @@ export interface OverpressureScenario {
     assumptions: string[];
     codeRefs: string[];
     isGoverning: boolean;
+    setPressure?: number; // barg - Set pressure for this scenario (cascaded from PSV if not specified)
     caseConsideration?: string; // Markdown-formatted case consideration details
 
     // Fire case specific metadata

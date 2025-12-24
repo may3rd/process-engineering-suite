@@ -288,6 +288,7 @@ function ScenariosTab() {
                 assumptions: scenario.assumptions ?? [],
                 codeRefs: scenario.codeRefs ?? [],
                 isGoverning: scenario.isGoverning ?? false,
+                setPressure: scenario.setPressure ?? selectedPsv.setPressure, // Cascade from PSV
                 currentRevisionId: scenario.currentRevisionId,
                 caseConsideration: scenario.caseConsideration,
                 createdAt: scenario.createdAt ?? now,
@@ -344,6 +345,7 @@ function ScenariosTab() {
             assumptions: fireScenario.assumptions || [],
             codeRefs: fireScenario.codeRefs || ['API-521 Section 4.4'],
             isGoverning: false,
+            setPressure: fireScenario.setPressure ?? selectedPsv.setPressure, // Cascade from PSV
             caseConsideration: fireScenario.caseConsideration,
             fireCalculation: fireScenario.fireCalculation,
             createdAt: now,
@@ -975,6 +977,12 @@ function SizingTab({ onEdit, onCreate }: { onEdit?: (id: string) => void; onCrea
                 specificHeatRatio: 1.4,
                 backpressure: 0,
                 backpressureType: 'superimposed',
+                // Set pressure from scenario or PSV for Kw calculation
+                setPressure: scenario.setPressure ?? selectedPsv.setPressure,
+                // Map valve type for Kb/Kw calculations
+                valveType: selectedPsv.valveType === 'balanced_bellows' ? 'balanced'
+                    : selectedPsv.valveType === 'pilot_operated' ? 'pilot'
+                        : 'conventional',
             },
             outputs: {
                 requiredArea: 0,

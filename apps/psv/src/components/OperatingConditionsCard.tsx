@@ -27,6 +27,9 @@ import { glassCardStyles } from "./styles";
 import { NumericInput } from "./shared/NumericInput";
 import { useAuthStore } from "@/store/useAuthStore";
 import { formatPressureGauge } from "@/lib/projectUnits";
+import { UnitSelector } from "./shared/UnitSelector";
+import { useUnitConversion } from "@/hooks/useUnitConversion";
+import { getDefaultUnitPreferences } from "@/lib/unitPreferences";
 
 interface OperatingConditionsCardProps {
     psv: ProtectiveSystem;
@@ -57,6 +60,12 @@ export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
         mawp: psv.mawp || 0,
         valveType: psv.valveType || 'conventional',
     });
+
+    // Unit conversion hook
+    const defaultPreferences = getDefaultUnitPreferences(unitSystem);
+    const { preferences, setUnit, toDisplay, toBase } = useUnitConversion(defaultPreferences);
+
+    const PRESSURE_UNITS = ['barg', 'psig', 'kPag', 'kg/cm2g'];
 
     const handleEdit = () => {
         setFormData({
@@ -224,18 +233,26 @@ export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
                                 <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
                             ))}
                         </TextField>
-                        <NumericInput
+                        <UnitSelector
                             label="Set Pressure"
-                            value={formData.setPressure}
-                            onChange={(val) => setFormData({ ...formData, setPressure: val || 0 })}
-                            endAdornment="barg"
+                            value={toDisplay(formData.setPressure, 'pressure')}
+                            unit={preferences.pressure}
+                            availableUnits={PRESSURE_UNITS}
+                            onChange={(val, unit) => {
+                                if (unit !== preferences.pressure) setUnit('pressure', unit);
+                                setFormData({ ...formData, setPressure: toBase(val || 0, 'pressure', unit) });
+                            }}
                             fullWidth
                         />
-                        <NumericInput
+                        <UnitSelector
                             label="MAWP"
-                            value={formData.mawp}
-                            onChange={(val) => setFormData({ ...formData, mawp: val || 0 })}
-                            endAdornment="barg"
+                            value={toDisplay(formData.mawp, 'pressure')}
+                            unit={preferences.pressure}
+                            availableUnits={PRESSURE_UNITS}
+                            onChange={(val, unit) => {
+                                if (unit !== preferences.pressure) setUnit('pressure', unit);
+                                setFormData({ ...formData, mawp: toBase(val || 0, 'pressure', unit) });
+                            }}
                             fullWidth
                         />
                     </Stack>

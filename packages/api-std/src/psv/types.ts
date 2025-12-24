@@ -32,7 +32,9 @@ export interface SizingInputs {
     destinationPressure?: number;  // barg - destination pressure for backward calculation
     inletPressureDrop?: number;  // kPa - calculated from inlet network
     dischargeCoefficient?: number; // Kd - manual override
-    backpressureCorrectionFactor?: number; // Kb - manual override
+    backpressureCorrectionFactor?: number; // Kb/Kw - manual override
+    valveType?: 'conventional' | 'balanced' | 'pilot'; // Valve operating type
+    setPressure?: number; // barg - PSV set pressure (for Kw calculation)
 }
 
 export interface SizingOutputs {
