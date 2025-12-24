@@ -340,7 +340,7 @@ function ScenariosTab() {
             relievingPressure: fireScenario.relievingPressure || selectedPsv.setPressure * 1.1,
             phase: fireScenario.phase || 'gas',
             relievingRate: fireScenario.relievingRate || 0,
-            accumulationPct: 10,
+            accumulationPct: fireScenario.accumulationPct ?? 21, // API-521 allows 21% for fire case
             requiredCapacity: fireScenario.relievingRate || 0,
             assumptions: fireScenario.assumptions || [],
             codeRefs: fireScenario.codeRefs || ['API-521 Section 4.4'],
