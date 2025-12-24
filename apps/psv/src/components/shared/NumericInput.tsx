@@ -4,7 +4,7 @@ import { TextField, InputAdornment } from '@mui/material';
 interface NumericInputProps {
     value: number | undefined | null;
     onChange: (value: number | undefined) => void;
-    onBlur?: () => void;
+    onBlur?: (committedValue: number | undefined) => void;
     label: string;
     endAdornment?: React.ReactNode;
     min?: number;
@@ -56,16 +56,19 @@ export function NumericInput({
         setDisplayValue(value.toString());
     }, [value]);
 
-    const commitValue = () => {
+    const commitValue = (): number | undefined => {
         const numValue = displayValue === '' ? undefined : parseFloat(displayValue);
 
         if (numValue !== undefined && !isNaN(numValue)) {
             onChange(numValue);
+            return numValue;
         } else if (displayValue === '') {
             onChange(undefined);
+            return undefined;
         } else {
             // Invalid number, revert
             setDisplayValue(value?.toString() || '');
+            return value ?? undefined;
         }
     };
 
@@ -76,8 +79,8 @@ export function NumericInput({
             value={displayValue}
             onChange={(e) => setDisplayValue(e.target.value)}
             onBlur={() => {
-                commitValue();
-                onBlur?.();
+                const committed = commitValue();
+                onBlur?.(committed);
             }}
             onKeyDown={(e) => {
                 if (e.key === 'Enter') {
