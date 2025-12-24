@@ -75,7 +75,13 @@ export function UnitSelector({
     };
 
     const handleValueChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        setDisplayValue(event.target.value);
+        const newValue = event.target.value;
+        setDisplayValue(newValue);
+        // Immediately notify parent of the new value
+        const numValue = newValue === '' ? null : parseFloat(newValue);
+        if (numValue === null || !isNaN(numValue)) {
+            onChange(numValue, unit);
+        }
     };
 
     const handleUnitChange = (event: React.ChangeEvent<HTMLInputElement>) => {
