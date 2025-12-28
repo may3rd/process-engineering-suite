@@ -57,7 +57,7 @@ yarn-error.log*
 .DS_Store
 *.pem
 .kilocode
-
+.tmp/
 
 # IDE
 .idea/
