@@ -19,6 +19,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
 
+from apps.api.app.database import is_db_available
 from apps.api.schemas import (
     PipeSectionRequest,
     CalculationResponse,
@@ -393,7 +394,12 @@ async def calculate_edge(edge_id: str, request: PipeSectionRequest):
 @app.get("/health")
 async def health_check():
     """Health check endpoint."""
-    return {"status": "healthy", "service": "hydraulics-api"}
+    db_available = await is_db_available()
+    return {
+        "status": "healthy",
+        "service": "hydraulics-api",
+        "database": "connected" if db_available else "disconnected",
+    }
 
 
 @app.post("/hydraulics/solve-length")

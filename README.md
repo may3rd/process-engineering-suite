@@ -80,6 +80,7 @@ docker-compose -f infra/docker-compose.yml up --build
 **Services:**
 - **All Web Apps** (managed by turborepo in parallel):
   - Dashboard: http://localhost:3000
+  - Docs: http://localhost:3001
   - Network Editor: http://localhost:3002
   - PSV: http://localhost:3003
 - **Python API**: http://localhost:8000/docs
@@ -88,21 +89,43 @@ docker-compose -f infra/docker-compose.yml up --build
 Volume mounts ensure code changes are reflected immediately for hot reload.
 
 #### Production / Single Image Deployment
-Build a single image containing all services (managed by supervisord). Suitable for deployment.
+Build a single image containing all services, including PostgreSQL (managed by supervisord). Suitable for deployment.
 
 ```bash
 # Build
 docker build -t process-engineering-suite .
 
-# Run
-# Run (Requires external PostgreSQL database)
+# Run (includes PostgreSQL in the container)
 docker run \
   -p 3000:3000 \
+  -p 3001:3001 \
   -p 3002:3002 \
   -p 3003:3003 \
   -p 8000:8000 \
-  -e DATABASE_URL="postgresql+asyncpg://user:password@host:5432/dbname" \
+  -e POSTGRES_PASSWORD="change-me" \
+  -e POSTGRES_USER="postgres" \
+  -e POSTGRES_DB="engsuite" \
+  -v postgres_data:/var/lib/postgresql/data \
   process-engineering-suite
+
+The API will build `DATABASE_URL` from `POSTGRES_USER`, `POSTGRES_PASSWORD`, and `POSTGRES_DB` if `DATABASE_URL` is not provided.
+
+**Data persistence and backups:** Postgres data lives in the named volume `postgres_data`. Use the volume for upgrades and backups. To copy backups out, you can mount a host directory or attach a second volume.
+
+**Run with explicit `DATABASE_URL` (overrides auto-build):**
+
+```bash
+docker run \
+  -p 3000:3000 \
+  -p 3001:3001 \
+  -p 3002:3002 \
+  -p 3003:3003 \
+  -p 8000:8000 \
+  -e DATABASE_URL="postgresql+asyncpg://postgres:change-me@localhost:5432/engsuite" \
+  -e POSTGRES_PASSWORD="change-me" \
+  -v postgres_data:/var/lib/postgresql/data \
+  process-engineering-suite
+```
 ```
 
 #### Hybrid Development (Recommended)
@@ -152,6 +175,19 @@ The API supports both **PostgreSQL** (production) and **mock data** (fallback).
 **Environment Variables:**
 - `DATABASE_URL`: PostgreSQL connection string (e.g., `postgresql+asyncpg://postgres:password@postgres:5432/engsuite`)
 - `USE_MOCK_DATA`: Set to `true` to force mock data even if database is available
+
+**Local API (without Docker):**
+
+Create `apps/api/.env` and run `uvicorn` with `--env-file`:
+
+```bash
+# apps/api/.env
+DATABASE_URL=postgresql+asyncpg://postgres:password@localhost:5432/engsuite
+USE_MOCK_DATA=false
+
+# From apps/api
+python -m uvicorn main:app --port 8000 --reload --env-file .env
+```
 
 **Running with PostgreSQL:**
 

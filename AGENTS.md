@@ -167,4 +167,11 @@ pytest -k "pattern"       # Run tests matching pattern
 - `conductor/`: Development guidelines and track metadata
 - `infra/`: Docker and infrastructure configs
 
+## Single Image Deployment (Postgres Included)
+
+- The root `Dockerfile` builds a single image that runs apps, API, and PostgreSQL via `supervisord`.
+- Runtime environment variables: `POSTGRES_PASSWORD`, `POSTGRES_USER`, `POSTGRES_DB`. `DATABASE_URL` is optional and will be derived if not set.
+- Persist data with a named volume mounted to `/var/lib/postgresql/data`.
+- See `README.md` for the full `docker run` examples and notes on backups.
+
 When making changes, always match the existing code style and patterns in the file you're editing. Run `bun run lint` (TypeScript) or `ruff check` (Python) before committing.

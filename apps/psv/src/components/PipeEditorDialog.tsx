@@ -470,7 +470,6 @@ export function PipeEditorDialog({
                         )}
 
                         {/* Length */}
-                        {/* Length */}
                         <UnitSelector
                             label="Length"
                             value={length}
@@ -483,7 +482,6 @@ export function PipeEditorDialog({
                         />
 
                         {/* Elevation */}
-                        {/* Elevation */}
                         <UnitSelector
                             label="Elevation Change"
                             value={elevation}
@@ -495,7 +493,6 @@ export function PipeEditorDialog({
                             }}
                         />
 
-                        {/* Roughness */}
                         {/* Roughness */}
                         <UnitSelector
                             label="Roughness"
@@ -517,7 +514,6 @@ export function PipeEditorDialog({
                             endAdornment="%"
                         />
 
-                        {/* User Specified Loss */}
                         {/* User Specified Loss */}
                         <UnitSelector
                             label="User Specified Loss"

@@ -1,122 +1,127 @@
-import React, { useState, useEffect } from 'react';
-import { TextField, InputAdornment } from '@mui/material';
+import React, { useState, useEffect } from "react";
+import { TextField, InputAdornment } from "@mui/material";
 
 interface NumericInputProps {
-    value: number | undefined | null;
-    onChange: (value: number | undefined) => void;
-    onBlur?: (committedValue: number | undefined) => void;
-    label: string;
-    endAdornment?: React.ReactNode;
-    min?: number;
-    max?: number;
-    step?: number | string;
-    fullWidth?: boolean;
-    required?: boolean;
-    disabled?: boolean;
-    error?: boolean;
-    helperText?: string;
-    size?: 'small' | 'medium';
+  value: number | undefined | null;
+  onChange: (value: number | undefined) => void;
+  onBlur?: (committedValue: number | undefined) => void;
+  label: string;
+  endAdornment?: React.ReactNode;
+  min?: number;
+  max?: number;
+  step?: number | string;
+  fullWidth?: boolean;
+  required?: boolean;
+  disabled?: boolean;
+  error?: boolean;
+  helperText?: string;
+  size?: "small" | "medium";
 }
 
 export function NumericInput({
-    value,
-    onChange,
-    onBlur,
-    label,
-    endAdornment,
-    min,
-    max,
-    step,
-    fullWidth = true,
-    required = false,
-    disabled = false,
-    error = false,
-    helperText,
-    size,
+  value,
+  onChange,
+  onBlur,
+  label,
+  endAdornment,
+  min,
+  max,
+  step,
+  fullWidth = true,
+  required = false,
+  disabled = false,
+  error = false,
+  helperText,
+  size,
 }: NumericInputProps) {
-    const [displayValue, setDisplayValue] = useState<string>(value?.toString() || '');
+  const [displayValue, setDisplayValue] = useState<string>(
+    value?.toString() || "",
+  );
 
-    // Update display value when prop changes, but only if it's significantly different
-    useEffect(() => {
-        if (value === null || value === undefined) {
-            if (displayValue !== '') setDisplayValue('');
-            return;
-        }
+  const getRangeError = (num: number | null | undefined): string | null => {
+    if (num === undefined || num === null || isNaN(num)) return null;
+    if (min !== undefined && num < min) {
+      return `Value must be ≥ ${min}`;
+    }
+    if (max !== undefined && num > max) {
+      return `Value must be ≤ ${max}`;
+    }
+    return null;
+  };
 
-        const currentNum = parseFloat(displayValue);
-        // If the current input is a valid number, check if the prop value is effectively the same
-        if (!isNaN(currentNum)) {
-            const epsilon = 1e-10;
-            if (Math.abs(currentNum - value) < epsilon) {
-                return; // Ignore update
-            }
-        }
+  const displayError = error || !!getRangeError(value);
+  const displayHelperText = displayError
+    ? getRangeError(value) || helperText
+    : helperText;
+  const errorId = `${label?.replace(/\s+/g, "-").toLowerCase()}-error`;
 
-        // Prop value is different, update display
-        setDisplayValue(value.toString());
-    }, [value]);
+  const commitValue = (): number | undefined => {
+    const numValue = displayValue === "" ? undefined : parseFloat(displayValue);
+    const rangeError = getRangeError(numValue);
 
-    const commitValue = (): number | undefined => {
-        const numValue = displayValue === '' ? undefined : parseFloat(displayValue);
+    if (numValue !== undefined && !isNaN(numValue) && !rangeError) {
+      onChange(numValue);
+      return numValue;
+    } else if (displayValue === "") {
+      onChange(undefined);
+      return undefined;
+    } else {
+      setDisplayValue(value?.toString() || "");
+      return value ?? undefined;
+    }
+  };
 
-        if (numValue !== undefined && !isNaN(numValue)) {
+  return (
+    <TextField
+      label={label}
+      type="number"
+      value={displayValue}
+      onChange={(e) => {
+        const newValue = e.target.value;
+        setDisplayValue(newValue);
+        const numValue = newValue === "" ? undefined : parseFloat(newValue);
+        if (numValue === undefined || !isNaN(numValue)) {
+          const rangeError = getRangeError(numValue);
+          if (!rangeError) {
             onChange(numValue);
-            return numValue;
-        } else if (displayValue === '') {
-            onChange(undefined);
-            return undefined;
-        } else {
-            // Invalid number, revert
-            setDisplayValue(value?.toString() || '');
-            return value ?? undefined;
+          }
         }
-    };
-
-    return (
-        <TextField
-            label={label}
-            type="number"
-            value={displayValue}
-            onChange={(e) => {
-                const newValue = e.target.value;
-                setDisplayValue(newValue);
-                // Immediately notify parent of the new value
-                const numValue = newValue === '' ? undefined : parseFloat(newValue);
-                if (numValue === undefined || !isNaN(numValue)) {
-                    onChange(numValue);
-                }
-            }}
-            onBlur={() => {
-                const committed = commitValue();
-                onBlur?.(committed);
-            }}
-            onKeyDown={(e) => {
-                if (e.key === 'Enter') {
-                    commitValue();
-                    (e.target as HTMLElement).blur();
-                } else if (e.key === 'Escape') {
-                    setDisplayValue(value?.toString() || '');
-                    (e.target as HTMLElement).blur();
-                }
-            }}
-            required={required}
-            helperText={helperText}
-            fullWidth={fullWidth}
-            disabled={disabled}
-            error={error}
-            size={size}
-            slotProps={{
-                input: {
-                    endAdornment: endAdornment ? (
-                        <InputAdornment position="end">{endAdornment}</InputAdornment>
-                    ) : undefined,
-                },
-                htmlInput: {
-                    min,
-                    max,
-                    step
-                }
-            }}
-        />
-    );
+      }}
+      onBlur={() => {
+        const committed = commitValue();
+        onBlur?.(committed);
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "Enter") {
+          commitValue();
+          (e.target as HTMLElement).blur();
+        } else if (e.key === "Escape") {
+          setDisplayValue(value?.toString() || "");
+          (e.target as HTMLElement).blur();
+        }
+      }}
+      required={required}
+      helperText={displayHelperText}
+      fullWidth={fullWidth}
+      disabled={disabled}
+      error={displayError}
+      size={size}
+      aria-invalid={displayError}
+      slotProps={{
+        input: {
+          endAdornment: endAdornment ? (
+            <InputAdornment position="end">{endAdornment}</InputAdornment>
+          ) : undefined,
+        },
+        htmlInput: {
+          min,
+          max,
+          step,
+        },
+        formHelperText: {
+          id: displayError ? errorId : undefined,
+        },
+      }}
+    />
+  );
 }

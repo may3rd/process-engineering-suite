@@ -13,6 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libffi-dev \
     libjpeg-dev \
     libopenjp2-7-dev \
+    postgresql \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Bun
@@ -64,6 +65,13 @@ EXPOSE 3000 3001 3002 3003 8000
 
 # Copy supervisord config
 COPY infra/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+COPY infra/start-postgres.sh /usr/local/bin/start-postgres.sh
+COPY infra/start-api.sh /usr/local/bin/start-api.sh
+RUN chmod +x /usr/local/bin/start-postgres.sh
+RUN chmod +x /usr/local/bin/start-api.sh
+
+RUN mkdir -p /var/lib/postgresql/data \
+    && chown -R postgres:postgres /var/lib/postgresql
 
 # Start Supervisor
 CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]

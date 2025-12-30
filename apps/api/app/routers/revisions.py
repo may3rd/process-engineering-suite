@@ -15,24 +15,24 @@ router = APIRouter(prefix="/revisions", tags=["revisions"])
 class RevisionResponse(BaseModel):
     """Revision history response model."""
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
-    
+
     id: str
-    entity_type: str = Field(serialization_alias="entityType")
-    entity_id: str = Field(serialization_alias="entityId")
-    revision_code: str = Field(serialization_alias="revisionCode")
+    entity_type: str = Field(validation_alias="entityType", serialization_alias="entityType")
+    entity_id: str = Field(validation_alias="entityId", serialization_alias="entityId")
+    revision_code: str = Field(validation_alias="revisionCode", serialization_alias="revisionCode")
     sequence: int
     description: Optional[str] = None
-    
-    originated_by: Optional[str] = Field(default=None, serialization_alias="originatedBy")
-    originated_at: Optional[datetime] = Field(default=None, serialization_alias="originatedAt")
-    checked_by: Optional[str] = Field(default=None, serialization_alias="checkedBy")
-    checked_at: Optional[datetime] = Field(default=None, serialization_alias="checkedAt")
-    approved_by: Optional[str] = Field(default=None, serialization_alias="approvedBy")
-    approved_at: Optional[datetime] = Field(default=None, serialization_alias="approvedAt")
-    issued_at: Optional[datetime] = Field(default=None, serialization_alias="issuedAt")
-    
+
+    originated_by: Optional[str] = Field(default=None, validation_alias="originatedBy", serialization_alias="originatedBy")
+    originated_at: Optional[datetime] = Field(default=None, validation_alias="originatedAt", serialization_alias="originatedAt")
+    checked_by: Optional[str] = Field(default=None, validation_alias="checkedBy", serialization_alias="checkedBy")
+    checked_at: Optional[datetime] = Field(default=None, validation_alias="checkedAt", serialization_alias="checkedAt")
+    approved_by: Optional[str] = Field(default=None, validation_alias="approvedBy", serialization_alias="approvedBy")
+    approved_at: Optional[datetime] = Field(default=None, validation_alias="approvedAt", serialization_alias="approvedAt")
+    issued_at: Optional[datetime] = Field(default=None, validation_alias="issuedAt", serialization_alias="issuedAt")
+
     snapshot: dict = {}
-    created_at: datetime = Field(serialization_alias="createdAt")
+    created_at: datetime = Field(validation_alias="createdAt", serialization_alias="createdAt")
 
 
 class RevisionCreate(BaseModel):

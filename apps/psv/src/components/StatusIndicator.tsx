@@ -4,6 +4,7 @@ import { Tooltip, useTheme, CircularProgress, Box, IconButton } from "@mui/mater
 import {
     Storage as StorageIcon,
     CloudDone as CloudDoneIcon,
+    CloudOff as CloudOffIcon,
     ErrorOutline as ErrorIcon,
 } from "@mui/icons-material";
 import { useServerHealth } from "@/hooks/useServerHealth";
@@ -50,6 +51,17 @@ export function StatusIndicator({ onClick }: StatusIndicatorProps) {
                             : ''
                         }`,
                     clickable: false,
+                };
+            case 'db-disconnected':
+                return {
+                    icon: <CloudOffIcon sx={{ fontSize: 20 }} />,
+                    color: theme.palette.error.main,
+                    bgColor: isDark ? 'rgba(239, 68, 68, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                    tooltip: `API Online, Database Offline\n\n${serverHealth.apiUrl}${serverHealth.lastChecked
+                            ? `\nLast checked: ${serverHealth.lastChecked.toLocaleTimeString()}`
+                            : ''
+                        }\n\nClick to retry connection`,
+                    clickable: true,
                 };
             case 'error':
                 return {

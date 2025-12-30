@@ -4,13 +4,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { API_BASE_URL } from '@/lib/api';
 
-export type HealthStatus = 'checking' | 'healthy' | 'error' | 'idle';
+export type HealthStatus = 'checking' | 'healthy' | 'error' | 'idle' | 'db-disconnected';
 
 export interface ServerHealth {
     status: HealthStatus;
     lastChecked?: Date;
     error?: string;
     apiUrl: string;
+    database?: 'connected' | 'disconnected';
 }
 
 interface HealthCheckResponse {
@@ -53,12 +54,25 @@ export function useServerHealth(enabled: boolean = true): ServerHealth {
             }
 
             const data: HealthCheckResponse = await response.json();
+            const databaseStatus = data.database;
+            const isDatabaseDisconnected = databaseStatus === 'disconnected';
+            const status: HealthStatus = isDatabaseDisconnected
+                ? 'db-disconnected'
+                : data.status === 'healthy'
+                    ? 'healthy'
+                    : 'error';
+            const error = isDatabaseDisconnected
+                ? 'Database connection unavailable'
+                : data.status === 'healthy'
+                    ? undefined
+                    : 'Server reported unhealthy';
 
             setHealth({
-                status: data.status === 'healthy' ? 'healthy' : 'error',
+                status,
                 lastChecked: new Date(),
-                error: data.status === 'healthy' ? undefined : 'Server reported unhealthy',
+                error,
                 apiUrl: API_BASE_URL,
+                database: databaseStatus,
             });
 
             // Reset retry delay on success
