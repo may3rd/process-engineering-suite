@@ -2,679 +2,720 @@
 // This module provides a typed interface to the backend API,
 // with automatic error handling and retry logic.
 
-export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+export const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 import {
-    Customer,
-    Plant,
-    Unit,
-    Area,
-    Project,
-    ProtectiveSystem,
-    OverpressureScenario as Scenario,
-    SizingCase,
-    Equipment,
-    EquipmentLink,
-    Attachment,
-    Comment,
-    TodoItem,
-    User,
-    ProjectNote,
-    RevisionHistory,
-    RevisionEntityType,
-    AuditLog,
-} from '@/data/types';
+  Customer,
+  Plant,
+  Unit,
+  Area,
+  Project,
+  ProtectiveSystem,
+  OverpressureScenario as Scenario,
+  SizingCase,
+  Equipment,
+  EquipmentLink,
+  Attachment,
+  Comment,
+  TodoItem,
+  User,
+  ProjectNote,
+  RevisionHistory,
+  RevisionEntityType,
+  AuditLog,
+} from "@/data/types";
 
 export interface LoginResponse {
-    accessToken: string;
-    tokenType: string;
-    expiresIn: number;
-    user: User;
+  accessToken: string;
+  tokenType: string;
+  expiresIn: number;
+  user: User;
 }
 
 // --- API Client Class ---
 
-class ApiClient {
-    private token: string | null = null;
-
-    constructor() {
-        // Load token from localStorage on initialization
-        if (typeof window !== 'undefined') {
-            this.token = localStorage.getItem('accessToken');
-        }
-    }
-
-    setToken(token: string | null) {
-        this.token = token;
-        if (typeof window !== 'undefined') {
-            if (token) {
-                localStorage.setItem('accessToken', token);
-            } else {
-                localStorage.removeItem('accessToken');
-            }
-        }
-    }
-
-    private async request<T>(
-        endpoint: string,
-        options: RequestInit = {}
-    ): Promise<T> {
-        const url = `${API_BASE_URL}${endpoint}`;
-
-        const headers: Record<string, string> = {
-            'Content-Type': 'application/json',
-            ...(options.headers as Record<string, string>),
-        };
-
-        if (this.token) {
-            headers['Authorization'] = `Bearer ${this.token}`;
-        }
-
-        let response: Response;
-        try {
-            response = await fetch(url, {
-                ...options,
-                headers,
-            });
-        } catch (err) {
-            const hint = `Failed to fetch ${url}. Check NEXT_PUBLIC_API_URL and that the API is reachable.`;
-            const message = err instanceof Error ? `${hint} (${err.message})` : hint;
-            throw new Error(message);
-        }
-
-        if (!response.ok) {
-            const contentType = response.headers.get('content-type') || '';
-            const errorBody =
-                contentType.includes('application/json')
-                    ? await response.json().catch(() => null)
-                    : await response.text().catch(() => null);
-
-            const detail =
-                typeof errorBody === 'string'
-                    ? errorBody
-                    : (errorBody && typeof errorBody === 'object' && 'detail' in errorBody ? (errorBody as any).detail : null);
-
-            throw new Error(detail || `HTTP ${response.status}`);
-        }
-
-        return response.json();
-    }
-
-    // --- Auth ---
-
-    async login(username: string, password: string): Promise<LoginResponse> {
-        const response = await this.request<LoginResponse>('/auth/login', {
-            method: 'POST',
-            body: JSON.stringify({ username, password }),
-        });
-        this.setToken(response.accessToken);
-        return response;
-    }
-
-    async logout(): Promise<void> {
-        await this.request('/auth/logout', { method: 'POST' });
-        this.setToken(null);
-    }
-
-    async getCurrentUser(): Promise<User> {
-        return this.request<User>('/auth/me');
-    }
-
-    // --- Hierarchy ---
-
-    async getCustomers(): Promise<Customer[]> {
-        return this.request<Customer[]>('/hierarchy/customers');
-    }
-
-    async getPlantsByCustomer(customerId: string): Promise<Plant[]> {
-        return this.request<Plant[]>(`/hierarchy/customers/${customerId}/plants`);
-    }
-
-    async getUnitsByPlant(plantId: string): Promise<Unit[]> {
-        return this.request<Unit[]>(`/hierarchy/plants/${plantId}/units`);
-    }
-
-    async getAreasByUnit(unitId: string): Promise<Area[]> {
-        return this.request<Area[]>(`/hierarchy/units/${unitId}/areas`);
-    }
-
-    async getProjectsByArea(areaId: string): Promise<Project[]> {
-        return this.request<Project[]>(`/hierarchy/areas/${areaId}/projects`);
-    }
-
-    async createCustomer(data: Partial<Customer>): Promise<Customer> {
-        return this.request<Customer>('/hierarchy/customers', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async updateCustomer(id: string, data: Partial<Customer>): Promise<Customer> {
-        return this.request<Customer>(`/hierarchy/customers/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async deleteCustomer(id: string): Promise<void> {
-        await this.request(`/hierarchy/customers/${id}`, { method: 'DELETE' });
-    }
-
-    async createPlant(data: Partial<Plant>): Promise<Plant> {
-        return this.request<Plant>('/hierarchy/plants', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async updatePlant(id: string, data: Partial<Plant>): Promise<Plant> {
-        return this.request<Plant>(`/hierarchy/plants/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async deletePlant(id: string): Promise<void> {
-        await this.request(`/hierarchy/plants/${id}`, { method: 'DELETE' });
-    }
-
-    async createUnit(data: Partial<Unit>): Promise<Unit> {
-        return this.request<Unit>('/hierarchy/units', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async updateUnit(id: string, data: Partial<Unit>): Promise<Unit> {
-        return this.request<Unit>(`/hierarchy/units/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async deleteUnit(id: string): Promise<void> {
-        await this.request(`/hierarchy/units/${id}`, { method: 'DELETE' });
-    }
-
-    async createArea(data: Partial<Area>): Promise<Area> {
-        return this.request<Area>('/hierarchy/areas', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async updateArea(id: string, data: Partial<Area>): Promise<Area> {
-        return this.request<Area>(`/hierarchy/areas/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async deleteArea(id: string): Promise<void> {
-        await this.request(`/hierarchy/areas/${id}`, { method: 'DELETE' });
-    }
-
-    async createProject(data: Partial<Project>): Promise<Project> {
-        return this.request<Project>('/hierarchy/projects', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async updateProject(id: string, data: Partial<Project>): Promise<Project> {
-        return this.request<Project>(`/hierarchy/projects/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async deleteProject(id: string): Promise<void> {
-        await this.request(`/hierarchy/projects/${id}`, { method: 'DELETE' });
-    }
-
-    // --- PSV ---
-
-    async getProtectiveSystems(areaId?: string): Promise<ProtectiveSystem[]> {
-        const query = areaId ? `?area_id=${areaId}` : '';
-        return this.request<ProtectiveSystem[]>(`/psv${query}`);
-    }
-
-    async getProtectiveSystem(id: string): Promise<ProtectiveSystem> {
-        return this.request<ProtectiveSystem>(`/psv/${id}`);
-    }
-
-    async createProtectiveSystem(data: Partial<ProtectiveSystem>): Promise<ProtectiveSystem> {
-        return this.request<ProtectiveSystem>('/psv', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async updateProtectiveSystem(id: string, data: Partial<ProtectiveSystem>): Promise<ProtectiveSystem> {
-        return this.request<ProtectiveSystem>(`/psv/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async deleteProtectiveSystem(id: string): Promise<void> {
-        await this.request(`/psv/${id}`, { method: 'DELETE' });
-    }
-
-    getPsvReportUrl(psvId: string): string {
-        const url = `${API_BASE_URL}/psv/${psvId}/report`;
-        if (this.token) {
-            // Append token as query param if needed for direct browser download, 
-            // though standard is header. For StreamingResponse, browser usually 
-            // needs a link or we use blob.
-            return `${url}?token=${this.token}`;
-        }
-        return url;
-    }
-
-    // --- Scenarios ---
-
-    async getScenarios(psvId: string): Promise<Scenario[]> {
-        return this.request<Scenario[]>(`/psv/${psvId}/scenarios`);
-    }
-
-    async getScenario(id: string): Promise<Scenario> {
-        return this.request<Scenario>(`/psv/scenarios/${id}`);
-    }
-
-    async createScenario(psvId: string, data: Partial<Scenario>): Promise<Scenario> {
-        return this.request<Scenario>(`/psv/${psvId}/scenarios`, {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async updateScenario(id: string, data: Partial<Scenario>): Promise<Scenario> {
-        return this.request<Scenario>(`/psv/scenarios/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async deleteScenario(id: string): Promise<void> {
-        await this.request(`/psv/scenarios/${id}`, { method: 'DELETE' });
-    }
-
-    // --- Sizing Cases ---
-
-    async getSizingCases(psvId: string): Promise<SizingCase[]> {
-        return this.request<SizingCase[]>(`/psv/${psvId}/sizing-cases`);
-    }
-
-    async createSizingCase(psvId: string, data: Partial<SizingCase>): Promise<SizingCase> {
-        return this.request<SizingCase>(`/psv/${psvId}/sizing-cases`, {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async updateSizingCase(id: string, data: Partial<SizingCase>): Promise<SizingCase> {
-        return this.request<SizingCase>(`/psv/sizing-cases/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async deleteSizingCase(id: string): Promise<void> {
-        await this.request(`/psv/sizing-cases/${id}`, { method: 'DELETE' });
-    }
-
-    // --- Equipment ---
-
-    async getEquipment(areaId?: string): Promise<Equipment[]> {
-        const query = areaId ? `?area_id=${areaId}` : '';
-        return this.request<Equipment[]>(`/equipment${query}`);
-    }
-
-    async createEquipment(data: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>): Promise<Equipment> {
-        return this.request<Equipment>('/equipment', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async updateEquipment(id: string, data: Partial<Equipment>): Promise<Equipment> {
-        return this.request<Equipment>(`/equipment/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async deleteEquipment(id: string): Promise<void> {
-        await this.request(`/equipment/${id}`, { method: 'DELETE' });
-    }
-
-    private mapEquipmentLink(raw: any): EquipmentLink {
-        return {
-            id: raw.id,
-            psvId: raw.protectiveSystemId ?? raw.psvId,
-            equipmentId: raw.equipmentId,
-            isPrimary: raw.isPrimary ?? false,
-            scenarioId: raw.scenarioId ?? raw.scenarioID,
-            relationship: raw.relationship,
-            notes: raw.notes,
-            createdAt: raw.createdAt,
-        };
-    }
-
-    private mapNote(raw: any): ProjectNote {
-        return {
-            id: raw.id,
-            protectiveSystemId: raw.protectiveSystemId ?? raw.psvId,
-            body: raw.body,
-            createdBy: raw.createdBy,
-            createdAt: raw.createdAt,
-            updatedBy: raw.updatedBy,
-            updatedAt: raw.updatedAt,
-        };
-    }
-
-    // --- Equipment Links ---
-
-    async getEquipmentLinks(psvId: string): Promise<EquipmentLink[]> {
-        const response = await this.request<any[]>(`/psv/${psvId}/equipment-links`);
-        return response.map((item) => this.mapEquipmentLink(item));
-    }
-
-    async createEquipmentLink(data: {
-        protectiveSystemId: string;
-        equipmentId: string;
-        isPrimary?: boolean;
-        scenarioId?: string;
-        relationship?: string;
-        notes?: string;
-    }): Promise<EquipmentLink> {
-        const created = await this.request<any>('/equipment-links', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-        return this.mapEquipmentLink(created);
-    }
-
-    async deleteEquipmentLink(id: string): Promise<void> {
-        await this.request(`/equipment-links/${id}`, { method: 'DELETE' });
-    }
-
-    // --- Notes ---
-
-    async getNotes(psvId: string): Promise<ProjectNote[]> {
-        const response = await this.request<any[]>(`/psv/${psvId}/notes`);
-        return response.map((item) => this.mapNote(item));
-    }
-
-    async createNote(data: Partial<ProjectNote>): Promise<ProjectNote> {
-        const response = await this.request<any>('/notes', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-        return this.mapNote(response);
-    }
-
-    async updateNote(id: string, data: Partial<ProjectNote>): Promise<ProjectNote> {
-        const response = await this.request<any>(`/notes/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        });
-        return this.mapNote(response);
-    }
-
-    async deleteNote(id: string): Promise<void> {
-        await this.request(`/notes/${id}`, { method: 'DELETE' });
-    }
-
-    // --- Comments ---
-
-    private mapComment(raw: any): Comment {
-        return {
-            id: raw.id,
-            protectiveSystemId: raw.protectiveSystemId ?? raw.psvId,
-            body: raw.body,
-            createdBy: raw.createdBy,
-            createdAt: raw.createdAt,
-            updatedBy: raw.updatedBy,
-            updatedAt: raw.updatedAt,
-        };
-    }
-
-    async getComments(psvId: string): Promise<Comment[]> {
-        const response = await this.request<any[]>(`/psv/${psvId}/comments`);
-        return response.map((item) => this.mapComment(item));
-    }
-
-    async createComment(data: Partial<Comment>): Promise<Comment> {
-        const response = await this.request<any>('/comments', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-        return this.mapComment(response);
-    }
-
-    async updateComment(id: string, data: Partial<Comment>): Promise<Comment> {
-        const response = await this.request<any>(`/comments/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        });
-        return this.mapComment(response);
-    }
-
-    async deleteComment(id: string): Promise<void> {
-        await this.request(`/comments/${id}`, { method: 'DELETE' });
-    }
-
-    // --- Todos ---
-
-    private mapTodo(raw: any): TodoItem {
-        return {
-            id: raw.id,
-            protectiveSystemId: raw.protectiveSystemId ?? raw.psvId,
-            text: raw.text,
-            completed: raw.completed ?? false,
-            assignedTo: raw.assignedTo,
-            dueDate: raw.dueDate,
-            createdBy: raw.createdBy,
-            createdAt: raw.createdAt,
-        };
-    }
-
-    async getTodos(psvId: string): Promise<TodoItem[]> {
-        const response = await this.request<any[]>(`/psv/${psvId}/todos`);
-        return response.map((item) => this.mapTodo(item));
-    }
-
-    async createTodo(data: Partial<TodoItem>): Promise<TodoItem> {
-        const response = await this.request<any>('/todos', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-        return this.mapTodo(response);
-    }
-
-    async updateTodo(id: string, data: Partial<TodoItem>): Promise<TodoItem> {
-        const response = await this.request<any>(`/todos/${id}`, {
-            method: 'PUT',
-            body: JSON.stringify(data),
-        });
-        return this.mapTodo(response);
-    }
-
-    async deleteTodo(id: string): Promise<void> {
-        await this.request(`/todos/${id}`, { method: 'DELETE' });
-    }
-
-    // --- Attachments ---
-
-    async getAttachments(psvId: string): Promise<any[]> {
-        return this.request<any[]>(`/psv/${psvId}/attachments`);
-    }
-
-    async createAttachment(data: any): Promise<any> {
-        return this.request<any>('/attachments', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async deleteAttachment(id: string): Promise<void> {
-        await this.request(`/attachments/${id}`, { method: 'DELETE' });
-    }
-
-    // --- Admin ---
-
-    async getDataSource(): Promise<{ source: 'mock' | 'database' }> {
-        return this.request<{ source: 'mock' | 'database' }>('/admin/data-source');
-    }
-
-    async seedFromMock(): Promise<{ message: string; counts: Record<string, number> }> {
-        return this.request('/admin/seed-from-mock', { method: 'POST' });
-    }
-
-    // --- Revision History ---
-
-    async getRevisionHistory(entityType: RevisionEntityType, entityId: string): Promise<RevisionHistory[]> {
-        return this.request<RevisionHistory[]>(`/revisions/${entityType}/${entityId}`);
-    }
-
-    async createRevision(
-        entityType: RevisionEntityType,
-        entityId: string,
-        data: {
-            revisionCode: string;
-            sequence: number;
-            description?: string;
-            snapshot: Record<string, unknown>;
-            originatedBy?: string;
-            originatedAt?: string;
-        }
-    ): Promise<RevisionHistory> {
-        return this.request<RevisionHistory>('/revisions/', {
-            method: 'POST',
-            body: JSON.stringify({
-                entityType,
-                entityId,
-                ...data,
-            }),
-        });
-    }
-
-    async updateRevision(id: string, data: Partial<RevisionHistory>): Promise<RevisionHistory> {
-        return this.request<RevisionHistory>(`/revisions/${id}`, {
-            method: 'PATCH',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async deleteRevision(id: string): Promise<void> {
-        await this.request(`/revisions/${id}`, { method: 'DELETE' });
-    }
-
-    async getRevisionById(id: string): Promise<RevisionHistory | undefined> {
-        try {
-            return await this.request<RevisionHistory>(`/revisions/id/${id}`);
-        } catch {
-            return undefined;
-        }
-    }
-
-    // --- Audit Logs ---
-
-    async getAuditLogs(filters?: {
-        entityType?: string;
-        entityId?: string;
-        userId?: string;
-        projectId?: string;
-        action?: string;
-        limit?: number;
-        offset?: number;
-    }): Promise<{ items: AuditLog[]; total: number; limit: number; offset: number }> {
-        const params = new URLSearchParams();
-        if (filters?.entityType) params.set('entityType', filters.entityType);
-        if (filters?.entityId) params.set('entityId', filters.entityId);
-        if (filters?.userId) params.set('userId', filters.userId);
-        if (filters?.projectId) params.set('projectId', filters.projectId);
-        if (filters?.action) params.set('action', filters.action);
-        if (filters?.limit) params.set('limit', String(filters.limit));
-        if (filters?.offset) params.set('offset', String(filters.offset));
-
-        const queryString = params.toString();
-        const url = queryString ? `/audit-logs?${queryString}` : '/audit-logs';
-        return this.request(url);
-    }
-
-    async createAuditLog(data: {
-        action: string;
-        entityType: string;
-        entityId: string;
-        entityName: string;
-        userId: string;
-        userName: string;
-        userRole?: string;
-        changes?: { field: string; oldValue: unknown; newValue: unknown }[];
-        description?: string;
-        projectId?: string;
-        projectName?: string;
-    }): Promise<AuditLog> {
-        return this.request<AuditLog>('/audit-logs', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        });
-    }
-
-    async clearAuditLogs(): Promise<{ message: string }> {
-        return this.request('/audit-logs', { method: 'DELETE' });
-    }
-
-    // --- Summary Counts (Lazy Loading) ---
-
-    async getSummaryCounts(): Promise<{
-        customers: number;
-        plants: number;
-        units: number;
-        areas: number;
-        projects: number;
-        psvs: number;
-        equipment: number;
-    }> {
-        // API endpoint for summary counts - fallback to individual counts if not available
-        try {
-            return await this.request('/hierarchy/summary-counts');
-        } catch {
-            // Fallback: fetch counts individually (less efficient but works)
-            const [customers, psvs, equipment] = await Promise.all([
-                this.getCustomers(),
-                this.getProtectiveSystems(),
-                this.getEquipment(),
-            ]);
-            return {
-                customers: customers.length,
-                plants: 0, // Would need additional requests
-                units: 0,
-                areas: 0,
-                projects: 0,
-                psvs: psvs.length,
-                equipment: equipment.length,
-            };
-        }
-    }
+export class ApiClient {
+  private token: string | null = null;
+
+  constructor() {
+    // Load token from localStorage on initialization
+    if (typeof window !== "undefined") {
+      this.token = localStorage.getItem("accessToken");
+    }
+  }
+
+  setToken(token: string | null) {
+    this.token = token;
+    if (typeof window !== "undefined") {
+      if (token) {
+        localStorage.setItem("accessToken", token);
+      } else {
+        localStorage.removeItem("accessToken");
+      }
+    }
+  }
+
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {},
+  ): Promise<T> {
+    const url = `${API_BASE_URL}${endpoint}`;
+
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+      ...(options.headers as Record<string, string>),
+    };
+
+    if (this.token) {
+      headers["Authorization"] = `Bearer ${this.token}`;
+    }
+
+    let response: Response;
+    try {
+      response = await fetch(url, {
+        ...options,
+        headers,
+      });
+    } catch (err) {
+      const hint = `Failed to fetch ${url}. Check NEXT_PUBLIC_API_URL and that the API is reachable.`;
+      const message = err instanceof Error ? `${hint} (${err.message})` : hint;
+      throw new Error(message);
+    }
+
+    if (!response.ok) {
+      const contentType = response.headers.get("content-type") || "";
+      const errorBody = contentType.includes("application/json")
+        ? await response.json().catch(() => null)
+        : await response.text().catch(() => null);
+
+      const detail =
+        typeof errorBody === "string"
+          ? errorBody
+          : errorBody && typeof errorBody === "object" && "detail" in errorBody
+            ? (errorBody as any).detail
+            : null;
+
+      throw new Error(detail || `HTTP ${response.status}`);
+    }
+
+    return response.json();
+  }
+
+  // --- Auth ---
+
+  async login(username: string, password: string): Promise<LoginResponse> {
+    const response = await this.request<LoginResponse>("/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+    });
+    this.setToken(response.accessToken);
+    return response;
+  }
+
+  async logout(): Promise<void> {
+    await this.request("/auth/logout", { method: "POST" });
+    this.setToken(null);
+  }
+
+  async getCurrentUser(): Promise<User> {
+    return this.request<User>("/auth/me");
+  }
+
+  // --- Hierarchy ---
+
+  async getCustomers(): Promise<Customer[]> {
+    return this.request<Customer[]>("/hierarchy/customers");
+  }
+
+  async getPlantsByCustomer(customerId: string): Promise<Plant[]> {
+    return this.request<Plant[]>(`/hierarchy/customers/${customerId}/plants`);
+  }
+
+  async getUnitsByPlant(plantId: string): Promise<Unit[]> {
+    return this.request<Unit[]>(`/hierarchy/plants/${plantId}/units`);
+  }
+
+  async getAreasByUnit(unitId: string): Promise<Area[]> {
+    return this.request<Area[]>(`/hierarchy/units/${unitId}/areas`);
+  }
+
+  async getProjectsByArea(areaId: string): Promise<Project[]> {
+    return this.request<Project[]>(`/hierarchy/areas/${areaId}/projects`);
+  }
+
+  async createCustomer(data: Partial<Customer>): Promise<Customer> {
+    return this.request<Customer>("/hierarchy/customers", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateCustomer(id: string, data: Partial<Customer>): Promise<Customer> {
+    return this.request<Customer>(`/hierarchy/customers/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteCustomer(id: string): Promise<void> {
+    await this.request(`/hierarchy/customers/${id}`, { method: "DELETE" });
+  }
+
+  async createPlant(data: Partial<Plant>): Promise<Plant> {
+    return this.request<Plant>("/hierarchy/plants", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updatePlant(id: string, data: Partial<Plant>): Promise<Plant> {
+    return this.request<Plant>(`/hierarchy/plants/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deletePlant(id: string): Promise<void> {
+    await this.request(`/hierarchy/plants/${id}`, { method: "DELETE" });
+  }
+
+  async createUnit(data: Partial<Unit>): Promise<Unit> {
+    return this.request<Unit>("/hierarchy/units", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateUnit(id: string, data: Partial<Unit>): Promise<Unit> {
+    return this.request<Unit>(`/hierarchy/units/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteUnit(id: string): Promise<void> {
+    await this.request(`/hierarchy/units/${id}`, { method: "DELETE" });
+  }
+
+  async createArea(data: Partial<Area>): Promise<Area> {
+    return this.request<Area>("/hierarchy/areas", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateArea(id: string, data: Partial<Area>): Promise<Area> {
+    return this.request<Area>(`/hierarchy/areas/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteArea(id: string): Promise<void> {
+    await this.request(`/hierarchy/areas/${id}`, { method: "DELETE" });
+  }
+
+  async createProject(data: Partial<Project>): Promise<Project> {
+    return this.request<Project>("/hierarchy/projects", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateProject(id: string, data: Partial<Project>): Promise<Project> {
+    return this.request<Project>(`/hierarchy/projects/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteProject(id: string): Promise<void> {
+    await this.request(`/hierarchy/projects/${id}`, { method: "DELETE" });
+  }
+
+  // --- PSV ---
+
+  async getProtectiveSystems(areaId?: string): Promise<ProtectiveSystem[]> {
+    const query = areaId ? `?area_id=${areaId}` : "";
+    return this.request<ProtectiveSystem[]>(`/psv${query}`);
+  }
+
+  async getProtectiveSystem(id: string): Promise<ProtectiveSystem> {
+    return this.request<ProtectiveSystem>(`/psv/${id}`);
+  }
+
+  async createProtectiveSystem(
+    data: Partial<ProtectiveSystem>,
+  ): Promise<ProtectiveSystem> {
+    return this.request<ProtectiveSystem>("/psv", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateProtectiveSystem(
+    id: string,
+    data: Partial<ProtectiveSystem>,
+  ): Promise<ProtectiveSystem> {
+    return this.request<ProtectiveSystem>(`/psv/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteProtectiveSystem(id: string): Promise<void> {
+    await this.request(`/psv/${id}`, { method: "DELETE" });
+  }
+
+  getPsvReportUrl(psvId: string): string {
+    const url = `${API_BASE_URL}/psv/${psvId}/report`;
+    if (this.token) {
+      // Append token as query param if needed for direct browser download,
+      // though standard is header. For StreamingResponse, browser usually
+      // needs a link or we use blob.
+      return `${url}?token=${this.token}`;
+    }
+    return url;
+  }
+
+  // --- Scenarios ---
+
+  async getScenarios(psvId: string): Promise<Scenario[]> {
+    return this.request<Scenario[]>(`/psv/${psvId}/scenarios`);
+  }
+
+  async getScenario(id: string): Promise<Scenario> {
+    return this.request<Scenario>(`/psv/scenarios/${id}`);
+  }
+
+  async createScenario(
+    psvId: string,
+    data: Partial<Scenario>,
+  ): Promise<Scenario> {
+    return this.request<Scenario>(`/psv/${psvId}/scenarios`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateScenario(id: string, data: Partial<Scenario>): Promise<Scenario> {
+    return this.request<Scenario>(`/psv/scenarios/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteScenario(id: string): Promise<void> {
+    await this.request(`/psv/scenarios/${id}`, { method: "DELETE" });
+  }
+
+  // --- Sizing Cases ---
+
+  async getSizingCases(psvId: string): Promise<SizingCase[]> {
+    return this.request<SizingCase[]>(`/psv/${psvId}/sizing-cases`);
+  }
+
+  async createSizingCase(
+    psvId: string,
+    data: Partial<SizingCase>,
+  ): Promise<SizingCase> {
+    return this.request<SizingCase>(`/psv/${psvId}/sizing-cases`, {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateSizingCase(
+    id: string,
+    data: Partial<SizingCase>,
+  ): Promise<SizingCase> {
+    return this.request<SizingCase>(`/psv/sizing-cases/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteSizingCase(id: string): Promise<void> {
+    await this.request(`/psv/sizing-cases/${id}`, { method: "DELETE" });
+  }
+
+  // --- Equipment ---
+
+  async getEquipment(areaId?: string): Promise<Equipment[]> {
+    const query = areaId ? `?area_id=${areaId}` : "";
+    return this.request<Equipment[]>(`/equipment${query}`);
+  }
+
+  async createEquipment(
+    data: Omit<Equipment, "id" | "createdAt" | "updatedAt">,
+  ): Promise<Equipment> {
+    return this.request<Equipment>("/equipment", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateEquipment(
+    id: string,
+    data: Partial<Equipment>,
+  ): Promise<Equipment> {
+    return this.request<Equipment>(`/equipment/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteEquipment(id: string): Promise<void> {
+    await this.request(`/equipment/${id}`, { method: "DELETE" });
+  }
+
+  private mapEquipmentLink(raw: any): EquipmentLink {
+    return {
+      id: raw.id,
+      psvId: raw.protectiveSystemId ?? raw.psvId,
+      equipmentId: raw.equipmentId,
+      isPrimary: raw.isPrimary ?? false,
+      scenarioId: raw.scenarioId ?? raw.scenarioID,
+      relationship: raw.relationship,
+      notes: raw.notes,
+      createdAt: raw.createdAt,
+    };
+  }
+
+  private mapNote(raw: any): ProjectNote {
+    return {
+      id: raw.id,
+      protectiveSystemId: raw.protectiveSystemId ?? raw.psvId,
+      body: raw.body,
+      createdBy: raw.createdBy,
+      createdAt: raw.createdAt,
+      updatedBy: raw.updatedBy,
+      updatedAt: raw.updatedAt,
+    };
+  }
+
+  // --- Equipment Links ---
+
+  async getEquipmentLinks(psvId: string): Promise<EquipmentLink[]> {
+    const response = await this.request<any[]>(`/psv/${psvId}/equipment-links`);
+    return response.map((item) => this.mapEquipmentLink(item));
+  }
+
+  async createEquipmentLink(data: {
+    protectiveSystemId: string;
+    equipmentId: string;
+    isPrimary?: boolean;
+    scenarioId?: string;
+    relationship?: string;
+    notes?: string;
+  }): Promise<EquipmentLink> {
+    const created = await this.request<any>("/equipment-links", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    return this.mapEquipmentLink(created);
+  }
+
+  async deleteEquipmentLink(id: string): Promise<void> {
+    await this.request(`/equipment-links/${id}`, { method: "DELETE" });
+  }
+
+  // --- Notes ---
+
+  async getNotes(psvId: string): Promise<ProjectNote[]> {
+    const response = await this.request<any[]>(`/psv/${psvId}/notes`);
+    return response.map((item) => this.mapNote(item));
+  }
+
+  async createNote(data: Partial<ProjectNote>): Promise<ProjectNote> {
+    const response = await this.request<any>("/notes", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    return this.mapNote(response);
+  }
+
+  async updateNote(
+    id: string,
+    data: Partial<ProjectNote>,
+  ): Promise<ProjectNote> {
+    const response = await this.request<any>(`/notes/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+    return this.mapNote(response);
+  }
+
+  async deleteNote(id: string): Promise<void> {
+    await this.request(`/notes/${id}`, { method: "DELETE" });
+  }
+
+  // --- Comments ---
+
+  private mapComment(raw: any): Comment {
+    return {
+      id: raw.id,
+      protectiveSystemId: raw.protectiveSystemId ?? raw.psvId,
+      body: raw.body,
+      createdBy: raw.createdBy,
+      createdAt: raw.createdAt,
+      updatedBy: raw.updatedBy,
+      updatedAt: raw.updatedAt,
+    };
+  }
+
+  async getComments(psvId: string): Promise<Comment[]> {
+    const response = await this.request<any[]>(`/psv/${psvId}/comments`);
+    return response.map((item) => this.mapComment(item));
+  }
+
+  async createComment(data: Partial<Comment>): Promise<Comment> {
+    const response = await this.request<any>("/comments", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    return this.mapComment(response);
+  }
+
+  async updateComment(id: string, data: Partial<Comment>): Promise<Comment> {
+    const response = await this.request<any>(`/comments/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+    return this.mapComment(response);
+  }
+
+  async deleteComment(id: string): Promise<void> {
+    await this.request(`/comments/${id}`, { method: "DELETE" });
+  }
+
+  // --- Todos ---
+
+  private mapTodo(raw: any): TodoItem {
+    return {
+      id: raw.id,
+      protectiveSystemId: raw.protectiveSystemId ?? raw.psvId,
+      text: raw.text,
+      completed: raw.completed ?? false,
+      assignedTo: raw.assignedTo,
+      dueDate: raw.dueDate,
+      createdBy: raw.createdBy,
+      createdAt: raw.createdAt,
+    };
+  }
+
+  async getTodos(psvId: string): Promise<TodoItem[]> {
+    const response = await this.request<any[]>(`/psv/${psvId}/todos`);
+    return response.map((item) => this.mapTodo(item));
+  }
+
+  async createTodo(data: Partial<TodoItem>): Promise<TodoItem> {
+    const response = await this.request<any>("/todos", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+    return this.mapTodo(response);
+  }
+
+  async updateTodo(id: string, data: Partial<TodoItem>): Promise<TodoItem> {
+    const response = await this.request<any>(`/todos/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+    return this.mapTodo(response);
+  }
+
+  async deleteTodo(id: string): Promise<void> {
+    await this.request(`/todos/${id}`, { method: "DELETE" });
+  }
+
+  // --- Attachments ---
+
+  async getAttachments(psvId: string): Promise<any[]> {
+    return this.request<any[]>(`/psv/${psvId}/attachments`);
+  }
+
+  async createAttachment(data: any): Promise<any> {
+    return this.request<any>("/attachments", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteAttachment(id: string): Promise<void> {
+    await this.request(`/attachments/${id}`, { method: "DELETE" });
+  }
+
+  // --- Admin ---
+
+  async getDataSource(): Promise<{ source: "mock" | "database" }> {
+    return this.request<{ source: "mock" | "database" }>("/admin/data-source");
+  }
+
+  async seedFromMock(): Promise<{
+    message: string;
+    counts: Record<string, number>;
+  }> {
+    return this.request("/admin/seed-from-mock", { method: "POST" });
+  }
+
+  // --- Revision History ---
+
+  async getRevisionHistory(
+    entityType: RevisionEntityType,
+    entityId: string,
+  ): Promise<RevisionHistory[]> {
+    return this.request<RevisionHistory[]>(
+      `/revisions/${entityType}/${entityId}`,
+    );
+  }
+
+  async createRevision(
+    entityType: RevisionEntityType,
+    entityId: string,
+    data: {
+      revisionCode: string;
+      sequence: number;
+      description?: string;
+      snapshot: Record<string, unknown>;
+      originatedBy?: string;
+      originatedAt?: string;
+    },
+  ): Promise<RevisionHistory> {
+    return this.request<RevisionHistory>("/revisions/", {
+      method: "POST",
+      body: JSON.stringify({
+        entityType,
+        entityId,
+        ...data,
+      }),
+    });
+  }
+
+  async updateRevision(
+    id: string,
+    data: Partial<RevisionHistory>,
+  ): Promise<RevisionHistory> {
+    return this.request<RevisionHistory>(`/revisions/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async deleteRevision(id: string): Promise<void> {
+    await this.request(`/revisions/${id}`, { method: "DELETE" });
+  }
+
+  async getRevisionById(id: string): Promise<RevisionHistory | undefined> {
+    try {
+      return await this.request<RevisionHistory>(`/revisions/id/${id}`);
+    } catch {
+      return undefined;
+    }
+  }
+
+  // --- Audit Logs ---
+
+  async getAuditLogs(filters?: {
+    entityType?: string;
+    entityId?: string;
+    userId?: string;
+    projectId?: string;
+    action?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<{
+    items: AuditLog[];
+    total: number;
+    limit: number;
+    offset: number;
+  }> {
+    const params = new URLSearchParams();
+    if (filters?.entityType) params.set("entityType", filters.entityType);
+    if (filters?.entityId) params.set("entityId", filters.entityId);
+    if (filters?.userId) params.set("userId", filters.userId);
+    if (filters?.projectId) params.set("projectId", filters.projectId);
+    if (filters?.action) params.set("action", filters.action);
+    if (filters?.limit) params.set("limit", String(filters.limit));
+    if (filters?.offset) params.set("offset", String(filters.offset));
+
+    const queryString = params.toString();
+    const url = queryString ? `/audit-logs?${queryString}` : "/audit-logs";
+    return this.request(url);
+  }
+
+  async createAuditLog(data: {
+    action: string;
+    entityType: string;
+    entityId: string;
+    entityName: string;
+    userId: string;
+    userName: string;
+    userRole?: string;
+    changes?: { field: string; oldValue: unknown; newValue: unknown }[];
+    description?: string;
+    projectId?: string;
+    projectName?: string;
+  }): Promise<AuditLog> {
+    return this.request<AuditLog>("/audit-logs", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async clearAuditLogs(): Promise<{ message: string }> {
+    return this.request("/audit-logs", { method: "DELETE" });
+  }
+
+  // --- Summary Counts (Lazy Loading) ---
+
+  async getSummaryCounts(): Promise<{
+    customers: number;
+    plants: number;
+    units: number;
+    areas: number;
+    projects: number;
+    psvs: number;
+    equipment: number;
+  }> {
+    // API endpoint for summary counts - fallback to individual counts if not available
+    try {
+      return await this.request("/hierarchy/summary-counts");
+    } catch {
+      // Fallback: fetch counts individually (less efficient but works)
+      const [customers, psvs, equipment] = await Promise.all([
+        this.getCustomers(),
+        this.getProtectiveSystems(),
+        this.getEquipment(),
+      ]);
+      return {
+        customers: customers.length,
+        plants: 0, // Would need additional requests
+        units: 0,
+        areas: 0,
+        projects: 0,
+        psvs: psvs.length,
+        equipment: equipment.length,
+      };
+    }
+  }
 }
 
 // Environment variable to toggle between API and localStorage
 // Default to localStorage when not explicitly disabled to ensure the demo works without a backend.
-export const USE_LOCAL_STORAGE = process.env.NEXT_PUBLIC_USE_LOCAL_STORAGE !== 'false';
+export const USE_LOCAL_STORAGE =
+  process.env.NEXT_PUBLIC_USE_LOCAL_STORAGE !== "false";
 
 // Export singleton instance
 export const api = new ApiClient();
 
 // Import localStorage service for demo mode
-import { localStorageService } from './localStorageService';
+import { localStorageService } from "./localStorageService";
 
 // Factory function to get the appropriate data service
 export function getDataService() {
-    return USE_LOCAL_STORAGE ? localStorageService : api;
+  return USE_LOCAL_STORAGE ? localStorageService : api;
 }
 
 // Export type for the data service (union of both interfaces)

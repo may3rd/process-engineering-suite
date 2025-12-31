@@ -142,7 +142,6 @@ export const createNavigationSlice: StateCreator<PsvStore, [], [], NavigationSli
 
     fetchAllPlants: async () => {
         if (get().arePlantsLoaded) return;
-        get().setIsLoading(true);
         try {
             const customers = get().customers;
             const plantsResults = await Promise.all(
@@ -154,17 +153,14 @@ export const createNavigationSlice: StateCreator<PsvStore, [], [], NavigationSli
                 plantList: allPlants,
                 arePlantsLoaded: true,
             });
-            get().setIsLoading(false);
         } catch (error) {
             console.error("Failed to fetch all plants:", error);
-            get().setIsLoading(false);
             toast.error("Failed to load plants");
         }
     },
 
     fetchAllUnits: async () => {
         if (get().areUnitsLoaded) return;
-        get().setIsLoading(true);
         try {
             if (!get().arePlantsLoaded) {
                 await get().fetchAllPlants();
@@ -179,17 +175,14 @@ export const createNavigationSlice: StateCreator<PsvStore, [], [], NavigationSli
                 unitList: allUnits,
                 areUnitsLoaded: true,
             });
-            get().setIsLoading(false);
         } catch (error) {
             console.error("Failed to fetch all units:", error);
-            get().setIsLoading(false);
             toast.error("Failed to load units");
         }
     },
 
     fetchAllAreas: async () => {
         if (get().areAreasLoaded) return;
-        get().setIsLoading(true);
         try {
             if (!get().areUnitsLoaded) {
                 await get().fetchAllUnits();
@@ -204,17 +197,14 @@ export const createNavigationSlice: StateCreator<PsvStore, [], [], NavigationSli
                 areaList: allAreas,
                 areAreasLoaded: true,
             });
-            get().setIsLoading(false);
         } catch (error) {
             console.error("Failed to fetch all areas:", error);
-            get().setIsLoading(false);
             toast.error("Failed to load areas");
         }
     },
 
     fetchAllProjects: async () => {
         if (get().areProjectsLoaded) return;
-        get().setIsLoading(true);
         try {
             if (!get().areAreasLoaded) {
                 await get().fetchAllAreas();
@@ -229,17 +219,14 @@ export const createNavigationSlice: StateCreator<PsvStore, [], [], NavigationSli
                 projectList: allProjects,
                 areProjectsLoaded: true,
             });
-            get().setIsLoading(false);
         } catch (error) {
             console.error("Failed to fetch all projects:", error);
-            get().setIsLoading(false);
             toast.error("Failed to load projects");
         }
     },
 
     fetchAllProtectiveSystems: async () => {
         if (get().arePsvsLoaded) return;
-        get().setIsLoading(true);
         try {
             const allPsvs = await dataService.getProtectiveSystems();
             set({
@@ -247,27 +234,22 @@ export const createNavigationSlice: StateCreator<PsvStore, [], [], NavigationSli
                 psvList: allPsvs,
                 arePsvsLoaded: true,
             });
-            get().setIsLoading(false);
         } catch (error) {
             console.error("Failed to fetch all PSVs:", error);
-            get().setIsLoading(false);
             toast.error("Failed to load PSVs");
         }
     },
 
     fetchAllEquipment: async () => {
         if (get().areEquipmentLoaded) return;
-        get().setIsLoading(true);
         try {
             const allEquipment = await dataService.getEquipment();
             set({
                 equipment: allEquipment,
                 areEquipmentLoaded: true,
             });
-            get().setIsLoading(false);
         } catch (error) {
             console.error("Failed to fetch all equipment:", error);
-            get().setIsLoading(false);
             toast.error("Failed to load equipment");
         }
     },

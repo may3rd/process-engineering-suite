@@ -1,42 +1,98 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Network Editor Application
 
-## Getting Started
+A powerful hydraulic network design and simulation tool, part of the Process Engineering Suite. Features drag-and-drop interface for modeling fluid networks with real-time hydraulic calculations.
 
-First, run the development server:
+## Overview
+
+This application enables engineers to:
+
+- **Visual Network Design**: Create fluid networks using an intuitive drag-and-drop interface
+- **Hydraulic Calculations**: Perform incompressible flow calculations with pressure drop analysis
+- **Component Management**: Configure pipes, pumps, valves, and other network components
+- **Real-time Analysis**: Instant feedback on network performance and pressure distributions
+- **Excel Integration**: Import/export network designs and calculation results
+
+## Quick Start
 
 ```bash
+# From monorepo root
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+
+# Or run Network Editor directly
+cd apps/network-editor
+npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+The app runs on `http://localhost:3002` and is accessible via the dashboard at `http://localhost:3000/network-editor`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Tech Stack
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- **Framework**: Next.js 16 (App Router)
+- **UI Library**: Material UI 7
+- **Diagramming**: React Flow
+- **State Management**: Zustand
+- **Language**: TypeScript
+- **Styling**: MUI sx prop with glassmorphism theme
 
-## Learn More
+## Project Structure
 
-To learn more about Next.js, take a look at the following resources:
+```
+apps/network-editor/
+├── src/
+│   ├── app/              # Next.js app router pages
+│   ├── components/       # React components and network elements
+│   ├── contexts/         # React contexts
+│   ├── lib/              # Hydraulic calculations and utilities
+│   └── store/            # Zustand state management
+├── public/               # Static assets
+└── next.config.ts        # Next.js configuration
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Current Status
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+**Production Ready** - The application provides full hydraulic network modeling capabilities with comprehensive calculation engine.
 
-## Deploy on Vercel
+### Implemented ✅
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Drag-and-drop network design interface
+- Hydraulic calculations for incompressible flow
+- Pipe and node property management
+- Real-time pressure and flow analysis
+- Excel import/export functionality
+- Network validation and error checking
+- Responsive design with theme support
+- Dashboard integration
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Deployment
 
+The Network Editor is deployed as part of the Process Engineering Suite using Docker.
 
-## Todo
+### Docker Deployment
 
-- [x] Add a logic to set the node's color based on the pressure set up conditions.
-- [ ] Add a result summary table, for pipe and for system.
+```bash
+# From monorepo root
+docker build -t process-engineering-suite .
+docker run -p 3002:3002 \
+  -e NEXT_PUBLIC_API_URL=http://your-api-server:8000 \
+  process-engineering-suite
+```
+
+### Environment Variables
+
+- `NEXT_PUBLIC_API_URL`: Backend API endpoint for calculations (default: http://localhost:8000)
+
+### Health Check
+
+```bash
+curl http://localhost:3002/api/health
+```
+
+For complete deployment instructions, see the main [Deployment Guide](../../docs/DEPLOYMENT_GUIDE.md).
+
+## Related Documentation
+
+- [Deployment Guide](../../docs/DEPLOYMENT_GUIDE.md) - Complete deployment instructions
+- [Environment Variables](../../docs/ENVIRONMENT_VARIABLES.md) - Configuration reference
+- [Docker Deployment](../../docs/DOCKER_DEPLOYMENT.md) - Container operations
+- [Troubleshooting](../../docs/TROUBLESHOOTING.md) - Issue resolution

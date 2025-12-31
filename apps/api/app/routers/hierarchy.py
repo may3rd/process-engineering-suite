@@ -7,6 +7,15 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from ..dependencies import DAL
 
+class SummaryCountsResponse(BaseModel):
+    customers: int
+    plants: int
+    units: int
+    areas: int
+    projects: int
+    psvs: int
+    equipment: int
+
 router = APIRouter(prefix="/hierarchy", tags=["hierarchy"])
 
 
@@ -161,6 +170,42 @@ class ProjectUpdate(BaseModel):
 
 # --- Endpoints ---
 
+
+@router.get("/summary-counts", response_model=SummaryCountsResponse)
+async def get_summary_counts(dal: DAL):
+    """Get summary counts for all entities."""
+    customers = await dal.get_customers()
+    psvs = await dal.get_protective_systems()
+    equipment = await dal.get_equipment()
+
+    # Count plants, units, areas, projects by querying all
+    plant_count = 0
+    unit_count = 0
+    area_count = 0
+    project_count = 0
+
+    for customer in customers:
+        plants = await dal.get_plants_by_customer(customer.id)
+        plant_count += len(plants)
+        for plant in plants:
+            units = await dal.get_units_by_plant(plant.id)
+            unit_count += len(units)
+            for unit in units:
+                areas = await dal.get_areas_by_unit(unit.id)
+                area_count += len(areas)
+                for area in areas:
+                    projects = await dal.get_projects_by_area(area.id)
+                    project_count += len(projects)
+
+    return SummaryCountsResponse(
+        customers=len(customers),
+        plants=plant_count,
+        units=unit_count,
+        areas=area_count,
+        projects=project_count,
+        psvs=len(psvs),
+        equipment=len(equipment)
+    )
 
 @router.get("/customers", response_model=List[CustomerResponse])
 async def get_customers(dal: DAL):

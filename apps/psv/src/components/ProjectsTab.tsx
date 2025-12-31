@@ -51,7 +51,8 @@ export function ProjectsTab() {
             setIsLoadingInit(true);
             fetchAllProjects().finally(() => setIsLoadingInit(false));
         }
-    }, [areProjectsLoaded, fetchAllProjects]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [areProjectsLoaded]);
     const projects = usePsvStore((state) => state.projects);
     const protectiveSystems = usePsvStore((state) => state.protectiveSystems);
 

@@ -43,28 +43,62 @@ apps/psv/
 │   ├── components/       # React components
 │   ├── contexts/         # React contexts (ColorMode)
 │   ├── data/             # Mock data and types
-│   └── store/            # Zustand state management
+│   ├── store/            # Zustand state management
+│   └── lib/              # Utilities and export functions
 ├── public/               # Static assets
+├── docs/                 # Application documentation
 └── next.config.ts        # Next.js configuration
 ```
 
+## Deployment
+
+The PSV application is deployed as part of the Process Engineering Suite using Docker.
+
+### Docker Deployment
+
+```bash
+# From monorepo root
+docker build -t process-engineering-suite .
+docker run -p 3003:3003 \
+  -e NEXT_PUBLIC_API_URL=http://your-api-server:8000 \
+  -e NEXT_PUBLIC_USE_LOCAL_STORAGE=false \
+  process-engineering-suite
+```
+
+### Environment Variables
+
+- `NEXT_PUBLIC_API_URL`: Backend API endpoint (default: http://localhost:8000)
+- `NEXT_PUBLIC_USE_LOCAL_STORAGE`: Enable demo mode (default: false)
+
+### Health Check
+
+```bash
+curl http://localhost:3003/api/health
+```
+
+For complete deployment instructions, see the main [Deployment Guide](../../docs/DEPLOYMENT_GUIDE.md).
+
 ## Current Status
 
-**Prototype Phase** - The app uses mock data and demonstrates the intended UX flow. No backend integration yet.
+**Production Ready** - The app is fully functional with complete backend integration, authentication, and production deployment support.
 
 ### Implemented ✅
-- Hierarchy browser (Customer → Plant → Unit → Area → Project)
-- Protective system list with status cards
-- Detail view with tabs (Overview, Scenarios, Sizing, Attachments)
-- Theme toggle (dark/light mode)
-- Dashboard integration with theme sync
+
+- Complete hierarchy browser (Customer → Plant → Unit → Area → Project)
+- Full protective system management with CRUD operations
+- Comprehensive PSV sizing calculations (ASME VIII / API 520)
+- Scenario management with API 521 code references
+- User authentication (API mode + localStorage demo mode)
+- File attachments and notes system
+- PDF/Excel export functionality
+- Revision control and approval workflows
+- Responsive UI with dark/light theme support
+- Comprehensive test suite (80+ tests)
+- Production-ready build and deployment
 
 ### Pending 🚧
-- Scenario editor component
-- Sizing workspace with calculations
-- Backend API integration
-- Database connectivity
-- User authentication
+
+- Advanced hydraulic modeling integration (planned for future release)
 
 ## Demo Mode (localStorage)
 
@@ -73,11 +107,13 @@ The app supports a **localStorage-based demo mode** for offline use or deploymen
 ### Enable Demo Mode
 
 **Option 1: Environment Variable**
+
 ```bash
 NEXT_PUBLIC_USE_LOCAL_STORAGE=true npm run dev
 ```
 
 **Option 2: Create `.env.local`**
+
 ```bash
 echo "NEXT_PUBLIC_USE_LOCAL_STORAGE=true" > .env.local
 npm run dev
@@ -87,17 +123,42 @@ npm run dev
 Add `NEXT_PUBLIC_USE_LOCAL_STORAGE=true` in Vercel project settings → Environment Variables.
 
 ### Demo Credentials
+
 - **Username:** `engineer`
 - **Password:** `engineer`
 
 ### How It Works
+
 - All data operations use browser localStorage instead of API
 - Pre-populated with mock data on first visit
 - Data persists in each user's browser (not shared)
 - No backend server required
 
+## Testing
+
+```bash
+# Run all tests
+npm run test:run
+
+# Run with coverage
+npm run test:run -- --coverage
+```
+
+The application includes comprehensive tests covering:
+
+- Component functionality
+- API integration
+- Store management
+- Export features
+- Authentication flows
+
 ## Related Documentation
 
+- [Deployment Guide](../../docs/DEPLOYMENT_GUIDE.md) - Complete deployment instructions
+- [Environment Variables](../../docs/ENVIRONMENT_VARIABLES.md) - Configuration reference
+- [Docker Deployment](../../docs/DOCKER_DEPLOYMENT.md) - Container operations
+- [Backup & Restore](../../docs/BACKUP_RESTORE.md) - Data management
+- [Troubleshooting](../../docs/TROUBLESHOOTING.md) - Issue resolution
 - [DEVELOPING.md](./DEVELOPING.md) - Development guide and architecture
 - [GEMINI.md](./GEMINI.md) - AI context for continuity
 - [product-overview.md](./product-overview.md) - Product requirements
