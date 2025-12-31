@@ -100,7 +100,7 @@ export function UserDialog({ open, user, onSave, onClose }: UserDialogProps) {
 
     const handleResetPassword = async () => {
         if (!user || !canManageUsers) return;
-        const result = resetUserPassword(user.id);
+        const result = await resetUserPassword(user.id);
         if (!result.success || !result.username || !result.temporaryPassword) {
             setCopyFeedback(result.message || "Failed to reset password");
             return;

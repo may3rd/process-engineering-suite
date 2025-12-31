@@ -83,7 +83,7 @@ class DatabaseService(DataAccessLayer):
         return cred
 
     async def update_credential_login(self, credential_id: str, success: bool) -> None:
-        data = {"last_login_at": datetime.utcnow()} if success else {}
+        data = {"last_login": datetime.utcnow()} if success else {}
         # We might track failed attempts too if model supports it
         if data:
             await self._update(Credential, credential_id, data)
@@ -528,7 +528,7 @@ class DatabaseService(DataAccessLayer):
             "userId": "user_id",
             "passwordHash": "password_hash",
             "failedAttempts": "failed_attempts",
-            "lastLogin": "last_login_at",
+            "lastLogin": "last_login",
             "createdAt": "created_at",
             "updatedAt": "updated_at",
             "deletedAt": "deleted_at",
@@ -596,7 +596,7 @@ class DatabaseService(DataAccessLayer):
         
         # Parse datetime fields (ISO string -> datetime)
         datetime_fields = [
-            'created_at', 'updated_at', 'deleted_at', 'last_login_at',
+            'created_at', 'updated_at', 'deleted_at', 'last_login',
             # Revision history
             'originated_at', 'checked_at', 'approved_at', 'issued_at'
         ]

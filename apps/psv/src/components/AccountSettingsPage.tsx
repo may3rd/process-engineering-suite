@@ -176,13 +176,13 @@ export function AccountSettingsPage() {
         }
     };
 
-    const handleChangePassword = () => {
+    const handleChangePassword = async () => {
         setPasswordMessage(null);
         if (newPassword !== confirmPassword) {
             setPasswordMessage({ type: "error", text: "New passwords do not match" });
             return;
         }
-        const result = changePassword(currentPassword, newPassword);
+        const result = await changePassword(currentPassword, newPassword);
         setPasswordMessage({ type: result.success ? "success" : "error", text: result.message });
         if (result.success) {
             setCurrentPassword("");

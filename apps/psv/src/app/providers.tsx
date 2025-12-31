@@ -4,6 +4,7 @@ import { ThemeProvider, createTheme, CssBaseline, Theme, Components } from "@mui
 import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { ReactNode, useState, useMemo, useEffect } from "react";
 import { ColorModeContext } from "@/contexts/ColorModeContext";
+import { SessionGuard } from "@/hooks/useSessionGuard";
 import { Toaster } from 'sonner';
 
 const getDesignTokens = (mode: 'light' | 'dark') => {
@@ -204,7 +205,9 @@ export function Providers({ children }: { children: ReactNode }) {
                 <ThemeProvider theme={theme}>
                     <CssBaseline />
                     <Toaster theme={mode} position="top-right" />
-                    {children}
+                    <SessionGuard>
+                        {children}
+                    </SessionGuard>
                 </ThemeProvider>
             </ColorModeContext.Provider>
         </AppRouterCacheProvider>

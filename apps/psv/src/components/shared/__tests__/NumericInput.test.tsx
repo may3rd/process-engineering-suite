@@ -82,7 +82,7 @@ describe("NumericInput", () => {
 
     render(
       <NumericInput
-        label="Percentage"
+        label="Percentage Max"
         value={50}
         min={0}
         max={100}
@@ -90,7 +90,7 @@ describe("NumericInput", () => {
       />,
     );
 
-    const input = screen.getByLabelText("Percentage");
+    const input = screen.getByLabelText("Percentage Max");
     await user.clear(input);
     await user.type(input, "150");
 

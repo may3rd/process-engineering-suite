@@ -28,7 +28,7 @@ export function LoginPage({ onSuccess, onContinueAsGuest }: LoginPageProps) {
         // Simulate network delay
         await new Promise((resolve) => setTimeout(resolve, 500));
 
-        const success = login(username, password);
+        const success = await login(username, password);
 
         if (success) {
             onSuccess?.();
@@ -188,10 +188,10 @@ export function LoginPage({ onSuccess, onContinueAsGuest }: LoginPageProps) {
                         Demo Accounts:
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontFamily: 'monospace' }}>
-                        engineer / engineer (Engineer)
+                        engineer / engineer
                     </Typography>
                     <Typography variant="caption" color="text.secondary" sx={{ display: 'block', fontFamily: 'monospace' }}>
-                        lead / leadlead (Lead Engineer)
+                        lead / lead
                     </Typography>
                 </Box>
             </Box>

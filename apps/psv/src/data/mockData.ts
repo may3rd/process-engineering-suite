@@ -34,12 +34,13 @@ export const users: User[] = [
 export const validOwnersForDb = users; // All users are valid now
 
 // Mock credentials for authentication - Updated IDs
+// Passwords are SHA-256 hashed for demo security
 export const credentials: MockCredential[] = [
-    { userId: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad', username: 'maetee', password: 'linkinpark' },
-    { userId: '1b9de640-0851-4ed5-941c-411efa30585c', username: 'lead', password: 'lead' },
-    { userId: 'f97ba14f-1fe6-4ad8-8c6e-241c12efcc27', username: 'approver', password: 'gcme2025' },
-    { userId: '2252f300-f2f3-4911-863d-40a5baa25346', username: 'engineer', password: 'engineer' },
-    { userId: 'd1a2b3c4-e5f6-47a8-b9c0-d1e2f3a4b5c6', username: 'dm', password: 'gcme2025' },
+    { userId: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad', username: 'maetee', password: 'f46daca7eb795765f476243ee233a9c3fa03bd49e71121bb5aebad24a0b5d015' },
+    { userId: '1b9de640-0851-4ed5-941c-411efa30585c', username: 'lead', password: 'e3456bc1f4d270f4a97933758645fdc21e39642b31ca343c1818f7972ac27906' },
+    { userId: 'f97ba14f-1fe6-4ad8-8c6e-241c12efcc27', username: 'approver', password: 'b2d147ae1542f9adeef2425c2735508c0df139daded52ae2658b0f7ba2807075' },
+    { userId: '2252f300-f2f3-4911-863d-40a5baa25346', username: 'engineer', password: '7826b958b79c70626801b880405eb5111557dadceb2fee2b1ed69a18eed0c6dc' },
+    { userId: 'd1a2b3c4-e5f6-47a8-b9c0-d1e2f3a4b5c6', username: 'dm', password: 'b2d147ae1542f9adeef2425c2735508c0df139daded52ae2658b0f7ba2807075' },
 ];
 
 // Customers

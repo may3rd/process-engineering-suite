@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { MockCredential, User } from '@/data/types';
 import { users, credentials } from '@/data/mockData';
+import { hashPassword, verifyPassword } from '@/lib/hashPassword';
+import { api, USE_LOCAL_STORAGE } from '@/lib/api';
 
 /**
  * Demo auth storage keys (local-only).
@@ -12,6 +14,9 @@ import { users, credentials } from '@/data/mockData';
  */
 const USERS_STORAGE_KEY = 'psv_demo_users';
 const CREDENTIALS_STORAGE_KEY = 'psv_demo_credentials';
+
+// Session expires after 8 hours (in milliseconds)
+const SESSION_DURATION_MS = 8 * 60 * 60 * 1000;
 
 function loadFromStorage<T>(key: string, fallback: T): T {
     if (typeof window === 'undefined') return fallback;
@@ -40,11 +45,13 @@ function ensureSeedData() {
 interface AuthState {
     currentUser: User | null;
     isAuthenticated: boolean;
-    login: (username: string, password: string) => boolean;
+    sessionExpiresAt: number | null;
+    login: (username: string, password: string) => Promise<boolean>;
     logout: () => void;
     updateUserProfile: (updates: Partial<Pick<User, 'name' | 'email' | 'initials' | 'displaySettings'>>) => void;
-    changePassword: (currentPassword: string, newPassword: string) => { success: boolean; message: string };
-    resetUserPassword: (userId: string) => { success: boolean; message: string; username?: string; temporaryPassword?: string };
+    changePassword: (currentPassword: string, newPassword: string) => Promise<{ success: boolean; message: string }>;
+    resetUserPassword: (userId: string) => Promise<{ success: boolean; message: string; username?: string; temporaryPassword?: string }>;
+    isSessionExpired: () => boolean;
     // Permission helpers
     canEdit: () => boolean;            // engineer+ (add/edit/delete items)
     canApprove: () => boolean;         // approver+
@@ -67,34 +74,57 @@ export const useAuthStore = create<AuthState>()(
         (set, get) => ({
             currentUser: null,
             isAuthenticated: false,
+            sessionExpiresAt: null,
 
-            login: (username: string, password: string) => {
-                ensureSeedData();
-                const storedCredentials = loadFromStorage<MockCredential[]>(CREDENTIALS_STORAGE_KEY, credentials);
-                const storedUsers = loadFromStorage<User[]>(USERS_STORAGE_KEY, users);
+            login: async (username: string, password: string) => {
+                if (USE_LOCAL_STORAGE) {
+                    ensureSeedData();
+                    const storedCredentials = loadFromStorage<MockCredential[]>(CREDENTIALS_STORAGE_KEY, credentials);
+                    const storedUsers = loadFromStorage<User[]>(USERS_STORAGE_KEY, users);
 
-                // Find credential
-                const credential = storedCredentials.find(
-                    (c) => c.username === username && c.password === password
-                );
+                    // Find credential by username
+                    const credential = storedCredentials.find((c) => c.username === username);
+                    if (!credential) {
+                        return false;
+                    }
 
-                if (!credential) {
-                    return false;
+                    // Verify password using hash comparison
+                    const isValid = await verifyPassword(password, credential.password);
+                    if (!isValid) {
+                        return false;
+                    }
+
+                    // Find user
+                    const user = storedUsers.find((u) => u.id === credential.userId);
+                    if (!user || user.status !== 'active') {
+                        return false;
+                    }
+
+                    const expiresAt = Date.now() + SESSION_DURATION_MS;
+                    set({ currentUser: user, isAuthenticated: true, sessionExpiresAt: expiresAt });
+                    return true;
+                } else {
+                    try {
+                        const response = await api.login(username, password);
+                        const expiresAt = Date.now() + (response.expiresIn * 1000);
+                        set({
+                            currentUser: response.user,
+                            isAuthenticated: true,
+                            sessionExpiresAt: expiresAt
+                        });
+                        return true;
+                    } catch (error) {
+                        console.error('API Login failed:', error);
+                        return false;
+                    }
                 }
-
-                // Find user
-                const user = storedUsers.find((u) => u.id === credential.userId);
-
-                if (!user || user.status !== 'active') {
-                    return false;
-                }
-
-                set({ currentUser: user, isAuthenticated: true });
-                return true;
             },
 
             logout: () => {
-                set({ currentUser: null, isAuthenticated: false });
+                if (!USE_LOCAL_STORAGE) {
+                    api.logout().catch(err => console.error('API Logout failed:', err));
+                }
+                set({ currentUser: null, isAuthenticated: false, sessionExpiresAt: null });
             },
 
             updateUserProfile: (updates) => {
@@ -111,7 +141,7 @@ export const useAuthStore = create<AuthState>()(
                 }
             },
 
-            changePassword: (currentPassword, newPassword) => {
+            changePassword: async (currentPassword, newPassword) => {
                 const { currentUser } = get();
                 if (!currentUser) return { success: false, message: 'Not signed in' };
                 if (!newPassword || newPassword.length < 6) {
@@ -122,17 +152,22 @@ export const useAuthStore = create<AuthState>()(
                 const storedCredentials = loadFromStorage<MockCredential[]>(CREDENTIALS_STORAGE_KEY, credentials);
                 const credIndex = storedCredentials.findIndex((c) => c.userId === currentUser.id);
                 if (credIndex === -1) return { success: false, message: 'Credential not found' };
-                if (storedCredentials[credIndex].password !== currentPassword) {
+
+                // Verify current password
+                const isValid = await verifyPassword(currentPassword, storedCredentials[credIndex].password);
+                if (!isValid) {
                     return { success: false, message: 'Current password is incorrect' };
                 }
 
+                // Hash new password and store
+                const hashedNewPassword = await hashPassword(newPassword);
                 const nextCredentials = [...storedCredentials];
-                nextCredentials[credIndex] = { ...nextCredentials[credIndex], password: newPassword };
+                nextCredentials[credIndex] = { ...nextCredentials[credIndex], password: hashedNewPassword };
                 persistToStorage(CREDENTIALS_STORAGE_KEY, nextCredentials);
                 return { success: true, message: 'Password updated' };
             },
 
-            resetUserPassword: (userId) => {
+            resetUserPassword: async (userId) => {
                 const { currentUser } = get();
                 if (!currentUser || !['admin', 'division_manager'].includes(currentUser.role)) {
                     return { success: false, message: 'Admin or Division Manager permission required' };
@@ -153,6 +188,7 @@ export const useAuthStore = create<AuthState>()(
                 }
 
                 const temporaryPassword = generateTemporaryPassword();
+                const hashedPassword = await hashPassword(temporaryPassword);
                 const existingIndex = storedCredentials.findIndex((c) => c.userId === userId);
                 const username =
                     existingIndex !== -1
@@ -161,9 +197,9 @@ export const useAuthStore = create<AuthState>()(
 
                 const nextCredentials = [...storedCredentials];
                 if (existingIndex !== -1) {
-                    nextCredentials[existingIndex] = { ...nextCredentials[existingIndex], password: temporaryPassword };
+                    nextCredentials[existingIndex] = { ...nextCredentials[existingIndex], password: hashedPassword };
                 } else {
-                    nextCredentials.push({ userId, username, password: temporaryPassword });
+                    nextCredentials.push({ userId, username, password: hashedPassword });
                 }
 
                 // Sync username back to user object for display
@@ -181,6 +217,12 @@ export const useAuthStore = create<AuthState>()(
                     username,
                     temporaryPassword,
                 };
+            },
+
+            isSessionExpired: () => {
+                const { sessionExpiresAt, isAuthenticated } = get();
+                if (!isAuthenticated || !sessionExpiresAt) return true;
+                return Date.now() >= sessionExpiresAt;
             },
 
             // Permission helpers
