@@ -30,6 +30,12 @@ import { UnitSelector } from "@/components/shared";
 import { NumericInput } from "@/components/shared/NumericInput";
 import { PipeProps } from "@/data/types";
 import type { FittingType } from "@eng-suite/physics";
+import {
+    PIPE_SCHEDULES,
+    getInnerDiameterMm,
+    getAvailableNpsSizes,
+    type PipeSchedule,
+} from "@eng-suite/physics";
 
 // Extended PipeProps with NPS/Schedule fields (used in network-editor)
 interface ExtendedPipeProps extends PipeProps {
@@ -38,27 +44,6 @@ interface ExtendedPipeProps extends PipeProps {
     pipeSchedule?: string;
     lineNumber?: string;
     isometricNumber?: string;
-}
-
-// NPS Schedule data - simplified for common schedules
-const PIPE_SCHEDULES = ["40", "80", "160", "STD", "XS", "XXS"] as const;
-type PipeSchedule = typeof PIPE_SCHEDULES[number];
-
-// Common NPS sizes (inches)
-const NPS_SIZES = [0.5, 0.75, 1, 1.25, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10, 12, 14, 16, 18, 20, 24];
-
-// Simplified schedule lookup (ID in mm) - Schedule 40 as reference
-const SCHEDULE_40_ID: Record<number, number> = {
-    0.5: 15.76, 0.75: 20.96, 1: 26.64, 1.25: 35.08, 1.5: 40.94,
-    2: 52.48, 2.5: 62.68, 3: 77.92, 4: 102.26, 5: 128.2,
-    6: 154.08, 8: 202.74, 10: 254.46, 12: 303.18, 14: 333.34,
-    16: 381, 18: 428.46, 20: 477.82, 24: 575.04,
-};
-
-function getInnerDiameterMmFromNpsSchedule(nps: number, _schedule: string): number | null {
-    // Current UI uses a simplified table; schedule is accepted for persistence/UI but
-    // diameter lookup uses the schedule-40 reference values for now.
-    return SCHEDULE_40_ID[nps] ?? null;
 }
 
 // Fitting type options
@@ -220,8 +205,8 @@ export function PipeEditorDialog({
 
     const handleNpsChange = (newNps: number) => {
         setNps(newNps);
-        const id = getInnerDiameterMmFromNpsSchedule(newNps, schedule);
-        if (id !== null) {
+        const id = getInnerDiameterMm(newNps, schedule);
+        if (id !== undefined) {
             setDiameter(id);
             setDiameterUnit("mm");
         }
@@ -246,7 +231,7 @@ export function PipeEditorDialog({
     const handleSave = () => {
         if (!pipe) return;
 
-        const computedNpsDiameter = getInnerDiameterMmFromNpsSchedule(nps, schedule);
+        const computedNpsDiameter = getInnerDiameterMm(nps, schedule);
         const effectiveDiameter =
             diameterInputMode === 'diameter'
                 ? diameter
@@ -285,8 +270,12 @@ export function PipeEditorDialog({
 
     const isGasPhase = fluidPhase === 'gas' || fluidPhase === 'steam' || fluidPhase === 'two_phase';
     const pressureLabel = direction === 'forward' ? 'Inlet Pressure' : 'Outlet Pressure';
+    const npsSizes = useMemo(
+        () => getAvailableNpsSizes(schedule),
+        [schedule]
+    );
     const npsCalculatedDiameterMm = useMemo(
-        () => getInnerDiameterMmFromNpsSchedule(nps, schedule),
+        () => getInnerDiameterMm(nps, schedule),
         [nps, schedule]
     );
 
@@ -403,8 +392,8 @@ export function PipeEditorDialog({
                                     const mode = e.target.value as "nps" | "diameter";
                                     setDiameterInputMode(mode);
                                     if (mode === "nps") {
-                                        const id = getInnerDiameterMmFromNpsSchedule(nps, schedule);
-                                        if (id !== null) {
+                                        const id = getInnerDiameterMm(nps, schedule);
+                                        if (id !== undefined) {
                                             setDiameter(id);
                                             setDiameterUnit("mm");
                                         }
@@ -426,12 +415,12 @@ export function PipeEditorDialog({
                                     size="small"
                                     sx={{ flex: 1 }}
                                     helperText={
-                                        npsCalculatedDiameterMm !== null
+                                        npsCalculatedDiameterMm !== undefined
                                             ? `Calculated ID: ${npsCalculatedDiameterMm.toFixed(2)} mm`
                                             : 'Calculated ID unavailable'
                                     }
                                 >
-                                    {NPS_SIZES.map(size => (
+                                    {npsSizes.map((size: number) => (
                                         <MenuItem key={size} value={size}>{size}"</MenuItem>
                                     ))}
                                 </TextField>
@@ -442,8 +431,8 @@ export function PipeEditorDialog({
                                     onChange={(e) => {
                                         const next = e.target.value;
                                         setSchedule(next);
-                                        const id = getInnerDiameterMmFromNpsSchedule(nps, next);
-                                        if (id !== null) {
+                                        const id = getInnerDiameterMm(nps, next);
+                                        if (id !== undefined) {
                                             setDiameter(id);
                                             setDiameterUnit("mm");
                                         }
@@ -571,14 +560,52 @@ export function PipeEditorDialog({
                                 </MenuItem>
                             )}
                         </TextField>
-                        <Box sx={{ width: 80 }}>
-                            <NumericInput
-                                label="Count"
-                                value={newFittingCount}
-                                onChange={(val) => setNewFittingCount(Math.floor(val || 1))}
+                        <Box
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                border: 1,
+                                borderColor: 'divider',
+                                borderRadius: 1,
+                                overflow: 'hidden',
+                                height: 40,
+                            }}
+                        >
+                            <IconButton
                                 size="small"
-                                min={1}
+                                onClick={() => setNewFittingCount(Math.max(1, newFittingCount - 1))}
+                                disabled={newFittingCount <= 1}
+                                sx={{ borderRadius: 0, px: 1.5 }}
+                            >
+                                <Typography variant="body1" fontWeight={500}>−</Typography>
+                            </IconButton>
+                            <TextField
+                                value={newFittingCount}
+                                onChange={(e) => {
+                                    const val = parseInt(e.target.value, 10);
+                                    if (!isNaN(val) && val >= 1) {
+                                        setNewFittingCount(val);
+                                    }
+                                }}
+                                size="small"
+                                slotProps={{
+                                    input: {
+                                        sx: {
+                                            textAlign: 'center',
+                                            width: 48,
+                                            '& input': { textAlign: 'center', p: 0 },
+                                            '& fieldset': { border: 'none' },
+                                        },
+                                    },
+                                }}
                             />
+                            <IconButton
+                                size="small"
+                                onClick={() => setNewFittingCount(newFittingCount + 1)}
+                                sx={{ borderRadius: 0, px: 1.5 }}
+                            >
+                                <Typography variant="body1" fontWeight={500}>+</Typography>
+                            </IconButton>
                         </Box>
                         <Button
                             variant="outlined"

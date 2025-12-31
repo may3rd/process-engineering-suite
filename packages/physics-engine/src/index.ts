@@ -6,4 +6,5 @@ export * from './calculations/utils';
 export * from './fittings';
 export * from './pressurePropagation';
 export * from './types';
+export * from './pipeSchedules';
 
