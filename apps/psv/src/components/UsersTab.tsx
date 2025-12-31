@@ -344,39 +344,60 @@ export function UsersTab() {
                     </Typography>
                 </Box>
                 {canManageUsers && (
-                    <Button
-                        variant="contained"
-                        startIcon={<Add />}
-                        onClick={handleAdd}
-                    >
-                        Invite User
-                    </Button>
+                    <>
+                        {/* Desktop: Full button with text */}
+                        <Button
+                            variant="contained"
+                            startIcon={<Add />}
+                            onClick={handleAdd}
+                            sx={{ display: { xs: 'none', sm: 'flex' } }}
+                        >
+                            Invite User
+                        </Button>
+                        {/* Mobile: Icon only */}
+                        <Tooltip title="Invite User">
+                            <IconButton
+                                onClick={handleAdd}
+                                sx={{
+                                    display: { xs: 'flex', sm: 'none' },
+                                    bgcolor: 'primary.main',
+                                    color: 'white',
+                                    '&:hover': { bgcolor: 'primary.dark' },
+                                }}
+                            >
+                                <Add />
+                            </IconButton>
+                        </Tooltip>
+                    </>
                 )}
             </Box>
 
             {/* Overview Cards */}
-            <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Grid container spacing={{ xs: 1, sm: 2 }} sx={{ mb: 3 }}>
                 {cards.map((card) => (
-                    <Grid size={{ xs: 12, md: 4 }} key={card.label}>
+                    <Grid size={{ xs: 4, md: 4 }} key={card.label}>
                         <Paper
                             sx={{
                                 ...glassCardStyles,
-                                p: 2,
+                                p: { xs: 1.5, sm: 2 },
                                 display: "flex",
                                 flexDirection: "column",
-                                gap: 0.5,
+                                gap: { xs: 0.25, sm: 0.5 },
+                                minHeight: { xs: 'auto', sm: 100 },
                             }}
                         >
-                            <Stack direction="row" spacing={1} alignItems="center">
-                                {card.icon}
-                                <Typography variant="body2" color="text.secondary">
+                            <Stack direction="row" spacing={0.5} alignItems="center">
+                                <Box sx={{ '& .MuiSvgIcon-root': { fontSize: { xs: '1rem', sm: '1.25rem' } } }}>
+                                    {card.icon}
+                                </Box>
+                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.7rem', sm: '0.875rem' }, lineHeight: 1.2 }}>
                                     {card.label}
                                 </Typography>
                             </Stack>
-                            <Typography variant="h4" fontWeight={700}>
+                            <Typography variant="h4" fontWeight={700} sx={{ fontSize: { xs: '1.5rem', sm: '2rem' }, lineHeight: 1 }}>
                                 {card.value}
                             </Typography>
-                            <Typography variant="body2" color="text.secondary">
+                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: { xs: '0.65rem', sm: '0.75rem' }, display: { xs: 'none', sm: 'block' } }}>
                                 {card.helper}
                             </Typography>
                         </Paper>

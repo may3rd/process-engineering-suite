@@ -135,12 +135,30 @@ export function DashboardPage() {
                 </IconButton>
             </Paper>
 
-            {/* Tabs - Folder Tab Style */}
-            <Box sx={{ px: { xs: 2, sm: 3 }, pt: 2 }}>
+            {/* Tabs - GitHub-style Folder Tab */}
+            <Box
+                sx={{
+                    position: 'relative',
+                    // Underline extends to page edges by using negative margins
+                    mx: { xs: -2, sm: -3 },
+                    px: { xs: 2, sm: 3 },
+                    '&::after': {
+                        content: '""',
+                        position: 'absolute',
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        height: '1px',
+                        backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)',
+                        pointerEvents: 'none',
+                        zIndex: 0,
+                    },
+                }}
+            >
                 <Box
                     sx={{
                         display: 'flex',
-                        gap: 0.5,
+                        gap: 0,
                         flexWrap: 'nowrap',
                         overflowX: 'auto',
                         overflowY: 'visible',
@@ -148,17 +166,6 @@ export function DashboardPage() {
                         scrollbarWidth: 'none',
                         '&::-webkit-scrollbar': { display: 'none' },
                         position: 'relative',
-                        '&::after': {
-                            content: '""',
-                            position: 'absolute',
-                            left: 0,
-                            right: 0,
-                            bottom: 0,
-                            height: '2px',
-                            backgroundColor: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)',
-                            pointerEvents: 'none',
-                            zIndex: 0,
-                        },
                     }}
                 >
                     {visibleTabs.map((tab, index) => {
@@ -179,20 +186,26 @@ export function DashboardPage() {
                                     cursor: 'pointer',
                                     position: 'relative',
                                     transition: 'all 0.15s ease',
-                                    flexShrink: 0, // Prevent shrinking in single line
+                                    flexShrink: 0,
                                     whiteSpace: 'nowrap',
                                     zIndex: isSelected ? 2 : 1,
+                                    marginBottom: '-1px', // Overlap the underline
 
                                     // Borders
-                                    border: '1px solid transparent',
-                                    borderBottom: 'none',
-
-                                    ...(isSelected && {
-                                        borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)',
-                                        borderBottom: 'none',
-                                        borderRadius: '8px 8px 0 0',
-                                        backgroundColor: selectedTabBg,
-                                    }),
+                                    borderTop: isSelected
+                                        ? `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)'}`
+                                        : '1px solid transparent',
+                                    borderLeft: isSelected
+                                        ? `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)'}`
+                                        : '1px solid transparent',
+                                    borderRight: isSelected
+                                        ? `1px solid ${isDark ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.15)'}`
+                                        : '1px solid transparent',
+                                    borderBottom: isSelected
+                                        ? `1px solid ${selectedTabBg}`
+                                        : '1px solid transparent',
+                                    borderRadius: isSelected ? '8px 8px 0 0' : '0',
+                                    backgroundColor: isSelected ? selectedTabBg : 'transparent',
 
                                     '&:hover': !isSelected ? {
                                         color: isDark ? '#fff' : '#000',
@@ -235,6 +248,7 @@ export function DashboardPage() {
                     })}
                 </Box>
             </Box>
+
 
             {/* Tab Content */}
             <Box sx={{ flex: 1, overflow: 'auto', p: { xs: 2, sm: 3 } }}>
