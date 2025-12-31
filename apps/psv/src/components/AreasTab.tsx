@@ -37,11 +37,13 @@ import {
 } from "@mui/icons-material";
 import { Area } from "@/data/types";
 import { glassCardStyles } from "./styles";
-import { DeleteConfirmDialog, TableSortButton } from "./shared";
+import { DeleteConfirmDialog, TableSortButton, PaginationControls, ItemsPerPageSelector } from "./shared";
 import { AreaDialog } from "./dashboard/AreaDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
 import { SortConfig, sortByGetter, toggleSortConfig } from "@/lib/sortUtils";
+import { usePagination } from "@/hooks/usePagination";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 export function AreasTab() {
   const theme = useTheme();
@@ -238,6 +240,13 @@ export function AreasTab() {
     [filteredAreas, sortConfig],
   );
 
+  // Pagination
+  const [itemsPerPage, setItemsPerPage] = useLocalStorage('dashboard_items_per_page', 15);
+  const pagination = usePagination(sortedAreas, {
+    totalItems: sortedAreas.length,
+    itemsPerPage: itemsPerPage,
+  });
+
   const renderHeader = (label: string, key: SortKey) => (
     <Box sx={{ display: "flex", alignItems: "center" }}>
       {label}
@@ -415,7 +424,7 @@ export function AreasTab() {
       {/* Mobile Card View */}
       {isMobile ? (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {filteredAreas.map((area) => {
+          {pagination.pageItems.map((area) => {
             const unit = units.find((u) => u.id === area.unitId);
             const counts = getAssetCounts(area.id);
 
@@ -556,7 +565,24 @@ export function AreasTab() {
               </Card>
             );
           })}
-          {filteredAreas.length === 0 && (
+
+          {/* Pagination for mobile */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+            <ItemsPerPageSelector
+              value={itemsPerPage}
+              onChange={setItemsPerPage}
+            />
+            <PaginationControls
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              pageNumbers={pagination.pageNumbers}
+              onPageChange={pagination.goToPage}
+              hasNextPage={pagination.hasNextPage}
+              hasPrevPage={pagination.hasPrevPage}
+            />
+          </Box>
+
+          {pagination.pageItems.length === 0 && (
             <Paper sx={{ ...glassCardStyles, p: 4, textAlign: "center" }}>
               <Typography color="text.secondary">
                 {searchText
@@ -586,7 +612,7 @@ export function AreasTab() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {sortedAreas.map((area) => {
+                {pagination.pageItems.map((area) => {
                   const unit = units.find((u) => u.id === area.unitId);
                   const counts = getAssetCounts(area.id);
 
@@ -675,7 +701,7 @@ export function AreasTab() {
                     </TableRow>
                   );
                 })}
-                {sortedAreas.length === 0 && (
+                {pagination.pageItems.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                       <Typography color="text.secondary">
@@ -689,6 +715,22 @@ export function AreasTab() {
               </TableBody>
             </Table>
           </TableContainer>
+
+          {/* Pagination for desktop */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 2, px: 2 }}>
+            <ItemsPerPageSelector
+              value={itemsPerPage}
+              onChange={setItemsPerPage}
+            />
+            <PaginationControls
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              pageNumbers={pagination.pageNumbers}
+              onPageChange={pagination.goToPage}
+              hasNextPage={pagination.hasNextPage}
+              hasPrevPage={pagination.hasPrevPage}
+            />
+          </Box>
         </Paper>
       )}
 

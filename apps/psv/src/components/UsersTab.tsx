@@ -47,11 +47,13 @@ import { v4 as uuidv4 } from "uuid";
 import { User } from "@/data/types";
 import { users as mockUsers, credentials } from "@/data/mockData";
 import { glassCardStyles } from "./styles";
-import { DeleteConfirmDialog, TableSortButton } from "./shared";
+import { DeleteConfirmDialog, TableSortButton, PaginationControls, ItemsPerPageSelector } from "./shared";
 import { UserDialog } from "./dashboard/UserDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
 import { SortConfig, sortByGetter, toggleSortConfig } from "@/lib/sortUtils";
+import { usePagination } from "@/hooks/usePagination";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 const USERS_STORAGE_KEY = "psv_demo_users_v2";
 
@@ -222,6 +224,13 @@ export function UsersTab() {
         () => sortByGetter(filteredUsers, sortConfig, getSortValue),
         [filteredUsers, sortConfig]
     );
+
+    // Pagination
+  const [itemsPerPage, setItemsPerPage] = useLocalStorage('dashboard_items_per_page', 15);
+    const pagination = usePagination(sortedUsers, {
+        totalItems: sortedUsers.length,
+        itemsPerPage: itemsPerPage,
+    });
 
     const totalUsers = userList.length;
     const activeUsers = userList.filter((user) => user.status === "active").length;
@@ -522,7 +531,7 @@ export function UsersTab() {
                         </TableRow>
                     </TableHead>
                     <TableBody>
-                        {sortedUsers.map((user) => {
+                        {pagination.pageItems.map((user) => {
                             const counts = getOwnership(user.id);
 
                             return (
@@ -670,7 +679,7 @@ export function UsersTab() {
                                 </TableRow>
                             );
                         })}
-                        {sortedUsers.length === 0 && (
+                        {pagination.pageItems.length === 0 && (
                             <TableRow>
                                 <TableCell colSpan={canManageUsers ? 5 : 4}>
                                     <Box
@@ -693,11 +702,27 @@ export function UsersTab() {
                         )}
                     </TableBody>
                 </Table>
+
+                {/* Pagination for mobile */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+            <ItemsPerPageSelector
+              value={itemsPerPage}
+              onChange={setItemsPerPage}
+            />
+            <PaginationControls
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              pageNumbers={pagination.pageNumbers}
+              onPageChange={pagination.goToPage}
+              hasNextPage={pagination.hasNextPage}
+              hasPrevPage={pagination.hasPrevPage}
+            />
+          </Box>
             </TableContainer>
 
             {/* Mobile Cards */}
             <Stack spacing={2} sx={{ display: { xs: "flex", md: "none" } }}>
-                {sortedUsers.map((user) => {
+                {pagination.pageItems.map((user) => {
                     const counts = getOwnership(user.id);
                     return (
                         <Card key={user.id} sx={glassCardStyles}>
@@ -818,6 +843,22 @@ export function UsersTab() {
                         </Card>
                     );
                 })}
+
+                {/* Pagination for desktop */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 2, px: 2 }}>
+            <ItemsPerPageSelector
+              value={itemsPerPage}
+              onChange={setItemsPerPage}
+            />
+            <PaginationControls
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              pageNumbers={pagination.pageNumbers}
+              onPageChange={pagination.goToPage}
+              hasNextPage={pagination.hasNextPage}
+              hasPrevPage={pagination.hasPrevPage}
+            />
+          </Box>
             </Stack>
 
             <UserDialog

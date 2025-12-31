@@ -37,11 +37,13 @@ import {
 import { users } from "@/data/mockData";
 import { Customer } from "@/data/types";
 import { glassCardStyles } from "./styles";
-import { DeleteConfirmDialog, TableSortButton } from "./shared";
+import { DeleteConfirmDialog, TableSortButton, PaginationControls, ItemsPerPageSelector } from "./shared";
 import { CustomerDialog } from "./dashboard/CustomerDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
 import { SortConfig, sortByGetter, toggleSortConfig } from "@/lib/sortUtils";
+import { usePagination } from "@/hooks/usePagination";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 export function CustomersTab() {
   const theme = useTheme();
@@ -223,6 +225,13 @@ export function CustomersTab() {
     [filteredCustomers, sortConfig],
   );
 
+  // Pagination
+  const [itemsPerPage, setItemsPerPage] = useLocalStorage('dashboard_items_per_page', 15);
+  const pagination = usePagination(sortedCustomers, {
+    totalItems: sortedCustomers.length,
+    itemsPerPage: itemsPerPage,
+  });
+
   const renderHeader = (label: string, key: SortKey) => (
     <Box sx={{ display: "flex", alignItems: "center" }}>
       {label}
@@ -395,7 +404,7 @@ export function CustomersTab() {
       {/* Mobile Card View */}
       {isMobile ? (
         <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
-          {filteredCustomers.map((customer) => {
+          {pagination.pageItems.map((customer) => {
             const owner = users.find((u) => u.id === customer.ownerId);
             const plantCount = getPlantCount(customer.id);
 
@@ -508,7 +517,26 @@ export function CustomersTab() {
               </Card>
             );
           })}
-          {filteredCustomers.length === 0 && (
+
+
+          {/* Pagination for mobile */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+            <ItemsPerPageSelector
+              value={itemsPerPage}
+              onChange={setItemsPerPage}
+            />
+            <PaginationControls
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              pageNumbers={pagination.pageNumbers}
+              onPageChange={pagination.goToPage}
+              hasNextPage={pagination.hasNextPage}
+              hasPrevPage={pagination.hasPrevPage}
+            />
+          </Box>
+
+
+          {pagination.pageItems.length === 0 && (
             <Paper sx={{ ...glassCardStyles, p: 4, textAlign: "center" }}>
               <Typography color="text.secondary">
                 {searchText
@@ -534,7 +562,7 @@ export function CustomersTab() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {sortedCustomers.map((customer) => {
+                {pagination.pageItems.map((customer) => {
                   const owner = users.find((u) => u.id === customer.ownerId);
                   const plantCount = getPlantCount(customer.id);
 
@@ -609,7 +637,7 @@ export function CustomersTab() {
                     </TableRow>
                   );
                 })}
-                {sortedCustomers.length === 0 && (
+                {pagination.pageItems.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
                       <Typography color="text.secondary">
@@ -623,6 +651,23 @@ export function CustomersTab() {
               </TableBody>
             </Table>
           </TableContainer>
+
+
+          {/* Pagination for desktop */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 2, px: 2 }}>
+            <ItemsPerPageSelector
+              value={itemsPerPage}
+              onChange={setItemsPerPage}
+            />
+            <PaginationControls
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              pageNumbers={pagination.pageNumbers}
+              onPageChange={pagination.goToPage}
+              hasNextPage={pagination.hasNextPage}
+              hasPrevPage={pagination.hasPrevPage}
+            />
+          </Box>
         </Paper>
       )}
 

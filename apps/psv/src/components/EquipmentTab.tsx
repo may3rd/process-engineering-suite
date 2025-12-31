@@ -29,11 +29,13 @@ import { Add, Edit, Delete, Settings, Search, Opacity, ThermostatAuto } from "@m
 import { areas, units, users } from "@/data/mockData";
 import { Equipment } from "@/data/types";
 import { glassCardStyles } from "./styles";
-import { DeleteConfirmDialog, TableSortButton } from "./shared";
+import { DeleteConfirmDialog, TableSortButton, PaginationControls, ItemsPerPageSelector } from "./shared";
 import { EquipmentDialog } from "./dashboard/EquipmentDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
 import { SortConfig, sortByGetter, toggleSortConfig } from "@/lib/sortUtils";
+import { usePagination } from "@/hooks/usePagination";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 export function EquipmentTab() {
     const theme = useTheme();
@@ -167,6 +169,13 @@ export function EquipmentTab() {
         () => sortByGetter(filteredEquipment, sortConfig, getSortValue),
         [filteredEquipment, sortConfig]
     );
+
+    // Pagination
+  const [itemsPerPage, setItemsPerPage] = useLocalStorage('dashboard_items_per_page', 15);
+    const pagination = usePagination(sortedEquipment, {
+        totalItems: sortedEquipment.length,
+        itemsPerPage: itemsPerPage,
+    });
 
     const renderHeader = (label: string, key: SortKey) => (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -314,7 +323,7 @@ export function EquipmentTab() {
             {/* Mobile Card View */}
             {isMobile ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {filteredEquipment.map((equip) => {
+                    {pagination.pageItems.map((equip) => {
                         const area = areas.find(a => a.id === equip.areaId);
                         const unit = area ? units.find(u => u.id === area.unitId) : null;
                         const owner = users.find(u => u.id === equip.ownerId);
@@ -424,7 +433,24 @@ export function EquipmentTab() {
                             </Card>
                         );
                     })}
-                    {filteredEquipment.length === 0 && (
+
+                    {/* Pagination for mobile */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+            <ItemsPerPageSelector
+              value={itemsPerPage}
+              onChange={setItemsPerPage}
+            />
+            <PaginationControls
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              pageNumbers={pagination.pageNumbers}
+              onPageChange={pagination.goToPage}
+              hasNextPage={pagination.hasNextPage}
+              hasPrevPage={pagination.hasPrevPage}
+            />
+          </Box>
+
+                    {pagination.pageItems.length === 0 && (
                         <Paper sx={{ ...glassCardStyles, p: 4, textAlign: 'center' }}>
                             <Typography color="text.secondary">
                                 {searchText ? 'No equipment matches your search.' : 'No equipment found. Click "Add Equipment" to create one.'}
@@ -451,7 +477,7 @@ export function EquipmentTab() {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {sortedEquipment.map((equip) => {
+                                {pagination.pageItems.map((equip) => {
                                     const area = areas.find(a => a.id === equip.areaId);
                                     const unit = area ? units.find(u => u.id === area.unitId) : null;
                                     const owner = users.find(u => u.id === equip.ownerId);
@@ -544,7 +570,7 @@ export function EquipmentTab() {
                                         </TableRow>
                                     );
                                 })}
-                                {sortedEquipment.length === 0 && (
+                                {pagination.pageItems.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={9} align="center" sx={{ py: 4 }}>
                                             <Typography color="text.secondary">
@@ -556,6 +582,22 @@ export function EquipmentTab() {
                             </TableBody>
                         </Table>
                     </TableContainer>
+
+                    {/* Pagination for desktop */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 2, px: 2 }}>
+            <ItemsPerPageSelector
+              value={itemsPerPage}
+              onChange={setItemsPerPage}
+            />
+            <PaginationControls
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              pageNumbers={pagination.pageNumbers}
+              onPageChange={pagination.goToPage}
+              hasNextPage={pagination.hasNextPage}
+              hasPrevPage={pagination.hasPrevPage}
+            />
+          </Box>
                 </Paper>
             )}
 

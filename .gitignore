@@ -58,6 +58,7 @@ yarn-error.log*
 *.pem
 .kilocode
 .tmp/
+*.backup
 
 # IDE
 .idea/

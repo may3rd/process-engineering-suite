@@ -29,12 +29,14 @@ import { Add, Edit, Delete, Folder, Search, Shield, CheckCircle } from "@mui/ico
 import { areas, units, users } from "@/data/mockData";
 import { Project } from "@/data/types";
 import { glassCardStyles } from "./styles";
-import { DeleteConfirmDialog, TableSortButton } from "./shared";
+import { DeleteConfirmDialog, TableSortButton, PaginationControls, ItemsPerPageSelector } from "./shared";
 import { ProjectDialog } from "./dashboard/ProjectDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
 import { SortConfig, sortByGetter, toggleSortConfig } from "@/lib/sortUtils";
 import { getWorkflowStatusColor, getWorkflowStatusLabel } from "@/lib/statusColors";
+import { usePagination } from "@/hooks/usePagination";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 export function ProjectsTab() {
     const theme = useTheme();
@@ -161,6 +163,13 @@ export function ProjectsTab() {
         () => sortByGetter(filteredProjects, sortConfig, getSortValue),
         [filteredProjects, sortConfig]
     );
+
+    // Pagination
+  const [itemsPerPage, setItemsPerPage] = useLocalStorage('dashboard_items_per_page', 15);
+    const pagination = usePagination(sortedProjects, {
+        totalItems: sortedProjects.length,
+        itemsPerPage: itemsPerPage,
+    });
 
     const renderHeader = (label: string, key: SortKey) => (
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -316,7 +325,7 @@ export function ProjectsTab() {
             {/* Mobile Card View */}
             {isMobile ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {filteredProjects.map((project) => {
+                    {pagination.pageItems.map((project) => {
                         const area = areas.find(a => a.id === project.areaId);
                         const unit = area ? units.find(u => u.id === area.unitId) : null;
                         const lead = users.find(u => u.id === project.leadId);
@@ -418,7 +427,24 @@ export function ProjectsTab() {
                             </Card>
                         );
                     })}
-                    {filteredProjects.length === 0 && (
+
+                    {/* Pagination for mobile */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+            <ItemsPerPageSelector
+              value={itemsPerPage}
+              onChange={setItemsPerPage}
+            />
+            <PaginationControls
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              pageNumbers={pagination.pageNumbers}
+              onPageChange={pagination.goToPage}
+              hasNextPage={pagination.hasNextPage}
+              hasPrevPage={pagination.hasPrevPage}
+            />
+          </Box>
+
+                    {pagination.pageItems.length === 0 && (
                         <Paper sx={{ ...glassCardStyles, p: 4, textAlign: 'center' }}>
                             <Typography color="text.secondary">
                                 {searchText ? 'No projects match your search.' : 'No projects found. Click "Add Project" to create one.'}
@@ -444,7 +470,7 @@ export function ProjectsTab() {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {sortedProjects.map((project) => {
+                                {pagination.pageItems.map((project) => {
                                     const area = areas.find(a => a.id === project.areaId);
                                     const unit = area ? units.find(u => u.id === area.unitId) : null;
                                     const lead = users.find(u => u.id === project.leadId);
@@ -535,7 +561,7 @@ export function ProjectsTab() {
                                         </TableRow>
                                     );
                                 })}
-                                {sortedProjects.length === 0 && (
+                                {pagination.pageItems.length === 0 && (
                                     <TableRow>
                                         <TableCell colSpan={8} align="center" sx={{ py: 4 }}>
                                             <Typography color="text.secondary">
@@ -547,6 +573,22 @@ export function ProjectsTab() {
                             </TableBody>
                         </Table>
                     </TableContainer>
+
+                    {/* Pagination for desktop */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 2, px: 2 }}>
+            <ItemsPerPageSelector
+              value={itemsPerPage}
+              onChange={setItemsPerPage}
+            />
+            <PaginationControls
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              pageNumbers={pagination.pageNumbers}
+              onPageChange={pagination.goToPage}
+              hasNextPage={pagination.hasNextPage}
+              hasPrevPage={pagination.hasPrevPage}
+            />
+          </Box>
                 </Paper>
             )}
 

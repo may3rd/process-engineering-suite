@@ -37,11 +37,13 @@ import {
 import { users } from "@/data/mockData";
 import { Unit } from "@/data/types";
 import { glassCardStyles } from "./styles";
-import { DeleteConfirmDialog, TableSortButton } from "./shared";
+import { DeleteConfirmDialog, TableSortButton, PaginationControls, ItemsPerPageSelector } from "./shared";
 import { UnitDialog } from "./dashboard/UnitDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
 import { SortConfig, sortByGetter, toggleSortConfig } from "@/lib/sortUtils";
+import { usePagination } from "@/hooks/usePagination";
+import { useLocalStorage } from "@/hooks/useLocalStorage";
 
 export function UnitsTab() {
   const theme = useTheme();
@@ -211,6 +213,13 @@ export function UnitsTab() {
     () => sortByGetter(filteredUnits, sortConfig, getSortValue),
     [filteredUnits, sortConfig],
   );
+
+  // Pagination
+  const [itemsPerPage, setItemsPerPage] = useLocalStorage('dashboard_items_per_page', 15);
+  const pagination = usePagination(sortedUnits, {
+    totalItems: sortedUnits.length,
+    itemsPerPage: itemsPerPage,
+  });
 
   const renderHeader = (label: string, key: SortKey) => (
     <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -529,7 +538,7 @@ export function UnitsTab() {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {sortedUnits.map((unit) => {
+                {pagination.pageItems.map((unit) => {
                   const plant = plants.find((p) => p.id === unit.plantId);
                   const owner = users.find((u) => u.id === unit.ownerId);
                   const areaCount = getAreaCount(unit.id);
@@ -610,7 +619,7 @@ export function UnitsTab() {
                     </TableRow>
                   );
                 })}
-                {sortedUnits.length === 0 && (
+                {pagination.pageItems.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                       <Typography color="text.secondary">
@@ -624,6 +633,22 @@ export function UnitsTab() {
               </TableBody>
             </Table>
           </TableContainer>
+
+          {/* Pagination for mobile */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+            <ItemsPerPageSelector
+              value={itemsPerPage}
+              onChange={setItemsPerPage}
+            />
+            <PaginationControls
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              pageNumbers={pagination.pageNumbers}
+              onPageChange={pagination.goToPage}
+              hasNextPage={pagination.hasNextPage}
+              hasPrevPage={pagination.hasPrevPage}
+            />
+          </Box>
         </Paper>
       )}
 
