@@ -26,7 +26,7 @@ import {
     Chip,
 } from "@mui/material";
 import { Delete, Add } from "@mui/icons-material";
-import { UnitSelector } from "@/components/shared";
+import { UnitSelector, StepperInput } from "@/components/shared";
 import { NumericInput } from "@/components/shared/NumericInput";
 import { PipeProps } from "@/data/types";
 import type { FittingType } from "@eng-suite/physics";
@@ -560,53 +560,13 @@ export function PipeEditorDialog({
                                 </MenuItem>
                             )}
                         </TextField>
-                        <Box
-                            sx={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                border: 1,
-                                borderColor: 'divider',
-                                borderRadius: 1,
-                                overflow: 'hidden',
-                                height: 40,
-                            }}
-                        >
-                            <IconButton
-                                size="small"
-                                onClick={() => setNewFittingCount(Math.max(1, newFittingCount - 1))}
-                                disabled={newFittingCount <= 1}
-                                sx={{ borderRadius: 0, px: 1.5 }}
-                            >
-                                <Typography variant="body1" fontWeight={500}>−</Typography>
-                            </IconButton>
-                            <TextField
-                                value={newFittingCount}
-                                onChange={(e) => {
-                                    const val = parseInt(e.target.value, 10);
-                                    if (!isNaN(val) && val >= 1) {
-                                        setNewFittingCount(val);
-                                    }
-                                }}
-                                size="small"
-                                slotProps={{
-                                    input: {
-                                        sx: {
-                                            textAlign: 'center',
-                                            width: 48,
-                                            '& input': { textAlign: 'center', p: 0 },
-                                            '& fieldset': { border: 'none' },
-                                        },
-                                    },
-                                }}
-                            />
-                            <IconButton
-                                size="small"
-                                onClick={() => setNewFittingCount(newFittingCount + 1)}
-                                sx={{ borderRadius: 0, px: 1.5 }}
-                            >
-                                <Typography variant="body1" fontWeight={500}>+</Typography>
-                            </IconButton>
-                        </Box>
+                        <StepperInput
+                            label="Count"
+                            value={newFittingCount}
+                            onChange={(val) => setNewFittingCount(val)}
+                            min={1}
+                            fullWidth={false}
+                        />
                         <Button
                             variant="outlined"
                             onClick={handleAddFitting}

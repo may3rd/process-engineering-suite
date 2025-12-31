@@ -8,3 +8,5 @@ export { TableSortButton } from './TableSortButton';
 export { UnitSelector } from './UnitSelector';
 export { GitHubFooter } from './GitHubFooter';
 export { PaginationControls } from './PaginationControls';
+export { NumericInput } from './NumericInput';
+export { StepperInput } from './StepperInput';

@@ -78,6 +78,8 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
 import { convertUnit } from "@eng-suite/physics";
 import { applyHydraulicSegmentsToNetwork } from "@/lib/hydraulicNetworkUtils";
+import { StepperInput } from "@/components/shared";
+import { glassCardStyles } from "./styles";
 
 interface SizingWorkspaceProps {
     sizingCase: SizingCase;
@@ -998,7 +1000,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                         </Typography>
 
                         {/* Flow Conditions */}
-                        <Card sx={{ mb: 3 }}>
+                        <Card sx={glassCardStyles}>
                             <CardContent>
                                 <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                                     Flow Conditions
@@ -1040,19 +1042,14 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                 {/* Vapor Fraction - only for two-phase */}
                                 {currentCase.method === 'two_phase' && (
                                     <Box sx={{ mt: 2 }}>
-                                        <TextField
+                                        <NumericInput
                                             label="Vapor Mass Fraction"
-                                            type="number"
-                                            value={currentCase.inputs.vaporFraction !== undefined ? currentCase.inputs.vaporFraction * 100 : ''}
-                                            onChange={(e) => handleInputChange('vaporFraction', parseFloat(e.target.value) / 100)}
-                                            slotProps={{
-                                                htmlInput: { step: 0.1, min: 0, max: 100 },
-                                                input: {
-                                                    endAdornment: <InputAdornment position="end">%</InputAdornment>
-                                                }
-                                            }}
+                                            value={currentCase.inputs.vaporFraction !== undefined ? currentCase.inputs.vaporFraction * 100 : undefined}
+                                            onChange={(val) => handleInputChange('vaporFraction', val !== undefined ? val / 100 : '', undefined)}
+                                            min={0}
+                                            max={100}
+                                            endAdornment="%"
                                             helperText="Percentage of vapor by mass (0-100%)"
-                                            fullWidth
                                         />
                                     </Box>
                                 )}
@@ -1060,7 +1057,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                         </Card>
 
                         {/* Pressure & Temperature */}
-                        <Card sx={{ mb: 3 }}>
+                        <Card sx={glassCardStyles}>
                             <CardContent>
                                 <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                                     Pressure & Temperature
@@ -1093,7 +1090,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
 
                         {/* Gas Phase Properties */}
                         {(currentCase.method === 'gas' || currentCase.method === 'steam' || currentCase.method === 'two_phase') && (
-                            <Card sx={{ mb: 3 }}>
+                            <Card sx={glassCardStyles}>
                                 <CardContent>
                                     <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                                         Gas/Vapor Phase Properties
@@ -1141,7 +1138,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
 
                         {/* Liquid Phase Properties */}
                         {(currentCase.method === 'liquid' || currentCase.method === 'two_phase') && (
-                            <Card sx={{ mb: 3 }}>
+                            <Card sx={glassCardStyles}>
                                 <CardContent>
                                     <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                                         Liquid Phase Properties
@@ -1173,7 +1170,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                         )}
 
                         {/* Backpressure & Hydraulic Validation */}
-                        <Card>
+                        <Card sx={glassCardStyles}>
                             <CardContent>
                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                                     <Typography variant="subtitle1" fontWeight={600}>
@@ -1363,7 +1360,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                         </Typography>
 
                         {/* Flow Rate Source Toggle */}
-                        <Card sx={{ mb: 3, p: 2 }}>
+                        <Card sx={{ ...glassCardStyles, mb: 3, p: 2 }}>
                             <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 2 }}>
                                 <Box>
                                     <Typography variant="subtitle2" fontWeight={600}>
@@ -1419,13 +1416,11 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                         {/* ===== INLET HYDRAULIC SUMMARY ===== */}
                         {(localInletNetwork?.pipes?.length ?? 0) > 0 && (
                             <Card sx={{
+                                ...glassCardStyles,
                                 mb: 3,
                                 background: isDark
-                                    ? 'rgba(15, 23, 42, 0.6)'
-                                    : 'rgba(255, 255, 255, 0.8)',
-                                backdropFilter: 'blur(12px)',
-                                border: '1px solid',
-                                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                                    ? 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%)'
+                                    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(241, 245, 249, 0.8) 100%)',
                                 borderRadius: 3,
                             }}>
                                 <CardContent>
@@ -1650,7 +1645,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                         </Typography>
 
                         {/* Sizing Standard */}
-                        <Card sx={{ mb: 3 }}>
+                        <Card sx={glassCardStyles}>
                             <CardContent>
                                 <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                                     Sizing Standard
@@ -1685,7 +1680,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                         </Card>
 
                         {/* Valve Parameters */}
-                        <Card sx={{ mb: 3 }}>
+                        <Card sx={glassCardStyles}>
                             <CardContent>
                                 <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                                     Valve Parameters
@@ -1728,7 +1723,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                         </Card>
 
                         {/* Orifice Selection */}
-                        <Card>
+                        <Card sx={glassCardStyles}>
                             <CardContent>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                                     <Typography variant="subtitle1" fontWeight={600}>
@@ -1746,33 +1741,14 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                 </Box>
 
                                 {/* Valve Count */}
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 3, p: 2, bgcolor: 'action.hover', borderRadius: 1 }}>
-                                    <Typography variant="body2" fontWeight={500}>Number of Valves:</Typography>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => setNumberOfValves(Math.max(1, numberOfValves - 1))}
-                                            disabled={numberOfValves <= 1}
-                                        >
-                                            <Typography fontWeight="bold">−</Typography>
-                                        </IconButton>
-                                        <Typography variant="h6" fontWeight={600} sx={{ minWidth: 30, textAlign: 'center' }}>
-                                            {numberOfValves}
-                                        </Typography>
-                                        <IconButton
-                                            size="small"
-                                            onClick={() => setNumberOfValves(numberOfValves + 1)}
-                                        >
-                                            <Typography fontWeight="bold">+</Typography>
-                                        </IconButton>
-                                    </Box>
-                                    {numberOfValves > 1 && (
-                                        <Chip
-                                            label={`${numberOfValves} × parallel valves`}
-                                            size="small"
-                                            color="info"
-                                        />
-                                    )}
+                                <Box sx={{ mb: 3 }}>
+                                    <StepperInput
+                                        label="Number of Valves"
+                                        value={numberOfValves}
+                                        onChange={(val) => setNumberOfValves(val)}
+                                        min={1}
+                                        helperText={numberOfValves > 1 ? `${numberOfValves} × parallel valves` : undefined}
+                                    />
                                 </Box>
 
                                 <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2, mb: 3 }}>
@@ -1868,13 +1844,11 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                         {/* ===== OUTLET HYDRAULIC SUMMARY ===== */}
                         {(localOutletNetwork?.pipes?.length ?? 0) > 0 && (
                             <Card sx={{
+                                ...glassCardStyles,
                                 mb: 3,
                                 background: isDark
-                                    ? 'rgba(15, 23, 42, 0.6)'
-                                    : 'rgba(255, 255, 255, 0.8)',
-                                backdropFilter: 'blur(12px)',
-                                border: '1px solid',
-                                borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)',
+                                    ? 'linear-gradient(135deg, rgba(30, 41, 59, 0.7) 0%, rgba(15, 23, 42, 0.8) 100%)'
+                                    : 'linear-gradient(135deg, rgba(255, 255, 255, 0.7) 0%, rgba(241, 245, 249, 0.8) 100%)',
                                 borderRadius: 3,
                             }}>
                                 <CardContent>
@@ -2084,6 +2058,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
 
                         {/* Summary Card */}
                         <Card sx={{
+                            ...glassCardStyles,
                             mb: 3,
                             background: isDark
                                 ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)'
@@ -2134,7 +2109,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                         </Card>
 
                         {/* Hydraulic Calculations */}
-                        <Card sx={{ mb: 3 }}>
+                        <Card sx={glassCardStyles}>
                             <CardContent>
                                 <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                                     Hydraulic Calculations
@@ -2201,7 +2176,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                         </Card >
 
                         {/* Flow Analysis */}
-                        < Card sx={{ mb: 3 }}>
+                        <Card sx={glassCardStyles}>
                             <CardContent>
                                 <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                                     Flow Analysis
@@ -2258,7 +2233,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                             if (filteredMessages.length === 0) return null;
 
                             return (
-                                <Card sx={{ mb: 3 }}>
+                                <Card sx={glassCardStyles}>
                                     <CardContent>
                                         <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                                             Notes & Warnings
