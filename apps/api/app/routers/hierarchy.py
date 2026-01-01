@@ -77,6 +77,7 @@ class ProjectResponse(BaseModel):
     start_date: date = Field(alias="startDate")
     end_date: date | None = Field(default=None, alias="endDate")
     lead_id: str = Field(alias="leadId")
+    is_active: bool = Field(default=True, alias="isActive")
     created_at: datetime = Field(alias="createdAt")
 
 
@@ -166,6 +167,7 @@ class ProjectUpdate(BaseModel):
     startDate: date | None = None
     endDate: date | None = None
     leadId: str | None = None
+    isActive: bool | None = None
 
 
 # --- Endpoints ---

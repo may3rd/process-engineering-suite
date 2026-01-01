@@ -210,7 +210,9 @@ export function PsvCreationWizard({ open, onClose, projectId }: PsvCreationWizar
             status: 'draft',
             valveType: formData.valveType,
             tags: [],
+            isActive: true,
         };
+
 
         try {
             await addProtectiveSystem(newPsv);

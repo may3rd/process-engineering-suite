@@ -2,7 +2,7 @@
 from datetime import date
 from typing import Optional
 
-from sqlalchemy import String, Date, ForeignKey, Enum as SQLEnum
+from sqlalchemy import String, Date, ForeignKey, Enum as SQLEnum, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -46,6 +46,10 @@ class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         default="metric",
     )
     
+    # Soft delete flag
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", nullable=False)
+    
     # Relationships
     area = relationship("Area", back_populates="projects")
     protective_systems = relationship("ProtectiveSystem", secondary="protective_system_projects", back_populates="projects")
+

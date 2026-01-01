@@ -206,6 +206,7 @@ export const projects: Project[] = [
         status: 'in_review',
         startDate: '2024-06-01',
         leadId: '22ee3f22-898a-461b-85ec-83f84d250810',
+        isActive: true,
         createdAt: '2024-06-01T08:00:00Z',
     },
     {
@@ -217,6 +218,7 @@ export const projects: Project[] = [
         status: 'draft',
         startDate: '2024-07-15',
         leadId: 'c34f5c40-8193-4e39-a628-e684361c2b67',
+        isActive: true,
         createdAt: '2024-07-15T08:00:00Z',
     },
     {
@@ -229,6 +231,7 @@ export const projects: Project[] = [
         startDate: '2024-05-01',
         endDate: '2024-08-30',
         leadId: '22ee3f22-898a-461b-85ec-83f84d250810',
+        isActive: true,
         createdAt: '2024-05-01T08:00:00Z',
     },
     {
@@ -240,6 +243,7 @@ export const projects: Project[] = [
         status: 'issued',
         startDate: '2024-03-01',
         leadId: 'c34f5c40-8193-4e39-a628-e684361c2b67',
+        isActive: true,
         createdAt: '2024-03-01T08:00:00Z',
     },
     {
@@ -251,6 +255,7 @@ export const projects: Project[] = [
         status: 'in_review',
         startDate: '2024-08-01',
         leadId: '1b9de640-0851-4ed5-941c-411efa30585c',
+        isActive: true,
         createdAt: '2024-08-01T08:00:00Z',
     },
     {
@@ -262,6 +267,7 @@ export const projects: Project[] = [
         status: 'in_review',
         startDate: '2024-09-01',
         leadId: 'c34f5c40-8193-4e39-a628-e684361c2b67', // Sarah
+        isActive: true,
         createdAt: '2024-09-01T08:00:00Z',
     },
     {
@@ -273,6 +279,7 @@ export const projects: Project[] = [
         status: 'in_review',
         startDate: '2024-10-01',
         leadId: '22ee3f22-898a-461b-85ec-83f84d250810', // Mike
+        isActive: true,
         createdAt: '2024-10-01T08:00:00Z',
     },
     {
@@ -284,6 +291,7 @@ export const projects: Project[] = [
         status: 'draft',
         startDate: '2024-11-01',
         leadId: 'c34f5c40-8193-4e39-a628-e684361c2b67', // Sarah
+        isActive: true,
         createdAt: '2024-11-01T08:00:00Z',
     },
     {
@@ -295,6 +303,7 @@ export const projects: Project[] = [
         status: 'approved',
         startDate: '2024-09-15',
         leadId: '890a53e4-85d9-4399-85bb-68af0aa179d1', // Emily
+        isActive: true,
         createdAt: '2024-09-15T08:00:00Z',
     },
     {
@@ -306,6 +315,7 @@ export const projects: Project[] = [
         status: 'issued',
         startDate: '2024-08-20',
         leadId: 'ab20b042-c519-423b-82e0-1dadf6f29fe0', // John
+        isActive: true,
         createdAt: '2024-08-20T08:00:00Z',
     },
 ];
@@ -480,6 +490,7 @@ export const protectiveSystems: ProtectiveSystem[] = [
                 }
             ]
         },
+        isActive: true,
         createdAt: '2024-06-10T08:00:00Z',
         updatedAt: '2024-09-15T14:30:00Z',
     },
@@ -498,6 +509,7 @@ export const protectiveSystems: ProtectiveSystem[] = [
         ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67',
         status: 'draft',
         tags: ['spare'],
+        isActive: true,
         createdAt: '2024-06-10T08:00:00Z',
         updatedAt: '2024-09-10T10:00:00Z',
     },
@@ -516,6 +528,7 @@ export const protectiveSystems: ProtectiveSystem[] = [
         ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67',
         status: 'approved',
         tags: ['blocked-outlet'],
+        isActive: true,
         createdAt: '2024-06-15T08:00:00Z',
         updatedAt: '2024-08-20T16:00:00Z',
     },
@@ -534,6 +547,7 @@ export const protectiveSystems: ProtectiveSystem[] = [
         ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67',
         status: 'draft',
         tags: ['tube-rupture'],
+        isActive: true,
         createdAt: '2024-07-25T08:00:00Z',
         updatedAt: '2024-07-25T08:00:00Z',
     },
@@ -552,6 +566,7 @@ export const protectiveSystems: ProtectiveSystem[] = [
         ownerId: '22ee3f22-898a-461b-85ec-83f84d250810',
         status: 'issued',
         tags: ['fire-case', 'rupture-disc'],
+        isActive: true,
         createdAt: '2024-05-20T08:00:00Z',
         updatedAt: '2024-08-25T10:00:00Z',
     },
@@ -570,43 +585,44 @@ export const protectiveSystems: ProtectiveSystem[] = [
         ownerId: '890a53e4-85d9-4399-85bb-68af0aa179d1',
         status: 'in_review',
         tags: ['high-pressure', 'cryogenic'],
+        isActive: true,
         createdAt: '2024-08-15T08:00:00Z',
         updatedAt: '2024-09-20T12:00:00Z',
     },
     // NEW PSVs (Matching the equipment above)
     // Preheat Area
-    { id: '6a249540-745c-4e27-b8c6-4ffc390bba6f', areaId: '52519920-7f49-44a1-b601-62a891d1f41d', projectIds: ['e1f2a3b4-c5d6-47e8-f9a0-b1c2d3e4f5a6'], name: 'Exchanger E-102 Thermal Relief', tag: 'TSV-102', type: 'psv', designCode: 'API-520', serviceFluid: 'Crude Oil', fluidPhase: 'liquid', setPressure: 30.0, mawp: 30.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'in_review', tags: ['thermal'], createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-    { id: '88c1aa2c-b885-41e0-b959-2c7da33f92f8', areaId: '52519920-7f49-44a1-b601-62a891d1f41d', projectIds: ['e1f2a3b4-c5d6-47e8-f9a0-b1c2d3e4f5a6'], name: 'Exchanger E-103 Thermal Relief', tag: 'TSV-103', type: 'psv', designCode: 'API-520', serviceFluid: 'Crude Oil', fluidPhase: 'liquid', setPressure: 30.0, mawp: 30.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'in_review', tags: ['thermal'], createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
-    { id: '95d89be5-0cd3-4b49-91a1-1a4506197ed3', areaId: '52519920-7f49-44a1-b601-62a891d1f41d', projectIds: ['5b35c05c-d7c7-4348-ba98-05b6329437d2'], name: 'Exchanger E-104 Thermal Relief', tag: 'TSV-104', type: 'psv', designCode: 'API-520', serviceFluid: 'Crude Oil', fluidPhase: 'liquid', setPressure: 30.0, mawp: 30.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'draft', tags: ['thermal'], createdAt: '2024-09-01T00:00:00Z', updatedAt: '2024-09-01T00:00:00Z' },
-    { id: '01751507-9830-4193-81bb-3b62958b17e0', areaId: '52519920-7f49-44a1-b601-62a891d1f41d', projectIds: ['5b35c05c-d7c7-4348-ba98-05b6329437d2'], name: 'Exchanger E-105 Thermal Relief', tag: 'TSV-105', type: 'psv', designCode: 'API-520', serviceFluid: 'Crude Oil', fluidPhase: 'liquid', setPressure: 30.0, mawp: 30.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'draft', tags: ['thermal'], createdAt: '2024-09-01T00:00:00Z', updatedAt: '2024-09-01T00:00:00Z' },
-    { id: '2afab739-bf7d-4d73-8692-46b58cae23a8', areaId: '52519920-7f49-44a1-b601-62a891d1f41d', projectIds: ['5b35c05c-d7c7-4348-ba98-05b6329437d2'], name: 'Pump P-101A Discharge PRV', tag: 'PSV-101A-D', type: 'prv', designCode: 'API-520', serviceFluid: 'Crude Oil', fluidPhase: 'liquid', setPressure: 45.0, mawp: 45.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'in_review', tags: ['blocked-discharge'], createdAt: '2024-09-01T00:00:00Z', updatedAt: '2024-09-01T00:00:00Z' },
-    { id: 'e1016706-e422-4201-b56f-5634383596d7', areaId: '52519920-7f49-44a1-b601-62a891d1f41d', projectIds: ['5b35c05c-d7c7-4348-ba98-05b6329437d2'], name: 'Pump P-101B Discharge PRV', tag: 'PSV-101B-D', type: 'prv', designCode: 'API-520', serviceFluid: 'Crude Oil', fluidPhase: 'liquid', setPressure: 45.0, mawp: 45.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'in_review', tags: ['blocked-discharge'], createdAt: '2024-09-01T00:00:00Z', updatedAt: '2024-09-01T00:00:00Z' },
+    { id: '6a249540-745c-4e27-b8c6-4ffc390bba6f', areaId: '52519920-7f49-44a1-b601-62a891d1f41d', projectIds: ['e1f2a3b4-c5d6-47e8-f9a0-b1c2d3e4f5a6'], name: 'Exchanger E-102 Thermal Relief', tag: 'TSV-102', type: 'psv', designCode: 'API-520', serviceFluid: 'Crude Oil', fluidPhase: 'liquid', setPressure: 30.0, mawp: 30.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'in_review', tags: ['thermal'], isActive: true, createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
+    { id: '88c1aa2c-b885-41e0-b959-2c7da33f92f8', areaId: '52519920-7f49-44a1-b601-62a891d1f41d', projectIds: ['e1f2a3b4-c5d6-47e8-f9a0-b1c2d3e4f5a6'], name: 'Exchanger E-103 Thermal Relief', tag: 'TSV-103', type: 'psv', designCode: 'API-520', serviceFluid: 'Crude Oil', fluidPhase: 'liquid', setPressure: 30.0, mawp: 30.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'in_review', tags: ['thermal'], isActive: true, createdAt: '2024-01-01T00:00:00Z', updatedAt: '2024-01-01T00:00:00Z' },
+    { id: '95d89be5-0cd3-4b49-91a1-1a4506197ed3', areaId: '52519920-7f49-44a1-b601-62a891d1f41d', projectIds: ['5b35c05c-d7c7-4348-ba98-05b6329437d2'], name: 'Exchanger E-104 Thermal Relief', tag: 'TSV-104', type: 'psv', designCode: 'API-520', serviceFluid: 'Crude Oil', fluidPhase: 'liquid', setPressure: 30.0, mawp: 30.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'draft', tags: ['thermal'], isActive: true, createdAt: '2024-09-01T00:00:00Z', updatedAt: '2024-09-01T00:00:00Z' },
+    { id: '01751507-9830-4193-81bb-3b62958b17e0', areaId: '52519920-7f49-44a1-b601-62a891d1f41d', projectIds: ['5b35c05c-d7c7-4348-ba98-05b6329437d2'], name: 'Exchanger E-105 Thermal Relief', tag: 'TSV-105', type: 'psv', designCode: 'API-520', serviceFluid: 'Crude Oil', fluidPhase: 'liquid', setPressure: 30.0, mawp: 30.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'draft', tags: ['thermal'], isActive: true, createdAt: '2024-09-01T00:00:00Z', updatedAt: '2024-09-01T00:00:00Z' },
+    { id: '2afab739-bf7d-4d73-8692-46b58cae23a8', areaId: '52519920-7f49-44a1-b601-62a891d1f41d', projectIds: ['5b35c05c-d7c7-4348-ba98-05b6329437d2'], name: 'Pump P-101A Discharge PRV', tag: 'PSV-101A-D', type: 'prv', designCode: 'API-520', serviceFluid: 'Crude Oil', fluidPhase: 'liquid', setPressure: 45.0, mawp: 45.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'in_review', tags: ['blocked-discharge'], isActive: true, createdAt: '2024-09-01T00:00:00Z', updatedAt: '2024-09-01T00:00:00Z' },
+    { id: 'e1016706-e422-4201-b56f-5634383596d7', areaId: '52519920-7f49-44a1-b601-62a891d1f41d', projectIds: ['5b35c05c-d7c7-4348-ba98-05b6329437d2'], name: 'Pump P-101B Discharge PRV', tag: 'PSV-101B-D', type: 'prv', designCode: 'API-520', serviceFluid: 'Crude Oil', fluidPhase: 'liquid', setPressure: 45.0, mawp: 45.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'in_review', tags: ['blocked-discharge'], isActive: true, createdAt: '2024-09-01T00:00:00Z', updatedAt: '2024-09-01T00:00:00Z' },
 
     // Vacuum Area
-    { id: 'de196a32-93aa-4fcd-8522-89330730fb2a', areaId: '136fb02a-a1b3-46c3-b2b5-bbcdcbb8eb3d', projectIds: ['7ba0f0f4-522d-4340-9755-e414c8104bd1'], name: 'VDU Overhead PSV', tag: 'PSV-202A', type: 'psv', designCode: 'API-520', serviceFluid: 'Vapors', fluidPhase: 'gas', setPressure: 5.0, mawp: 5.0, ownerId: '22ee3f22-898a-461b-85ec-83f84d250810', status: 'in_review', tags: ['pilot-operated'], createdAt: '2024-10-01T00:00:00Z', updatedAt: '2024-10-01T00:00:00Z' },
-    { id: '8715c712-0e96-4246-9762-c577d27c1001', areaId: '136fb02a-a1b3-46c3-b2b5-bbcdcbb8eb3d', projectIds: ['7ba0f0f4-522d-4340-9755-e414c8104bd1'], name: 'VDU Pre-Flash PSV', tag: 'PSV-202B', type: 'psv', designCode: 'API-520', serviceFluid: 'Vapors', fluidPhase: 'gas', setPressure: 5.0, mawp: 5.0, ownerId: '22ee3f22-898a-461b-85ec-83f84d250810', status: 'in_review', tags: ['pilot-operated'], createdAt: '2024-10-01T00:00:00Z', updatedAt: '2024-10-01T00:00:00Z' },
-    { id: '975b85bb-2677-4888-b90f-cbcbe1eefe69', areaId: '136fb02a-a1b3-46c3-b2b5-bbcdcbb8eb3d', projectIds: ['f2a3b4c5-d6e7-48f9-a0b1-c2d3e4f5a6b7'], name: 'Heater Tube Rupture Disc', tag: 'RD-202', type: 'rupture_disc', designCode: 'ASME-VIII', serviceFluid: 'Crude', fluidPhase: 'two_phase', setPressure: 25.0, mawp: 25.0, ownerId: '22ee3f22-898a-461b-85ec-83f84d250810', status: 'approved', tags: ['fire-case'], createdAt: '2024-05-15T00:00:00Z', updatedAt: '2024-05-15T00:00:00Z' },
+    { id: 'de196a32-93aa-4fcd-8522-89330730fb2a', areaId: '136fb02a-a1b3-46c3-b2b5-bbcdcbb8eb3d', projectIds: ['7ba0f0f4-522d-4340-9755-e414c8104bd1'], name: 'VDU Overhead PSV', tag: 'PSV-202A', type: 'psv', designCode: 'API-520', serviceFluid: 'Vapors', fluidPhase: 'gas', setPressure: 5.0, mawp: 5.0, ownerId: '22ee3f22-898a-461b-85ec-83f84d250810', status: 'in_review', tags: ['pilot-operated'], isActive: true, createdAt: '2024-10-01T00:00:00Z', updatedAt: '2024-10-01T00:00:00Z' },
+    { id: '8715c712-0e96-4246-9762-c577d27c1001', areaId: '136fb02a-a1b3-46c3-b2b5-bbcdcbb8eb3d', projectIds: ['7ba0f0f4-522d-4340-9755-e414c8104bd1'], name: 'VDU Pre-Flash PSV', tag: 'PSV-202B', type: 'psv', designCode: 'API-520', serviceFluid: 'Vapors', fluidPhase: 'gas', setPressure: 5.0, mawp: 5.0, ownerId: '22ee3f22-898a-461b-85ec-83f84d250810', status: 'in_review', tags: ['pilot-operated'], isActive: true, createdAt: '2024-10-01T00:00:00Z', updatedAt: '2024-10-01T00:00:00Z' },
+    { id: '975b85bb-2677-4888-b90f-cbcbe1eefe69', areaId: '136fb02a-a1b3-46c3-b2b5-bbcdcbb8eb3d', projectIds: ['f2a3b4c5-d6e7-48f9-a0b1-c2d3e4f5a6b7'], name: 'Heater Tube Rupture Disc', tag: 'RD-202', type: 'rupture_disc', designCode: 'ASME-VIII', serviceFluid: 'Crude', fluidPhase: 'two_phase', setPressure: 25.0, mawp: 25.0, ownerId: '22ee3f22-898a-461b-85ec-83f84d250810', status: 'approved', tags: ['fire-case'], isActive: true, createdAt: '2024-05-15T00:00:00Z', updatedAt: '2024-05-15T00:00:00Z' },
 
     // Furnace Area
-    { id: '74edbded-2339-4467-83c7-1d11f7c320d3', areaId: 'ba68c07b-d72a-4155-aa45-2cf91ce28fb3', projectIds: ['a3b4c5d6-e7f8-49a0-b1c2-d3e4f5a6b7c8'], name: 'HP Steam Drum PSV', tag: 'PSV-301A', type: 'psv', designCode: 'ASME-VIII', serviceFluid: 'Steam', fluidPhase: 'steam', setPressure: 120.0, mawp: 120.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'issued', tags: ['power-boiler'], createdAt: '2024-03-01T00:00:00Z', updatedAt: '2024-03-01T00:00:00Z' },
-    { id: '4c44243a-7ed4-4065-9831-23f2f5c76579', areaId: 'ba68c07b-d72a-4155-aa45-2cf91ce28fb3', projectIds: ['a3b4c5d6-e7f8-49a0-b1c2-d3e4f5a6b7c8'], name: 'HP Steam Drum PSV Spare', tag: 'PSV-301B', type: 'psv', designCode: 'ASME-VIII', serviceFluid: 'Steam', fluidPhase: 'steam', setPressure: 121.0, mawp: 120.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'issued', tags: ['power-boiler', 'spare'], createdAt: '2024-03-01T00:00:00Z', updatedAt: '2024-03-01T00:00:00Z' },
-    { id: '2cd06d15-9993-41c3-8898-15cf64d36e78', areaId: 'ba68c07b-d72a-4155-aa45-2cf91ce28fb3', projectIds: ['7257989d-7f41-477c-a45e-b15358055458'], name: 'Quench Tower PSV', tag: 'PSV-302', type: 'psv', designCode: 'API-520', serviceFluid: 'Hydrocarbon', fluidPhase: 'two_phase', setPressure: 15.0, mawp: 15.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'draft', tags: ['process'], createdAt: '2024-11-01T00:00:00Z', updatedAt: '2024-11-01T00:00:00Z' },
-    { id: 'f146bc84-934c-473d-88b6-963d76b1cc4b', areaId: 'ba68c07b-d72a-4155-aa45-2cf91ce28fb3', projectIds: ['7257989d-7f41-477c-a45e-b15358055458'], name: 'Fuel Gas KO Drum PSV', tag: 'PSV-303', type: 'psv', designCode: 'API-520', serviceFluid: 'Fuel Gas', fluidPhase: 'gas', setPressure: 10.0, mawp: 10.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'draft', tags: ['fire-case'], createdAt: '2024-11-01T00:00:00Z', updatedAt: '2024-11-01T00:00:00Z' },
-    { id: '475039ea-a4c7-44b7-97ed-e0331fb497f1', areaId: 'ba68c07b-d72a-4155-aa45-2cf91ce28fb3', projectIds: ['7257989d-7f41-477c-a45e-b15358055458'], name: 'Deaerator PSV', tag: 'PSV-304', type: 'psv', designCode: 'ASME-VIII', serviceFluid: 'Steam/Water', fluidPhase: 'steam', setPressure: 7.0, mawp: 7.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'draft', tags: ['utility'], createdAt: '2024-11-01T00:00:00Z', updatedAt: '2024-11-01T00:00:00Z' },
+    { id: '74edbded-2339-4467-83c7-1d11f7c320d3', areaId: 'ba68c07b-d72a-4155-aa45-2cf91ce28fb3', projectIds: ['a3b4c5d6-e7f8-49a0-b1c2-d3e4f5a6b7c8'], name: 'HP Steam Drum PSV', tag: 'PSV-301A', type: 'psv', designCode: 'ASME-VIII', serviceFluid: 'Steam', fluidPhase: 'steam', setPressure: 120.0, mawp: 120.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'issued', tags: ['power-boiler'], isActive: true, createdAt: '2024-03-01T00:00:00Z', updatedAt: '2024-03-01T00:00:00Z' },
+    { id: '4c44243a-7ed4-4065-9831-23f2f5c76579', areaId: 'ba68c07b-d72a-4155-aa45-2cf91ce28fb3', projectIds: ['a3b4c5d6-e7f8-49a0-b1c2-d3e4f5a6b7c8'], name: 'HP Steam Drum PSV Spare', tag: 'PSV-301B', type: 'psv', designCode: 'ASME-VIII', serviceFluid: 'Steam', fluidPhase: 'steam', setPressure: 121.0, mawp: 120.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'issued', tags: ['power-boiler', 'spare'], isActive: true, createdAt: '2024-03-01T00:00:00Z', updatedAt: '2024-03-01T00:00:00Z' },
+    { id: '2cd06d15-9993-41c3-8898-15cf64d36e78', areaId: 'ba68c07b-d72a-4155-aa45-2cf91ce28fb3', projectIds: ['7257989d-7f41-477c-a45e-b15358055458'], name: 'Quench Tower PSV', tag: 'PSV-302', type: 'psv', designCode: 'API-520', serviceFluid: 'Hydrocarbon', fluidPhase: 'two_phase', setPressure: 15.0, mawp: 15.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'draft', tags: ['process'], isActive: true, createdAt: '2024-11-01T00:00:00Z', updatedAt: '2024-11-01T00:00:00Z' },
+    { id: 'f146bc84-934c-473d-88b6-963d76b1cc4b', areaId: 'ba68c07b-d72a-4155-aa45-2cf91ce28fb3', projectIds: ['7257989d-7f41-477c-a45e-b15358055458'], name: 'Fuel Gas KO Drum PSV', tag: 'PSV-303', type: 'psv', designCode: 'API-520', serviceFluid: 'Fuel Gas', fluidPhase: 'gas', setPressure: 10.0, mawp: 10.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'draft', tags: ['fire-case'], isActive: true, createdAt: '2024-11-01T00:00:00Z', updatedAt: '2024-11-01T00:00:00Z' },
+    { id: '475039ea-a4c7-44b7-97ed-e0331fb497f1', areaId: 'ba68c07b-d72a-4155-aa45-2cf91ce28fb3', projectIds: ['7257989d-7f41-477c-a45e-b15358055458'], name: 'Deaerator PSV', tag: 'PSV-304', type: 'psv', designCode: 'ASME-VIII', serviceFluid: 'Steam/Water', fluidPhase: 'steam', setPressure: 7.0, mawp: 7.0, ownerId: 'c34f5c40-8193-4e39-a628-e684361c2b67', status: 'draft', tags: ['utility'], isActive: true, createdAt: '2024-11-01T00:00:00Z', updatedAt: '2024-11-01T00:00:00Z' },
 
     // LNG Area
-    { id: '16705733-2581-468c-9912-127501c8e636', areaId: '780cbf94-e8ff-4ec4-9d69-786a0cd3f095', projectIds: ['b4c5d6e7-f8a9-40b1-c2d3-e4f5a6b7c8d9'], name: 'LNG Tank PSV', tag: 'PSV-501A', type: 'psv', designCode: 'API-2000', serviceFluid: 'LNG Vapor', fluidPhase: 'gas', setPressure: 0.8, mawp: 0.8, ownerId: '890a53e4-85d9-4399-85bb-68af0aa179d1', status: 'in_review', tags: ['low-pressure'], createdAt: '2024-08-01T00:00:00Z', updatedAt: '2024-08-01T00:00:00Z' },
-    { id: '73fc30bc-6fbf-45ca-ae6c-6d0220e187a4', areaId: '780cbf94-e8ff-4ec4-9d69-786a0cd3f095', projectIds: ['b4c5d6e7-f8a9-40b1-c2d3-e4f5a6b7c8d9'], name: 'LNG Tank PSV 2', tag: 'PSV-501B', type: 'psv', designCode: 'API-2000', serviceFluid: 'LNG Vapor', fluidPhase: 'gas', setPressure: 0.8, mawp: 0.8, ownerId: '890a53e4-85d9-4399-85bb-68af0aa179d1', status: 'in_review', tags: ['low-pressure'], createdAt: '2024-08-01T00:00:00Z', updatedAt: '2024-08-01T00:00:00Z' },
-    { id: 'e6145f3a-703c-4fb1-878a-f33ddf68316f', areaId: '780cbf94-e8ff-4ec4-9d69-786a0cd3f095', projectIds: ['88c27eeb-98d0-4089-a2ea-9e735414d79c'], name: 'Sendout Pump Thermal Relief', tag: 'TSV-502A', type: 'psv', designCode: 'API-520', serviceFluid: 'LNG', fluidPhase: 'liquid', setPressure: 100.0, mawp: 100.0, ownerId: '890a53e4-85d9-4399-85bb-68af0aa179d1', status: 'in_review', tags: ['thermal', 'cryogenic'], createdAt: '2024-09-15T00:00:00Z', updatedAt: '2024-09-15T00:00:00Z' },
-    { id: 'c3dcb30d-ece4-4b7a-809d-a9ba1ded36d2', areaId: '780cbf94-e8ff-4ec4-9d69-786a0cd3f095', projectIds: ['88c27eeb-98d0-4089-a2ea-9e735414d79c'], name: 'Sendout Pump Thermal Relief', tag: 'TSV-502B', type: 'psv', designCode: 'API-520', serviceFluid: 'LNG', fluidPhase: 'liquid', setPressure: 100.0, mawp: 100.0, ownerId: '890a53e4-85d9-4399-85bb-68af0aa179d1', status: 'in_review', tags: ['thermal', 'cryogenic'], createdAt: '2024-09-15T00:00:00Z', updatedAt: '2024-09-15T00:00:00Z' },
-    { id: 'b49530ae-be65-4eb0-88f9-f4f254ced73c', areaId: '780cbf94-e8ff-4ec4-9d69-786a0cd3f095', projectIds: ['88c27eeb-98d0-4089-a2ea-9e735414d79c'], name: 'BOG Suction Drum PSV', tag: 'PSV-505', type: 'psv', designCode: 'API-520', serviceFluid: 'BOG', fluidPhase: 'gas', setPressure: 2.0, mawp: 2.0, ownerId: '890a53e4-85d9-4399-85bb-68af0aa179d1', status: 'in_review', tags: ['cryogenic'], createdAt: '2024-09-15T00:00:00Z', updatedAt: '2024-09-15T00:00:00Z' },
-    { id: '93644372-667b-4922-91d5-5e66ffd78b77', areaId: '780cbf94-e8ff-4ec4-9d69-786a0cd3f095', projectIds: ['88c27eeb-98d0-4089-a2ea-9e735414d79c'], name: 'BOG Recondenser PSV', tag: 'PSV-502', type: 'psv', designCode: 'API-520', serviceFluid: 'LNG', fluidPhase: 'two_phase', setPressure: 15.0, mawp: 15.0, ownerId: '890a53e4-85d9-4399-85bb-68af0aa179d1', status: 'in_review', tags: ['cryogenic'], createdAt: '2024-09-15T00:00:00Z', updatedAt: '2024-09-15T00:00:00Z' },
+    { id: '16705733-2581-468c-9912-127501c8e636', areaId: '780cbf94-e8ff-4ec4-9d69-786a0cd3f095', projectIds: ['b4c5d6e7-f8a9-40b1-c2d3-e4f5a6b7c8d9'], name: 'LNG Tank PSV', tag: 'PSV-501A', type: 'psv', designCode: 'API-2000', serviceFluid: 'LNG Vapor', fluidPhase: 'gas', setPressure: 0.8, mawp: 0.8, ownerId: '890a53e4-85d9-4399-85bb-68af0aa179d1', status: 'in_review', tags: ['low-pressure'], isActive: true, createdAt: '2024-08-01T00:00:00Z', updatedAt: '2024-08-01T00:00:00Z' },
+    { id: '73fc30bc-6fbf-45ca-ae6c-6d0220e187a4', areaId: '780cbf94-e8ff-4ec4-9d69-786a0cd3f095', projectIds: ['b4c5d6e7-f8a9-40b1-c2d3-e4f5a6b7c8d9'], name: 'LNG Tank PSV 2', tag: 'PSV-501B', type: 'psv', designCode: 'API-2000', serviceFluid: 'LNG Vapor', fluidPhase: 'gas', setPressure: 0.8, mawp: 0.8, ownerId: '890a53e4-85d9-4399-85bb-68af0aa179d1', status: 'in_review', tags: ['low-pressure'], isActive: true, createdAt: '2024-08-01T00:00:00Z', updatedAt: '2024-08-01T00:00:00Z' },
+    { id: 'e6145f3a-703c-4fb1-878a-f33ddf68316f', areaId: '780cbf94-e8ff-4ec4-9d69-786a0cd3f095', projectIds: ['88c27eeb-98d0-4089-a2ea-9e735414d79c'], name: 'Sendout Pump Thermal Relief', tag: 'TSV-502A', type: 'psv', designCode: 'API-520', serviceFluid: 'LNG', fluidPhase: 'liquid', setPressure: 100.0, mawp: 100.0, ownerId: '890a53e4-85d9-4399-85bb-68af0aa179d1', status: 'in_review', tags: ['thermal', 'cryogenic'], isActive: true, createdAt: '2024-09-15T00:00:00Z', updatedAt: '2024-09-15T00:00:00Z' },
+    { id: 'c3dcb30d-ece4-4b7a-809d-a9ba1ded36d2', areaId: '780cbf94-e8ff-4ec4-9d69-786a0cd3f095', projectIds: ['88c27eeb-98d0-4089-a2ea-9e735414d79c'], name: 'Sendout Pump Thermal Relief', tag: 'TSV-502B', type: 'psv', designCode: 'API-520', serviceFluid: 'LNG', fluidPhase: 'liquid', setPressure: 100.0, mawp: 100.0, ownerId: '890a53e4-85d9-4399-85bb-68af0aa179d1', status: 'in_review', tags: ['thermal', 'cryogenic'], isActive: true, createdAt: '2024-09-15T00:00:00Z', updatedAt: '2024-09-15T00:00:00Z' },
+    { id: 'b49530ae-be65-4eb0-88f9-f4f254ced73c', areaId: '780cbf94-e8ff-4ec4-9d69-786a0cd3f095', projectIds: ['88c27eeb-98d0-4089-a2ea-9e735414d79c'], name: 'BOG Suction Drum PSV', tag: 'PSV-505', type: 'psv', designCode: 'API-520', serviceFluid: 'BOG', fluidPhase: 'gas', setPressure: 2.0, mawp: 2.0, ownerId: '890a53e4-85d9-4399-85bb-68af0aa179d1', status: 'in_review', tags: ['cryogenic'], isActive: true, createdAt: '2024-09-15T00:00:00Z', updatedAt: '2024-09-15T00:00:00Z' },
+    { id: '93644372-667b-4922-91d5-5e66ffd78b77', areaId: '780cbf94-e8ff-4ec4-9d69-786a0cd3f095', projectIds: ['88c27eeb-98d0-4089-a2ea-9e735414d79c'], name: 'BOG Recondenser PSV', tag: 'PSV-502', type: 'psv', designCode: 'API-520', serviceFluid: 'LNG', fluidPhase: 'two_phase', setPressure: 15.0, mawp: 15.0, ownerId: '890a53e4-85d9-4399-85bb-68af0aa179d1', status: 'in_review', tags: ['cryogenic'], isActive: true, createdAt: '2024-09-15T00:00:00Z', updatedAt: '2024-09-15T00:00:00Z' },
 
     // Atmospheric Area
-    { id: '30ba97b1-2a1e-4513-a9d1-0f4b36142c67', areaId: '503b8fcf-43f7-4ca4-a512-b561fcb78617', projectIds: ['6767c699-b141-4c6e-8260-ef0240d9089f'], name: 'Desalter PSV', tag: 'PSV-105', type: 'psv', designCode: 'API-520', serviceFluid: 'Crude/Water', fluidPhase: 'liquid', setPressure: 18.0, mawp: 18.0, ownerId: 'ab20b042-c519-423b-82e0-1dadf6f29fe0', status: 'approved', tags: ['process'], createdAt: '2024-08-20T00:00:00Z', updatedAt: '2024-08-20T00:00:00Z' },
-    { id: '652f416d-3174-4b47-b353-0661ca3fb65e', areaId: '503b8fcf-43f7-4ca4-a512-b561fcb78617', projectIds: ['6767c699-b141-4c6e-8260-ef0240d9089f'], name: 'Stabilizer PSV', tag: 'PSV-106A', type: 'psv', designCode: 'API-520', serviceFluid: 'Naphtha/LPG', fluidPhase: 'gas', setPressure: 12.0, mawp: 12.0, ownerId: 'ab20b042-c519-423b-82e0-1dadf6f29fe0', status: 'approved', tags: ['process'], createdAt: '2024-08-20T00:00:00Z', updatedAt: '2024-08-20T00:00:00Z' },
-    { id: '276708ab-9cda-46a4-8451-925a1762c2f4', areaId: '503b8fcf-43f7-4ca4-a512-b561fcb78617', projectIds: ['6767c699-b141-4c6e-8260-ef0240d9089f'], name: 'Stabilizer PSV Spare', tag: 'PSV-106B', type: 'psv', designCode: 'API-520', serviceFluid: 'Naphtha/LPG', fluidPhase: 'gas', setPressure: 12.0, mawp: 12.0, ownerId: 'ab20b042-c519-423b-82e0-1dadf6f29fe0', status: 'approved', tags: ['process', 'spare'], createdAt: '2024-08-20T00:00:00Z', updatedAt: '2024-08-20T00:00:00Z' },
-    { id: '8f7e6d5c-4b3a-2190-a8b7-c6d5e4f3a2b1', areaId: '503b8fcf-43f7-4ca4-a512-b561fcb78617', projectIds: ['6767c699-b141-4c6e-8260-ef0240d9089f'], name: 'Stabilizer Overhead Drum PSV', tag: 'PSV-107', type: 'psv', designCode: 'API-520', serviceFluid: 'LPG', fluidPhase: 'gas', setPressure: 12.0, mawp: 12.0, ownerId: 'ab20b042-c519-423b-82e0-1dadf6f29fe0', status: 'approved', tags: ['process'], createdAt: '2024-08-20T00:00:00Z', updatedAt: '2024-08-20T00:00:00Z' },
+    { id: '30ba97b1-2a1e-4513-a9d1-0f4b36142c67', areaId: '503b8fcf-43f7-4ca4-a512-b561fcb78617', projectIds: ['6767c699-b141-4c6e-8260-ef0240d9089f'], name: 'Desalter PSV', tag: 'PSV-105', type: 'psv', designCode: 'API-520', serviceFluid: 'Crude/Water', fluidPhase: 'liquid', setPressure: 18.0, mawp: 18.0, ownerId: 'ab20b042-c519-423b-82e0-1dadf6f29fe0', status: 'approved', tags: ['process'], isActive: true, createdAt: '2024-08-20T00:00:00Z', updatedAt: '2024-08-20T00:00:00Z' },
+    { id: '652f416d-3174-4b47-b353-0661ca3fb65e', areaId: '503b8fcf-43f7-4ca4-a512-b561fcb78617', projectIds: ['6767c699-b141-4c6e-8260-ef0240d9089f'], name: 'Stabilizer PSV', tag: 'PSV-106A', type: 'psv', designCode: 'API-520', serviceFluid: 'Naphtha/LPG', fluidPhase: 'gas', setPressure: 12.0, mawp: 12.0, ownerId: 'ab20b042-c519-423b-82e0-1dadf6f29fe0', status: 'approved', tags: ['process'], isActive: true, createdAt: '2024-08-20T00:00:00Z', updatedAt: '2024-08-20T00:00:00Z' },
+    { id: '276708ab-9cda-46a4-8451-925a1762c2f4', areaId: '503b8fcf-43f7-4ca4-a512-b561fcb78617', projectIds: ['6767c699-b141-4c6e-8260-ef0240d9089f'], name: 'Stabilizer PSV Spare', tag: 'PSV-106B', type: 'psv', designCode: 'API-520', serviceFluid: 'Naphtha/LPG', fluidPhase: 'gas', setPressure: 12.0, mawp: 12.0, ownerId: 'ab20b042-c519-423b-82e0-1dadf6f29fe0', status: 'approved', tags: ['process', 'spare'], isActive: true, createdAt: '2024-08-20T00:00:00Z', updatedAt: '2024-08-20T00:00:00Z' },
+    { id: '8f7e6d5c-4b3a-2190-a8b7-c6d5e4f3a2b1', areaId: '503b8fcf-43f7-4ca4-a512-b561fcb78617', projectIds: ['6767c699-b141-4c6e-8260-ef0240d9089f'], name: 'Stabilizer Overhead Drum PSV', tag: 'PSV-107', type: 'psv', designCode: 'API-520', serviceFluid: 'LPG', fluidPhase: 'gas', setPressure: 12.0, mawp: 12.0, ownerId: 'ab20b042-c519-423b-82e0-1dadf6f29fe0', status: 'approved', tags: ['process'], isActive: true, createdAt: '2024-08-20T00:00:00Z', updatedAt: '2024-08-20T00:00:00Z' },
 ];
 
 // Overpressure Scenarios

@@ -1,7 +1,7 @@
 """ProtectiveSystem (PSV) model."""
 from typing import Optional, List
 
-from sqlalchemy import String, Numeric, ForeignKey, Enum as SQLEnum, Table, Column, Integer
+from sqlalchemy import String, Numeric, ForeignKey, Enum as SQLEnum, Table, Column, Integer, Boolean
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
 
@@ -78,6 +78,9 @@ class ProtectiveSystem(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixi
     # Pipeline networks stored as JSONB
     inlet_network: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
     outlet_network: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    
+    # Soft delete flag
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", nullable=False)
     
     # Relationships
     owner = relationship("User", back_populates="owned_psvs")

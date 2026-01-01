@@ -92,9 +92,9 @@ export function PlantDialog({
                             onChange={(e) => setCustomerId(e.target.value)}
                             label="Customer"
                         >
-                            {customers.map((customer) => (
+                            {customers.filter(c => c.status === 'active' || c.id === customerId).map((customer) => (
                                 <MenuItem key={customer.id} value={customer.id}>
-                                    {customer.name} ({customer.code})
+                                    {customer.name} ({customer.code}) {customer.status === 'inactive' && '(Inactive)'}
                                 </MenuItem>
                             ))}
                         </Select>

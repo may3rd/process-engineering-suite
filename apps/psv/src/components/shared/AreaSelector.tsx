@@ -11,7 +11,7 @@ import {
     Chip,
 } from "@mui/material";
 import { ChevronRight } from "@mui/icons-material";
-import { customers, plants, units, areas } from "@/data/mockData";
+import { usePsvStore } from "@/store/usePsvStore";
 
 interface AreaSelectorProps {
     value: string | null;
@@ -31,6 +31,14 @@ export function AreaSelector({
     const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
     const [selectedPlant, setSelectedPlant] = useState<string | null>(null);
     const [selectedUnit, setSelectedUnit] = useState<string | null>(null);
+
+    const { customers, plants, units, areas } = usePsvStore();
+
+    // Only show active items in dropdowns, but allow currently selected item if it's inactive
+    const activeCustomers = useMemo(() => customers.filter(c => c.status === 'active' || c.id === selectedCustomer), [customers, selectedCustomer]);
+    const activePlants = useMemo(() => plants.filter(p => p.status === 'active' || p.id === selectedPlant), [plants, selectedPlant]);
+    const activeUnits = useMemo(() => units.filter(u => u.status === 'active' || u.id === selectedUnit), [units, selectedUnit]);
+    const activeAreas = useMemo(() => areas.filter(a => a.status === 'active' || a.id === value), [areas, value]);
 
     // Initialize selections based on current value
     useMemo(() => {
@@ -54,15 +62,15 @@ export function AreaSelector({
     }, [value]);
 
     const filteredPlants = selectedCustomer
-        ? plants.filter(p => p.customerId === selectedCustomer)
+        ? activePlants.filter(p => p.customerId === selectedCustomer)
         : [];
 
     const filteredUnits = selectedPlant
-        ? units.filter(u => u.plantId === selectedPlant)
+        ? activeUnits.filter(u => u.plantId === selectedPlant)
         : [];
 
     const filteredAreas = selectedUnit
-        ? areas.filter(a => a.unitId === selectedUnit)
+        ? activeAreas.filter(a => a.unitId === selectedUnit)
         : [];
 
     // Get full path for display
@@ -109,9 +117,9 @@ export function AreaSelector({
                     label="Customer"
                     disabled={disabled}
                 >
-                    {customers.map((customer) => (
+                    {activeCustomers.map((customer) => (
                         <MenuItem key={customer.id} value={customer.id}>
-                            {customer.name} ({customer.code})
+                            {customer.name} ({customer.code}) {customer.status === 'inactive' && '(Inactive)'}
                         </MenuItem>
                     ))}
                 </Select>
@@ -131,7 +139,7 @@ export function AreaSelector({
                 >
                     {filteredPlants.map((plant) => (
                         <MenuItem key={plant.id} value={plant.id}>
-                            {plant.name} ({plant.code})
+                            {plant.name} ({plant.code}) {plant.status === 'inactive' && '(Inactive)'}
                         </MenuItem>
                     ))}
                 </Select>
@@ -150,7 +158,7 @@ export function AreaSelector({
                 >
                     {filteredUnits.map((unit) => (
                         <MenuItem key={unit.id} value={unit.id}>
-                            {unit.name} ({unit.code})
+                            {unit.name} ({unit.code}) {unit.status === 'inactive' && '(Inactive)'}
                         </MenuItem>
                     ))}
                 </Select>
@@ -166,7 +174,7 @@ export function AreaSelector({
                 >
                     {filteredAreas.map((area) => (
                         <MenuItem key={area.id} value={area.id}>
-                            {area.name} ({area.code})
+                            {area.name} ({area.code}) {area.status === 'inactive' && '(Inactive)'}
                         </MenuItem>
                     ))}
                 </Select>

@@ -49,6 +49,7 @@ export interface Project {
     code: string;
     phase: 'design' | 'construction' | 'commissioning' | 'operation';
     status: 'draft' | 'in_review' | 'checked' | 'approved' | 'issued';
+    isActive: boolean;  // Soft delete flag (separate from workflow status)
     unitSystem?: UnitSystem;
     startDate: string;
     endDate?: string;
@@ -118,6 +119,7 @@ export interface ProtectiveSystem {
     mawp: number; // barg
     ownerId: string;
     status: 'draft' | 'in_review' | 'checked' | 'approved' | 'issued';
+    isActive: boolean;  // Soft delete flag (separate from workflow status)
     currentRevisionId?: string; // FK to revision_history
     valveType?: ValveOperatingType; // Conventional, Balanced Bellows, or Pilot Operated
     tags: string[];

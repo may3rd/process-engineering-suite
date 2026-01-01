@@ -97,11 +97,11 @@ export function AreaDialog({
     };
 
     const filteredPlants = customerId
-        ? plants.filter(p => p.customerId === customerId)
+        ? plants.filter(p => (p.status === 'active' || p.id === plantId) && p.customerId === customerId)
         : [];
 
     const filteredUnits = plantId
-        ? units.filter(u => u.plantId === plantId)
+        ? units.filter(u => (u.status === 'active' || u.id === unitId) && u.plantId === plantId)
         : [];
 
     const isValid = name.trim() && code.trim() && unitId;
@@ -125,9 +125,9 @@ export function AreaDialog({
                             }}
                             label="Customer"
                         >
-                            {customers.map((customer) => (
+                            {customers.filter(c => c.status === 'active' || c.id === customerId).map((customer) => (
                                 <MenuItem key={customer.id} value={customer.id}>
-                                    {customer.name} ({customer.code})
+                                    {customer.name} ({customer.code}) {customer.status === 'inactive' && '(Inactive)'}
                                 </MenuItem>
                             ))}
                         </Select>
@@ -146,7 +146,7 @@ export function AreaDialog({
                         >
                             {filteredPlants.map((plant) => (
                                 <MenuItem key={plant.id} value={plant.id}>
-                                    {plant.name} ({plant.code})
+                                    {plant.name} ({plant.code}) {plant.status === 'inactive' && '(Inactive)'}
                                 </MenuItem>
                             ))}
                         </Select>
@@ -162,7 +162,7 @@ export function AreaDialog({
                         >
                             {filteredUnits.map((unit) => (
                                 <MenuItem key={unit.id} value={unit.id}>
-                                    {unit.name} ({unit.code})
+                                    {unit.name} ({unit.code}) {unit.status === 'inactive' && '(Inactive)'}
                                 </MenuItem>
                             ))}
                         </Select>

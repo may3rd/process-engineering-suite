@@ -33,6 +33,7 @@ class ProtectiveSystemResponse(BaseModel):
     current_revision_id: Optional[str] = Field(default=None, serialization_alias="currentRevisionId", alias="currentRevisionId")
     inlet_network: Optional[dict] = Field(default=None, serialization_alias="inletNetwork", alias="inletNetwork")
     outlet_network: Optional[dict] = Field(default=None, serialization_alias="outletNetwork", alias="outletNetwork")
+    is_active: bool = Field(default=True, serialization_alias="isActive", alias="isActive")
     version: int = 1  # For optimistic locking / conflict detection
     created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
     updated_at: Optional[datetime] = Field(default=None, serialization_alias="updatedAt", alias="updatedAt")
@@ -91,6 +92,7 @@ class ProtectiveSystemUpdate(BaseModel):
     inletNetwork: Optional[dict] = None
     outletNetwork: Optional[dict] = None
     projectIds: Optional[List[str]] = None
+    isActive: Optional[bool] = None
     version: Optional[int] = None  # For optimistic locking / conflict detection
 
 

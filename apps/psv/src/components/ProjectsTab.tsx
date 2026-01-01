@@ -25,7 +25,8 @@ import {
     Stack,
     InputAdornment,
 } from "@mui/material";
-import { Add, Edit, Delete, Folder, Search, Shield, CheckCircle } from "@mui/icons-material";
+import { Add, Edit, Delete, Folder, Search, Shield, CheckCircle, Block } from "@mui/icons-material";
+import { ButtonGroup } from "@mui/material";
 import { areas, units, users } from "@/data/mockData";
 import { Project } from "@/data/types";
 import { glassCardStyles } from "./styles";
@@ -43,7 +44,7 @@ export function ProjectsTab() {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
-    const { addProject, updateProject, deleteProject, fetchAllProjects, areProjectsLoaded } = usePsvStore();
+    const { addProject, updateProject, deleteProject, softDeleteProject, fetchAllProjects, areProjectsLoaded } = usePsvStore();
     const selectedArea = usePsvStore((state) => state.selectedArea);
 
     const [isLoadingInit, setIsLoadingInit] = useState(false);
@@ -63,7 +64,8 @@ export function ProjectsTab() {
     const [selectedProject, setSelectedProject] = useState<Project | null>(null);
     const [projectToDelete, setProjectToDelete] = useState<Project | null>(null);
     const [searchText, setSearchText] = useState('');
-    type SortKey = 'code' | 'area' | 'phase' | 'status' | 'psvs' | 'lead' | 'startDate';
+    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
+    type SortKey = 'code' | 'area' | 'phase' | 'status' | 'psvs' | 'lead' | 'startDate' | 'isActive';
     const [sortConfig, setSortConfig] = useState<SortConfig<SortKey> | null>(null);
 
     const handleAdd = () => {
@@ -81,14 +83,41 @@ export function ProjectsTab() {
         setDeleteDialogOpen(true);
     };
 
-    const handleConfirmDelete = () => {
+    const handleConfirmDelete = async () => {
         if (projectToDelete) {
             try {
-                deleteProject(projectToDelete.id);
+                await softDeleteProject(projectToDelete.id);
                 setDeleteDialogOpen(false);
                 setProjectToDelete(null);
             } catch (error) {
                 console.error(error);
+            }
+        }
+    };
+
+    const handleToggleStatus = async (project: Project) => {
+        if (!canEdit) return;
+        const newStatus = !project.isActive;
+        await updateProject(project.id, { isActive: newStatus });
+
+        // Cascade UP: if activating, also activate parent Area, Unit, Plant, Customer
+        if (newStatus) {
+            const { areas, units, plants, customers, updateArea, updateUnit, updatePlant, updateCustomer } = usePsvStore.getState();
+            const area = areas.find(a => a.id === project.areaId);
+            if (area && area.status === 'inactive') {
+                await updateArea(area.id, { status: 'active' });
+                const unit = units.find(u => u.id === area.unitId);
+                if (unit && unit.status === 'inactive') {
+                    await updateUnit(unit.id, { status: 'active' });
+                    const plant = plants.find(p => p.id === unit.plantId);
+                    if (plant && plant.status === 'inactive') {
+                        await updatePlant(plant.id, { status: 'active' });
+                        const customer = customers.find(c => c.id === plant.customerId);
+                        if (customer && customer.status === 'inactive') {
+                            await updateCustomer(customer.id, { status: 'active' });
+                        }
+                    }
+                }
             }
         }
     };
@@ -114,8 +143,12 @@ export function ProjectsTab() {
         return protectiveSystems.filter(ps => ps.projectIds?.includes(projectId)).length;
     };
 
-    // Filter projects based on search text
+    // Filter projects based on search text and status
     const filteredProjects = projects.filter(project => {
+        // Status filter
+        if (statusFilter === 'active' && !project.isActive) return false;
+        if (statusFilter === 'inactive' && project.isActive) return false;
+
         if (!searchText) return true;
         const search = searchText.toLowerCase();
         const area = areas.find(a => a.id === project.areaId);
@@ -154,6 +187,8 @@ export function ProjectsTab() {
             }
             case 'startDate':
                 return new Date(project.startDate).getTime();
+            case 'isActive':
+                return project.isActive ? 1 : 0;
             default:
                 return '';
         }
@@ -165,7 +200,7 @@ export function ProjectsTab() {
     );
 
     // Pagination
-  const [itemsPerPage, setItemsPerPage] = useLocalStorage('dashboard_items_per_page', 15);
+    const [itemsPerPage, setItemsPerPage] = useLocalStorage('dashboard_items_per_page', 15);
     const pagination = usePagination(sortedProjects, {
         totalItems: sortedProjects.length,
         itemsPerPage: itemsPerPage,
@@ -319,6 +354,28 @@ export function ProjectsTab() {
                             ),
                         }}
                     />
+                    <ButtonGroup size="small">
+                        <Button
+                            variant={statusFilter === 'all' ? 'contained' : 'outlined'}
+                            onClick={() => setStatusFilter('all')}
+                        >
+                            All
+                        </Button>
+                        <Button
+                            variant={statusFilter === 'active' ? 'contained' : 'outlined'}
+                            onClick={() => setStatusFilter('active')}
+                            color="success"
+                        >
+                            Active
+                        </Button>
+                        <Button
+                            variant={statusFilter === 'inactive' ? 'contained' : 'outlined'}
+                            onClick={() => setStatusFilter('inactive')}
+                            color="warning"
+                        >
+                            Inactive
+                        </Button>
+                    </ButtonGroup>
                 </Stack>
             </Paper>
 
@@ -345,6 +402,17 @@ export function ProjectsTab() {
                                             </Typography>
                                         </Box>
                                         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-end' }}>
+                                            <Chip
+                                                label={project.isActive ? "Active" : "Inactive"}
+                                                size="small"
+                                                color={project.isActive ? "success" : "warning"}
+                                                variant={project.isActive ? "filled" : "outlined"}
+                                                onClick={() => handleToggleStatus(project)}
+                                                sx={{
+                                                    cursor: canEdit ? 'pointer' : 'default',
+                                                    '&:hover': canEdit ? { opacity: 0.8 } : {}
+                                                }}
+                                            />
                                             <Chip
                                                 label={project.phase}
                                                 size="small"
@@ -429,20 +497,20 @@ export function ProjectsTab() {
                     })}
 
                     {/* Pagination for mobile */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
-            <ItemsPerPageSelector
-              value={itemsPerPage}
-              onChange={setItemsPerPage}
-            />
-            <PaginationControls
-              currentPage={pagination.currentPage}
-              totalPages={pagination.totalPages}
-              pageNumbers={pagination.pageNumbers}
-              onPageChange={pagination.goToPage}
-              hasNextPage={pagination.hasNextPage}
-              hasPrevPage={pagination.hasPrevPage}
-            />
-          </Box>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+                        <ItemsPerPageSelector
+                            value={itemsPerPage}
+                            onChange={setItemsPerPage}
+                        />
+                        <PaginationControls
+                            currentPage={pagination.currentPage}
+                            totalPages={pagination.totalPages}
+                            pageNumbers={pagination.pageNumbers}
+                            onPageChange={pagination.goToPage}
+                            hasNextPage={pagination.hasNextPage}
+                            hasPrevPage={pagination.hasPrevPage}
+                        />
+                    </Box>
 
                     {pagination.pageItems.length === 0 && (
                         <Paper sx={{ ...glassCardStyles, p: 4, textAlign: 'center' }}>
@@ -463,6 +531,7 @@ export function ProjectsTab() {
                                     <TableCell>{renderHeader('Area', 'area')}</TableCell>
                                     <TableCell>{renderHeader('Phase', 'phase')}</TableCell>
                                     <TableCell>{renderHeader('Status', 'status')}</TableCell>
+                                    <TableCell>{renderHeader('Active', 'isActive')}</TableCell>
                                     <TableCell>{renderHeader('PSVs', 'psvs')}</TableCell>
                                     <TableCell>{renderHeader('Lead', 'lead')}</TableCell>
                                     <TableCell>{renderHeader('Start Date', 'startDate')}</TableCell>
@@ -516,6 +585,19 @@ export function ProjectsTab() {
                                                     size="small"
                                                     color={getWorkflowStatusColor(project.status)}
                                                     sx={{ textTransform: 'capitalize' }}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Chip
+                                                    label={project.isActive ? "Active" : "Inactive"}
+                                                    size="small"
+                                                    color={project.isActive ? "success" : "warning"}
+                                                    variant={project.isActive ? "filled" : "outlined"}
+                                                    onClick={() => handleToggleStatus(project)}
+                                                    sx={{
+                                                        cursor: canEdit ? 'pointer' : 'default',
+                                                        '&:hover': canEdit ? { opacity: 0.8 } : {}
+                                                    }}
                                                 />
                                             </TableCell>
                                             <TableCell>
@@ -575,20 +657,20 @@ export function ProjectsTab() {
                     </TableContainer>
 
                     {/* Pagination for desktop */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 2, px: 2 }}>
-            <ItemsPerPageSelector
-              value={itemsPerPage}
-              onChange={setItemsPerPage}
-            />
-            <PaginationControls
-              currentPage={pagination.currentPage}
-              totalPages={pagination.totalPages}
-              pageNumbers={pagination.pageNumbers}
-              onPageChange={pagination.goToPage}
-              hasNextPage={pagination.hasNextPage}
-              hasPrevPage={pagination.hasPrevPage}
-            />
-          </Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 2, px: 2 }}>
+                        <ItemsPerPageSelector
+                            value={itemsPerPage}
+                            onChange={setItemsPerPage}
+                        />
+                        <PaginationControls
+                            currentPage={pagination.currentPage}
+                            totalPages={pagination.totalPages}
+                            pageNumbers={pagination.pageNumbers}
+                            onPageChange={pagination.goToPage}
+                            hasNextPage={pagination.hasNextPage}
+                            hasPrevPage={pagination.hasPrevPage}
+                        />
+                    </Box>
                 </Paper>
             )}
 
@@ -613,8 +695,9 @@ export function ProjectsTab() {
                     onConfirm={handleConfirmDelete}
                     onForceDelete={handleForceDelete}
                     allowForceDelete={canApprove}
-                    title="Delete Project"
+                    title={projectToDelete && getPsvCount(projectToDelete.id) > 0 ? "Deactivate Project?" : "Delete Project?"}
                     itemName={projectToDelete.name}
+                    showSoftDelete={projectToDelete && getPsvCount(projectToDelete.id) > 0}
                     children={[
                         { label: 'PSV', count: getPsvCount(projectToDelete.id) }
                     ]}

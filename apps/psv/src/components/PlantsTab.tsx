@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import {
   Box,
   Button,
+  ButtonGroup,
   Paper,
   Table,
   TableBody,
@@ -54,6 +55,7 @@ export function PlantsTab() {
     addPlant,
     updatePlant,
     deletePlant,
+    softDeletePlant,
     fetchAllPlants,
     arePlantsLoaded,
     fetchAllUnits,
@@ -94,6 +96,7 @@ export function PlantsTab() {
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
   const [plantToDelete, setPlantToDelete] = useState<Plant | null>(null);
   const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   type SortKey = "code" | "customer" | "owner" | "units" | "status" | "created";
   const [sortConfig, setSortConfig] = useState<SortConfig<SortKey> | null>(
     null,
@@ -114,10 +117,11 @@ export function PlantsTab() {
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (plantToDelete) {
       try {
-        deletePlant(plantToDelete.id);
+        // Use soft delete (cascade deactivation)
+        const result = await softDeletePlant(plantToDelete.id);
         setDeleteDialogOpen(false);
         setPlantToDelete(null);
       } catch (error) {
@@ -126,32 +130,33 @@ export function PlantsTab() {
     }
   };
 
-  const handleForceDelete = () => {
+  const handleForceDelete = async () => {
     if (plantToDelete) {
-      // Cascade delete: delete plant and all units, areas, projects, PSVs, equipment
-      const { units, areas, projects, protectiveSystems, equipment } =
-        usePsvStore.getState();
+      try {
+        const { units, areas, projects, protectiveSystems, equipment,
+          deleteEquipment, deleteProtectiveSystem, deleteProject, deleteArea,
+          deleteUnit, deletePlant } = usePsvStore.getState();
 
-      const unitsToDelete = units.filter((u) => u.plantId === plantToDelete.id);
-      const unitIds = unitsToDelete.map((u) => u.id);
+        const unitsToDelete = units.filter(u => u.plantId === plantToDelete.id);
+        const unitIds = unitsToDelete.map(u => u.id);
+        const areasToDelete = areas.filter(a => unitIds.includes(a.unitId));
+        const areaIds = areasToDelete.map(a => a.id);
+        const projectsToDelete = projects.filter(p => areaIds.includes(p.areaId));
+        const psvsToDelete = protectiveSystems.filter(p => areaIds.includes(p.areaId));
+        const equipmentToDeleteList = equipment.filter(e => areaIds.includes(e.areaId));
 
-      const areasToDelete = areas.filter((a) => unitIds.includes(a.unitId));
-      const areaIds = areasToDelete.map((a) => a.id);
+        for (const e of equipmentToDeleteList) await deleteEquipment(e.id);
+        for (const psv of psvsToDelete) await deleteProtectiveSystem(psv.id);
+        for (const project of projectsToDelete) await deleteProject(project.id);
+        for (const area of areasToDelete) await deleteArea(area.id);
+        for (const unit of unitsToDelete) await deleteUnit(unit.id);
+        await deletePlant(plantToDelete.id);
 
-      // Delete all entities from bottom-up
-      usePsvStore.setState((state) => ({
-        equipment: state.equipment.filter((e) => !areaIds.includes(e.areaId)),
-        protectiveSystems: state.protectiveSystems.filter(
-          (p) => !areaIds.includes(p.areaId),
-        ),
-        projects: state.projects.filter((p) => !areaIds.includes(p.areaId)),
-        areas: state.areas.filter((a) => !unitIds.includes(a.unitId)),
-        units: state.units.filter((u) => u.plantId !== plantToDelete.id),
-        plants: state.plants.filter((p) => p.id !== plantToDelete.id),
-      }));
-
-      setDeleteDialogOpen(false);
-      setPlantToDelete(null);
+        setDeleteDialogOpen(false);
+        setPlantToDelete(null);
+      } catch (error) {
+        console.error('Force delete failed:', error);
+      }
     }
   };
 
@@ -164,12 +169,35 @@ export function PlantsTab() {
     setDialogOpen(false);
   };
 
+  const handleToggleStatus = async (plant: Plant) => {
+    if (!canEdit) return;
+    const newStatus = plant.status === 'active' ? 'inactive' : 'active';
+
+    if (newStatus === 'inactive') {
+      // Cascade DOWN: deactivate plant and all children (Units, Areas, Equipment)
+      await softDeletePlant(plant.id);
+    } else {
+      // Activate the plant
+      await updatePlant(plant.id, { status: 'active' });
+      // Cascade UP: also activate parent Customer
+      const { customers, updateCustomer } = usePsvStore.getState();
+      const customer = customers.find(c => c.id === plant.customerId);
+      if (customer && customer.status === 'inactive') {
+        await updateCustomer(customer.id, { status: 'active' });
+      }
+    }
+  };
+
+
   const getUnitCount = (plantId: string) => {
     return units.filter((u) => u.plantId === plantId).length;
   };
 
   // Filter plants based on search text
   const filteredPlants = plants.filter((plant) => {
+    // Status filter
+    if (statusFilter !== 'all' && plant.status !== statusFilter) return false;
+
     if (!searchText) return true;
     const search = searchText.toLowerCase();
     const customer = customers.find((c) => c.id === plant.customerId);
@@ -393,6 +421,29 @@ export function PlantsTab() {
               ),
             }}
           />
+          {/* Status Filter */}
+          <ButtonGroup size="small" sx={{ flexShrink: 0 }}>
+            <Button
+              variant={statusFilter === 'all' ? 'contained' : 'outlined'}
+              onClick={() => setStatusFilter('all')}
+            >
+              All ({plants.length})
+            </Button>
+            <Button
+              variant={statusFilter === 'active' ? 'contained' : 'outlined'}
+              color="success"
+              onClick={() => setStatusFilter('active')}
+            >
+              Active ({plants.filter(e => e.status === 'active').length})
+            </Button>
+            <Button
+              variant={statusFilter === 'inactive' ? 'contained' : 'outlined'}
+              color="warning"
+              onClick={() => setStatusFilter('inactive')}
+            >
+              Inactive ({plants.filter(e => e.status === 'inactive').length})
+            </Button>
+          </ButtonGroup>
         </Stack>
       </Paper>
 
@@ -405,7 +456,10 @@ export function PlantsTab() {
             const unitCount = getUnitCount(plant.id);
 
             return (
-              <Card key={plant.id} sx={{ ...glassCardStyles }}>
+              <Card key={plant.id} sx={{
+                ...glassCardStyles,
+                opacity: plant.status === 'inactive' ? 0.6 : 1,
+              }}>
                 <CardContent sx={{ pb: 1 }}>
                   <Box
                     sx={{
@@ -430,8 +484,14 @@ export function PlantsTab() {
                     <Chip
                       label={plant.status}
                       size="small"
-                      color={plant.status === "active" ? "success" : "default"}
-                      sx={{ textTransform: "capitalize" }}
+                      color={plant.status === 'active' ? 'success' : 'default'}
+                      variant={plant.status === 'active' ? 'filled' : 'outlined'}
+                      onClick={() => handleToggleStatus(plant)}
+                      sx={{
+                        textTransform: 'capitalize',
+                        cursor: canEdit ? 'pointer' : 'default',
+                        '&:hover': canEdit ? { opacity: 0.8 } : {},
+                      }}
                     />
                   </Box>
 
@@ -579,6 +639,8 @@ export function PlantsTab() {
                       key={plant.id}
                       hover
                       sx={{
+                        opacity: plant.status === 'inactive' ? 0.5 : 1,
+                        bgcolor: plant.status === 'inactive' ? 'action.disabledBackground' : 'transparent',
                         "&:last-child td": {
                           borderBottom: 0,
                         },
@@ -613,10 +675,14 @@ export function PlantsTab() {
                         <Chip
                           label={plant.status}
                           size="small"
-                          color={
-                            plant.status === "active" ? "success" : "default"
-                          }
-                          sx={{ textTransform: "capitalize" }}
+                          color={plant.status === 'active' ? 'success' : 'default'}
+                          variant={plant.status === 'active' ? 'filled' : 'outlined'}
+                          onClick={() => handleToggleStatus(plant)}
+                          sx={{
+                            textTransform: 'capitalize',
+                            cursor: canEdit ? 'pointer' : 'default',
+                            '&:hover': canEdit ? { opacity: 0.8 } : {},
+                          }}
                         />
                       </TableCell>
                       <TableCell>

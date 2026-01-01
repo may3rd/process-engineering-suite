@@ -62,22 +62,28 @@ export interface NavigationSlice {
     addCustomer: (customer: Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
     updateCustomer: (id: string, updates: Partial<Omit<Customer, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
     deleteCustomer: (id: string) => Promise<void>;
+    softDeleteCustomer: (id: string) => Promise<{ deactivatedCount: number }>;
 
     addPlant: (plant: Omit<Plant, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
     updatePlant: (id: string, updates: Partial<Omit<Plant, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
     deletePlant: (id: string) => Promise<void>;
+    softDeletePlant: (id: string) => Promise<{ deactivatedCount: number }>;
 
     addUnit: (unit: Omit<Unit, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
     updateUnit: (id: string, updates: Partial<Omit<Unit, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
     deleteUnit: (id: string) => Promise<void>;
+    softDeleteUnit: (id: string) => Promise<{ deactivatedCount: number }>;
 
     addArea: (area: Omit<Area, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
     updateArea: (id: string, updates: Partial<Omit<Area, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
     deleteArea: (id: string) => Promise<void>;
+    softDeleteArea: (id: string) => Promise<{ deactivatedCount: number }>;
+    softDeleteEquipment: (id: string) => Promise<void>;
 
     addProject: (project: Omit<Project, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
     updateProject: (id: string, updates: Partial<Omit<Project, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
     deleteProject: (id: string) => Promise<void>;
+    softDeleteProject: (id: string) => Promise<void>;
 }
 
 export const createNavigationSlice: StateCreator<PsvStore, [], [], NavigationSlice> = (set, get) => ({
@@ -883,6 +889,183 @@ export const createNavigationSlice: StateCreator<PsvStore, [], [], NavigationSli
             toast.success('Project deleted');
         } catch (error) {
             toast.error('Failed to delete project');
+            throw error;
+        }
+    },
+
+    // Soft Delete with Cascade (Recursive)
+    softDeleteCustomer: async (id) => {
+        try {
+            const state = get();
+            const customer = state.customers.find(c => c.id === id);
+            if (!customer) throw new Error('Customer not found');
+
+            // Recursively deactivate all child Plants (which cascades to Units, Areas, Equipment, Projects, PSVs)
+            const affectedPlants = state.plants.filter(p => p.customerId === id);
+            let deactivatedCount = 0;
+
+            for (const plant of affectedPlants) {
+                const result = await get().softDeletePlant(plant.id);
+                deactivatedCount += result?.deactivatedCount ?? 0;
+            }
+
+            // Finally deactivate the customer
+            if (customer.status === 'active') {
+                await get().updateCustomer(id, { status: 'inactive' });
+                deactivatedCount++;
+            }
+
+            toast.success(`Deactivated customer and ${deactivatedCount - 1} related items`);
+            return { deactivatedCount };
+        } catch (error) {
+            toast.error('Failed to deactivate customer');
+            throw error;
+        }
+    },
+
+    softDeletePlant: async (id) => {
+        try {
+            const state = get();
+            const plant = state.plants.find(p => p.id === id);
+            if (!plant) throw new Error('Plant not found');
+
+            // Recursively deactivate all child Units (which cascades to Areas, Equipment, Projects, PSVs)
+            const affectedUnits = state.units.filter(u => u.plantId === id);
+            let deactivatedCount = 0;
+
+            for (const unit of affectedUnits) {
+                const result = await get().softDeleteUnit(unit.id);
+                deactivatedCount += result?.deactivatedCount ?? 0;
+            }
+
+            // Deactivate the plant itself
+            if (plant.status === 'active') {
+                await get().updatePlant(id, { status: 'inactive' });
+                deactivatedCount++;
+            }
+
+            return { deactivatedCount };
+        } catch (error) {
+            toast.error('Failed to deactivate plant');
+            throw error;
+        }
+    },
+
+    softDeleteUnit: async (id) => {
+        try {
+            const state = get();
+            const unit = state.units.find(u => u.id === id);
+            if (!unit) throw new Error('Unit not found');
+
+            // Recursively deactivate all child Areas (which cascades to Equipment, Projects, PSVs)
+            const affectedAreas = state.areas.filter(a => a.unitId === id);
+            let deactivatedCount = 0;
+
+            for (const area of affectedAreas) {
+                const result = await get().softDeleteArea(area.id);
+                deactivatedCount += result?.deactivatedCount ?? 0;
+            }
+
+            // Deactivate the unit itself
+            if (unit.status === 'active') {
+                await get().updateUnit(id, { status: 'inactive' });
+                deactivatedCount++;
+            }
+
+            return { deactivatedCount };
+        } catch (error) {
+            toast.error('Failed to deactivate unit');
+            throw error;
+        }
+    },
+
+    softDeleteArea: async (id) => {
+        try {
+            const state = get();
+            const area = state.areas.find(a => a.id === id);
+            if (!area) throw new Error('Area not found');
+
+            const affectedEquipment = state.equipment.filter(e => e.areaId === id);
+            const affectedProjects = state.projects.filter(p => p.areaId === id);
+            const affectedPsvs = state.protectiveSystems.filter(p => p.areaId === id);
+
+            let deactivatedCount = 0;
+
+            for (const equip of affectedEquipment) {
+                if (equip.status === 'active') {
+                    await get().updateEquipment(equip.id, { status: 'inactive' });
+                    deactivatedCount++;
+                }
+            }
+
+            for (const project of affectedProjects) {
+                if (project.isActive) {
+                    await get().updateProject(project.id, { isActive: false });
+                    deactivatedCount++;
+                }
+            }
+
+            for (const psv of affectedPsvs) {
+                if (psv.isActive) {
+                    await get().updateProtectiveSystem(psv.id, { isActive: false });
+                    deactivatedCount++;
+                }
+            }
+
+            if (area.status === 'active') {
+                await get().updateArea(id, { status: 'inactive' });
+                deactivatedCount++;
+            }
+
+            toast.success(`Deactivated area and ${deactivatedCount - 1} related items`);
+            return { deactivatedCount };
+        } catch (error) {
+            toast.error('Failed to deactivate area');
+            throw error;
+        }
+    },
+
+    softDeleteProject: async (id) => {
+        try {
+            const state = get();
+            const project = state.projects.find(p => p.id === id);
+            if (!project) throw new Error('Project not found');
+
+            // Find PSVs tagged with this project
+            const affectedPsvs = state.protectiveSystems.filter(p => p.projectIds?.includes(id));
+
+            if (project.isActive) {
+                await get().updateProject(id, { isActive: false });
+
+                // Note: We DON'T necessarily deactivate PSVs just because a project is deactivated, 
+                // as a PSV might be part of multiple projects. 
+                // But we should probably provide feedback or handle it if the user expects cascade.
+                // For now, only deactivate the project itself.
+
+                toast.success('Project deactivated');
+            } else {
+                toast.info('Project already inactive');
+            }
+        } catch (error) {
+            toast.error('Failed to deactivate project');
+            throw error;
+        }
+    },
+
+    softDeleteEquipment: async (id) => {
+        try {
+            const state = get();
+            const equipment = state.equipment.find(e => e.id === id);
+            if (!equipment) throw new Error('Equipment not found');
+
+            if (equipment.status === 'active') {
+                await get().updateEquipment(id, { status: 'inactive' });
+                toast.success('Equipment deactivated');
+            } else {
+                toast.info('Equipment already inactive');
+            }
+        } catch (error) {
+            toast.error('Failed to deactivate equipment');
             throw error;
         }
     },

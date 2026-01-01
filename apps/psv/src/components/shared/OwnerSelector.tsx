@@ -37,8 +37,8 @@ export function OwnerSelector({
 }: OwnerSelectorProps) {
     // Show all users in dropdown for testing
     const filteredUsers = filterRole
-        ? users.filter(u => filterRole.includes(u.role) && u.status === 'active')
-        : users.filter(u => u.status === 'active');
+        ? users.filter(u => filterRole.includes(u.role) && (u.status === 'active' || u.id === value))
+        : users.filter(u => u.status === 'active' || u.id === value);
 
     const selectedUser = value ? users.find(u => u.id === value) : null;
 
@@ -80,7 +80,7 @@ export function OwnerSelector({
                             </Avatar>
                         </ListItemAvatar>
                         <ListItemText
-                            primary={user.name}
+                            primary={user.status === 'inactive' ? `${user.name} (Inactive)` : user.name}
                             secondary={
                                 <span style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
                                     {user.email}

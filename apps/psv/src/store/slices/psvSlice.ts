@@ -50,6 +50,7 @@ export interface PsvSlice {
     addProtectiveSystem: (psv: Omit<ProtectiveSystem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
     updateProtectiveSystem: (id: string, updates: Partial<Omit<ProtectiveSystem, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
     deleteProtectiveSystem: (id: string) => Promise<void>;
+    softDeleteProtectiveSystem: (id: string) => Promise<void>;
     addEquipment: (data: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
     updateEquipment: (id: string, updates: Partial<Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
     deleteEquipment: (id: string) => Promise<void>;
@@ -661,6 +662,24 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to delete PSV';
             toast.error('Failed to delete PSV', { description: message });
+            throw error;
+        }
+    },
+
+    softDeleteProtectiveSystem: async (id) => {
+        try {
+            const state = get();
+            const psv = state.protectiveSystems.find(p => p.id === id);
+            if (!psv) throw new Error('PSV not found');
+
+            if (psv.isActive) {
+                await get().updateProtectiveSystem(id, { isActive: false });
+                toast.success('PSV deactivated');
+            } else {
+                toast.info('PSV already inactive');
+            }
+        } catch (error) {
+            toast.error('Failed to deactivate PSV');
             throw error;
         }
     },

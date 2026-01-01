@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
+  ButtonGroup,
   Paper,
   Table,
   TableBody,
@@ -54,6 +55,7 @@ export function CustomersTab() {
     addCustomer,
     updateCustomer,
     deleteCustomer,
+    softDeleteCustomer,
     fetchAllPlants,
     arePlantsLoaded,
   } = usePsvStore();
@@ -70,6 +72,7 @@ export function CustomersTab() {
     null,
   );
   const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   type SortKey = "code" | "owner" | "plants" | "status" | "created";
   const [sortConfig, setSortConfig] = useState<SortConfig<SortKey> | null>(
     null,
@@ -97,13 +100,14 @@ export function CustomersTab() {
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (customerToDelete) {
       try {
-        deleteCustomer(customerToDelete.id);
+        // Use soft delete (cascade deactivation)
+        const result = await softDeleteCustomer(customerToDelete.id);
         setDeleteDialogOpen(false);
         setCustomerToDelete(null);
-        // TODO: Show success message
+        // Success message is shown in the store action
       } catch (error) {
         // Error is shown in dialog via child count
         console.error(error);
@@ -111,72 +115,77 @@ export function CustomersTab() {
     }
   };
 
-  const handleForceDelete = () => {
+  const handleForceDelete = async () => {
     if (customerToDelete) {
-      // Cascade delete: delete all plants (which will cascade to units, areas, etc.)
-      const { plants, units, areas, projects, protectiveSystems, equipment } =
-        usePsvStore.getState();
+      try {
+        // Get child entities to delete
+        const { plants, units, areas, projects, protectiveSystems, equipment,
+          deleteEquipment, deleteProtectiveSystem, deleteProject, deleteArea,
+          deleteUnit, deletePlant, deleteCustomer } = usePsvStore.getState();
 
-      // Find all child entities to delete
-      const plantsToDelete = plants.filter(
-        (p) => p.customerId === customerToDelete.id,
-      );
-      const plantIds = plantsToDelete.map((p) => p.id);
+        // Find all child entities to delete
+        const plantsToDelete = plants.filter(p => p.customerId === customerToDelete.id);
+        const plantIds = plantsToDelete.map(p => p.id);
+        const unitsToDelete = units.filter(u => plantIds.includes(u.plantId));
+        const unitIds = unitsToDelete.map(u => u.id);
+        const areasToDelete = areas.filter(a => unitIds.includes(a.unitId));
+        const areaIds = areasToDelete.map(a => a.id);
+        const projectsToDelete = projects.filter(p => areaIds.includes(p.areaId));
+        const psvsToDelete = protectiveSystems.filter(p => areaIds.includes(p.areaId));
+        const equipmentToDeleteList = equipment.filter(e => areaIds.includes(e.areaId));
 
-      const unitsToDelete = units.filter((u) => plantIds.includes(u.plantId));
-      const unitIds = unitsToDelete.map((u) => u.id);
+        // Delete all entities from bottom-up (children first)
+        for (const e of equipmentToDeleteList) {
+          await deleteEquipment(e.id);
+        }
+        for (const psv of psvsToDelete) {
+          await deleteProtectiveSystem(psv.id);
+        }
+        for (const project of projectsToDelete) {
+          await deleteProject(project.id);
+        }
+        for (const area of areasToDelete) {
+          await deleteArea(area.id);
+        }
+        for (const unit of unitsToDelete) {
+          await deleteUnit(unit.id);
+        }
+        for (const plant of plantsToDelete) {
+          await deletePlant(plant.id);
+        }
 
-      const areasToDelete = areas.filter((a) => unitIds.includes(a.unitId));
-      const areaIds = areasToDelete.map((a) => a.id);
+        // Finally delete the customer
+        await deleteCustomer(customerToDelete.id);
 
-      const projectsToDelete = projects.filter((p) =>
-        areaIds.includes(p.areaId),
-      );
-      const projectIds = projectsToDelete.map((p) => p.id);
-      const psvsToDelete = protectiveSystems.filter((p) =>
-        areaIds.includes(p.areaId),
-      );
-      const equipmentToDelete = equipment.filter((e) =>
-        areaIds.includes(e.areaId),
-      );
-
-      // Delete all entities from bottom-up
-      usePsvStore.setState((state) => ({
-        equipment: state.equipment.filter((e) => !areaIds.includes(e.areaId)),
-        // Remove project IDs from PSVs before deleting PSVs
-        protectiveSystems: state.protectiveSystems
-          .map((psv) => ({
-            ...psv,
-            projectIds: (psv.projectIds || []).filter(
-              (pid) => !projectIds.includes(pid),
-            ),
-          }))
-          .filter((p) => !areaIds.includes(p.areaId)),
-        projects: state.projects.filter((p) => !areaIds.includes(p.areaId)),
-        areas: state.areas.filter((a) => !unitIds.includes(a.unitId)),
-        units: state.units.filter((u) => !plantIds.includes(u.plantId)),
-        plants: state.plants.filter(
-          (p) => p.customerId !== customerToDelete.id,
-        ),
-        customers: state.customers.filter((c) => c.id !== customerToDelete.id),
-        customerList: state.customers.filter(
-          (c) => c.id !== customerToDelete.id,
-        ),
-      }));
-
-      setDeleteDialogOpen(false);
-      setCustomerToDelete(null);
-      // TODO: Show success message
+        setDeleteDialogOpen(false);
+        setCustomerToDelete(null);
+        // Success toast is shown by deleteCustomer action
+      } catch (error) {
+        console.error('Force delete failed:', error);
+      }
     }
   };
 
-  const handleSave = (data: Omit<Customer, "id" | "createdAt">) => {
+  const handleSave = (data: Partial<Omit<Customer, "id" | "createdAt" | "updatedAt">>) => {
     if (selectedCustomer) {
       updateCustomer(selectedCustomer.id, data);
     } else {
-      addCustomer(data);
+      addCustomer(data as Omit<Customer, "id" | "createdAt" | "updatedAt">);
     }
     setDialogOpen(false);
+  };
+
+  const handleToggleStatus = async (customer: Customer) => {
+    if (!canEdit) return;
+    const newStatus = customer.status === 'active' ? 'inactive' : 'active';
+
+    if (newStatus === 'inactive') {
+      // Cascade DOWN: deactivate customer and all children
+      await softDeleteCustomer(customer.id);
+    } else {
+      // Just activate the customer (no cascade up needed for top-level)
+      await updateCustomer(customer.id, { status: 'active' });
+    }
   };
 
   // Count plants for each customer
@@ -185,8 +194,12 @@ export function CustomersTab() {
     return plants.filter((p) => p.customerId === customerId).length;
   };
 
-  // Filter customers based on search text
+  // Filter customers based on search text and status
   const filteredCustomers = customers.filter((customer) => {
+    // Status filter
+    if (statusFilter !== 'all' && customer.status !== statusFilter) return false;
+
+    // Search filter
     if (!searchText) return true;
     const search = searchText.toLowerCase();
     const owner = users.find((u) => u.id === customer.ownerId);
@@ -248,6 +261,9 @@ export function CustomersTab() {
     const activeCustomers = customers.filter(
       (customer) => customer.status === "active",
     ).length;
+    const inactiveCustomers = customers.filter(
+      (customer) => customer.status === "inactive",
+    ).length;
     return [
       {
         label: "Customers",
@@ -269,6 +285,13 @@ export function CustomersTab() {
       },
     ];
   }, [customers, plants.length, projects.length]);
+
+  const activeCustomers = customers.filter(
+    (customer) => customer.status === "active",
+  ).length;
+  const inactiveCustomers = customers.filter(
+    (customer) => customer.status === "inactive",
+  ).length;
 
   return (
     <Box>
@@ -398,6 +421,29 @@ export function CustomersTab() {
               ),
             }}
           />
+          {/* Status Filter */}
+          <ButtonGroup size="small" sx={{ flexShrink: 0 }}>
+            <Button
+              variant={statusFilter === 'all' ? 'contained' : 'outlined'}
+              onClick={() => setStatusFilter('all')}
+            >
+              All ({customers.length})
+            </Button>
+            <Button
+              variant={statusFilter === 'active' ? 'contained' : 'outlined'}
+              color="success"
+              onClick={() => setStatusFilter('active')}
+            >
+              Active ({activeCustomers})
+            </Button>
+            <Button
+              variant={statusFilter === 'inactive' ? 'contained' : 'outlined'}
+              color="warning"
+              onClick={() => setStatusFilter('inactive')}
+            >
+              Inactive ({inactiveCustomers})
+            </Button>
+          </ButtonGroup>
         </Stack>
       </Paper>
 
@@ -409,7 +455,10 @@ export function CustomersTab() {
             const plantCount = getPlantCount(customer.id);
 
             return (
-              <Card key={customer.id} sx={{ ...glassCardStyles }}>
+              <Card key={customer.id} sx={{
+                ...glassCardStyles,
+                opacity: customer.status === 'inactive' ? 0.6 : 1,
+              }}>
                 <CardContent sx={{ pb: 1 }}>
                   <Box
                     sx={{
@@ -437,7 +486,13 @@ export function CustomersTab() {
                       color={
                         customer.status === "active" ? "success" : "default"
                       }
-                      sx={{ textTransform: "capitalize" }}
+                      variant={customer.status === 'active' ? 'filled' : 'outlined'}
+                      onClick={() => handleToggleStatus(customer)}
+                      sx={{
+                        textTransform: 'capitalize',
+                        cursor: canEdit ? 'pointer' : 'default',
+                        '&:hover': canEdit ? { opacity: 0.8 } : {},
+                      }}
                     />
                   </Box>
 
@@ -571,6 +626,8 @@ export function CustomersTab() {
                       key={customer.id}
                       hover
                       sx={{
+                        opacity: customer.status === 'inactive' ? 0.5 : 1,
+                        bgcolor: customer.status === 'inactive' ? 'action.disabledBackground' : 'transparent',
                         "&:last-child td": {
                           borderBottom: 0,
                         },
@@ -600,10 +657,14 @@ export function CustomersTab() {
                         <Chip
                           label={customer.status}
                           size="small"
-                          color={
-                            customer.status === "active" ? "success" : "default"
-                          }
-                          sx={{ textTransform: "capitalize" }}
+                          color={customer.status === 'active' ? 'success' : 'default'}
+                          variant={customer.status === 'active' ? 'filled' : 'outlined'}
+                          onClick={() => handleToggleStatus(customer)}
+                          sx={{
+                            textTransform: 'capitalize',
+                            cursor: canEdit ? 'pointer' : 'default',
+                            '&:hover': canEdit ? { opacity: 0.8 } : {},
+                          }}
                         />
                       </TableCell>
                       <TableCell>

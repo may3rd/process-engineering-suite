@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { Equipment, EquipmentType, EquipmentDetails } from "@/data/types";
-import { areas, units, plants, customers } from "@/data/mockData";
+import { usePsvStore } from "@/store/usePsvStore";
+import { useShallow } from "zustand/react/shallow";
 import { OwnerSelector, UnitSelector } from "../shared";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
@@ -45,6 +46,12 @@ export function EquipmentDialog({
     onSave,
     equipment,
 }: EquipmentDialogProps) {
+    const { customers, plants, units, areas } = usePsvStore(useShallow((state) => ({
+        customers: state.customers,
+        plants: state.plants,
+        units: state.units,
+        areas: state.areas,
+    })));
     const [type, setType] = useState<EquipmentType>('vessel');
     const [tag, setTag] = useState('');
     const [name, setName] = useState('');
@@ -176,9 +183,9 @@ export function EquipmentDialog({
         }
     };
 
-    const filteredPlants = customerId ? plants.filter(p => p.customerId === customerId) : [];
-    const filteredUnits = plantId ? units.filter(u => u.plantId === plantId) : [];
-    const filteredAreas = unitId ? areas.filter(a => a.unitId === unitId) : [];
+    const filteredPlants = customerId ? plants.filter(p => (p.status === 'active' || p.id === plantId) && p.customerId === customerId) : [];
+    const filteredUnits = plantId ? units.filter(u => (u.status === 'active' || u.id === unitId) && u.plantId === plantId) : [];
+    const filteredAreas = unitId ? areas.filter(a => (a.status === 'active' || a.id === areaId) && a.unitId === unitId) : [];
     const statusEnabledForUser = (value: 'active' | 'inactive') =>
         value === 'inactive' ? canDeactivate : canEdit;
     const statusLocked = !statusEnabledForUser(status);
@@ -240,9 +247,9 @@ export function EquipmentDialog({
                                 }}
                                 label="Customer"
                             >
-                                {customers.map((customer) => (
+                                {customers.filter(c => c.status === 'active' || c.id === customerId).map((customer) => (
                                     <MenuItem key={customer.id} value={customer.id}>
-                                        {customer.name}
+                                        {customer.name} {customer.status === 'inactive' && '(Inactive)'}
                                     </MenuItem>
                                 ))}
                             </Select>
@@ -261,7 +268,7 @@ export function EquipmentDialog({
                             >
                                 {filteredPlants.map((plant) => (
                                     <MenuItem key={plant.id} value={plant.id}>
-                                        {plant.name}
+                                        {plant.name} {plant.status === 'inactive' && '(Inactive)'}
                                     </MenuItem>
                                 ))}
                             </Select>
@@ -279,7 +286,7 @@ export function EquipmentDialog({
                             >
                                 {filteredUnits.map((unit) => (
                                     <MenuItem key={unit.id} value={unit.id}>
-                                        {unit.name}
+                                        {unit.name} {unit.status === 'inactive' && '(Inactive)'}
                                     </MenuItem>
                                 ))}
                             </Select>
@@ -294,7 +301,7 @@ export function EquipmentDialog({
                             >
                                 {filteredAreas.map((area) => (
                                     <MenuItem key={area.id} value={area.id}>
-                                        {area.name}
+                                        {area.name} {area.status === 'inactive' && '(Inactive)'}
                                     </MenuItem>
                                 ))}
                             </Select>

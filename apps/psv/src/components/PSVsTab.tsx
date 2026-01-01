@@ -25,7 +25,8 @@ import {
     Stack,
     InputAdornment,
 } from "@mui/material";
-import { Add, Edit, Delete, Shield, Search, Bolt, AssignmentTurnedIn } from "@mui/icons-material";
+import { Add, Edit, Delete, Shield, Search, Bolt, AssignmentTurnedIn, Block } from "@mui/icons-material";
+import { ButtonGroup } from "@mui/material";
 import { areas, units, users } from "@/data/mockData";
 import { ProtectiveSystem } from "@/data/types";
 import { glassCardStyles } from "./styles";
@@ -46,7 +47,7 @@ export function PSVsTab() {
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const { unitSystem } = useProjectUnitSystem();
-    const { addProtectiveSystem, updateProtectiveSystem, deleteProtectiveSystem, fetchAllProtectiveSystems, arePsvsLoaded } = usePsvStore();
+    const { addProtectiveSystem, updateProtectiveSystem, deleteProtectiveSystem, softDeleteProtectiveSystem, fetchAllProtectiveSystems, arePsvsLoaded } = usePsvStore();
     const protectiveSystems = usePsvStore((state) => state.protectiveSystems);
     const [isLoadingInit, setIsLoadingInit] = useState(false);
 
@@ -62,7 +63,8 @@ export function PSVsTab() {
     const [selectedPSV, setSelectedPSV] = useState<ProtectiveSystem | null>(null);
     const [psvToDelete, setPsvToDelete] = useState<ProtectiveSystem | null>(null);
     const [searchText, setSearchText] = useState('');
-    type SortKey = 'tag' | 'area' | 'serviceFluid' | 'setPressure' | 'status' | 'owner';
+    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('active');
+    type SortKey = 'tag' | 'area' | 'serviceFluid' | 'setPressure' | 'status' | 'owner' | 'isActive';
     const [sortConfig, setSortConfig] = useState<SortConfig<SortKey> | null>(null);
 
     const handleAdd = () => {
@@ -80,14 +82,41 @@ export function PSVsTab() {
         setDeleteDialogOpen(true);
     };
 
-    const handleConfirmDelete = () => {
+    const handleConfirmDelete = async () => {
         if (psvToDelete) {
             try {
-                deleteProtectiveSystem(psvToDelete.id);
+                await softDeleteProtectiveSystem(psvToDelete.id);
                 setDeleteDialogOpen(false);
                 setPsvToDelete(null);
             } catch (error) {
                 console.error(error);
+            }
+        }
+    };
+
+    const handleToggleStatus = async (psv: ProtectiveSystem) => {
+        if (!canEdit) return;
+        const newStatus = !psv.isActive;
+        await updateProtectiveSystem(psv.id, { isActive: newStatus });
+
+        // Cascade UP: if activating, also activate parent Area, Unit, Plant, Customer
+        if (newStatus) {
+            const { areas, units, plants, customers, updateArea, updateUnit, updatePlant, updateCustomer } = usePsvStore.getState();
+            const area = areas.find(a => a.id === psv.areaId);
+            if (area && area.status === 'inactive') {
+                await updateArea(area.id, { status: 'active' });
+                const unit = units.find(u => u.id === area.unitId);
+                if (unit && unit.status === 'inactive') {
+                    await updateUnit(unit.id, { status: 'active' });
+                    const plant = plants.find(p => p.id === unit.plantId);
+                    if (plant && plant.status === 'inactive') {
+                        await updatePlant(plant.id, { status: 'active' });
+                        const customer = customers.find(c => c.id === plant.customerId);
+                        if (customer && customer.status === 'inactive') {
+                            await updateCustomer(customer.id, { status: 'active' });
+                        }
+                    }
+                }
             }
         }
     };
@@ -121,8 +150,12 @@ export function PSVsTab() {
         setDialogOpen(false);
     };
 
-    // Filter PSVs based on search text
+    // Filter PSVs based on search text and status
     const filteredPSVs = protectiveSystems.filter(psv => {
+        // Status filter
+        if (statusFilter === 'active' && !psv.isActive) return false;
+        if (statusFilter === 'inactive' && psv.isActive) return false;
+
         if (!searchText) return true;
         const search = searchText.toLowerCase();
         const area = areas.find(a => a.id === psv.areaId);
@@ -158,6 +191,8 @@ export function PSVsTab() {
                 const owner = users.find(u => u.id === psv.ownerId);
                 return (owner?.name || '').toLowerCase();
             }
+            case 'isActive':
+                return psv.isActive ? 1 : 0;
             default:
                 return '';
         }
@@ -169,7 +204,7 @@ export function PSVsTab() {
     );
 
     // Pagination
-  const [itemsPerPage, setItemsPerPage] = useLocalStorage('dashboard_items_per_page', 15);
+    const [itemsPerPage, setItemsPerPage] = useLocalStorage('dashboard_items_per_page', 15);
     const pagination = usePagination(sortedPSVs, {
         totalItems: sortedPSVs.length,
         itemsPerPage: itemsPerPage,
@@ -315,6 +350,28 @@ export function PSVsTab() {
                             ),
                         }}
                     />
+                    <ButtonGroup size="small">
+                        <Button
+                            variant={statusFilter === 'all' ? 'contained' : 'outlined'}
+                            onClick={() => setStatusFilter('all')}
+                        >
+                            All
+                        </Button>
+                        <Button
+                            variant={statusFilter === 'active' ? 'contained' : 'outlined'}
+                            onClick={() => setStatusFilter('active')}
+                            color="success"
+                        >
+                            Active
+                        </Button>
+                        <Button
+                            variant={statusFilter === 'inactive' ? 'contained' : 'outlined'}
+                            onClick={() => setStatusFilter('inactive')}
+                            color="warning"
+                        >
+                            Inactive
+                        </Button>
+                    </ButtonGroup>
                 </Stack>
             </Paper>
 
@@ -342,12 +399,25 @@ export function PSVsTab() {
                                                 {getTypeLabel(psv.type)}
                                             </Typography>
                                         </Box>
-                                        <Chip
-                                            label={getWorkflowStatusLabel(psv.status)}
-                                            size="small"
-                                            color={getWorkflowStatusColor(psv.status)}
-                                            sx={{ textTransform: 'capitalize', flexShrink: 0 }}
-                                        />
+                                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, alignItems: 'flex-end' }}>
+                                            <Chip
+                                                label={psv.isActive ? "Active" : "Inactive"}
+                                                size="small"
+                                                color={psv.isActive ? "success" : "warning"}
+                                                variant={psv.isActive ? "filled" : "outlined"}
+                                                onClick={() => handleToggleStatus(psv)}
+                                                sx={{
+                                                    cursor: canEdit ? 'pointer' : 'default',
+                                                    '&:hover': canEdit ? { opacity: 0.8 } : {}
+                                                }}
+                                            />
+                                            <Chip
+                                                label={getWorkflowStatusLabel(psv.status)}
+                                                size="small"
+                                                color={getWorkflowStatusColor(psv.status)}
+                                                sx={{ textTransform: 'capitalize', flexShrink: 0 }}
+                                            />
+                                        </Box>
                                     </Box>
 
                                     {/* Details Grid */}
@@ -419,20 +489,20 @@ export function PSVsTab() {
                     })}
 
                     {/* Pagination for mobile */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
-            <ItemsPerPageSelector
-              value={itemsPerPage}
-              onChange={setItemsPerPage}
-            />
-            <PaginationControls
-              currentPage={pagination.currentPage}
-              totalPages={pagination.totalPages}
-              pageNumbers={pagination.pageNumbers}
-              onPageChange={pagination.goToPage}
-              hasNextPage={pagination.hasNextPage}
-              hasPrevPage={pagination.hasPrevPage}
-            />
-          </Box>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+                        <ItemsPerPageSelector
+                            value={itemsPerPage}
+                            onChange={setItemsPerPage}
+                        />
+                        <PaginationControls
+                            currentPage={pagination.currentPage}
+                            totalPages={pagination.totalPages}
+                            pageNumbers={pagination.pageNumbers}
+                            onPageChange={pagination.goToPage}
+                            hasNextPage={pagination.hasNextPage}
+                            hasPrevPage={pagination.hasPrevPage}
+                        />
+                    </Box>
 
                     {pagination.pageItems.length === 0 && (
                         <Paper sx={{ ...glassCardStyles, p: 4, textAlign: 'center' }}>
@@ -454,6 +524,7 @@ export function PSVsTab() {
                                     <TableCell>{renderHeader('Service Fluid', 'serviceFluid')}</TableCell>
                                     <TableCell>{renderHeader('Set Pressure', 'setPressure')}</TableCell>
                                     <TableCell>{renderHeader('Status', 'status')}</TableCell>
+                                    <TableCell>{renderHeader('Active', 'isActive')}</TableCell>
                                     <TableCell>{renderHeader('Owner', 'owner')}</TableCell>
                                     <TableCell align="right">Actions</TableCell>
                                 </TableRow>
@@ -512,6 +583,19 @@ export function PSVsTab() {
                                                 />
                                             </TableCell>
                                             <TableCell>
+                                                <Chip
+                                                    label={psv.isActive ? "Active" : "Inactive"}
+                                                    size="small"
+                                                    color={psv.isActive ? "success" : "warning"}
+                                                    variant={psv.isActive ? "filled" : "outlined"}
+                                                    onClick={() => handleToggleStatus(psv)}
+                                                    sx={{
+                                                        cursor: canEdit ? 'pointer' : 'default',
+                                                        '&:hover': canEdit ? { opacity: 0.8 } : {}
+                                                    }}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
                                                 <Typography variant="body2">
                                                     {owner?.name || 'N/A'}
                                                 </Typography>
@@ -556,20 +640,20 @@ export function PSVsTab() {
                     </TableContainer>
 
                     {/* Pagination for desktop */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 2, px: 2 }}>
-            <ItemsPerPageSelector
-              value={itemsPerPage}
-              onChange={setItemsPerPage}
-            />
-            <PaginationControls
-              currentPage={pagination.currentPage}
-              totalPages={pagination.totalPages}
-              pageNumbers={pagination.pageNumbers}
-              onPageChange={pagination.goToPage}
-              hasNextPage={pagination.hasNextPage}
-              hasPrevPage={pagination.hasPrevPage}
-            />
-          </Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 2, px: 2 }}>
+                        <ItemsPerPageSelector
+                            value={itemsPerPage}
+                            onChange={setItemsPerPage}
+                        />
+                        <PaginationControls
+                            currentPage={pagination.currentPage}
+                            totalPages={pagination.totalPages}
+                            pageNumbers={pagination.pageNumbers}
+                            onPageChange={pagination.goToPage}
+                            hasNextPage={pagination.hasNextPage}
+                            hasPrevPage={pagination.hasPrevPage}
+                        />
+                    </Box>
                 </Paper>
             )}
 
@@ -594,13 +678,11 @@ export function PSVsTab() {
                     onConfirm={handleConfirmDelete}
                     onForceDelete={handleForceDelete}
                     allowForceDelete={canApprove}
-                    title="Delete PSV"
+                    title="Deactivate PSV?"
                     itemName={psvToDelete.tag}
-                    children={[
-                        { label: 'Scenario', count: 0 }, // TODO: Get from store
-                        { label: 'Equipment Link', count: 0 } // TODO: Get from store
-                    ]}
+                    showSoftDelete={true}
                 />
+
             )}
         </Box>
     );

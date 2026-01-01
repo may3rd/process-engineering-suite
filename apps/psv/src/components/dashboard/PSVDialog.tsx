@@ -161,10 +161,10 @@ export function PSVDialog({
         });
     };
 
-    const filteredPlants = customerId ? plants.filter(p => p.customerId === customerId) : [];
-    const filteredUnits = plantId ? units.filter(u => u.plantId === plantId) : [];
-    const filteredAreas = unitId ? areas.filter(a => a.unitId === unitId) : [];
-    const availableProjects = areaId ? projects.filter(p => p.areaId === areaId) : [];
+    const filteredPlants = customerId ? plants.filter(p => (p.status === 'active' || p.id === plantId) && p.customerId === customerId) : [];
+    const filteredUnits = plantId ? units.filter(u => (u.status === 'active' || u.id === unitId) && u.plantId === plantId) : [];
+    const filteredAreas = unitId ? areas.filter(a => (a.status === 'active' || a.id === areaId) && a.unitId === unitId) : [];
+    const availableProjects = areaId ? projects.filter(p => (p.isActive || projectIds.includes(p.id)) && p.areaId === areaId) : [];
     const statusEnabledForUser = (value: ProtectiveSystem['status']) => {
         switch (value) {
             case 'checked':
@@ -222,9 +222,9 @@ export function PSVDialog({
                                     }}
                                     label="Customer"
                                 >
-                                    {customers.map((customer) => (
+                                    {customers.filter(c => c.status === 'active' || c.id === customerId).map((customer) => (
                                         <MenuItem key={customer.id} value={customer.id}>
-                                            {customer.name}
+                                            {customer.name} {customer.status === 'inactive' && '(Inactive)'}
                                         </MenuItem>
                                     ))}
                                 </Select>
@@ -243,7 +243,7 @@ export function PSVDialog({
                                 >
                                     {filteredPlants.map((plant) => (
                                         <MenuItem key={plant.id} value={plant.id}>
-                                            {plant.name}
+                                            {plant.name} {plant.status === 'inactive' && '(Inactive)'}
                                         </MenuItem>
                                     ))}
                                 </Select>
@@ -261,7 +261,7 @@ export function PSVDialog({
                                 >
                                     {filteredUnits.map((unit) => (
                                         <MenuItem key={unit.id} value={unit.id}>
-                                            {unit.name}
+                                            {unit.name} {unit.status === 'inactive' && '(Inactive)'}
                                         </MenuItem>
                                     ))}
                                 </Select>
@@ -276,7 +276,7 @@ export function PSVDialog({
                                 >
                                     {filteredAreas.map((area) => (
                                         <MenuItem key={area.id} value={area.id}>
-                                            {area.name}
+                                            {area.name} {area.status === 'inactive' && '(Inactive)'}
                                         </MenuItem>
                                     ))}
                                 </Select>

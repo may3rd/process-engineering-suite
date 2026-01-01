@@ -17,7 +17,7 @@ import {
     TextField,
     Collapse,
 } from "@mui/material";
-import { Warning, Delete, DeleteForever } from "@mui/icons-material";
+import { Warning, Delete, DeleteForever, Block } from "@mui/icons-material";
 
 interface ChildRelationship {
     label: string;
@@ -27,13 +27,14 @@ interface ChildRelationship {
 interface DeleteConfirmDialogProps {
     open: boolean;
     onClose: () => void;
-    onConfirm: () => void;
-    onForceDelete?: () => void;  // New: cascade delete callback
+    onConfirm: () => void;  // Soft delete / Deactivate
+    onForceDelete?: () => void;  // Cascade delete (permanent)
     title: string;
     itemName: string;
     children?: ChildRelationship[];
     loading?: boolean;
-    allowForceDelete?: boolean;  // New: enable cascade delete option
+    allowForceDelete?: boolean;  // Enable cascade delete option
+    showSoftDelete?: boolean;  // Show deactivate option for items with children
 }
 
 export function DeleteConfirmDialog({
@@ -46,6 +47,7 @@ export function DeleteConfirmDialog({
     children = [],
     loading = false,
     allowForceDelete = false,
+    showSoftDelete = true,
 }: DeleteConfirmDialogProps) {
     const hasChildren = children.some(c => c.count > 0);
     const canDelete = !hasChildren;
@@ -112,6 +114,29 @@ export function DeleteConfirmDialog({
                             <Typography variant="body2" color="text.secondary">
                                 Please remove or reassign these items before deleting.
                             </Typography>
+
+                            {/* Soft Delete / Deactivate Option */}
+                            {showSoftDelete && (
+                                <Box sx={{ mt: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+                                    <Alert severity="info" sx={{ mb: 2 }}>
+                                        <AlertTitle>Recommended: Deactivate</AlertTitle>
+                                        Deactivating will preserve data for audit trails and allow reactivation later.
+                                    </Alert>
+                                    <Button
+                                        onClick={() => {
+                                            onConfirm();
+                                            handleClose();
+                                        }}
+                                        color="warning"
+                                        variant="contained"
+                                        startIcon={<Block />}
+                                        fullWidth
+                                        disabled={loading}
+                                    >
+                                        {loading ? 'Deactivating...' : `Deactivate All (${totalChildren + 1} items)`}
+                                    </Button>
+                                </Box>
+                            )}
 
                             {/* Force Delete Option */}
                             {allowForceDelete && onForceDelete && !showForceDelete && (

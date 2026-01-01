@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
     Box,
     Button,
+    ButtonGroup,
     Paper,
     Table,
     TableBody,
@@ -42,7 +43,8 @@ export function EquipmentTab() {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
-    const { addEquipment, updateEquipment, deleteEquipment, fetchAllEquipment, areEquipmentLoaded } = usePsvStore();
+    const { addEquipment, updateEquipment, deleteEquipment,
+        softDeleteEquipment, fetchAllEquipment, areEquipmentLoaded } = usePsvStore();
     const equipment = usePsvStore((state) => state.equipment);
 
     const [isLoadingInit, setIsLoadingInit] = useState(false);
@@ -59,6 +61,7 @@ export function EquipmentTab() {
     const [selectedEquipment, setSelectedEquipment] = useState<Equipment | null>(null);
     const [equipmentToDelete, setEquipmentToDelete] = useState<Equipment | null>(null);
     const [searchText, setSearchText] = useState('');
+    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
     type SortKey =
         | 'tag'
         | 'type'
@@ -85,10 +88,11 @@ export function EquipmentTab() {
         setDeleteDialogOpen(true);
     };
 
-    const handleConfirmDelete = () => {
+    const handleConfirmDelete = async () => {
         if (equipmentToDelete) {
             try {
-                deleteEquipment(equipmentToDelete.id);
+                // Use soft delete (cascade deactivation)
+                const result = await softDeleteEquipment(equipmentToDelete.id);
                 setDeleteDialogOpen(false);
                 setEquipmentToDelete(null);
             } catch (error) {
@@ -97,11 +101,43 @@ export function EquipmentTab() {
         }
     };
 
-    const handleForceDelete = () => {
+    const handleForceDelete = async () => {
         if (equipmentToDelete) {
-            console.log('Force delete equipment:', equipmentToDelete.id);
-            setDeleteDialogOpen(false);
-            setEquipmentToDelete(null);
+            try {
+                const { deleteEquipment } = usePsvStore.getState();
+                await deleteEquipment(equipmentToDelete.id);
+                setDeleteDialogOpen(false);
+                setEquipmentToDelete(null);
+            } catch (error) {
+                console.error('Force delete failed:', error);
+            }
+        }
+    };
+
+    const handleToggleStatus = async (equip: Equipment) => {
+        if (!canEdit) return;
+        const newStatus = equip.status === 'active' ? 'inactive' : 'active';
+        await updateEquipment(equip.id, { status: newStatus });
+
+        // Cascade UP: if activating, also activate all parent entities
+        if (newStatus === 'active') {
+            const { areas, units, plants, customers, updateArea, updateUnit, updatePlant, updateCustomer } = usePsvStore.getState();
+            const area = areas.find(a => a.id === equip.areaId);
+            if (area && area.status === 'inactive') {
+                await updateArea(area.id, { status: 'active' });
+                const unit = units.find(u => u.id === area.unitId);
+                if (unit && unit.status === 'inactive') {
+                    await updateUnit(unit.id, { status: 'active' });
+                    const plant = plants.find(p => p.id === unit.plantId);
+                    if (plant && plant.status === 'inactive') {
+                        await updatePlant(plant.id, { status: 'active' });
+                        const customer = customers.find(c => c.id === plant.customerId);
+                        if (customer && customer.status === 'inactive') {
+                            await updateCustomer(customer.id, { status: 'active' });
+                        }
+                    }
+                }
+            }
         }
     };
 
@@ -171,7 +207,7 @@ export function EquipmentTab() {
     );
 
     // Pagination
-  const [itemsPerPage, setItemsPerPage] = useLocalStorage('dashboard_items_per_page', 15);
+    const [itemsPerPage, setItemsPerPage] = useLocalStorage('dashboard_items_per_page', 15);
     const pagination = usePagination(sortedEquipment, {
         totalItems: sortedEquipment.length,
         itemsPerPage: itemsPerPage,
@@ -317,6 +353,29 @@ export function EquipmentTab() {
                             ),
                         }}
                     />
+                    {/* Status Filter */}
+                    <ButtonGroup size="small" sx={{ flexShrink: 0 }}>
+                        <Button
+                            variant={statusFilter === 'all' ? 'contained' : 'outlined'}
+                            onClick={() => setStatusFilter('all')}
+                        >
+                            All ({equipment.length})
+                        </Button>
+                        <Button
+                            variant={statusFilter === 'active' ? 'contained' : 'outlined'}
+                            color="success"
+                            onClick={() => setStatusFilter('active')}
+                        >
+                            Active ({equipment.filter(e => e.status === 'active').length})
+                        </Button>
+                        <Button
+                            variant={statusFilter === 'inactive' ? 'contained' : 'outlined'}
+                            color="warning"
+                            onClick={() => setStatusFilter('inactive')}
+                        >
+                            Inactive ({equipment.filter(e => e.status === 'inactive').length})
+                        </Button>
+                    </ButtonGroup>
                 </Stack>
             </Paper>
 
@@ -384,7 +443,14 @@ export function EquipmentTab() {
                                                 label={equip.status}
                                                 size="small"
                                                 color={equip.status === 'active' ? 'success' : 'default'}
-                                                sx={{ textTransform: 'capitalize', mt: 0.5 }}
+                                                variant={equip.status === 'active' ? 'filled' : 'outlined'}
+                                                onClick={() => handleToggleStatus(equip)}
+                                                sx={{
+                                                    textTransform: 'capitalize',
+                                                    mt: 0.5,
+                                                    cursor: canEdit ? 'pointer' : 'default',
+                                                    '&:hover': canEdit ? { opacity: 0.8 } : {},
+                                                }}
                                             />
                                         </Box>
                                         <Box>
@@ -435,20 +501,20 @@ export function EquipmentTab() {
                     })}
 
                     {/* Pagination for mobile */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
-            <ItemsPerPageSelector
-              value={itemsPerPage}
-              onChange={setItemsPerPage}
-            />
-            <PaginationControls
-              currentPage={pagination.currentPage}
-              totalPages={pagination.totalPages}
-              pageNumbers={pagination.pageNumbers}
-              onPageChange={pagination.goToPage}
-              hasNextPage={pagination.hasNextPage}
-              hasPrevPage={pagination.hasPrevPage}
-            />
-          </Box>
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+                        <ItemsPerPageSelector
+                            value={itemsPerPage}
+                            onChange={setItemsPerPage}
+                        />
+                        <PaginationControls
+                            currentPage={pagination.currentPage}
+                            totalPages={pagination.totalPages}
+                            pageNumbers={pagination.pageNumbers}
+                            onPageChange={pagination.goToPage}
+                            hasNextPage={pagination.hasNextPage}
+                            hasPrevPage={pagination.hasPrevPage}
+                        />
+                    </Box>
 
                     {pagination.pageItems.length === 0 && (
                         <Paper sx={{ ...glassCardStyles, p: 4, textAlign: 'center' }}>
@@ -536,7 +602,13 @@ export function EquipmentTab() {
                                                     label={equip.status}
                                                     size="small"
                                                     color={equip.status === 'active' ? 'success' : 'default'}
-                                                    sx={{ textTransform: 'capitalize' }}
+                                                    variant={equip.status === 'active' ? 'filled' : 'outlined'}
+                                                    onClick={() => handleToggleStatus(equip)}
+                                                    sx={{
+                                                        textTransform: 'capitalize',
+                                                        cursor: canEdit ? 'pointer' : 'default',
+                                                        '&:hover': canEdit ? { opacity: 0.8 } : {},
+                                                    }}
                                                 />
                                             </TableCell>
                                             <TableCell>
@@ -584,20 +656,20 @@ export function EquipmentTab() {
                     </TableContainer>
 
                     {/* Pagination for desktop */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 2, px: 2 }}>
-            <ItemsPerPageSelector
-              value={itemsPerPage}
-              onChange={setItemsPerPage}
-            />
-            <PaginationControls
-              currentPage={pagination.currentPage}
-              totalPages={pagination.totalPages}
-              pageNumbers={pagination.pageNumbers}
-              onPageChange={pagination.goToPage}
-              hasNextPage={pagination.hasNextPage}
-              hasPrevPage={pagination.hasPrevPage}
-            />
-          </Box>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 2, px: 2 }}>
+                        <ItemsPerPageSelector
+                            value={itemsPerPage}
+                            onChange={setItemsPerPage}
+                        />
+                        <PaginationControls
+                            currentPage={pagination.currentPage}
+                            totalPages={pagination.totalPages}
+                            pageNumbers={pagination.pageNumbers}
+                            onPageChange={pagination.goToPage}
+                            hasNextPage={pagination.hasNextPage}
+                            hasPrevPage={pagination.hasPrevPage}
+                        />
+                    </Box>
                 </Paper>
             )}
 

@@ -4,6 +4,7 @@ import { useMemo, useState, useEffect } from "react";
 import {
   Box,
   Button,
+  ButtonGroup,
   Paper,
   Table,
   TableBody,
@@ -54,6 +55,7 @@ export function UnitsTab() {
     addUnit,
     updateUnit,
     deleteUnit,
+    softDeleteUnit,
     fetchAllUnits,
     areUnitsLoaded,
     fetchAllAreas,
@@ -94,6 +96,7 @@ export function UnitsTab() {
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
   const [unitToDelete, setUnitToDelete] = useState<Unit | null>(null);
   const [searchText, setSearchText] = useState("");
+  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
   type SortKey = "code" | "plant" | "owner" | "areas" | "status" | "created";
   const [sortConfig, setSortConfig] = useState<SortConfig<SortKey> | null>(
     null,
@@ -114,10 +117,11 @@ export function UnitsTab() {
     setDeleteDialogOpen(true);
   };
 
-  const handleConfirmDelete = () => {
+  const handleConfirmDelete = async () => {
     if (unitToDelete) {
       try {
-        deleteUnit(unitToDelete.id);
+        // Use soft delete (cascade deactivation)
+        const result = await softDeleteUnit(unitToDelete.id);
         setDeleteDialogOpen(false);
         setUnitToDelete(null);
       } catch (error) {
@@ -126,28 +130,29 @@ export function UnitsTab() {
     }
   };
 
-  const handleForceDelete = () => {
+  const handleForceDelete = async () => {
     if (unitToDelete) {
-      // Cascade delete: delete unit and all areas, projects, PSVs, equipment
-      const { areas, projects, protectiveSystems, equipment } =
-        usePsvStore.getState();
+      try {
+        const { areas, projects, protectiveSystems, equipment,
+          deleteEquipment, deleteProtectiveSystem, deleteProject, deleteArea, deleteUnit } = usePsvStore.getState();
 
-      const areasToDelete = areas.filter((a) => a.unitId === unitToDelete.id);
-      const areaIds = areasToDelete.map((a) => a.id);
+        const areasToDelete = areas.filter(a => a.unitId === unitToDelete.id);
+        const areaIds = areasToDelete.map(a => a.id);
+        const projectsToDelete = projects.filter(p => areaIds.includes(p.areaId));
+        const psvsToDelete = protectiveSystems.filter(p => areaIds.includes(p.areaId));
+        const equipmentToDeleteList = equipment.filter(e => areaIds.includes(e.areaId));
 
-      // Delete all entities from bottom-up
-      usePsvStore.setState((state) => ({
-        equipment: state.equipment.filter((e) => !areaIds.includes(e.areaId)),
-        protectiveSystems: state.protectiveSystems.filter(
-          (p) => !areaIds.includes(p.areaId),
-        ),
-        projects: state.projects.filter((p) => !areaIds.includes(p.areaId)),
-        areas: state.areas.filter((a) => a.unitId !== unitToDelete.id),
-        units: state.units.filter((u) => u.id !== unitToDelete.id),
-      }));
+        for (const e of equipmentToDeleteList) await deleteEquipment(e.id);
+        for (const psv of psvsToDelete) await deleteProtectiveSystem(psv.id);
+        for (const project of projectsToDelete) await deleteProject(project.id);
+        for (const area of areasToDelete) await deleteArea(area.id);
+        await deleteUnit(unitToDelete.id);
 
-      setDeleteDialogOpen(false);
-      setUnitToDelete(null);
+        setDeleteDialogOpen(false);
+        setUnitToDelete(null);
+      } catch (error) {
+        console.error('Force delete failed:', error);
+      }
     }
   };
 
@@ -160,12 +165,39 @@ export function UnitsTab() {
     setDialogOpen(false);
   };
 
+  const handleToggleStatus = async (unit: Unit) => {
+    if (!canEdit) return;
+    const newStatus = unit.status === 'active' ? 'inactive' : 'active';
+
+    if (newStatus === 'inactive') {
+      // Cascade DOWN: deactivate unit and all children (Areas, Equipment)
+      await softDeleteUnit(unit.id);
+    } else {
+      // Activate the unit
+      await updateUnit(unit.id, { status: 'active' });
+      // Cascade UP: also activate parent Plant and Customer
+      const { plants, customers, updatePlant, updateCustomer } = usePsvStore.getState();
+      const plant = plants.find(p => p.id === unit.plantId);
+      if (plant && plant.status === 'inactive') {
+        await updatePlant(plant.id, { status: 'active' });
+        const customer = customers.find(c => c.id === plant.customerId);
+        if (customer && customer.status === 'inactive') {
+          await updateCustomer(customer.id, { status: 'active' });
+        }
+      }
+    }
+  };
+
+
   const getAreaCount = (unitId: string) => {
     return areas.filter((a) => a.unitId === unitId).length;
   };
 
   // Filter units based on search text
   const filteredUnits = units.filter((unit) => {
+    // Status filter
+    if (statusFilter !== 'all' && unit.status !== statusFilter) return false;
+
     if (!searchText) return true;
     const search = searchText.toLowerCase();
     const plant = plants.find((p) => p.id === unit.plantId);
@@ -381,6 +413,29 @@ export function UnitsTab() {
               ),
             }}
           />
+          {/* Status Filter */}
+          <ButtonGroup size="small" sx={{ flexShrink: 0 }}>
+            <Button
+              variant={statusFilter === 'all' ? 'contained' : 'outlined'}
+              onClick={() => setStatusFilter('all')}
+            >
+              All ({units.length})
+            </Button>
+            <Button
+              variant={statusFilter === 'active' ? 'contained' : 'outlined'}
+              color="success"
+              onClick={() => setStatusFilter('active')}
+            >
+              Active ({units.filter(e => e.status === 'active').length})
+            </Button>
+            <Button
+              variant={statusFilter === 'inactive' ? 'contained' : 'outlined'}
+              color="warning"
+              onClick={() => setStatusFilter('inactive')}
+            >
+              Inactive ({units.filter(e => e.status === 'inactive').length})
+            </Button>
+          </ButtonGroup>
         </Stack>
       </Paper>
 
@@ -393,7 +448,10 @@ export function UnitsTab() {
             const areaCount = getAreaCount(unit.id);
 
             return (
-              <Card key={unit.id} sx={{ ...glassCardStyles }}>
+              <Card key={unit.id} sx={{
+                ...glassCardStyles,
+                opacity: unit.status === 'inactive' ? 0.6 : 1,
+              }}>
                 <CardContent sx={{ pb: 1 }}>
                   <Box
                     sx={{
@@ -418,8 +476,14 @@ export function UnitsTab() {
                     <Chip
                       label={unit.status}
                       size="small"
-                      color={unit.status === "active" ? "success" : "default"}
-                      sx={{ textTransform: "capitalize" }}
+                      color={unit.status === 'active' ? 'success' : 'default'}
+                      variant={unit.status === 'active' ? 'filled' : 'outlined'}
+                      onClick={() => handleToggleStatus(unit)}
+                      sx={{
+                        textTransform: 'capitalize',
+                        cursor: canEdit ? 'pointer' : 'default',
+                        '&:hover': canEdit ? { opacity: 0.8 } : {},
+                      }}
                     />
                   </Box>
 
@@ -548,6 +612,8 @@ export function UnitsTab() {
                       key={unit.id}
                       hover
                       sx={{
+                        opacity: unit.status === 'inactive' ? 0.5 : 1,
+                        bgcolor: unit.status === 'inactive' ? 'action.disabledBackground' : 'transparent',
                         "&:last-child td": {
                           borderBottom: 0,
                         },
@@ -582,10 +648,14 @@ export function UnitsTab() {
                         <Chip
                           label={unit.status}
                           size="small"
-                          color={
-                            unit.status === "active" ? "success" : "default"
-                          }
-                          sx={{ textTransform: "capitalize" }}
+                          color={unit.status === 'active' ? 'success' : 'default'}
+                          variant={unit.status === 'active' ? 'filled' : 'outlined'}
+                          onClick={() => handleToggleStatus(unit)}
+                          sx={{
+                            textTransform: 'capitalize',
+                            cursor: canEdit ? 'pointer' : 'default',
+                            '&:hover': canEdit ? { opacity: 0.8 } : {},
+                          }}
                         />
                       </TableCell>
                       <TableCell>

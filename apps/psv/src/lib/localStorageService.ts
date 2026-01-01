@@ -418,6 +418,7 @@ class LocalStorageService {
             leadId: data.leadId || '',
             startDate: data.startDate || now().split('T')[0],
             endDate: data.endDate,
+            isActive: data.isActive ?? true,
             createdAt: now(),
         };
         projects.push(newProject);
@@ -475,6 +476,7 @@ class LocalStorageService {
             tags: data.tags || [],
             inletNetwork: data.inletNetwork,
             outletNetwork: data.outletNetwork,
+            isActive: data.isActive ?? true,
             version: 1,
             createdAt: now(),
             updatedAt: now(),

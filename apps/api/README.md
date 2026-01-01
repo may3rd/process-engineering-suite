@@ -160,9 +160,20 @@ async def read_items(db: Session = Depends(get_db)):
 # Generate migration
 alembic revision --autogenerate -m "Add new table"
 
-# Apply migrations
+# Apply migrations (Docker/Production - uses /app paths)
 alembic upgrade head
+
+# Apply migrations (Local Development - uses relative paths)
+alembic -c alembic.local.ini upgrade head
+
+# Check current revision
+alembic -c alembic.local.ini current
+
+# Show migration history
+alembic -c alembic.local.ini history
 ```
+
+> **Note**: Use `alembic.local.ini` for local development. The default `alembic.ini` uses Docker paths (`/app/...`).
 
 ## Related Documentation
 

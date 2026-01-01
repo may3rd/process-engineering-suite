@@ -158,6 +158,7 @@ export function ProjectDialog({
             startDate,
             endDate: endDate || undefined,
             leadId,
+            isActive: project?.isActive ?? true,
         });
     };
 
@@ -222,9 +223,9 @@ export function ProjectDialog({
                             }}
                             label="Customer"
                         >
-                            {customers.map((customer) => (
+                            {customers.filter(c => c.status === 'active' || c.id === customerId).map((customer) => (
                                 <MenuItem key={customer.id} value={customer.id}>
-                                    {customer.name} ({customer.code})
+                                    {customer.name} ({customer.code}) {customer.status === 'inactive' && '(Inactive)'}
                                 </MenuItem>
                             ))}
                         </Select>
@@ -242,9 +243,9 @@ export function ProjectDialog({
                             }}
                             label="Plant"
                         >
-                            {filteredPlants.map((plant) => (
+                            {filteredPlants.filter(p => p.status === 'active' || p.id === plantId).map((plant) => (
                                 <MenuItem key={plant.id} value={plant.id}>
-                                    {plant.name} ({plant.code})
+                                    {plant.name} ({plant.code}) {plant.status === 'inactive' && '(Inactive)'}
                                 </MenuItem>
                             ))}
                         </Select>
@@ -261,9 +262,9 @@ export function ProjectDialog({
                             }}
                             label="Unit"
                         >
-                            {filteredUnits.map((unit) => (
+                            {filteredUnits.filter(u => u.status === 'active' || u.id === unitId).map((unit) => (
                                 <MenuItem key={unit.id} value={unit.id}>
-                                    {unit.name} ({unit.code})
+                                    {unit.name} ({unit.code}) {unit.status === 'inactive' && '(Inactive)'}
                                 </MenuItem>
                             ))}
                         </Select>
@@ -277,9 +278,9 @@ export function ProjectDialog({
                             onChange={(e) => setAreaId(e.target.value)}
                             label="Area"
                         >
-                            {filteredAreas.map((area) => (
+                            {filteredAreas.filter(a => a.status === 'active' || a.id === areaId).map((area) => (
                                 <MenuItem key={area.id} value={area.id}>
-                                    {area.name} ({area.code})
+                                    {area.name} ({area.code}) {area.status === 'inactive' && '(Inactive)'}
                                 </MenuItem>
                             ))}
                         </Select>
