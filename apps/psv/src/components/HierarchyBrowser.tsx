@@ -161,7 +161,7 @@ export function HierarchyBrowser() {
         }
         switch (status) {
             case 'active': return 'success';
-            case 'inactive': return 'error';
+            case 'inactive': return 'default';
             case 'construction': return 'warning';
             case 'design': return 'default';
             default: return 'default';
@@ -459,7 +459,7 @@ export function HierarchyBrowser() {
                             <Button
                                 size="small"
                                 variant={statusFilter === 'inactive' ? 'contained' : 'text'}
-                                color={statusFilter === 'inactive' ? 'error' : 'inherit'}
+                                color={statusFilter === 'inactive' ? 'inherit' : 'inherit'}
                                 onClick={() => setStatusFilter('inactive')}
                                 sx={{
                                     textTransform: 'none',
