@@ -53,6 +53,7 @@ import { SortConfig, toggleSortConfig, sortByGetter } from "@/lib/sortUtils";
 import { TableSortButton } from "@/components/shared/TableSortButton";
 import { MarkdownPreview } from "@/components/shared/MarkdownEditor";
 import { formatPressureGauge, formatTemperatureC, formatMassFlowKgH } from "@/lib/projectUnits";
+import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 
 type ScenarioSortKey = 'cause' | 'rate' | 'created';
 
@@ -247,6 +248,7 @@ export function ScenariosTab() {
             setPressure: fireScenario.setPressure ?? selectedPsv.setPressure,
             caseConsideration: fireScenario.caseConsideration,
             fireCalculation: fireScenario.fireCalculation,
+            isActive: true,
             createdAt: now,
             updatedAt: now,
         };

@@ -81,6 +81,7 @@ describe("PSV Sizing End-to-End Workflow", () => {
       },
       status: "draft" as const,
       createdBy: "user-1",
+      isActive: true,
       createdAt: "2024-01-01T00:00:00Z",
       updatedAt: "2024-01-01T00:00:00Z",
     };

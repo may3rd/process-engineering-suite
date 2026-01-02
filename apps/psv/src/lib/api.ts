@@ -392,6 +392,7 @@ export class ApiClient {
       createdAt: raw.createdAt,
       updatedBy: raw.updatedBy,
       updatedAt: raw.updatedAt,
+      isActive: raw.isActive ?? true,
     };
   }
 
@@ -462,6 +463,7 @@ export class ApiClient {
       createdAt: raw.createdAt,
       updatedBy: raw.updatedBy,
       updatedAt: raw.updatedAt,
+      isActive: raw.isActive ?? true,
     };
   }
 
@@ -502,6 +504,7 @@ export class ApiClient {
       dueDate: raw.dueDate,
       createdBy: raw.createdBy,
       createdAt: raw.createdAt,
+      isActive: raw.isActive ?? true,
     };
   }
 
@@ -545,6 +548,13 @@ export class ApiClient {
 
   async deleteAttachment(id: string): Promise<void> {
     await this.request(`/attachments/${id}`, { method: "DELETE" });
+  }
+
+  async updateAttachment(id: string, data: Partial<Attachment>): Promise<Attachment> {
+    return this.request<Attachment>(`/attachments/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
   }
 
   // --- Admin ---

@@ -236,6 +236,7 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
             unitPreferences: getDefaultUnitPreferences(unitSystem),
             status: 'draft',
             createdBy: selectedPsv.ownerId,
+            isActive: true,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
         };

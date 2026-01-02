@@ -129,6 +129,7 @@ describe("generatePsvSummaryPdf", () => {
       tags: [],
       createdAt: "2024-01-01T00:00:00Z",
       updatedAt: "2024-01-15T00:00:00Z",
+      isActive: true,
     } as ProtectiveSystem,
     scenarios: [
       {
@@ -147,6 +148,7 @@ describe("generatePsvSummaryPdf", () => {
         isGoverning: true,
         createdAt: "2024-01-01T00:00:00Z",
         updatedAt: "2024-01-01T00:00:00Z",
+        isActive: true,
       },
     ] as OverpressureScenario[],
     sizingCases: [
@@ -169,6 +171,7 @@ describe("generatePsvSummaryPdf", () => {
         createdBy: "user-1",
         createdAt: "2024-01-01T00:00:00Z",
         updatedAt: "2024-01-01T00:00:00Z",
+        isActive: true,
       },
     ] as SizingCase[],
     unitSystem: "metric",

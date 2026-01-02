@@ -77,6 +77,7 @@ describe("exportScenariosToExcel", () => {
       isGoverning: true,
       createdAt: "2024-01-01T00:00:00Z",
       updatedAt: "2024-01-01T00:00:00Z",
+      isActive: true,
     },
     {
       id: "scenario-2",
@@ -94,6 +95,7 @@ describe("exportScenariosToExcel", () => {
       isGoverning: false,
       createdAt: "2024-01-02T00:00:00Z",
       updatedAt: "2024-01-02T00:00:00Z",
+      isActive: true,
     },
   ];
 
@@ -113,6 +115,7 @@ describe("exportScenariosToExcel", () => {
     tags: ["tag1", "tag2"],
     createdAt: "2024-01-01T00:00:00Z",
     updatedAt: "2024-01-15T00:00:00Z",
+    isActive: true,
   });
 
   it("should create a new workbook", () => {
@@ -231,6 +234,7 @@ describe("exportScenariosToExcel", () => {
         isGoverning: true,
         createdAt: "2024-01-01T00:00:00Z",
         updatedAt: "2024-01-01T00:00:00Z",
+        isActive: true,
       },
     ];
     const psv = createMockPsv();

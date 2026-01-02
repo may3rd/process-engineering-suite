@@ -556,6 +556,7 @@ class LocalStorageService {
             codeRefs: data.codeRefs || [],
             isGoverning: data.isGoverning || false,
             caseConsideration: data.caseConsideration,
+            isActive: data.isActive ?? true,
             version: 1,
             createdAt: now(),
             updatedAt: now(),
@@ -653,6 +654,7 @@ class LocalStorageService {
             status: data.status || 'draft',
             createdBy: data.createdBy || '',
             approvedBy: data.approvedBy,
+            isActive: data.isActive ?? true,
             createdAt: now(),
             updatedAt: now(),
         };
@@ -762,6 +764,7 @@ class LocalStorageService {
             createdAt: now(),
             updatedAt: data.updatedAt,
             updatedBy: data.updatedBy,
+            isActive: data.isActive ?? true,
         };
         notes.push(newNote);
         setItem(STORAGE_KEYS.NOTES, notes);
@@ -805,6 +808,7 @@ class LocalStorageService {
             createdAt: now(),
             updatedAt: data.updatedAt,
             updatedBy: data.updatedBy,
+            isActive: data.isActive ?? true,
         };
         comments.push(newComment);
         setItem(STORAGE_KEYS.COMMENTS, comments);
@@ -849,6 +853,7 @@ class LocalStorageService {
             dueDate: data.dueDate,
             createdBy: data.createdBy || '',
             createdAt: now(),
+            isActive: data.isActive ?? true,
         };
         todos.push(newTodo);
         setItem(STORAGE_KEYS.TODOS, todos);
@@ -888,6 +893,7 @@ class LocalStorageService {
             size: data.size || 0,
             uploadedBy: data.uploadedBy || '',
             createdAt: now(),
+            isActive: data.isActive ?? true,
         };
         attachments.push(newAttachment);
         setItem(STORAGE_KEYS.ATTACHMENTS, attachments);
@@ -897,6 +903,16 @@ class LocalStorageService {
     async deleteAttachment(id: string): Promise<void> {
         const attachments = getItem<Attachment>(STORAGE_KEYS.ATTACHMENTS, mockAttachments);
         setItem(STORAGE_KEYS.ATTACHMENTS, attachments.filter(a => a.id !== id));
+    }
+
+    async updateAttachment(id: string, data: Partial<Attachment>): Promise<Attachment> {
+        const attachments = getItem<Attachment>(STORAGE_KEYS.ATTACHMENTS, mockAttachments);
+        const index = attachments.findIndex(a => a.id === id);
+        if (index === -1) throw new Error('Attachment not found');
+
+        attachments[index] = { ...attachments[index], ...data };
+        setItem(STORAGE_KEYS.ATTACHMENTS, attachments);
+        return attachments[index];
     }
 
     // --- Utility: Reset demo data ---
@@ -971,6 +987,7 @@ class LocalStorageService {
             originatedAt: new Date().toISOString(),
             snapshot: data.snapshot,
             createdAt: new Date().toISOString(),
+            isActive: true,
         };
 
         all.push(newRevision);

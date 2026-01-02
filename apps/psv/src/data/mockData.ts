@@ -647,6 +647,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: false,
         createdAt: '2024-06-12T10:00:00Z',
         updatedAt: '2024-06-12T10:00:00Z',
+    isActive: true,
     },
     {
         id: '3143ab0b-1d8d-4e05-a3c3-ba619616ff9a',
@@ -669,6 +670,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-06-15T10:00:00Z',
         updatedAt: '2024-09-10T14:00:00Z',
+    isActive: true,
     },
     {
         id: '9da5b757-930b-4ae3-97cf-c806ee8072c6',
@@ -689,6 +691,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-06-20T10:00:00Z',
         updatedAt: '2024-08-15T10:00:00Z',
+    isActive: true,
     },
     {
         id: 'eb0dd53f-d7ce-4fa5-b322-ec1dbd613792',
@@ -710,6 +713,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-07-28T10:00:00Z',
         updatedAt: '2024-07-28T10:00:00Z',
+    isActive: true,
     },
     {
         id: 'd7835008-2b70-4f7f-9777-a7e86e529a57',
@@ -731,6 +735,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-08-20T10:00:00Z',
         updatedAt: '2024-09-18T10:00:00Z',
+    isActive: true,
     },
     {
         id: 'aa033994-d80b-415c-ac95-44304bb8e827',
@@ -752,6 +757,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: false,
         createdAt: '2024-08-22T10:00:00Z',
         updatedAt: '2024-08-22T10:00:00Z',
+    isActive: true,
     },
     // Preheat Exchanger Thermal Expansion Scenarios
     {
@@ -770,6 +776,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-01-15T10:00:00Z',
         updatedAt: '2024-01-15T10:00:00Z',
+    isActive: true,
     },
     {
         id: 'fec6e67c-2d85-4c9c-8420-2ebff04e7b4b',
@@ -787,6 +794,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-01-15T10:00:00Z',
         updatedAt: '2024-01-15T10:00:00Z',
+    isActive: true,
     },
     {
         id: '41eeabf7-cb0c-4d19-a89b-8ee52b2702d6',
@@ -804,6 +812,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-09-05T10:00:00Z',
         updatedAt: '2024-09-05T10:00:00Z',
+    isActive: true,
     },
     {
         id: 'e179b0a4-a0ca-40c2-85ec-8721f9da5625',
@@ -821,6 +830,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-09-05T10:00:00Z',
         updatedAt: '2024-09-05T10:00:00Z',
+    isActive: true,
     },
     // Pump Discharge PRV Scenarios
     {
@@ -839,6 +849,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-09-10T10:00:00Z',
         updatedAt: '2024-09-10T10:00:00Z',
+    isActive: true,
     },
     {
         id: '1b74df0c-31db-47d8-92a2-5ffc10ec3bf4',
@@ -856,6 +867,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-09-10T10:00:00Z',
         updatedAt: '2024-09-10T10:00:00Z',
+    isActive: true,
     },
     // Vacuum Column Scenarios
     {
@@ -874,6 +886,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-10-05T10:00:00Z',
         updatedAt: '2024-10-05T10:00:00Z',
+    isActive: true,
     },
     {
         id: '6decf2f9-4c6a-4f28-8f50-1753775aad38',
@@ -891,6 +904,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-10-05T10:00:00Z',
         updatedAt: '2024-10-05T10:00:00Z',
+    isActive: true,
     },
     {
         id: '21a8c7b4-45b3-43f5-8339-1c4010690176',
@@ -908,6 +922,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-05-20T10:00:00Z',
         updatedAt: '2024-05-20T10:00:00Z',
+    isActive: true,
     },
     // Furnace Area Scenarios
     {
@@ -926,6 +941,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-03-10T10:00:00Z',
         updatedAt: '2024-03-10T10:00:00Z',
+    isActive: true,
     },
     {
         id: 'faae218f-9c39-4552-90d7-efc32f740e77',
@@ -943,6 +959,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: false,
         createdAt: '2024-03-10T10:00:00Z',
         updatedAt: '2024-03-10T10:00:00Z',
+    isActive: true,
     },
     {
         id: 'ba977d7e-d907-4911-94dd-409a7f9fa19f',
@@ -960,6 +977,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-11-05T10:00:00Z',
         updatedAt: '2024-11-05T10:00:00Z',
+    isActive: true,
     },
     {
         id: '4ce58915-e0f3-40d2-852b-873d2d8cea95',
@@ -977,6 +995,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: false,
         createdAt: '2024-11-05T10:00:00Z',
         updatedAt: '2024-11-05T10:00:00Z',
+    isActive: true,
     },
     {
         id: 'f8fd97c2-7e95-46ba-8ef4-9efafa7dc7e0',
@@ -994,6 +1013,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-11-08T10:00:00Z',
         updatedAt: '2024-11-08T10:00:00Z',
+    isActive: true,
     },
     {
         id: '97ba30bf-a35f-48ad-af75-8b8108cc49e5',
@@ -1011,6 +1031,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-11-08T10:00:00Z',
         updatedAt: '2024-11-08T10:00:00Z',
+    isActive: true,
     },
     // LNG Area Scenarios
     {
@@ -1029,6 +1050,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-08-10T10:00:00Z',
         updatedAt: '2024-08-10T10:00:00Z',
+    isActive: true,
     },
     {
         id: 'df16c2ae-793b-490c-b66b-726bdc0e95b0',
@@ -1046,6 +1068,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: false,
         createdAt: '2024-08-10T10:00:00Z',
         updatedAt: '2024-08-10T10:00:00Z',
+    isActive: true,
     },
     {
         id: '3e1b1fc0-afec-46be-8e24-4083ac336cb8',
@@ -1063,6 +1086,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-09-20T10:00:00Z',
         updatedAt: '2024-09-20T10:00:00Z',
+    isActive: true,
     },
     {
         id: '228336da-6564-4b2f-b065-e785111ca273',
@@ -1080,6 +1104,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-09-20T10:00:00Z',
         updatedAt: '2024-09-20T10:00:00Z',
+    isActive: true,
     },
     {
         id: '3c486469-3abf-475c-b804-0f5c605a33f3',
@@ -1097,6 +1122,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-09-20T10:00:00Z',
         updatedAt: '2024-09-20T10:00:00Z',
+    isActive: true,
     },
     {
         id: 'f57f2b74-a44b-44ad-9568-eb9aa659d082',
@@ -1114,6 +1140,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-09-20T10:00:00Z',
         updatedAt: '2024-09-20T10:00:00Z',
+    isActive: true,
     },
     {
         id: '26f130c5-b86a-4b62-b433-c9737db727ca',
@@ -1131,6 +1158,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: false,
         createdAt: '2024-09-20T10:00:00Z',
         updatedAt: '2024-09-20T10:00:00Z',
+    isActive: true,
     },
     // Atmospheric Stabilizer Area Scenarios
     {
@@ -1149,6 +1177,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-08-25T10:00:00Z',
         updatedAt: '2024-08-25T10:00:00Z',
+    isActive: true,
     },
     {
         id: '288aaaa2-bdf8-4847-a78c-071b014326d3',
@@ -1166,6 +1195,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-08-25T10:00:00Z',
         updatedAt: '2024-08-25T10:00:00Z',
+    isActive: true,
     },
     {
         id: '92a56d6f-2a4b-41e5-9ac8-0345e9e00794',
@@ -1183,6 +1213,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: false,
         createdAt: '2024-08-25T10:00:00Z',
         updatedAt: '2024-08-25T10:00:00Z',
+    isActive: true,
     },
     {
         id: '99ad18b2-735a-4e55-bf4c-93865f156e5a',
@@ -1200,6 +1231,7 @@ export const scenarios: OverpressureScenario[] = [
         isGoverning: true,
         createdAt: '2024-08-25T10:00:00Z',
         updatedAt: '2024-08-25T10:00:00Z',
+    isActive: true,
     },
 ];
 
@@ -1250,6 +1282,7 @@ export const sizingCases: SizingCase[] = [
         approvedBy: 'f97ba14f-1fe6-4ad8-8c6e-241c12efcc27',
         createdAt: '2024-06-20T10:00:00Z',
         updatedAt: '2024-09-12T14:00:00Z',
+    isActive: true,
     },
     {
         id: 'e0c19c12-4366-46b0-8643-16e6551a90bd',
@@ -1297,6 +1330,7 @@ export const sizingCases: SizingCase[] = [
         approvedBy: '22ee3f22-898a-461b-85ec-83f84d250810',
         createdAt: '2024-06-25T10:00:00Z',
         updatedAt: '2024-08-18T16:00:00Z',
+    isActive: true,
     },
     {
         id: 'f9aab8f6-7bf0-4f0f-950f-fbe9f6ed9acf',
@@ -1345,6 +1379,7 @@ export const sizingCases: SizingCase[] = [
         createdBy: '1b9de640-0851-4ed5-941c-411efa30585c',
         createdAt: '2024-08-25T10:00:00Z',
         updatedAt: '2024-09-20T11:00:00Z',
+    isActive: true,
     },
     // Preheat Exchanger Thermal Expansion Sizing Cases (Liquid Method)
     {
@@ -1393,6 +1428,7 @@ export const sizingCases: SizingCase[] = [
         approvedBy: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad',
         createdAt: '2024-01-20T10:00:00Z',
         updatedAt: '2024-01-22T14:00:00Z',
+    isActive: true,
     },
     // Pump PRV Sizing Cases (Liquid Method)
     {
@@ -1441,6 +1477,7 @@ export const sizingCases: SizingCase[] = [
         approvedBy: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad',
         createdAt: '2024-09-15T10:00:00Z',
         updatedAt: '2024-09-16T14:00:00Z',
+    isActive: true,
     },
     // Vacuum Column Sizing Cases (Gas Method)
     {
@@ -1488,6 +1525,7 @@ export const sizingCases: SizingCase[] = [
         approvedBy: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad',
         createdAt: '2024-10-08T10:00:00Z',
         updatedAt: '2024-10-10T14:00:00Z',
+    isActive: true,
     },
     {
         id: '05e4145d-e286-490b-ad48-e7b8fa421f45',
@@ -1536,6 +1574,7 @@ export const sizingCases: SizingCase[] = [
         approvedBy: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad',
         createdAt: '2024-05-25T10:00:00Z',
         updatedAt: '2024-05-28T14:00:00Z',
+    isActive: true,
     },
     // Furnace Area Sizing Cases (Steam/Two-Phase Method)
     {
@@ -1583,6 +1622,7 @@ export const sizingCases: SizingCase[] = [
         approvedBy: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad',
         createdAt: '2024-03-15T10:00:00Z',
         updatedAt: '2024-03-20T14:00:00Z',
+    isActive: true,
     },
     {
         id: '80f6d7e7-79bf-44fd-91ba-4a2baff9cf07',
@@ -1630,6 +1670,7 @@ export const sizingCases: SizingCase[] = [
         createdBy: 'c34f5c40-8193-4e39-a628-e684361c2b67',
         createdAt: '2024-11-08T10:00:00Z',
         updatedAt: '2024-11-09T14:00:00Z',
+    isActive: true,
     },
     {
         id: 'd2cee6c9-45aa-4dec-a0ad-46771ac3969a',
@@ -1675,6 +1716,7 @@ export const sizingCases: SizingCase[] = [
         createdBy: 'c34f5c40-8193-4e39-a628-e684361c2b67',
         createdAt: '2024-11-10T10:00:00Z',
         updatedAt: '2024-11-10T14:00:00Z',
+    isActive: true,
     },
     {
         id: 'c37ab4bd-84ed-4c91-904e-9af7c7d47683',
@@ -1720,6 +1762,7 @@ export const sizingCases: SizingCase[] = [
         createdBy: 'c34f5c40-8193-4e39-a628-e684361c2b67',
         createdAt: '2024-11-10T10:00:00Z',
         updatedAt: '2024-11-10T14:00:00Z',
+    isActive: true,
     },
     // LNG Area Sizing Cases (Gas/Liquid/Cryogenic)
     {
@@ -1767,6 +1810,7 @@ export const sizingCases: SizingCase[] = [
         approvedBy: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad',
         createdAt: '2024-08-15T10:00:00Z',
         updatedAt: '2024-08-18T14:00:00Z',
+    isActive: true,
     },
     {
         id: '4263f078-97e3-44c3-98b1-2ea5f26a2284',
@@ -1814,6 +1858,7 @@ export const sizingCases: SizingCase[] = [
         approvedBy: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad',
         createdAt: '2024-09-25T10:00:00Z',
         updatedAt: '2024-09-28T14:00:00Z',
+    isActive: true,
     },
     {
         id: 'de72725a-0a60-4ace-b153-9ca45e0877d7',
@@ -1860,6 +1905,7 @@ export const sizingCases: SizingCase[] = [
         approvedBy: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad',
         createdAt: '2024-09-25T10:00:00Z',
         updatedAt: '2024-09-28T14:00:00Z',
+    isActive: true,
     },
     {
         id: 'ec70febb-f5d3-4485-b51f-ccca616134a0',
@@ -1908,6 +1954,7 @@ export const sizingCases: SizingCase[] = [
         approvedBy: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad',
         createdAt: '2024-09-25T10:00:00Z',
         updatedAt: '2024-09-28T14:00:00Z',
+    isActive: true,
     },
     // Atmospheric Stabilizer Area Sizing Cases (Liquid/Gas)
     {
@@ -1956,6 +2003,7 @@ export const sizingCases: SizingCase[] = [
         approvedBy: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad',
         createdAt: '2024-08-28T10:00:00Z',
         updatedAt: '2024-08-30T14:00:00Z',
+    isActive: true,
     },
     {
         id: 'fd2b6687-4f0c-43e1-8bf6-deaca9a87ac6',
@@ -2002,6 +2050,7 @@ export const sizingCases: SizingCase[] = [
         approvedBy: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad',
         createdAt: '2024-08-28T10:00:00Z',
         updatedAt: '2024-08-30T14:00:00Z',
+    isActive: true,
     },
     {
         id: 'b66f0ce2-039b-4610-9193-c04ea602e444',
@@ -2048,6 +2097,7 @@ export const sizingCases: SizingCase[] = [
         approvedBy: 'f6c289ac-fabe-4d2e-a635-127e5b9045ad',
         createdAt: '2024-08-28T10:00:00Z',
         updatedAt: '2024-08-30T14:00:00Z',
+    isActive: true,
     },
 ];
 
@@ -2096,6 +2146,7 @@ export const attachments: Attachment[] = [
         size: 245000,
         uploadedBy: 'c34f5c40-8193-4e39-a628-e684361c2b67',
         createdAt: '2024-07-10T10:00:00Z',
+    isActive: true,
     },
     {
         id: 'att-2',
@@ -2106,6 +2157,7 @@ export const attachments: Attachment[] = [
         size: 156000,
         uploadedBy: 'c34f5c40-8193-4e39-a628-e684361c2b67',
         createdAt: '2024-07-15T10:00:00Z',
+    isActive: true,
     },
     {
         id: 'att-3',
@@ -2116,6 +2168,7 @@ export const attachments: Attachment[] = [
         size: 1250000,
         uploadedBy: '1b9de640-0851-4ed5-941c-411efa30585c',
         createdAt: '2024-08-18T10:00:00Z',
+    isActive: true,
     },
 ];
 
@@ -2127,6 +2180,7 @@ export const notes: ProjectNote[] = [
         body: 'Relief calculations are based on API-520 (2023) with accumulation limited to 10%.',
         createdBy: '22ee3f22-898a-461b-85ec-83f84d250810',
         createdAt: '2024-09-05T14:30:00Z',
+    isActive: true,
     },
     {
         id: 'n1000002-0001-0001-0001-000000000002',
@@ -2134,6 +2188,7 @@ export const notes: ProjectNote[] = [
         body: 'Cryogenic service requires SS316L trim and soft seat; vendor spec PSV-CRYO-221 applies.',
         createdBy: '1b9de640-0851-4ed5-941c-411efa30585c',
         createdAt: '2024-09-12T11:00:00Z',
+    isActive: true,
     },
 ];
 
@@ -2145,6 +2200,7 @@ export const comments: Comment[] = [
         body: 'Verified fire case wetted area calculation with operations. Confirmed liquid level at HLL during relief.',
         createdBy: '22ee3f22-898a-461b-85ec-83f84d250810',
         createdAt: '2024-09-05T14:30:00Z',
+    isActive: true,
     },
     {
         id: 'c1000002-0002-0002-0002-000000000002',
@@ -2152,6 +2208,7 @@ export const comments: Comment[] = [
         body: 'PSV vendor confirmed 2" x 3" size available for quoted delivery. Lead time 12 weeks.',
         createdBy: 'c34f5c40-8193-4e39-a628-e684361c2b67',
         createdAt: '2024-09-10T09:00:00Z',
+    isActive: true,
     },
     {
         id: 'c1000003-0003-0003-0003-000000000003',
@@ -2159,6 +2216,7 @@ export const comments: Comment[] = [
         body: 'Need to confirm cryogenic material requirements with metallurgy team. SS316L minimum.',
         createdBy: '1b9de640-0851-4ed5-941c-411efa30585c',
         createdAt: '2024-09-18T11:00:00Z',
+    isActive: true,
     },
 ];
 
@@ -2173,6 +2231,7 @@ export const todos: TodoItem[] = [
         dueDate: '2024-09-05',
         createdBy: 'c34f5c40-8193-4e39-a628-e684361c2b67',
         createdAt: '2024-09-01T08:00:00Z',
+    isActive: true,
     },
     {
         id: 't1000002-0002-0002-0002-000000000002',
@@ -2183,6 +2242,7 @@ export const todos: TodoItem[] = [
         dueDate: '2024-09-08',
         createdBy: 'c34f5c40-8193-4e39-a628-e684361c2b67',
         createdAt: '2024-09-02T10:00:00Z',
+    isActive: true,
     },
     {
         id: 't1000003-0003-0003-0003-000000000003',
@@ -2193,6 +2253,7 @@ export const todos: TodoItem[] = [
         dueDate: '2024-10-15',
         createdBy: 'c34f5c40-8193-4e39-a628-e684361c2b67',
         createdAt: '2024-09-15T14:00:00Z',
+    isActive: true,
     },
     {
         id: 't1000004-0004-0004-0004-000000000004',
@@ -2203,6 +2264,7 @@ export const todos: TodoItem[] = [
         dueDate: '2024-09-25',
         createdBy: '1b9de640-0851-4ed5-941c-411efa30585c',
         createdAt: '2024-09-18T11:30:00Z',
+    isActive: true,
     },
 ];
 
@@ -2311,6 +2373,7 @@ export const revisionHistory: RevisionHistory[] = [
         approvedAt: '2025-12-15T10:00:00Z',
         snapshot: {},
         createdAt: '2025-12-12T09:00:00Z',
+    isActive: true,
     },
     {
         id: 'rev-001-o1',
@@ -2327,6 +2390,7 @@ export const revisionHistory: RevisionHistory[] = [
         approvedAt: '2025-12-05T11:00:00Z',
         snapshot: {},
         createdAt: '2025-12-01T08:00:00Z',
+    isActive: true,
     },
     {
         id: 'rev-002-o1',
@@ -2343,5 +2407,6 @@ export const revisionHistory: RevisionHistory[] = [
         approvedAt: '2025-11-22T16:00:00Z',
         snapshot: {},
         createdAt: '2025-11-20T10:00:00Z',
+    isActive: true,
     },
 ];
