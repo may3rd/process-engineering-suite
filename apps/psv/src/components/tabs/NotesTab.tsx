@@ -25,6 +25,7 @@ import {
     AddCircle,
     Edit,
     Note,
+    Delete,
     DeleteForever,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
