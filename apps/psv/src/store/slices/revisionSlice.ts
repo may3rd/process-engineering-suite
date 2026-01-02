@@ -22,6 +22,7 @@ export interface RevisionSlice {
     updateRevisionLifecycle: (revisionId: string, field: 'checkedBy' | 'approvedBy' | 'originatedBy', userId: string) => Promise<void>;
     updateRevision: (revisionId: string, updates: Partial<RevisionHistory>) => Promise<void>;
     deleteRevision: (revisionId: string) => Promise<void>;
+    softDeleteRevision: (revisionId: string) => Promise<void>;
     getCurrentRevision: (entityType: RevisionEntityType, entityId: string) => RevisionHistory | undefined;
 }
 
@@ -239,15 +240,15 @@ export const createRevisionSlice: StateCreator<PsvStore, [], [], RevisionSlice> 
     },
 
     deleteRevision: async (revisionId) => {
+        const state = get();
+        const existing = state.revisionHistory.find((r) => r.id === revisionId);
         await dataService.deleteRevision(revisionId);
         set((state: PsvStore) => ({
             revisionHistory: state.revisionHistory.filter((r) => r.id !== revisionId),
         }));
-        toast.success('Revision deleted');
+        toast.success('Revision permanently deleted');
 
         const currentUser = useAuthStore.getState().currentUser;
-        const existing = get().revisionHistory.find((r) => r.id === revisionId);
-
         if (currentUser && existing) {
             const psv = get().selectedPsv;
             createAuditLog(
@@ -259,9 +260,23 @@ export const createRevisionSlice: StateCreator<PsvStore, [], [], RevisionSlice> 
                 currentUser.name,
                 {
                     userRole: currentUser.role,
-                    description: `Deleted Revision ${existing.revisionCode}`
+                    description: `Permanently deleted Revision ${existing.revisionCode}`
                 }
             );
+        }
+    },
+
+    softDeleteRevision: async (revisionId) => {
+        try {
+            const state = get();
+            const revision = state.revisionHistory.find(r => r.id === revisionId);
+            if (!revision) throw new Error('Revision not found');
+
+            await get().updateRevision(revisionId, { isActive: false });
+            toast.success('Revision deactivated');
+        } catch (error) {
+            toast.error('Failed to deactivate revision');
+            throw error;
         }
     },
 

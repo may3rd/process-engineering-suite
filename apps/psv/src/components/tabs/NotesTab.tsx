@@ -24,15 +24,14 @@ import {
 import {
     AddCircle,
     Edit,
-    Delete,
-    CheckCircle,
-    Description,
     Note,
+    DeleteForever,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Comment, TodoItem, ProjectNote } from "@/data/types";
 import { getUserById, users } from "@/data/mockData";
+import { DeleteConfirmDialog } from '../shared/DeleteConfirmDialog';
 
 export function NotesTab() {
     const {
@@ -42,14 +41,17 @@ export function NotesTab() {
         noteList,
         addTodo,
         deleteTodo,
+        softDeleteTodo,
         toggleTodo,
         updateTodo,
         addComment,
         deleteComment,
+        softDeleteComment,
         updateComment,
         addNote,
         updateNote,
         deleteNote,
+        softDeleteNote,
     } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
     const currentUser = useAuthStore((state) => state.currentUser);
@@ -76,9 +78,37 @@ export function NotesTab() {
 
     if (!selectedPsv) return null;
 
-    const filteredTodos = todoList.filter(t => t.protectiveSystemId === selectedPsv.id);
-    const filteredComments = commentList.filter(c => c.protectiveSystemId === selectedPsv.id);
-    const filteredNotes = noteList.filter(n => n.protectiveSystemId === selectedPsv.id);
+    const filteredTodos = todoList.filter(t => t.protectiveSystemId === selectedPsv.id && t.isActive !== false);
+    const filteredComments = commentList.filter(c => c.protectiveSystemId === selectedPsv.id && c.isActive !== false);
+    const filteredNotes = noteList.filter(n => n.protectiveSystemId === selectedPsv.id && n.isActive !== false);
+
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleteItem, setDeleteItem] = useState<{ id: string; type: 'todo' | 'comment' | 'note'; name: string } | null>(null);
+
+    const handleDeleteClick = (id: string, type: 'todo' | 'comment' | 'note', name: string) => {
+        setDeleteItem({ id, type, name });
+        setDeleteDialogOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!deleteItem) return;
+        const { id, type } = deleteItem;
+        if (type === 'todo') await softDeleteTodo(id);
+        else if (type === 'comment') await softDeleteComment(id);
+        else if (type === 'note') await softDeleteNote(id);
+        setDeleteDialogOpen(false);
+        setDeleteItem(null);
+    };
+
+    const handleForceDelete = async () => {
+        if (!deleteItem) return;
+        const { id, type } = deleteItem;
+        if (type === 'todo') await deleteTodo(id);
+        else if (type === 'comment') await deleteComment(id);
+        else if (type === 'note') await deleteNote(id);
+        setDeleteDialogOpen(false);
+        setDeleteItem(null);
+    };
 
     const formatDate = (dateStr: string) => {
         return new Date(dateStr).toLocaleDateString('en-US', {
@@ -103,6 +133,7 @@ export function NotesTab() {
             dueDate: dueDate,
             createdBy: selectedPsv.ownerId,
             createdAt: new Date().toISOString(),
+            isActive: true,
         };
         addTodo(newTodo);
         setNewTaskText('');
@@ -111,10 +142,8 @@ export function NotesTab() {
         setAddTaskOpen(false);
     };
 
-    const handleDeleteTodo = (id: string) => {
-        if (window.confirm("Are you sure you want to delete this task?")) {
-            deleteTodo(id);
-        }
+    const handleDeleteTodo = (id: string, text: string) => {
+        handleDeleteClick(id, 'todo', text);
     };
 
     const handleStartEditTask = (todo: TodoItem) => {
@@ -148,6 +177,7 @@ export function NotesTab() {
             body: newCommentText.trim(),
             createdBy: creatorId,
             createdAt: new Date().toISOString(),
+            isActive: true,
         };
         addComment(newComment);
         setNewCommentText('');
@@ -172,10 +202,8 @@ export function NotesTab() {
         setEditCommentText('');
     };
 
-    const handleDeleteComment = (id: string) => {
-        if (window.confirm("Are you sure you want to delete this comment?")) {
-            deleteComment(id);
-        }
+    const handleDeleteComment = (id: string, text: string) => {
+        handleDeleteClick(id, 'comment', text);
     };
 
     const handleAddNote = () => {
@@ -187,6 +215,7 @@ export function NotesTab() {
             body: newNoteText.trim(),
             createdBy: creatorId,
             createdAt: new Date().toISOString(),
+            isActive: true,
         });
         setNewNoteText('');
         setAddNoteOpen(false);
@@ -210,10 +239,8 @@ export function NotesTab() {
         setEditNoteText('');
     };
 
-    const handleDeleteNote = (id: string) => {
-        if (window.confirm("Delete this note? It will be removed from the printable summary.")) {
-            deleteNote(id);
-        }
+    const handleDeleteNote = (id: string, text: string) => {
+        handleDeleteClick(id, 'note', text);
     };
 
     return (
@@ -261,7 +288,7 @@ export function NotesTab() {
                                                         <IconButton
                                                             edge="end"
                                                             aria-label="delete"
-                                                            onClick={() => handleDeleteTodo(todo.id)}
+                                                            onClick={() => handleDeleteTodo(todo.id, todo.text)}
                                                         >
                                                             <Delete />
                                                         </IconButton>
@@ -345,7 +372,7 @@ export function NotesTab() {
                                                     <IconButton size="small" onClick={() => handleStartEditNote(note)}>
                                                         <Edit fontSize="small" />
                                                     </IconButton>
-                                                    <IconButton size="small" onClick={() => handleDeleteNote(note.id)}>
+                                                    <IconButton size="small" onClick={() => handleDeleteNote(note.id, note.body.slice(0, 30) + "...")}>
                                                         <Delete fontSize="small" />
                                                     </IconButton>
                                                 </Box>
@@ -398,7 +425,7 @@ export function NotesTab() {
                                                     <IconButton size="small" onClick={() => handleStartEditComment(comment)}>
                                                         <Edit fontSize="small" />
                                                     </IconButton>
-                                                    <IconButton size="small" onClick={() => handleDeleteComment(comment.id)}>
+                                                    <IconButton size="small" onClick={() => handleDeleteComment(comment.id, comment.body.slice(0, 30) + "...")}>
                                                         <Delete fontSize="small" />
                                                     </IconButton>
                                                 </Box>
@@ -610,6 +637,16 @@ export function NotesTab() {
                     </Button>
                 </DialogActions>
             </Dialog>
+
+            <DeleteConfirmDialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                onConfirm={handleConfirmDelete}
+                onForceDelete={handleForceDelete}
+                allowForceDelete={canEdit}
+                title={`Deactivate ${deleteItem?.type || 'item'}`}
+                itemName={deleteItem?.name || ''}
+            />
         </Box>
     );
 }

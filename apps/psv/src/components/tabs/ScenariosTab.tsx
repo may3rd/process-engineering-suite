@@ -60,7 +60,7 @@ export function ScenariosTab() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const { unitSystem } = useProjectUnitSystem();
-    const { scenarioList, selectedPsv, addScenario, updateScenario, deleteScenario } = usePsvStore();
+    const { scenarioList, selectedPsv, addScenario, updateScenario, softDeleteScenario } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
 
     const [editorOpen, setEditorOpen] = useState(false);
@@ -110,7 +110,7 @@ export function ScenariosTab() {
     };
 
     const sortedScenarios = useMemo(
-        () => sortByGetter(scenarioList, sortConfig, getSortValue),
+        () => sortByGetter(scenarioList.filter(s => s.isActive !== false), sortConfig, getSortValue),
         [scenarioList, sortConfig]
     );
 
@@ -201,10 +201,29 @@ export function ScenariosTab() {
         }
     };
 
-    const handleDeleteScenario = (id: string) => {
-        deleteScenario(id);
-        setEditorOpen(false);
-        setEditingScenario(undefined);
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [scenarioToDelete, setScenarioToDelete] = useState<OverpressureScenario | null>(null);
+
+    const handleDeleteScenarioClick = (scenario: OverpressureScenario) => {
+        setScenarioToDelete(scenario);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (scenarioToDelete) {
+            await softDeleteScenario(scenarioToDelete.id);
+            setDeleteDialogOpen(false);
+            setScenarioToDelete(null);
+        }
+    };
+
+    const handleForceDelete = async () => {
+        if (scenarioToDelete) {
+            const { deleteScenario } = usePsvStore.getState();
+            await deleteScenario(scenarioToDelete.id);
+            setDeleteDialogOpen(false);
+            setScenarioToDelete(null);
+        }
     };
 
     const handleFireCaseSave = (fireScenario: Partial<OverpressureScenario>) => {
@@ -415,7 +434,7 @@ export function ScenariosTab() {
                                 setEditorOpen(false);
                                 setEditingScenario(undefined);
                             }}
-                            onDelete={editingScenario ? handleDeleteScenario : undefined}
+                            onDelete={editingScenario ? () => handleDeleteScenarioClick(editingScenario) : undefined}
                         />
                     )}
                 </DialogContent>
@@ -454,6 +473,15 @@ export function ScenariosTab() {
                 onClose={() => setTubeRuptureOpen(false)}
                 psvId={selectedPsv.id}
                 onSave={handleSaveScenario}
+            />
+            <DeleteConfirmDialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                onConfirm={handleConfirmDelete}
+                onForceDelete={handleForceDelete}
+                allowForceDelete={canEdit}
+                title="Deactivate Scenario"
+                itemName={scenarioToDelete ? getCauseLabel(scenarioToDelete.cause) : "scenario"}
             />
 
             {sortedScenarios.length > 0 ? (

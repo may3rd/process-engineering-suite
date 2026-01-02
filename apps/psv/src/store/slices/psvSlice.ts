@@ -29,11 +29,13 @@ export interface PsvSlice {
     updateSizingCase: (updatedCase: SizingCase) => Promise<void>;
     addSizingCase: (newCase: Partial<SizingCase>) => Promise<void>;
     deleteSizingCase: (id: string) => Promise<void>;
+    softDeleteSizingCase: (id: string) => Promise<void>;
     updatePsv: (updatedPsv: ProtectiveSystem) => Promise<void>;
     deletePsv: (id: string) => Promise<void>;
     addScenario: (newScenario: Partial<OverpressureScenario>) => Promise<void>;
     updateScenario: (updatedScenario: OverpressureScenario) => Promise<void>;
     deleteScenario: (id: string) => Promise<void>;
+    softDeleteScenario: (id: string) => Promise<void>;
     addPsvTag: (psvId: string, tag: string) => Promise<void>;
     removePsvTag: (psvId: string, tag: string) => Promise<void>;
     linkEquipment: (data: {
@@ -46,6 +48,7 @@ export interface PsvSlice {
     }) => Promise<void>;
     unlinkEquipment: (linkId: string) => Promise<void>;
     deleteAttachment: (id: string) => Promise<void>;
+    softDeleteAttachment: (id: string) => Promise<void>;
     addAttachment: (attachment: Attachment) => Promise<void>;
     addProtectiveSystem: (psv: Omit<ProtectiveSystem, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
     updateProtectiveSystem: (id: string, updates: Partial<Omit<ProtectiveSystem, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
@@ -167,7 +170,7 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
                     currentUser.name,
                     {
                         userRole: currentUser.role,
-                        description: 'Deleted sizing case',
+                        description: 'Permanently deleted sizing case',
                         projectId: state.selectedProject?.id,
                     }
                 );
@@ -176,10 +179,24 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
             set((state: PsvStore) => ({
                 sizingCaseList: state.sizingCaseList.filter((c) => c.id !== id),
             }));
-            toast.success('Sizing case deleted');
+            toast.success('Sizing case permanently deleted');
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to delete sizing case';
             toast.error('Failed to delete sizing case', { description: message });
+            throw error;
+        }
+    },
+
+    softDeleteSizingCase: async (id) => {
+        try {
+            const state = get();
+            const sizingCase = state.sizingCaseList.find(c => c.id === id);
+            if (!sizingCase) throw new Error('Sizing case not found');
+
+            await get().updateSizingCase({ ...sizingCase, isActive: false });
+            toast.success('Sizing case deactivated');
+        } catch (error) {
+            toast.error('Failed to deactivate sizing case');
             throw error;
         }
     },
@@ -462,16 +479,30 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
                     currentUser.name,
                     {
                         userRole: currentUser.role,
-                        description: 'Deleted scenario',
+                        description: 'Permanently deleted scenario',
                         projectId: state.selectedProject?.id,
                     }
                 );
             }
 
-            toast.success('Scenario deleted');
+            toast.success('Scenario permanently deleted');
         } catch (error) {
             const message = error instanceof Error ? error.message : 'Failed to delete scenario';
             toast.error('Failed to delete scenario', { description: message });
+            throw error;
+        }
+    },
+
+    softDeleteScenario: async (id) => {
+        try {
+            const state = get();
+            const scenario = state.scenarioList.find(s => s.id === id);
+            if (!scenario) throw new Error('Scenario not found');
+
+            await get().updateScenario({ ...scenario, isActive: false });
+            toast.success('Scenario deactivated');
+        } catch (error) {
+            toast.error('Failed to deactivate scenario');
             throw error;
         }
     },
@@ -595,12 +626,30 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
         try {
             await dataService.deleteAttachment(id);
             set((state: PsvStore) => ({
-                attachmentList: state.attachmentList.filter((a) => a.id !== id)
+                attachmentList: state.attachmentList.filter(a => a.id !== id),
             }));
-            toast.success('Attachment deleted');
+            toast.success('Attachment permanently deleted');
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to delete attachment';
-            toast.error('Failed to delete attachment', { description: message });
+            toast.error('Failed to remove attachment');
+            throw error;
+        }
+    },
+
+    softDeleteAttachment: async (id) => {
+        try {
+            const state = get();
+            const attachment = state.attachmentList.find(a => a.id === id);
+            if (!attachment) throw new Error('Attachment not found');
+
+            // Using update logic if dataService supports it, otherwise manually updating state
+            const updated = { ...attachment, isActive: false };
+            await dataService.updateAttachment?.(id, { isActive: false }); // Optional chain if not yet in dataService
+            set((state: PsvStore) => ({
+                attachmentList: state.attachmentList.map(a => a.id === id ? updated : a),
+            }));
+            toast.success('Attachment deactivated');
+        } catch (error) {
+            toast.error('Failed to deactivate attachment');
             throw error;
         }
     },

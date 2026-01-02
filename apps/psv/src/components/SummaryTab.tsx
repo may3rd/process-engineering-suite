@@ -275,12 +275,12 @@ export function SummaryTab() {
         .filter((e): e is Equipment => !!e);
 
     const owner = getUserById(selectedPsv.ownerId);
-    const psvScenarios = scenarioList.filter(s => s.protectiveSystemId === selectedPsv.id);
-    const psvSizingCases = sizingCaseList.filter(c => c.protectiveSystemId === selectedPsv.id);
-    const psvAttachments = attachmentList.filter(a => a.protectiveSystemId === selectedPsv.id);
+    const psvScenarios = scenarioList.filter(s => s.protectiveSystemId === selectedPsv.id && s.isActive !== false);
+    const psvSizingCases = sizingCaseList.filter(c => c.protectiveSystemId === selectedPsv.id && c.isActive !== false);
+    const psvAttachments = attachmentList.filter(a => a.protectiveSystemId === selectedPsv.id && a.isActive !== false);
     const psvNotes = noteList.filter(n => n.protectiveSystemId === selectedPsv.id);
     const psvRevisions = revisionHistory
-        .filter(r => r.entityType === 'protective_system' && r.entityId === selectedPsv.id)
+        .filter(r => r.entityType === 'protective_system' && r.entityId === selectedPsv.id && r.isActive !== false)
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
     // Find the governing scenario for this PSV

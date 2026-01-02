@@ -94,6 +94,7 @@ import { ActivityPanel } from "./ActivityPanel";
 import { ActiveViewers } from "./ActiveViewers";
 import { sortRevisionsByOriginatedAtDesc } from "@/lib/revisionSort";
 import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
+import { DeleteConfirmDialog } from './shared';
 
 
 interface TabPanelProps {
@@ -129,9 +130,10 @@ export function ProtectiveSystemDetail() {
     const {
         selectedPsv,
         selectPsv,
-        deletePsv,
         updatePsv,
+        softDeleteProtectiveSystem,
         updateSizingCase,
+        scenarioList,
         sizingCaseList,
         deleteSizingCase,
         getCurrentRevision,
@@ -312,9 +314,28 @@ export function ProtectiveSystemDetail() {
         setDeleteDialogOpen(true);
     };
 
-    const handleConfirmDelete = () => {
+    const handleConfirmDelete = async () => {
+        if (selectedPsv) {
+            try {
+                await softDeleteProtectiveSystem(selectedPsv.id);
+                setDeleteDialogOpen(false);
+                selectPsv(null); // Navigate back to list
+            } catch (error) {
+                console.error('Failed to deactivate PSV:', error);
+            }
+        }
+    };
+
+    const handleForceDelete = async () => {
         if (selectedPsv && deleteConfirmationInput === selectedPsv.tag) {
-            deletePsv(selectedPsv.id);
+            try {
+                const { deletePsv } = usePsvStore.getState();
+                await deletePsv(selectedPsv.id);
+                setDeleteDialogOpen(false);
+                selectPsv(null);
+            } catch (error) {
+                console.error('Failed to force delete PSV:', error);
+            }
         }
     };
 
@@ -601,40 +622,19 @@ export function ProtectiveSystemDetail() {
             </Dialog>
 
             {/* Delete Confirmation Dialog */}
-            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-                <DialogTitle>Delete Protective System?</DialogTitle>
-                <DialogContent>
-                    <DialogContentText sx={{ mb: 2 }}>
-                        This action cannot be undone. This will permanently delete the protective system
-                        <strong> {selectedPsv.tag} </strong> and all associated scenarios and sizing cases.
-                    </DialogContentText>
-                    <Typography variant="body2" gutterBottom>
-                        Please type <strong>{selectedPsv.tag}</strong> to confirm.
-                    </Typography>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        fullWidth
-                        variant="outlined"
-                        value={deleteConfirmationInput}
-                        onChange={(e) => setDeleteConfirmationInput(e.target.value)}
-                        placeholder={selectedPsv.tag}
-                        size="small"
-                        sx={{ mt: 1 }}
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-                    <Button
-                        variant="contained"
-                        color="error"
-                        onClick={handleConfirmDelete}
-                        disabled={deleteConfirmationInput !== selectedPsv.tag}
-                    >
-                        Delete
-                    </Button>
-                </DialogActions>
-            </Dialog>
+            <DeleteConfirmDialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                onConfirm={handleConfirmDelete}
+                onForceDelete={handleForceDelete}
+                allowForceDelete={canApprove}
+                title="Deactivate Protective System"
+                itemName={selectedPsv.tag}
+                children={[
+                    { label: 'scenario', count: scenarioList.length },
+                    { label: 'sizing case', count: sizingCaseList.length }
+                ]}
+            />
 
             {/* Tabs */}
             <Paper

@@ -37,10 +37,12 @@ import {
     Air,
     Star,
     Warning as WarningIcon,
+    Delete,
 } from "@mui/icons-material";
 import { v4 as uuidv4 } from "uuid";
 import { usePsvStore } from "@/store/usePsvStore";
 import { useAuthStore } from "@/store/useAuthStore";
+import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
 import { SizingCase, OverpressureScenario } from "@/data/types";
 import { SortConfig, toggleSortConfig, sortByGetter } from "@/lib/sortUtils";
@@ -70,7 +72,7 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const { unitSystem, units } = useProjectUnitSystem();
-    const { sizingCaseList, scenarioList, selectedPsv, addSizingCase, updateSizingCase } = usePsvStore();
+    const { sizingCaseList, scenarioList, selectedPsv, addSizingCase, updateSizingCase, softDeleteSizingCase } = usePsvStore();
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
     const canCheck = useAuthStore((state) => ['lead', 'approver', 'admin'].includes(state.currentUser?.role || ''));
@@ -79,6 +81,31 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
     const [dialogOpen, setDialogOpen] = useState(false);
     const [statusMenu, setStatusMenu] = useState<{ anchorEl: HTMLElement; sizing: SizingCase } | null>(null);
     const [sortConfig, setSortConfig] = useState<SortConfig<SizingSortKey> | null>({ key: 'scenario', direction: 'asc' });
+
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [sizingToDelete, setSizingToDelete] = useState<SizingCase | null>(null);
+
+    const handleDeleteClick = (sizing: SizingCase) => {
+        setSizingToDelete(sizing);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (sizingToDelete) {
+            await softDeleteSizingCase(sizingToDelete.id);
+            setDeleteDialogOpen(false);
+            setSizingToDelete(null);
+        }
+    };
+
+    const handleForceDelete = async () => {
+        if (sizingToDelete) {
+            const { deleteSizingCase } = usePsvStore.getState();
+            await deleteSizingCase(sizingToDelete.id);
+            setDeleteDialogOpen(false);
+            setSizingToDelete(null);
+        }
+    };
 
     const handleSort = (key: SizingSortKey) => {
         setSortConfig((prev) => toggleSortConfig(prev, key));
@@ -104,7 +131,7 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
     };
 
     const sortedSizingCases = useMemo(
-        () => sortByGetter(sizingCaseList, sortConfig, getSortValue),
+        () => sortByGetter(sizingCaseList.filter(s => s.isActive !== false), sortConfig, getSortValue),
         [sizingCaseList, sortConfig, scenarioList]
     );
 
@@ -383,11 +410,18 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
                                     </Box>
                                     <Box sx={{ display: 'flex', gap: 1 }}>
                                         {canEdit ? (
-                                            <Tooltip title="Edit">
-                                                <IconButton size="small" onClick={() => onEdit?.(sizing.id)}>
-                                                    <Edit fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
+                                            <>
+                                                <Tooltip title="Edit">
+                                                    <IconButton size="small" onClick={() => onEdit?.(sizing.id)}>
+                                                        <Edit fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                                <Tooltip title="Deactivate">
+                                                    <IconButton size="small" color="error" onClick={() => handleDeleteClick(sizing)}>
+                                                        <Delete fontSize="small" />
+                                                    </IconButton>
+                                                </Tooltip>
+                                            </>
                                         ) : (
                                             <Tooltip title="View Details">
                                                 <IconButton size="small" onClick={() => onEdit?.(sizing.id)}>
@@ -595,6 +629,16 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
                     </Button>
                 </Paper>
             )}
+
+            <DeleteConfirmDialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                onConfirm={handleConfirmDelete}
+                onForceDelete={handleForceDelete}
+                allowForceDelete={canEdit}
+                title="Deactivate Sizing Case"
+                itemName={sizingToDelete ? getScenarioName(sizingToDelete.scenarioId) : "sizing case"}
+            />
         </Box>
     );
 }

@@ -24,6 +24,7 @@ import { Delete, Edit, History } from '@mui/icons-material';
 import { usePsvStore } from '@/store/usePsvStore';
 import { getUserById } from '@/data/mockData';
 import { RevisionEntityType, RevisionHistory } from '@/data/types';
+import { DeleteConfirmDialog } from './shared/DeleteConfirmDialog';
 import { useAuthStore } from '@/store/useAuthStore';
 import { EditRevisionDialog } from './EditRevisionDialog';
 import { sortRevisionsByOriginatedAtDesc } from '@/lib/revisionSort';
@@ -107,7 +108,7 @@ export function RevisionHistoryCard({
     showActions = true,
     hideBorder = false,
 }: RevisionHistoryCardProps) {
-    const { revisionHistory, loadRevisionHistory, deleteRevision } = usePsvStore();
+    const { revisionHistory, loadRevisionHistory, deleteRevision, softDeleteRevision } = usePsvStore();
     const canManualEdit = useAuthStore(
         (state) => state.isAuthenticated && ['lead', 'approver', 'admin'].includes(state.currentUser?.role || '')
     );
@@ -122,7 +123,7 @@ export function RevisionHistoryCard({
 
     const revisionsForEntity = useMemo(
         () => sortRevisionsByOriginatedAtDesc(
-            revisionHistory.filter((r) => r.entityType === entityType && r.entityId === entityId)
+            revisionHistory.filter((r) => r.entityType === entityType && r.entityId === entityId && r.isActive !== false)
         ),
         [entityId, entityType, revisionHistory]
     );
@@ -144,6 +145,16 @@ export function RevisionHistoryCard({
     const handleConfirmDelete = async () => {
         if (!revisionToDelete || !canManualEdit) return;
         if (revisionsForEntity.length <= 1) return;
+        await softDeleteRevision(revisionToDelete.id);
+        setDeleteDialogOpen(false);
+        const deletedId = revisionToDelete.id;
+        setRevisionToDelete(null);
+        await loadRevisionHistory(entityType, entityId);
+        onRevisionDeleted?.(deletedId);
+    };
+
+    const handleForceDelete = async () => {
+        if (!revisionToDelete || !canManualEdit) return;
         await deleteRevision(revisionToDelete.id);
         setDeleteDialogOpen(false);
         const deletedId = revisionToDelete.id;
@@ -187,156 +198,139 @@ export function RevisionHistoryCard({
 
     return (
         <>
-        <Paper sx={paperStyles(hideBorder)}>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                <History color="primary" />
-                <Typography variant="h6" fontWeight={600} sx={{ fontSize: '1rem' }}>
-                    Revision History
-                </Typography>
-            </Box>
-
-            <TableContainer>
-                <Table size="small">
-                    <TableHead>
-                        <TableRow>
-                            <TableCell sx={{ fontWeight: 600, width: '60px' }}>Rev</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>By</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Checked</TableCell>
-                            <TableCell sx={{ fontWeight: 600 }}>Approved</TableCell>
-                            {showActions !== false && (
-                                <TableCell sx={{ fontWeight: 600, width: '96px', textAlign: 'right' }}>
-                                    Actions
-                                </TableCell>
-                            )}
-                        </TableRow>
-                    </TableHead>
-                    <TableBody>
-                        {revisionsForEntity.map((revision) => {
-                            const isCurrent = revision.id === currentRevisionId;
-                            return (
-                                <TableRow
-                                    key={revision.id}
-                                    sx={{
-                                        bgcolor: isCurrent ? 'action.selected' : 'transparent',
-                                        '&:hover': { bgcolor: 'action.hover' },
-                                    }}
-                                >
-                                    <TableCell>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <Typography variant="body2" fontWeight={600}>
-                                                {revision.revisionCode}
-                                            </Typography>
-                                            {isCurrent && (
-                                                <Chip
-                                                    label="Current"
-                                                    size="small"
-                                                    color="primary"
-                                                    variant="outlined"
-                                                    sx={{ height: 20, fontSize: '0.7rem' }}
-                                                />
-                                            )}
-                                        </Box>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2">
-                                            {revision.description || (revision.sequence === 1 ? 'Original' : '-')}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2">
-                                            {formatUserDate(revision.originatedBy, revision.originatedAt)}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2">
-                                            {formatUserDate(revision.checkedBy, revision.checkedAt)}
-                                        </Typography>
-                                    </TableCell>
-                                    <TableCell>
-                                        <Typography variant="body2">
-                                            {formatUserDate(revision.approvedBy, revision.approvedAt)}
-                                        </Typography>
-                                    </TableCell>
-                                    {showActions !== false && (
-                                        <TableCell align="right">
-                                            <Tooltip title={canManualEdit ? 'Edit revision' : 'Admin / Lead / Approver only'}>
-                                                <span>
-                                                    <IconButton
-                                                        size="small"
-                                                        onClick={() => handleEditClick(revision)}
-                                                        disabled={!canManualEdit}
-                                                    >
-                                                        <Edit fontSize="small" />
-                                                    </IconButton>
-                                                </span>
-                                            </Tooltip>
-                                            <Tooltip
-                                                title={
-                                                    !canManualEdit
-                                                        ? 'Admin / Lead / Approver only'
-                                                        : revisionsForEntity.length <= 1
-                                                            ? 'At least one revision must remain'
-                                                            : 'Delete revision'
-                                                }
-                                            >
-                                                <span>
-                                                    <IconButton
-                                                        size="small"
-                                                        color="error"
-                                                        onClick={() => handleDeleteClick(revision)}
-                                                        disabled={!canManualEdit || revisionsForEntity.length <= 1}
-                                                    >
-                                                        <Delete fontSize="small" />
-                                                    </IconButton>
-                                                </span>
-                                            </Tooltip>
-                                        </TableCell>
-                                    )}
-                                </TableRow>
-                            );
-                        })}
-                    </TableBody>
-                </Table>
-            </TableContainer>
-        </Paper>
-
-        <EditRevisionDialog
-            open={editDialogOpen}
-            onClose={() => {
-                setEditDialogOpen(false);
-                setEditingRevision(null);
-            }}
-            revision={editingRevision}
-            onSuccess={handleEditSuccess}
-        />
-
-        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)} maxWidth="xs" fullWidth>
-            <DialogTitle>Delete revision?</DialogTitle>
-            <DialogContent>
-                <Typography variant="body2" color="text.secondary">
-                    {revisionToDelete
-                        ? `This permanently deletes Rev. ${revisionToDelete.revisionCode}.`
-                        : 'This permanently deletes the selected revision.'}
-                </Typography>
-                {revisionToDelete?.id === currentRevisionId && (
-                    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                        This is the current revision; deleting it will unset the current revision reference.
+            <Paper sx={paperStyles(hideBorder)}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                    <History color="primary" />
+                    <Typography variant="h6" fontWeight={600} sx={{ fontSize: '1rem' }}>
+                        Revision History
                     </Typography>
-                )}
-            </DialogContent>
-            <DialogActions>
-                <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-                <Button
-                    color="error"
-                    variant="contained"
-                    onClick={handleConfirmDelete}
-                    disabled={!revisionToDelete || !canManualEdit}
-                >
-                    Delete
-                </Button>
-            </DialogActions>
-        </Dialog>
+                </Box>
+
+                <TableContainer>
+                    <Table size="small">
+                        <TableHead>
+                            <TableRow>
+                                <TableCell sx={{ fontWeight: 600, width: '60px' }}>Rev</TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>Description</TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>By</TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>Checked</TableCell>
+                                <TableCell sx={{ fontWeight: 600 }}>Approved</TableCell>
+                                {showActions !== false && (
+                                    <TableCell sx={{ fontWeight: 600, width: '96px', textAlign: 'right' }}>
+                                        Actions
+                                    </TableCell>
+                                )}
+                            </TableRow>
+                        </TableHead>
+                        <TableBody>
+                            {revisionsForEntity.map((revision) => {
+                                const isCurrent = revision.id === currentRevisionId;
+                                return (
+                                    <TableRow
+                                        key={revision.id}
+                                        sx={{
+                                            bgcolor: isCurrent ? 'action.selected' : 'transparent',
+                                            '&:hover': { bgcolor: 'action.hover' },
+                                        }}
+                                    >
+                                        <TableCell>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Typography variant="body2" fontWeight={600}>
+                                                    {revision.revisionCode}
+                                                </Typography>
+                                                {isCurrent && (
+                                                    <Chip
+                                                        label="Current"
+                                                        size="small"
+                                                        color="primary"
+                                                        variant="outlined"
+                                                        sx={{ height: 20, fontSize: '0.7rem' }}
+                                                    />
+                                                )}
+                                            </Box>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography variant="body2">
+                                                {revision.description || (revision.sequence === 1 ? 'Original' : '-')}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography variant="body2">
+                                                {formatUserDate(revision.originatedBy, revision.originatedAt)}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography variant="body2">
+                                                {formatUserDate(revision.checkedBy, revision.checkedAt)}
+                                            </Typography>
+                                        </TableCell>
+                                        <TableCell>
+                                            <Typography variant="body2">
+                                                {formatUserDate(revision.approvedBy, revision.approvedAt)}
+                                            </Typography>
+                                        </TableCell>
+                                        {showActions !== false && (
+                                            <TableCell align="right">
+                                                <Tooltip title={canManualEdit ? 'Edit revision' : 'Admin / Lead / Approver only'}>
+                                                    <span>
+                                                        <IconButton
+                                                            size="small"
+                                                            onClick={() => handleEditClick(revision)}
+                                                            disabled={!canManualEdit}
+                                                        >
+                                                            <Edit fontSize="small" />
+                                                        </IconButton>
+                                                    </span>
+                                                </Tooltip>
+                                                <Tooltip
+                                                    title={
+                                                        !canManualEdit
+                                                            ? 'Admin / Lead / Approver only'
+                                                            : revisionsForEntity.length <= 1
+                                                                ? 'At least one revision must remain'
+                                                                : 'Delete revision'
+                                                    }
+                                                >
+                                                    <span>
+                                                        <IconButton
+                                                            size="small"
+                                                            color="error"
+                                                            onClick={() => handleDeleteClick(revision)}
+                                                            disabled={!canManualEdit || revisionsForEntity.length <= 1}
+                                                        >
+                                                            <Delete fontSize="small" />
+                                                        </IconButton>
+                                                    </span>
+                                                </Tooltip>
+                                            </TableCell>
+                                        )}
+                                    </TableRow>
+                                );
+                            })}
+                        </TableBody>
+                    </Table>
+                </TableContainer>
+            </Paper>
+
+            <EditRevisionDialog
+                open={editDialogOpen}
+                onClose={() => {
+                    setEditDialogOpen(false);
+                    setEditingRevision(null);
+                }}
+                revision={editingRevision}
+                onSuccess={handleEditSuccess}
+            />
+
+            <DeleteConfirmDialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                onConfirm={handleConfirmDelete}
+                onForceDelete={handleForceDelete}
+                allowForceDelete={canManualEdit}
+                title="Deactivate Revision"
+                itemName={revisionToDelete ? `Rev. ${revisionToDelete.revisionCode}` : "revision"}
+            />
         </>
     );
 }

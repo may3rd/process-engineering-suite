@@ -15,14 +15,17 @@ export interface CollaborationSlice {
 
     addTodo: (todo: TodoItem) => Promise<void>;
     deleteTodo: (id: string) => Promise<void>;
+    softDeleteTodo: (id: string) => Promise<void>;
     toggleTodo: (id: string) => Promise<void>;
     updateTodo: (id: string, updates: Partial<TodoItem>) => Promise<void>;
     addNote: (note: ProjectNote) => Promise<void>;
     updateNote: (id: string, updates: Partial<ProjectNote>) => Promise<void>;
     deleteNote: (id: string) => Promise<void>;
+    softDeleteNote: (id: string) => Promise<void>;
     addComment: (comment: Comment) => Promise<void>;
     updateComment: (id: string, updates: Partial<Comment>) => Promise<void>;
     deleteComment: (id: string) => Promise<void>;
+    softDeleteComment: (id: string) => Promise<void>;
 }
 
 export const createCollaborationSlice: StateCreator<PsvStore, [], [], CollaborationSlice> = (set, get) => ({
@@ -76,10 +79,43 @@ export const createCollaborationSlice: StateCreator<PsvStore, [], [], Collaborat
             set((state: PsvStore) => ({
                 todoList: state.todoList.filter((t) => t.id !== id)
             }));
-            toast.success('Todo deleted');
+            toast.success('Todo permanently deleted');
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to delete todo';
-            toast.error('Failed to delete todo', { description: message });
+            const message = error instanceof Error ? error.message : 'Failed to permanently delete todo';
+            toast.error('Failed to permanently delete todo', { description: message });
+            throw error;
+        }
+    },
+
+    softDeleteTodo: async (id: string) => {
+        try {
+            const state = get();
+            const existing = state.todoList.find(t => t.id === id);
+            if (!existing) throw new Error('Todo not found');
+
+            const updated = await dataService.updateTodo(id, { isActive: false });
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'update',
+                    'todo',
+                    id,
+                    `Todo: ${existing.text.slice(0, 30)}...`,
+                    currentUser.id,
+                    currentUser.name,
+                    {
+                        userRole: currentUser.role,
+                        description: 'Deactivated todo',
+                        changes: [{ field: 'isActive', oldValue: true, newValue: false }]
+                    }
+                );
+            }
+            set((state: PsvStore) => ({
+                todoList: state.todoList.map(t => t.id === id ? updated : t)
+            }));
+            toast.success('Todo deactivated');
+        } catch (error) {
+            toast.error('Failed to deactivate todo');
             throw error;
         }
     },
@@ -212,10 +248,43 @@ export const createCollaborationSlice: StateCreator<PsvStore, [], [], Collaborat
             set((state: PsvStore) => ({
                 noteList: state.noteList.filter((n) => n.id !== id)
             }));
-            toast.success('Note deleted');
+            toast.success('Note permanently deleted');
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to delete note';
-            toast.error('Failed to delete note', { description: message });
+            const message = error instanceof Error ? error.message : 'Failed to permanently delete note';
+            toast.error('Failed to permanently delete note', { description: message });
+            throw error;
+        }
+    },
+
+    softDeleteNote: async (id: string) => {
+        try {
+            const state = get();
+            const existing = state.noteList.find(n => n.id === id);
+            if (!existing) throw new Error('Note not found');
+
+            const updated = await dataService.updateNote(id, { isActive: false });
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'update',
+                    'note',
+                    id,
+                    'Note deactivated',
+                    currentUser.id,
+                    currentUser.name,
+                    {
+                        userRole: currentUser.role,
+                        description: 'Deactivated note',
+                        changes: [{ field: 'isActive', oldValue: true, newValue: false }]
+                    }
+                );
+            }
+            set((state: PsvStore) => ({
+                noteList: state.noteList.map(n => n.id === id ? updated : n)
+            }));
+            toast.success('Note deactivated');
+        } catch (error) {
+            toast.error('Failed to deactivate note');
             throw error;
         }
     },
@@ -257,10 +326,43 @@ export const createCollaborationSlice: StateCreator<PsvStore, [], [], Collaborat
             set((state: PsvStore) => ({
                 commentList: state.commentList.filter((c) => c.id !== id)
             }));
-            toast.success('Comment deleted');
+            toast.success('Comment permanently deleted');
         } catch (error) {
-            const message = error instanceof Error ? error.message : 'Failed to delete comment';
-            toast.error('Failed to delete comment', { description: message });
+            const message = error instanceof Error ? error.message : 'Failed to permanently delete comment';
+            toast.error('Failed to permanently delete comment', { description: message });
+            throw error;
+        }
+    },
+
+    softDeleteComment: async (id: string) => {
+        try {
+            const state = get();
+            const existing = state.commentList.find(c => c.id === id);
+            if (!existing) throw new Error('Comment not found');
+
+            const updated = await dataService.updateComment(id, { isActive: false });
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'update',
+                    'comment',
+                    id,
+                    'Comment deactivated',
+                    currentUser.id,
+                    currentUser.name,
+                    {
+                        userRole: currentUser.role,
+                        description: 'Deactivated comment',
+                        changes: [{ field: 'isActive', oldValue: true, newValue: false }]
+                    }
+                );
+            }
+            set((state: PsvStore) => ({
+                commentList: state.commentList.map(c => c.id === id ? updated : c)
+            }));
+            toast.success('Comment deactivated');
+        } catch (error) {
+            toast.error('Failed to deactivate comment');
             throw error;
         }
     },

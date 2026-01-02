@@ -272,9 +272,22 @@ export function UsersTab() {
 
     const handleConfirmDelete = () => {
         if (!userToDelete) return;
+        persistUsers(
+            userList.map((user) =>
+                user.id === userToDelete.id ? { ...user, status: "inactive" } : user
+            )
+        );
+        setDeleteDialogOpen(false);
+        setUserToDelete(null);
+        toast.success(`User ${userToDelete.name} deactivated`);
+    };
+
+    const handleForceDelete = () => {
+        if (!userToDelete) return;
         persistUsers(userList.filter((user) => user.id !== userToDelete.id));
         setDeleteDialogOpen(false);
         setUserToDelete(null);
+        toast.success(`User ${userToDelete.name} permanently removed`);
     };
 
     const handleToggleStatus = (userId: string) => {
@@ -873,7 +886,10 @@ export function UsersTab() {
                 open={deleteDialogOpen}
                 onClose={() => setDeleteDialogOpen(false)}
                 onConfirm={handleConfirmDelete}
-                title="Remove User"
+                onForceDelete={handleForceDelete}
+                allowForceDelete={canManageUsers}
+                showSoftDelete={userToDelete?.status === "active"}
+                title={userToDelete?.status === "active" ? "Deactivate User" : "Permanently Remove User"}
                 itemName={userToDelete?.name || "user"}
                 children={userToDelete ? childRelationships(userToDelete) : []}
             />

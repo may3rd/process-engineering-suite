@@ -79,6 +79,7 @@ export interface RevisionHistory {
 
     // Snapshot of entity state at this revision
     snapshot: Record<string, unknown>;
+    isActive: boolean;  // Soft delete flag
     createdAt: string;
 }
 
@@ -183,6 +184,7 @@ export interface OverpressureScenario {
         }>;
     };
 
+    isActive: boolean; // Soft delete flag
     createdAt: string;
     updatedAt: string;
     version?: number;
@@ -233,6 +235,7 @@ export interface SizingCase {
     status: 'draft' | 'calculated' | 'verified' | 'approved';
     createdBy: string;
     approvedBy?: string;
+    isActive: boolean; // Soft delete flag
     createdAt: string;
     updatedAt: string;
 }
@@ -492,6 +495,7 @@ export interface Attachment {
     mimeType: string;
     size: number;
     uploadedBy: string;
+    isActive: boolean; // Soft delete flag
     createdAt: string;
 }
 
@@ -521,6 +525,7 @@ export interface Comment {
     createdAt: string;
     updatedAt?: string;
     updatedBy?: string;
+    isActive: boolean; // Soft delete flag
 }
 
 export interface ProjectNote {
@@ -531,6 +536,7 @@ export interface ProjectNote {
     createdAt: string;
     updatedAt?: string;
     updatedBy?: string;
+    isActive: boolean; // Soft delete flag
 }
 
 export interface TodoItem {
@@ -541,6 +547,7 @@ export interface TodoItem {
     assignedTo?: string;
     dueDate?: string;
     createdBy: string;
+    isActive: boolean; // Soft delete flag
     createdAt: string;
 }
 

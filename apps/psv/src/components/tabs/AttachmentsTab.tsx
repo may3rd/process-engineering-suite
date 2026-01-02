@@ -20,16 +20,21 @@ import {
 import { usePsvStore } from "@/store/usePsvStore";
 import { useAuthStore } from "@/store/useAuthStore";
 import { Attachment } from "@/data/types";
+import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
+import { useState } from 'react';
 
 export function AttachmentsTab() {
-    const { selectedPsv, attachmentList, deleteAttachment, addAttachment } = usePsvStore();
+    const { selectedPsv, attachmentList, deleteAttachment, softDeleteAttachment, addAttachment } = usePsvStore();
     const { currentUser } = useAuthStore();
     const canEdit = useAuthStore((state) => state.canEdit());
     const fileInputRef = useRef<HTMLInputElement>(null);
 
+    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [attachmentToDelete, setAttachmentToDelete] = useState<Attachment | null>(null);
+
     if (!selectedPsv) return null;
 
-    const attachments = attachmentList.filter(a => a.protectiveSystemId === selectedPsv.id);
+    const attachments = attachmentList.filter(a => a.protectiveSystemId === selectedPsv.id && a.isActive !== false);
 
     const formatFileSize = (bytes: number) => {
         if (bytes < 1024) return `${bytes} B`;
@@ -47,9 +52,24 @@ export function AttachmentsTab() {
         });
     };
 
-    const handleDelete = (id: string, name: string) => {
-        if (window.confirm(`Are you sure you want to delete ${name}?`)) {
-            deleteAttachment(id);
+    const handleDeleteClick = (attachment: Attachment) => {
+        setAttachmentToDelete(attachment);
+        setDeleteDialogOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (attachmentToDelete) {
+            await softDeleteAttachment(attachmentToDelete.id);
+            setDeleteDialogOpen(false);
+            setAttachmentToDelete(null);
+        }
+    };
+
+    const handleForceDelete = async () => {
+        if (attachmentToDelete) {
+            await deleteAttachment(attachmentToDelete.id);
+            setDeleteDialogOpen(false);
+            setAttachmentToDelete(null);
         }
     };
 
@@ -71,6 +91,7 @@ export function AttachmentsTab() {
             mimeType: file.type,
             size: file.size,
             uploadedBy: currentUser?.id || '',
+            isActive: true,
             createdAt: new Date().toISOString(),
         };
 
@@ -125,7 +146,7 @@ export function AttachmentsTab() {
                                 }}
                                 secondaryAction={
                                     canEdit ? (
-                                        <IconButton edge="end" aria-label="delete" onClick={() => handleDelete(att.id, att.fileName)}>
+                                        <IconButton edge="end" aria-label="delete" onClick={() => handleDeleteClick(att)}>
                                             <Delete />
                                         </IconButton>
                                     ) : null
@@ -149,6 +170,16 @@ export function AttachmentsTab() {
                     </Paper>
                 )}
             </Box>
+
+            <DeleteConfirmDialog
+                open={deleteDialogOpen}
+                onClose={() => setDeleteDialogOpen(false)}
+                onConfirm={handleConfirmDelete}
+                onForceDelete={handleForceDelete}
+                allowForceDelete={canEdit}
+                title="Deactivate Attachment"
+                itemName={attachmentToDelete?.fileName || "attachment"}
+            />
         </Box >
     );
 }
