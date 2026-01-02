@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Button,
-  ButtonGroup,
   Paper,
   Table,
   TableBody,
@@ -25,6 +24,9 @@ import {
   Grid,
   Stack,
   InputAdornment,
+  FormControl,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import {
   Add,
@@ -422,28 +424,17 @@ export function CustomersTab() {
             }}
           />
           {/* Status Filter */}
-          <ButtonGroup size="small" sx={{ flexShrink: 0 }}>
-            <Button
-              variant={statusFilter === 'all' ? 'contained' : 'outlined'}
-              onClick={() => setStatusFilter('all')}
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+              displayEmpty
             >
-              All ({customers.length})
-            </Button>
-            <Button
-              variant={statusFilter === 'active' ? 'contained' : 'outlined'}
-              color="success"
-              onClick={() => setStatusFilter('active')}
-            >
-              Active ({activeCustomers})
-            </Button>
-            <Button
-              variant={statusFilter === 'inactive' ? 'contained' : 'outlined'}
-              color="warning"
-              onClick={() => setStatusFilter('inactive')}
-            >
-              Inactive ({inactiveCustomers})
-            </Button>
-          </ButtonGroup>
+              <MenuItem value="all">All ({customers.length})</MenuItem>
+              <MenuItem value="active">Active ({activeCustomers})</MenuItem>
+              <MenuItem value="inactive">Inactive ({inactiveCustomers})</MenuItem>
+            </Select>
+          </FormControl>
         </Stack>
       </Paper>
 

@@ -24,9 +24,11 @@ import {
     Grid,
     Stack,
     InputAdornment,
+    FormControl,
+    Select,
+    MenuItem,
 } from "@mui/material";
 import { Add, Edit, Delete, Shield, Search, Bolt, AssignmentTurnedIn, Block } from "@mui/icons-material";
-import { ButtonGroup } from "@mui/material";
 import { areas, units, users } from "@/data/mockData";
 import { ProtectiveSystem } from "@/data/types";
 import { glassCardStyles } from "./styles";
@@ -350,28 +352,17 @@ export function PSVsTab() {
                             ),
                         }}
                     />
-                    <ButtonGroup size="small">
-                        <Button
-                            variant={statusFilter === 'all' ? 'contained' : 'outlined'}
-                            onClick={() => setStatusFilter('all')}
+                    <FormControl size="small" sx={{ minWidth: 180 }}>
+                        <Select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+                            displayEmpty
                         >
-                            All
-                        </Button>
-                        <Button
-                            variant={statusFilter === 'active' ? 'contained' : 'outlined'}
-                            onClick={() => setStatusFilter('active')}
-                            color="success"
-                        >
-                            Active
-                        </Button>
-                        <Button
-                            variant={statusFilter === 'inactive' ? 'contained' : 'outlined'}
-                            onClick={() => setStatusFilter('inactive')}
-                            color="warning"
-                        >
-                            Inactive
-                        </Button>
-                    </ButtonGroup>
+                            <MenuItem value="all">All ({protectiveSystems.length})</MenuItem>
+                            <MenuItem value="active">Active ({protectiveSystems.filter(p => p.isActive).length})</MenuItem>
+                            <MenuItem value="inactive">Inactive ({protectiveSystems.filter(p => !p.isActive).length})</MenuItem>
+                        </Select>
+                    </FormControl>
                 </Stack>
             </Paper>
 

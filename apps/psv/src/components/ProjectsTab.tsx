@@ -24,9 +24,11 @@ import {
     Grid,
     Stack,
     InputAdornment,
+    FormControl,
+    Select,
+    MenuItem,
 } from "@mui/material";
 import { Add, Edit, Delete, Folder, Search, Shield, CheckCircle, Block } from "@mui/icons-material";
-import { ButtonGroup } from "@mui/material";
 import { areas, units, users } from "@/data/mockData";
 import { Project } from "@/data/types";
 import { glassCardStyles } from "./styles";
@@ -44,11 +46,16 @@ export function ProjectsTab() {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const canEdit = useAuthStore((state) => state.canEdit());
     const canApprove = useAuthStore((state) => state.canApprove());
-    const { addProject, updateProject, deleteProject, softDeleteProject, fetchAllProjects, areProjectsLoaded } = usePsvStore();
+    const {
+        addProject, updateProject, deleteProject, softDeleteProject,
+        fetchAllProjects, areProjectsLoaded,
+        fetchAllProtectiveSystems, arePsvsLoaded
+    } = usePsvStore();
     const selectedArea = usePsvStore((state) => state.selectedArea);
 
     const [isLoadingInit, setIsLoadingInit] = useState(false);
 
+    // Load projects if not already loaded
     useEffect(() => {
         if (!areProjectsLoaded) {
             setIsLoadingInit(true);
@@ -56,6 +63,15 @@ export function ProjectsTab() {
         }
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [areProjectsLoaded]);
+
+    // Load protective systems for PSV count display
+    useEffect(() => {
+        if (!arePsvsLoaded) {
+            fetchAllProtectiveSystems();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [arePsvsLoaded]);
+
     const projects = usePsvStore((state) => state.projects);
     const protectiveSystems = usePsvStore((state) => state.protectiveSystems);
 
@@ -354,28 +370,17 @@ export function ProjectsTab() {
                             ),
                         }}
                     />
-                    <ButtonGroup size="small">
-                        <Button
-                            variant={statusFilter === 'all' ? 'contained' : 'outlined'}
-                            onClick={() => setStatusFilter('all')}
+                    <FormControl size="small" sx={{ minWidth: 180 }}>
+                        <Select
+                            value={statusFilter}
+                            onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+                            displayEmpty
                         >
-                            All
-                        </Button>
-                        <Button
-                            variant={statusFilter === 'active' ? 'contained' : 'outlined'}
-                            onClick={() => setStatusFilter('active')}
-                            color="success"
-                        >
-                            Active
-                        </Button>
-                        <Button
-                            variant={statusFilter === 'inactive' ? 'contained' : 'outlined'}
-                            onClick={() => setStatusFilter('inactive')}
-                            color="warning"
-                        >
-                            Inactive
-                        </Button>
-                    </ButtonGroup>
+                            <MenuItem value="all">All ({projects.length})</MenuItem>
+                            <MenuItem value="active">Active ({projects.filter(p => p.isActive).length})</MenuItem>
+                            <MenuItem value="inactive">Inactive ({projects.filter(p => !p.isActive).length})</MenuItem>
+                        </Select>
+                    </FormControl>
                 </Stack>
             </Paper>
 

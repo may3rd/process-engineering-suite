@@ -226,7 +226,7 @@ export function UsersTab() {
     );
 
     // Pagination
-  const [itemsPerPage, setItemsPerPage] = useLocalStorage('dashboard_items_per_page', 15);
+    const [itemsPerPage, setItemsPerPage] = useLocalStorage('dashboard_items_per_page', 15);
     const pagination = usePagination(sortedUsers, {
         totalItems: sortedUsers.length,
         itemsPerPage: itemsPerPage,
@@ -431,6 +431,7 @@ export function UsersTab() {
                         placeholder="Search by name or email..."
                         value={searchText}
                         onChange={(e) => setSearchText(e.target.value)}
+                        size="small"
                         fullWidth
                         InputProps={{
                             startAdornment: (
@@ -704,20 +705,20 @@ export function UsersTab() {
                 </Table>
 
                 {/* Pagination for mobile */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
-            <ItemsPerPageSelector
-              value={itemsPerPage}
-              onChange={setItemsPerPage}
-            />
-            <PaginationControls
-              currentPage={pagination.currentPage}
-              totalPages={pagination.totalPages}
-              pageNumbers={pagination.pageNumbers}
-              onPageChange={pagination.goToPage}
-              hasNextPage={pagination.hasNextPage}
-              hasPrevPage={pagination.hasPrevPage}
-            />
-          </Box>
+                <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+                    <ItemsPerPageSelector
+                        value={itemsPerPage}
+                        onChange={setItemsPerPage}
+                    />
+                    <PaginationControls
+                        currentPage={pagination.currentPage}
+                        totalPages={pagination.totalPages}
+                        pageNumbers={pagination.pageNumbers}
+                        onPageChange={pagination.goToPage}
+                        hasNextPage={pagination.hasNextPage}
+                        hasPrevPage={pagination.hasPrevPage}
+                    />
+                </Box>
             </TableContainer>
 
             {/* Mobile Cards */}
@@ -845,20 +846,20 @@ export function UsersTab() {
                 })}
 
                 {/* Pagination for desktop */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 2, px: 2 }}>
-            <ItemsPerPageSelector
-              value={itemsPerPage}
-              onChange={setItemsPerPage}
-            />
-            <PaginationControls
-              currentPage={pagination.currentPage}
-              totalPages={pagination.totalPages}
-              pageNumbers={pagination.pageNumbers}
-              onPageChange={pagination.goToPage}
-              hasNextPage={pagination.hasNextPage}
-              hasPrevPage={pagination.hasPrevPage}
-            />
-          </Box>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 2, px: 2 }}>
+                    <ItemsPerPageSelector
+                        value={itemsPerPage}
+                        onChange={setItemsPerPage}
+                    />
+                    <PaginationControls
+                        currentPage={pagination.currentPage}
+                        totalPages={pagination.totalPages}
+                        pageNumbers={pagination.pageNumbers}
+                        onPageChange={pagination.goToPage}
+                        hasNextPage={pagination.hasNextPage}
+                        hasPrevPage={pagination.hasPrevPage}
+                    />
+                </Box>
             </Stack>
 
             <UserDialog

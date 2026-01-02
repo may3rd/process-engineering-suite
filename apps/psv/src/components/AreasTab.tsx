@@ -4,7 +4,6 @@ import { useMemo, useState, useEffect } from "react";
 import {
   Box,
   Button,
-  ButtonGroup,
   Paper,
   Table,
   TableBody,
@@ -26,6 +25,9 @@ import {
   Grid,
   Stack,
   InputAdornment,
+  FormControl,
+  Select,
+  MenuItem,
 } from "@mui/material";
 import {
   Add,
@@ -458,28 +460,17 @@ export function AreasTab() {
             }}
           />
           {/* Status Filter */}
-          <ButtonGroup size="small" sx={{ flexShrink: 0 }}>
-            <Button
-              variant={statusFilter === 'all' ? 'contained' : 'outlined'}
-              onClick={() => setStatusFilter('all')}
+          <FormControl size="small" sx={{ minWidth: 180 }}>
+            <Select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+              displayEmpty
             >
-              All ({areas.length})
-            </Button>
-            <Button
-              variant={statusFilter === 'active' ? 'contained' : 'outlined'}
-              color="success"
-              onClick={() => setStatusFilter('active')}
-            >
-              Active ({areas.filter(e => e.status === 'active').length})
-            </Button>
-            <Button
-              variant={statusFilter === 'inactive' ? 'contained' : 'outlined'}
-              color="warning"
-              onClick={() => setStatusFilter('inactive')}
-            >
-              Inactive ({areas.filter(e => e.status === 'inactive').length})
-            </Button>
-          </ButtonGroup>
+              <MenuItem value="all">All ({areas.length})</MenuItem>
+              <MenuItem value="active">Active ({areas.filter(e => e.status === 'active').length})</MenuItem>
+              <MenuItem value="inactive">Inactive ({areas.filter(e => e.status === 'inactive').length})</MenuItem>
+            </Select>
+          </FormControl>
         </Stack>
       </Paper>
 

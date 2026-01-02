@@ -586,6 +586,8 @@ class DatabaseService(DataAccessLayer):
             "userName": "user_name",
             "userRole": "user_role",
             "projectName": "project_name",
+            # Soft delete
+            "isActive": "is_active",
         }
         new_data = data.copy()
         
