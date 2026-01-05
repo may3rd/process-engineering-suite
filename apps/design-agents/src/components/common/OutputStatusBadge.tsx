@@ -16,7 +16,7 @@ interface OutputStatusBadgeProps {
 export function OutputStatusBadge({ status, size = 'small' }: OutputStatusBadgeProps) {
     const theme = useTheme();
 
-    const statusConfig: Record<OutputStatus, { label: string; color: string; icon: React.ReactNode }> = {
+    const statusConfig: Record<OutputStatus, { label: string; color: string; icon: React.ReactElement }> = {
         draft: {
             label: 'Draft',
             color: theme.palette.mode === 'dark' ? '#0284c7' : '#0ea5e9',

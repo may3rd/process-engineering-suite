@@ -4,6 +4,7 @@ import { Box, Tabs, Tab, useTheme } from "@mui/material";
 import { useDesignStore } from "@/store/useDesignStore";
 import { RequirementsView } from "./views/RequirementsView";
 import { ResearchView } from "./views/ResearchView";
+import { ComponentListView } from "./views/ComponentListView";
 import { DesignBasisView } from "./views/DesignBasisView";
 import { SpreadsheetView } from "./views/SpreadsheetView";
 import { ApprovalView } from "./views/ApprovalView";
@@ -11,7 +12,7 @@ import { LLMSettingsView } from "./views/LLMSettingsView";
 import { StorageView } from "./views/StorageView";
 import { ExportView } from "./views/ExportView";
 
-type ViewTab = 'requirements' | 'research' | 'design' | 'spreadsheet' | 'approval' | 'settings' | 'storage' | 'export';
+type ViewTab = 'requirements' | 'research' | 'components' | 'design' | 'spreadsheet' | 'approval' | 'settings' | 'storage' | 'export';
 
 // Spacer component that consumes MUI Tabs injected props to avoid console warnings
 const TabSpacer = () => <Box sx={{ flexGrow: 1 }} />;
@@ -52,6 +53,7 @@ export function DesignWorkspace() {
             >
                 <Tab label="Requirements" value="requirements" />
                 <Tab label="Research" value="research" />
+                <Tab label="Components" value="components" />
                 <Tab label="Design Basis" value="design" />
                 <Tab label="Equipment & Streams" value="spreadsheet" />
                 <Tab label="Approval" value="approval" />
@@ -64,6 +66,7 @@ export function DesignWorkspace() {
             <Box sx={{ p: 3 }}>
                 {activeTab === 'requirements' && <RequirementsView />}
                 {activeTab === 'research' && <ResearchView />}
+                {activeTab === 'components' && <ComponentListView />}
                 {activeTab === 'design' && <DesignBasisView />}
                 {activeTab === 'spreadsheet' && <SpreadsheetView />}
                 {activeTab === 'approval' && <ApprovalView />}

@@ -87,6 +87,7 @@ export interface DesignState {
     researchRatingResults: string; // JSON string
     selectedConceptName: string;
     selectedConceptDetails: string;
+    selectedConceptEvaluation: string; // JSON of chosen concept's evaluation
     componentList: string;
     designBasis: string;
     flowsheetDescription: string;
@@ -101,14 +102,20 @@ export interface DesignState {
     // UI state
     currentStep: number;
     stepStatuses: Record<number, StepStatus>;
-    activeTab: 'requirements' | 'research' | 'design' | 'spreadsheet' | 'approval' | 'settings' | 'storage' | 'export';
+    activeTab: 'requirements' | 'research' | 'components' | 'design' | 'spreadsheet' | 'approval' | 'settings' | 'storage' | 'export';
     outputStatuses: Record<string, OutputMetadata>;
 
-    // LLM configuration
-    llmProvider: string;
-    llmModel: string;
-    llmTemperature: number;
-    llmApiKey: string;
+    // LLM configuration - Quick model (for fast responses)
+    llmQuickProvider: string;
+    llmQuickModel: string;
+    llmQuickTemperature: number;
+    llmQuickApiKey: string;
+
+    // LLM configuration - Deep Thinking model (for complex reasoning)
+    llmDeepProvider: string;
+    llmDeepModel: string;
+    llmDeepTemperature: number;
+    llmDeepApiKey: string;
 }
 
 export const AGENT_STEPS: AgentStep[] = [

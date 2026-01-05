@@ -38,7 +38,7 @@ export function StorageView() {
             </Typography>
 
             <Grid container spacing={4}>
-                <Grid item xs={12} md={7}>
+                <Grid size={{ xs: 12, md: 7 }}>
                     <Paper
                         elevation={0}
                         sx={{
@@ -92,7 +92,7 @@ export function StorageView() {
                     </Paper>
                 </Grid>
 
-                <Grid item xs={12} md={5}>
+                <Grid size={{ xs: 12, md: 5 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                         <Button
                             variant="contained"

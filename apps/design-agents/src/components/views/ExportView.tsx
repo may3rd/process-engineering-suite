@@ -4,7 +4,6 @@ import {
     Box,
     Typography,
     Button,
-    Paper,
     useTheme,
     Grid,
     Card,
@@ -35,7 +34,7 @@ export function ExportView() {
             </Typography>
 
             <Grid container spacing={3}>
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                     <Card
                         elevation={0}
                         sx={{
@@ -64,7 +63,7 @@ export function ExportView() {
                     </Card>
                 </Grid>
 
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                     <Card
                         elevation={0}
                         sx={{
@@ -93,7 +92,7 @@ export function ExportView() {
                     </Card>
                 </Grid>
 
-                <Grid item xs={12} md={4}>
+                <Grid size={{ xs: 12, md: 4 }}>
                     <Card
                         elevation={0}
                         sx={{

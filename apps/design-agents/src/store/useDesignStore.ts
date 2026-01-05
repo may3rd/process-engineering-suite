@@ -35,11 +35,17 @@ interface DesignStoreState extends DesignState {
     markOutputEdited: (key: keyof DesignState) => void;
     getOutputMetadata: (key: keyof DesignState) => OutputMetadata | undefined;
 
-    // LLM settings
-    setLLMProvider: (provider: string) => void;
-    setLLMModel: (model: string) => void;
-    setLLMTemperature: (temperature: number) => void;
-    setLLMApiKey: (apiKey: string) => void;
+    // LLM settings - Quick model
+    setLLMQuickProvider: (provider: string) => void;
+    setLLMQuickModel: (model: string) => void;
+    setLLMQuickTemperature: (temperature: number) => void;
+    setLLMQuickApiKey: (apiKey: string) => void;
+
+    // LLM settings - Deep Thinking model
+    setLLMDeepProvider: (provider: string) => void;
+    setLLMDeepModel: (model: string) => void;
+    setLLMDeepTemperature: (temperature: number) => void;
+    setLLMDeepApiKey: (apiKey: string) => void;
 }
 
 const initialState: DesignState = {
@@ -50,6 +56,7 @@ const initialState: DesignState = {
     researchRatingResults: mockResearchRatingResults,
     selectedConceptName: 'Autothermal Reforming (ATR)',
     selectedConceptDetails: '',
+    selectedConceptEvaluation: '',
     componentList: mockComponentList,
     designBasis: mockDesignBasis,
     flowsheetDescription: mockFlowsheetDescription,
@@ -75,10 +82,14 @@ const initialState: DesignState = {
         10: 'complete',
         11: 'complete',
     },
-    llmProvider: 'openrouter',
-    llmModel: 'anthropic/claude-3.5-sonnet',
-    llmTemperature: 0.7,
-    llmApiKey: '',
+    llmQuickProvider: 'openrouter',
+    llmQuickModel: 'google/gemini-2.0-flash-exp',
+    llmQuickTemperature: 0.5,
+    llmQuickApiKey: '',
+    llmDeepProvider: 'openrouter',
+    llmDeepModel: 'anthropic/claude-3.5-sonnet',
+    llmDeepTemperature: 0.7,
+    llmDeepApiKey: '',
     activeTab: 'requirements',
     outputStatuses: {},
 };
@@ -249,24 +260,38 @@ export const useDesignStore = create<DesignStoreState>((set, get) => ({
         return outputStatuses[key];
     },
 
-    setLLMProvider: (provider) => set({ llmProvider: provider }),
-    setLLMModel: (model) => set({ llmModel: model }),
-    setLLMTemperature: (temperature) => set({ llmTemperature: temperature }),
-    setLLMApiKey: (apiKey) => set({ llmApiKey: apiKey }),
+    // Quick model setters
+    setLLMQuickProvider: (provider) => set({ llmQuickProvider: provider }),
+    setLLMQuickModel: (model) => set({ llmQuickModel: model }),
+    setLLMQuickTemperature: (temperature) => set({ llmQuickTemperature: temperature }),
+    setLLMQuickApiKey: (apiKey) => set({ llmQuickApiKey: apiKey }),
+
+    // Deep Thinking model setters
+    setLLMDeepProvider: (provider) => set({ llmDeepProvider: provider }),
+    setLLMDeepModel: (model) => set({ llmDeepModel: model }),
+    setLLMDeepTemperature: (temperature) => set({ llmDeepTemperature: temperature }),
+    setLLMDeepApiKey: (apiKey) => set({ llmDeepApiKey: apiKey }),
 }));
 
 // Helper function to map output keys to step indices
+// Steps: 0-Process Req, 1-Innovative, 2-Conservative, 3-Concept Detailer, 4-Component List,
+// 5-Design Basis, 6-Flowsheet, 7-Catalog, 8-Stream Estimation, 9-Equipment Sizing,
+// 10-Safety, 11-Project Manager
 function getStepIndexForKey(key: keyof DesignState): number {
     const keyToStepMap: Record<string, number> = {
         'processRequirements': 0,
         'researchConcepts': 1,
         'researchRatingResults': 2,
         'selectedConceptName': 3,
+        'selectedConceptDetails': 3,
+        'selectedConceptEvaluation': 3,
         'componentList': 4,
         'designBasis': 5,
         'flowsheetDescription': 6,
-        'equipmentListResults': 7,
-        'streamListResults': 7,
+        'equipmentListTemplate': 7,
+        'streamListTemplate': 7,
+        'streamListResults': 8,
+        'equipmentListResults': 9,
         'safetyRiskAnalystReport': 10,
         'projectManagerReport': 11,
     };

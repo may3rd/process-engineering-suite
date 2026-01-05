@@ -5,11 +5,27 @@ import { useState } from "react";
 import { useDesignStore } from "@/store/useDesignStore";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { EquipmentItem, StreamItem } from "@/data/types";
+import { OutputStatusBadge } from "../common/OutputStatusBadge";
+import { RunAgentButton } from "../common/RunAgentButton";
 
 export function SpreadsheetView() {
     const theme = useTheme();
-    const { equipmentListResults, streamListResults } = useDesignStore();
+    const {
+        equipmentListResults,
+        streamListResults,
+        stepStatuses,
+        triggerNextStep,
+        getOutputMetadata,
+    } = useDesignStore();
     const [activeTab, setActiveTab] = useState<'equipment' | 'streams'>('equipment');
+
+    const equipmentStatus = getOutputMetadata('equipmentListResults');
+    const streamStatus = getOutputMetadata('streamListResults');
+
+    // Step 7: Catalog generation, Step 8: Stream estimation, Step 9: Equipment sizing
+    const canRunCatalog = stepStatuses[7] === 'pending' || stepStatuses[7] === 'edited';
+    const canRunStreamEstimation = stepStatuses[8] === 'pending' || stepStatuses[8] === 'edited';
+    const canRunSizing = stepStatuses[9] === 'pending' || stepStatuses[9] === 'edited';
 
     let equipment: EquipmentItem[] = [];
     let streams: StreamItem[] = [];
@@ -53,14 +69,49 @@ export function SpreadsheetView() {
                 Editable spreadsheet view with Excel copy-paste support
             </Typography>
 
-            <Tabs
-                value={activeTab}
-                onChange={(_, newValue) => setActiveTab(newValue)}
-                sx={{ mb: 2 }}
-            >
-                <Tab label={`Equipment (${equipment.length})`} value="equipment" />
-                <Tab label={`Streams (${streams.length})`} value="streams" />
-            </Tabs>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <Tabs
+                        value={activeTab}
+                        onChange={(_, newValue) => setActiveTab(newValue)}
+                    >
+                        <Tab label={`Equipment (${equipment.length})`} value="equipment" />
+                        <Tab label={`Streams (${streams.length})`} value="streams" />
+                    </Tabs>
+                    {activeTab === 'equipment' && equipmentStatus && (
+                        <OutputStatusBadge status={equipmentStatus.status} />
+                    )}
+                    {activeTab === 'streams' && streamStatus && (
+                        <OutputStatusBadge status={streamStatus.status} />
+                    )}
+                </Box>
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                    <RunAgentButton
+                        label={stepStatuses[7] === 'pending' ? 'Generate Catalogs' : 'Regenerate'}
+                        onClick={triggerNextStep}
+                        disabled={!canRunCatalog}
+                        isRerun={stepStatuses[7] !== 'pending'}
+                        loading={stepStatuses[7] === 'running'}
+                        size="small"
+                    />
+                    <RunAgentButton
+                        label="Estimate Streams"
+                        onClick={triggerNextStep}
+                        disabled={!canRunStreamEstimation}
+                        isRerun={stepStatuses[8] !== 'pending'}
+                        loading={stepStatuses[8] === 'running'}
+                        size="small"
+                    />
+                    <RunAgentButton
+                        label="Size Equipment"
+                        onClick={triggerNextStep}
+                        disabled={!canRunSizing}
+                        isRerun={stepStatuses[9] !== 'pending'}
+                        loading={stepStatuses[9] === 'running'}
+                        size="small"
+                    />
+                </Box>
+            </Box>
 
             <Box
                 sx={{

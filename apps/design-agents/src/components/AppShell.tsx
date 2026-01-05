@@ -1,7 +1,8 @@
 "use client";
 
-import { Box } from "@mui/material";
+import { Box, IconButton } from "@mui/material";
 import { TopFloatingToolbar } from "@eng-suite/ui-kit";
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { ReactNode } from "react";
 
 interface AppShellProps {
@@ -13,9 +14,11 @@ export function AppShell({ children }: AppShellProps) {
         <Box sx={{ minHeight: '100vh', position: 'relative' }}>
             <TopFloatingToolbar
                 title="Process Design Agents"
-                onBack={() => {
-                    window.location.href = '/';
-                }}
+                leadingAction={
+                    <IconButton onClick={() => window.location.href = '/'}>
+                        <ArrowBackIcon />
+                    </IconButton>
+                }
             />
             <Box sx={{ pt: '72px' }}>
                 {children}

@@ -18,7 +18,7 @@ export function MarkdownEditor({ value, onChange, minHeight = 400 }: MarkdownEdi
     return (
         <Box sx={{ width: '100%' }}>
             <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 1 }}>
-                <Tabs value={mode} onChange={(_, v) => setMode(v)} size="small">
+                <Tabs value={mode} onChange={(_, v) => setMode(v)}>
                     <Tab label="Edit" value="edit" sx={{ minWidth: 80 }} />
                     <Tab label="Preview" value="preview" sx={{ minWidth: 80 }} />
                 </Tabs>

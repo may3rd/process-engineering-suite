@@ -3,10 +3,26 @@
 import { Box, Typography, Paper, useTheme } from "@mui/material";
 import { useDesignStore } from "@/store/useDesignStore";
 import { MarkdownEditor } from "../common/MarkdownEditor";
+import { OutputStatusBadge } from "../common/OutputStatusBadge";
+import { RunAgentButton } from "../common/RunAgentButton";
 
 export function DesignBasisView() {
     const theme = useTheme();
-    const { designBasis, flowsheetDescription, setStepOutput } = useDesignStore();
+    const {
+        designBasis,
+        flowsheetDescription,
+        setStepOutput,
+        stepStatuses,
+        triggerNextStep,
+        getOutputMetadata,
+        markOutputEdited,
+    } = useDesignStore();
+
+    const designBasisStatus = getOutputMetadata('designBasis');
+    const flowsheetStatus = getOutputMetadata('flowsheetDescription');
+
+    const canRunDesignBasis = stepStatuses[5] === 'pending' || stepStatuses[5] === 'edited';
+    const canRunFlowsheet = stepStatuses[6] === 'pending' || stepStatuses[6] === 'edited';
 
     return (
         <Box>
@@ -31,14 +47,29 @@ export function DesignBasisView() {
                         border: `1px solid ${theme.palette.divider}`,
                     }}
                 >
-                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                        Design Basis
-                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            Design Basis
+                        </Typography>
+                        {designBasisStatus && <OutputStatusBadge status={designBasisStatus.status} />}
+                    </Box>
                     <Box sx={{ mt: 2 }}>
                         <MarkdownEditor
                             value={designBasis}
-                            onChange={(val) => setStepOutput('designBasis', val)}
+                            onChange={(val) => {
+                                setStepOutput('designBasis', val);
+                                markOutputEdited('designBasis');
+                            }}
                             minHeight={300}
+                        />
+                    </Box>
+                    <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                        <RunAgentButton
+                            label={stepStatuses[5] === 'pending' ? 'Generate Design Basis' : 'Regenerate Basis'}
+                            onClick={triggerNextStep}
+                            disabled={!canRunDesignBasis}
+                            isRerun={stepStatuses[5] !== 'pending'}
+                            loading={stepStatuses[5] === 'running'}
                         />
                     </Box>
                 </Paper>
@@ -56,14 +87,29 @@ export function DesignBasisView() {
                         border: `1px solid ${theme.palette.divider}`,
                     }}
                 >
-                    <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                        Flowsheet Description
-                    </Typography>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            Flowsheet Description
+                        </Typography>
+                        {flowsheetStatus && <OutputStatusBadge status={flowsheetStatus.status} />}
+                    </Box>
                     <Box sx={{ mt: 2 }}>
                         <MarkdownEditor
                             value={flowsheetDescription}
-                            onChange={(val) => setStepOutput('flowsheetDescription', val)}
+                            onChange={(val) => {
+                                setStepOutput('flowsheetDescription', val);
+                                markOutputEdited('flowsheetDescription');
+                            }}
                             minHeight={300}
+                        />
+                    </Box>
+                    <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                        <RunAgentButton
+                            label={stepStatuses[6] === 'pending' ? 'Generate Flowsheet' : 'Regenerate Flowsheet'}
+                            onClick={triggerNextStep}
+                            disabled={!canRunFlowsheet}
+                            isRerun={stepStatuses[6] !== 'pending'}
+                            loading={stepStatuses[6] === 'running'}
                         />
                     </Box>
                 </Paper>
