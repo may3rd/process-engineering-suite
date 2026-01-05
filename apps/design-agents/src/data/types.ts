@@ -102,7 +102,7 @@ export interface DesignState {
     // UI state
     currentStep: number;
     stepStatuses: Record<number, StepStatus>;
-    activeTab: 'requirements' | 'research' | 'components' | 'design' | 'spreadsheet' | 'approval' | 'settings' | 'storage' | 'export';
+    activeTab: 'requirements' | 'research' | 'components' | 'design' | 'spreadsheet' | 'approval' | 'settings' | 'storage' | 'export' | 'transcript';
     outputStatuses: Record<string, OutputMetadata>;
 
     // LLM configuration - Quick model (for fast responses)
@@ -118,6 +118,22 @@ export interface DesignState {
     llmDeepTemperature: number;
     llmDeepApiKey: string;
     llmDeepUseStructured: boolean;
+
+    // LLM message transcript for debugging
+    messages: LLMMessage[];
+}
+
+/**
+ * LLM Message for transcript tracking
+ */
+export interface LLMMessage {
+    id: string;
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+    timestamp: string;
+    agentStep?: AgentStep;
+    model?: string;
+    tokenCount?: number;
 }
 
 export const AGENT_STEPS: AgentStep[] = [

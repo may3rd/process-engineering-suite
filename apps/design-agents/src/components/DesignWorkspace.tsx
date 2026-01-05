@@ -11,8 +11,9 @@ import { ApprovalView } from "./views/ApprovalView";
 import { LLMSettingsView } from "./views/LLMSettingsView";
 import { StorageView } from "./views/StorageView";
 import { ExportView } from "./views/ExportView";
+import { TranscriptView } from "./views/TranscriptView";
 
-type ViewTab = 'requirements' | 'research' | 'components' | 'design' | 'spreadsheet' | 'approval' | 'settings' | 'storage' | 'export';
+type ViewTab = 'requirements' | 'research' | 'components' | 'design' | 'spreadsheet' | 'approval' | 'settings' | 'storage' | 'export' | 'transcript';
 
 // Spacer component that consumes MUI Tabs injected props to avoid console warnings
 const TabSpacer = () => <Box sx={{ flexGrow: 1 }} />;
@@ -59,6 +60,7 @@ export function DesignWorkspace() {
                 <Tab label="Approval" value="approval" />
                 <TabSpacer />
                 <Tab label="LLM Settings" value="settings" />
+                <Tab label="Transcript" value="transcript" />
                 <Tab label="Storage" value="storage" />
                 <Tab label="Export" value="export" />
             </Tabs>
@@ -71,6 +73,7 @@ export function DesignWorkspace() {
                 {activeTab === 'spreadsheet' && <SpreadsheetView />}
                 {activeTab === 'approval' && <ApprovalView />}
                 {activeTab === 'settings' && <LLMSettingsView />}
+                {activeTab === 'transcript' && <TranscriptView />}
                 {activeTab === 'storage' && <StorageView />}
                 {activeTab === 'export' && <ExportView />}
             </Box>

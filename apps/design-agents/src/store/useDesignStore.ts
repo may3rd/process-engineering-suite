@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { DesignState, StepStatus, OutputStatus, OutputMetadata } from '@/data/types';
+import { DesignState, StepStatus, OutputStatus, OutputMetadata, LLMMessage, AgentStep } from '@/data/types';
 import {
     mockProject,
     mockProblemStatement,
@@ -49,6 +49,10 @@ interface DesignStoreState extends DesignState {
     setLLMDeepTemperature: (temperature: number) => void;
     setLLMDeepApiKey: (apiKey: string) => void;
     setLLMDeepUseStructured: (useStructured: boolean) => void;
+
+    // Message transcript actions
+    addMessage: (message: Omit<LLMMessage, 'id' | 'timestamp'>) => void;
+    clearMessages: () => void;
 }
 
 const initialState: DesignState = {
@@ -97,6 +101,7 @@ const initialState: DesignState = {
     llmDeepUseStructured: false,
     activeTab: 'requirements',
     outputStatuses: {},
+    messages: [],
 };
 
 export const useDesignStore = create<DesignStoreState>()(
@@ -280,6 +285,16 @@ export const useDesignStore = create<DesignStoreState>()(
             setLLMDeepTemperature: (temperature) => set({ llmDeepTemperature: temperature }),
             setLLMDeepApiKey: (apiKey) => set({ llmDeepApiKey: apiKey }),
             setLLMDeepUseStructured: (useStructured) => set({ llmDeepUseStructured: useStructured }),
+
+            // Message transcript actions
+            addMessage: (message) => set((state) => ({
+                messages: [...state.messages, {
+                    ...message,
+                    id: `msg-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    timestamp: new Date().toISOString(),
+                }],
+            })),
+            clearMessages: () => set({ messages: [] }),
         }),
         {
             name: 'design-agents-project',
@@ -319,6 +334,8 @@ export const useDesignStore = create<DesignStoreState>()(
                 llmDeepTemperature: state.llmDeepTemperature,
                 llmDeepApiKey: state.llmDeepApiKey,
                 llmDeepUseStructured: state.llmDeepUseStructured,
+                // Persist message transcript
+                messages: state.messages,
                 // Exclude: activeTab (UI state)
             }),
         }
