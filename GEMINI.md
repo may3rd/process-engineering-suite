@@ -1,5 +1,7 @@
 # Process Engineering Suite: React Coding Rules
 
+**Always use `bun` instead of `npm` or `yarn`**
+
 ## 1. Architecture & Performance
 - **Framework:** Prefer Vite + TypeScript for fast HMR on M4 Pro.
 - **Component Design:** Use the "Container/Presenter" pattern. Keep calculation logic in custom hooks (`useFlashCalculation.ts`) and UI in pure components.

@@ -4,19 +4,19 @@
 
 1.  **Install Dependencies**:
     ```bash
-    npm install
+    bun install
     ```
 
 2.  **Run Development Server**:
     ```bash
-    npm run dev
+    bun run dev
     ```
     - Dashboard: [http://localhost:3000](http://localhost:3000)
     - Network Editor: [http://localhost:3002](http://localhost:3002)
 
 3.  **Build**:
     ```bash
-    npm run build
+    bun run build
     ```
 
 ## Project Structure

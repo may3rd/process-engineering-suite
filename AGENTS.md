@@ -4,6 +4,8 @@ This document provides build commands, testing procedures, and code style guidel
 
 ## Build Commands
 
+**Always use `bun` instead of `npm` or `yarn`**
+
 ### Root Level (Monorepo)
 
 ```bash
