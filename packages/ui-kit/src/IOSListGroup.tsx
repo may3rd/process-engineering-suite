@@ -1,3 +1,5 @@
+"use client";
+
 import { Box, Typography, useTheme } from "@mui/material";
 import { glassListGroupSx } from "./glassStyles";
 import { ReactNode } from "react";

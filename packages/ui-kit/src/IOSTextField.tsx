@@ -1,3 +1,5 @@
+"use client";
+
 import { Box, TextField, TextFieldProps, InputAdornment, IconButton, useTheme } from "@mui/material";
 import { Cancel } from "@mui/icons-material";
 

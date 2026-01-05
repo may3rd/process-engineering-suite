@@ -1,0 +1,31 @@
+{
+    "extends": "../../packages/tsconfig/base.json",
+    "compilerOptions": {
+        "plugins": [
+            {
+                "name": "next"
+            }
+        ],
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "./src/*"
+            ],
+            "@eng-suite/physics": [
+                "../../packages/physics-engine/src/index.ts"
+            ],
+            "@eng-suite/ui-kit": [
+                "../../packages/ui-kit/src/index.ts"
+            ]
+        }
+    },
+    "include": [
+        "next-env.d.ts",
+        "**/*.ts",
+        "**/*.tsx",
+        ".next/types/**/*.ts"
+    ],
+    "exclude": [
+        "node_modules"
+    ]
+}

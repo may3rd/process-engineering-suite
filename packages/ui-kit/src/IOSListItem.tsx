@@ -1,3 +1,5 @@
+"use client";
+
 import { Box, Typography, useTheme, Stack } from "@mui/material";
 import { ChevronRight } from "@mui/icons-material";
 import { ReactNode } from "react";
