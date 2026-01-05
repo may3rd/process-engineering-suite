@@ -1,11 +1,18 @@
 "use client";
 
-import { Box, Typography, Card, CardContent, Chip, Paper, useTheme, Radio, RadioGroup, FormControlLabel, Button, Alert } from "@mui/material";
+import { Box, Typography, Card, CardContent, Chip, Paper, useTheme, Radio, RadioGroup, FormControlLabel, Alert } from "@mui/material";
 import { useDesignStore } from "@/store/useDesignStore";
 import { ResearchConcept, ConceptEvaluation } from "@/data/types";
 import { OutputStatusBadge } from "../common/OutputStatusBadge";
 import { RunAgentButton } from "../common/RunAgentButton";
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import { useState } from "react";
+
+/**
+ * ResearchView component for displaying research concepts and evaluations.
+ * Handles innovative and conservative research outputs, concept selection, and error states.
+ */
+type MaturityColor = 'success' | 'warning' | 'error' | 'default';
 
 export function ResearchView() {
     const theme = useTheme();
@@ -20,6 +27,8 @@ export function ResearchView() {
         setStepOutput,
     } = useDesignStore();
 
+    const [parseError, setParseError] = useState<string | null>(null);
+
     const conceptsStatus = getOutputMetadata('researchConcepts');
     const ratingsStatus = getOutputMetadata('researchRatingResults');
 
@@ -29,8 +38,10 @@ export function ResearchView() {
     try {
         if (researchConcepts) concepts = JSON.parse(researchConcepts);
         if (researchRatingResults) evaluations = JSON.parse(researchRatingResults);
+        setParseError(null);
     } catch (e) {
-        // Invalid JSON, show empty
+        setParseError('Failed to parse research data. Please check the input.');
+        console.error('JSON parse error:', e);
     }
 
     const canRunInnovative = stepStatuses[1] === 'pending' || stepStatuses[1] === 'edited';
@@ -46,7 +57,7 @@ export function ResearchView() {
         setStepOutput('selectedConceptName', conceptName);
     };
 
-    const getMaturityColor = (maturity: string) => {
+    const getMaturityColor = (maturity: string): MaturityColor => {
         switch (maturity) {
             case 'Proven': return 'success';
             case 'Emerging': return 'warning';
@@ -63,6 +74,12 @@ export function ResearchView() {
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                 Innovative concepts vs. conservative feasibility analysis
             </Typography>
+
+            {parseError && (
+                <Alert severity="error" sx={{ mb: 3 }}>
+                    {parseError}
+                </Alert>
+            )}
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                 {/* Innovative Researcher Output */}
@@ -115,7 +132,7 @@ export function ResearchView() {
                                             <Chip
                                                 label={concept.maturity}
                                                 size="small"
-                                                color={getMaturityColor(concept.maturity) as any}
+                                                color={getMaturityColor(concept.maturity)}
                                             />
                                         </Box>
                                         <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
