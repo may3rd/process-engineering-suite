@@ -1,23 +1,28 @@
 "use client";
 
-import { Box, Typography, Tabs, Tab, useTheme } from "@mui/material";
+import { Box, Typography, Tabs, Tab, useTheme, ToggleButtonGroup, ToggleButton, Chip } from "@mui/material";
 import { useState } from "react";
 import { useDesignStore } from "@/store/useDesignStore";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import { EquipmentItem, StreamItem } from "@/data/types";
 import { OutputStatusBadge } from "../common/OutputStatusBadge";
 import { RunAgentButton } from "../common/RunAgentButton";
+import DataObjectIcon from '@mui/icons-material/DataObject';
+import CalculateIcon from '@mui/icons-material/Calculate';
 
 export function SpreadsheetView() {
     const theme = useTheme();
     const {
+        equipmentListTemplate,
         equipmentListResults,
+        streamListTemplate,
         streamListResults,
         stepStatuses,
         triggerNextStep,
         getOutputMetadata,
     } = useDesignStore();
     const [activeTab, setActiveTab] = useState<'equipment' | 'streams'>('equipment');
+    const [dataView, setDataView] = useState<'template' | 'calculated'>('calculated');
 
     const equipmentStatus = getOutputMetadata('equipmentListResults');
     const streamStatus = getOutputMetadata('streamListResults');
@@ -29,13 +34,22 @@ export function SpreadsheetView() {
 
     let equipment: EquipmentItem[] = [];
     let streams: StreamItem[] = [];
+    let equipmentTemplate: EquipmentItem[] = [];
+    let streamsTemplate: StreamItem[] = [];
 
     try {
         if (equipmentListResults) equipment = JSON.parse(equipmentListResults);
         if (streamListResults) streams = JSON.parse(streamListResults);
+        if (equipmentListTemplate) equipmentTemplate = JSON.parse(equipmentListTemplate);
+        if (streamListTemplate) streamsTemplate = JSON.parse(streamListTemplate);
     } catch (e) {
         // Invalid JSON
     }
+
+    // Determine which data to display
+    const displayEquipment = dataView === 'template' ? equipmentTemplate : equipment;
+    const displayStreams = dataView === 'template' ? streamsTemplate : streams;
+    const hasTemplateData = equipmentTemplate.length > 0 || streamsTemplate.length > 0;
 
     const equipmentColumns: GridColDef[] = [
         { field: 'tag', headerName: 'Tag', width: 120, editable: true },
@@ -75,14 +89,33 @@ export function SpreadsheetView() {
                         value={activeTab}
                         onChange={(_, newValue) => setActiveTab(newValue)}
                     >
-                        <Tab label={`Equipment (${equipment.length})`} value="equipment" />
-                        <Tab label={`Streams (${streams.length})`} value="streams" />
+                        <Tab label={`Equipment (${displayEquipment.length})`} value="equipment" />
+                        <Tab label={`Streams (${displayStreams.length})`} value="streams" />
                     </Tabs>
                     {activeTab === 'equipment' && equipmentStatus && (
                         <OutputStatusBadge status={equipmentStatus.status} />
                     )}
                     {activeTab === 'streams' && streamStatus && (
                         <OutputStatusBadge status={streamStatus.status} />
+                    )}
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                    {hasTemplateData && (
+                        <ToggleButtonGroup
+                            value={dataView}
+                            exclusive
+                            onChange={(_, newValue) => newValue && setDataView(newValue)}
+                            size="small"
+                        >
+                            <ToggleButton value="template" sx={{ px: 2 }}>
+                                <DataObjectIcon fontSize="small" sx={{ mr: 0.5 }} />
+                                Template
+                            </ToggleButton>
+                            <ToggleButton value="calculated" sx={{ px: 2 }}>
+                                <CalculateIcon fontSize="small" sx={{ mr: 0.5 }} />
+                                Calculated
+                            </ToggleButton>
+                        </ToggleButtonGroup>
                     )}
                 </Box>
                 <Box sx={{ display: 'flex', gap: 1 }}>
@@ -129,7 +162,7 @@ export function SpreadsheetView() {
             >
                 {activeTab === 'equipment' ? (
                     <DataGrid
-                        rows={equipment.map((item, idx) => ({ id: idx, ...item }))}
+                        rows={displayEquipment.map((item, idx) => ({ id: idx, ...item }))}
                         columns={equipmentColumns}
                         pageSizeOptions={[10, 25, 50]}
                         initialState={{
@@ -143,7 +176,7 @@ export function SpreadsheetView() {
                     />
                 ) : (
                     <DataGrid
-                        rows={streams.map((item, idx) => ({ id: idx, ...item }))}
+                        rows={displayStreams.map((item, idx) => ({ id: idx, ...item }))}
                         columns={streamColumns}
                         pageSizeOptions={[10, 25, 50]}
                         initialState={{

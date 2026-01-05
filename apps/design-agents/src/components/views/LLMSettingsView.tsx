@@ -12,7 +12,9 @@ import {
     InputLabel,
     Select,
     Grid,
-    Chip
+    Chip,
+    FormControlLabel,
+    Switch
 } from "@mui/material";
 import FlashOnIcon from '@mui/icons-material/FlashOn';
 import PsychologyIcon from '@mui/icons-material/Psychology';
@@ -91,14 +93,18 @@ export function LLMSettingsView() {
         llmDeepModel,
         llmDeepTemperature,
         llmDeepApiKey,
+        llmQuickUseStructured,
+        llmDeepUseStructured,
         setLLMQuickProvider,
         setLLMQuickModel,
         setLLMQuickTemperature,
         setLLMQuickApiKey,
+        setLLMQuickUseStructured,
         setLLMDeepProvider,
         setLLMDeepModel,
         setLLMDeepTemperature,
         setLLMDeepApiKey,
+        setLLMDeepUseStructured,
     } = useDesignStore();
 
     // Get models for selected provider
@@ -221,6 +227,21 @@ export function LLMSettingsView() {
                                     ]}
                                 />
                             </Box>
+
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={llmQuickUseStructured}
+                                        onChange={(e) => setLLMQuickUseStructured(e.target.checked)}
+                                        size="small"
+                                    />
+                                }
+                                label={
+                                    <Typography variant="body2" color="text.secondary">
+                                        Use structured output (JSON mode)
+                                    </Typography>
+                                }
+                            />
                         </Box>
                     </Paper>
                 </Grid>
@@ -314,6 +335,21 @@ export function LLMSettingsView() {
                                     ]}
                                 />
                             </Box>
+
+                            <FormControlLabel
+                                control={
+                                    <Switch
+                                        checked={llmDeepUseStructured}
+                                        onChange={(e) => setLLMDeepUseStructured(e.target.checked)}
+                                        size="small"
+                                    />
+                                }
+                                label={
+                                    <Typography variant="body2" color="text.secondary">
+                                        Use structured output (JSON mode)
+                                    </Typography>
+                                }
+                            />
                         </Box>
                     </Paper>
                 </Grid>

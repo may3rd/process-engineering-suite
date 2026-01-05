@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState } from "react";
 import {
     Box,
     Typography,
@@ -11,21 +12,149 @@ import {
     ListItem,
     ListItemText,
     ListItemIcon,
-    IconButton
+    IconButton,
+    Alert,
+    Snackbar
 } from "@mui/material";
 import { useDesignStore } from "@/store/useDesignStore";
 import SaveIcon from '@mui/icons-material/Save';
-import FolderOpenIcon from '@mui/icons-material/FolderOpen';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import FileUploadIcon from '@mui/icons-material/FileUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
 import DescriptionIcon from '@mui/icons-material/Description';
 
 export function StorageView() {
     const theme = useTheme();
-    const { project, resetProject } = useDesignStore();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [snackbar, setSnackbar] = useState<{ open: boolean; message: string; severity: 'success' | 'error' }>({
+        open: false,
+        message: '',
+        severity: 'success'
+    });
 
-    const handleSave = () => {
-        // In a real app, this would call the API
-        console.log('Project saved to local storage');
+    const {
+        project,
+        problemStatement,
+        processRequirements,
+        researchConcepts,
+        researchRatingResults,
+        selectedConceptName,
+        selectedConceptDetails,
+        selectedConceptEvaluation,
+        componentList,
+        designBasis,
+        flowsheetDescription,
+        equipmentListTemplate,
+        equipmentListResults,
+        streamListTemplate,
+        streamListResults,
+        safetyRiskAnalystReport,
+        projectManagerReport,
+        projectApproval,
+        currentStep,
+        stepStatuses,
+        outputStatuses,
+        resetProject,
+        setStepOutput,
+        setProject,
+        setCurrentStep,
+        setStepStatus,
+    } = useDesignStore();
+
+    const handleExportJSON = () => {
+        const exportData = {
+            version: '1.0',
+            exportedAt: new Date().toISOString(),
+            project,
+            problemStatement,
+            processRequirements,
+            researchConcepts,
+            researchRatingResults,
+            selectedConceptName,
+            selectedConceptDetails,
+            selectedConceptEvaluation,
+            componentList,
+            designBasis,
+            flowsheetDescription,
+            equipmentListTemplate,
+            equipmentListResults,
+            streamListTemplate,
+            streamListResults,
+            safetyRiskAnalystReport,
+            projectManagerReport,
+            projectApproval,
+            currentStep,
+            stepStatuses,
+            outputStatuses,
+        };
+
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${project?.name?.replace(/\s+/g, '_') || 'design-project'}_${new Date().toISOString().split('T')[0]}.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        setSnackbar({ open: true, message: 'Project exported successfully!', severity: 'success' });
+    };
+
+    const handleImportJSON = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = JSON.parse(e.target?.result as string);
+
+                // Validate file format
+                if (!data.version || !data.project) {
+                    throw new Error('Invalid project file format');
+                }
+
+                // Restore state
+                if (data.project) setProject(data.project);
+                if (data.problemStatement) setStepOutput('problemStatement', data.problemStatement);
+                if (data.processRequirements) setStepOutput('processRequirements', data.processRequirements);
+                if (data.researchConcepts) setStepOutput('researchConcepts', data.researchConcepts);
+                if (data.researchRatingResults) setStepOutput('researchRatingResults', data.researchRatingResults);
+                if (data.selectedConceptName) setStepOutput('selectedConceptName', data.selectedConceptName);
+                if (data.selectedConceptDetails) setStepOutput('selectedConceptDetails', data.selectedConceptDetails);
+                if (data.selectedConceptEvaluation) setStepOutput('selectedConceptEvaluation', data.selectedConceptEvaluation);
+                if (data.componentList) setStepOutput('componentList', data.componentList);
+                if (data.designBasis) setStepOutput('designBasis', data.designBasis);
+                if (data.flowsheetDescription) setStepOutput('flowsheetDescription', data.flowsheetDescription);
+                if (data.equipmentListTemplate) setStepOutput('equipmentListTemplate', data.equipmentListTemplate);
+                if (data.equipmentListResults) setStepOutput('equipmentListResults', data.equipmentListResults);
+                if (data.streamListTemplate) setStepOutput('streamListTemplate', data.streamListTemplate);
+                if (data.streamListResults) setStepOutput('streamListResults', data.streamListResults);
+                if (data.safetyRiskAnalystReport) setStepOutput('safetyRiskAnalystReport', data.safetyRiskAnalystReport);
+                if (data.projectManagerReport) setStepOutput('projectManagerReport', data.projectManagerReport);
+                if (data.projectApproval) setStepOutput('projectApproval', data.projectApproval);
+                if (data.currentStep !== undefined) setCurrentStep(data.currentStep);
+
+                // Restore step statuses
+                if (data.stepStatuses) {
+                    Object.entries(data.stepStatuses).forEach(([step, status]) => {
+                        setStepStatus(Number(step), status as any);
+                    });
+                }
+
+                setSnackbar({ open: true, message: 'Project imported successfully!', severity: 'success' });
+            } catch (error) {
+                console.error('Import error:', error);
+                setSnackbar({ open: true, message: 'Failed to import project. Invalid file format.', severity: 'error' });
+            }
+        };
+        reader.readAsText(file);
+
+        // Reset file input
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
     };
 
     return (
@@ -33,9 +162,13 @@ export function StorageView() {
             <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
                 Save & Load Projects
             </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 4 }}>
-                Manage your design project files and snapshots.
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Your project is automatically saved to browser storage.
             </Typography>
+
+            <Alert severity="info" sx={{ mb: 4 }}>
+                Projects are automatically persisted to localStorage. Use Export/Import to transfer between devices.
+            </Alert>
 
             <Grid container spacing={4}>
                 <Grid size={{ xs: 12, md: 7 }}>
@@ -52,77 +185,88 @@ export function StorageView() {
                         }}
                     >
                         <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                            Recent Projects
+                            Current Project
                         </Typography>
                         <List>
-                            <ListItem
-                                secondaryAction={
-                                    <IconButton edge="end" aria-label="delete">
-                                        <DeleteIcon />
-                                    </IconButton>
-                                }
-                            >
+                            <ListItem>
                                 <ListItemIcon>
                                     <DescriptionIcon color="primary" />
                                 </ListItemIcon>
                                 <ListItemText
-                                    primary={project?.name || 'Current Project'}
-                                    secondary={`Last modified: ${project?.lastModified ? new Date(project.lastModified).toLocaleString() : 'Just now'}`}
+                                    primary={project?.name || 'Untitled Project'}
+                                    secondary={`Last modified: ${project?.lastModified ? new Date(project.lastModified).toLocaleString() : 'Just now'} • Step ${currentStep + 1}/12`}
                                 />
-                                <Button variant="outlined" size="small" sx={{ mr: 2 }}>Load</Button>
-                            </ListItem>
-                            {/* Mock other project */}
-                            <ListItem
-                                secondaryAction={
-                                    <IconButton edge="end" aria-label="delete">
-                                        <DeleteIcon />
-                                    </IconButton>
-                                }
-                            >
-                                <ListItemIcon>
-                                    <DescriptionIcon sx={{ opacity: 0.5 }} />
-                                </ListItemIcon>
-                                <ListItemText
-                                    primary="Ammonia Synthesis Loop"
-                                    secondary="Created: 2025-12-28"
-                                />
-                                <Button variant="outlined" size="small" sx={{ mr: 2 }}>Load</Button>
                             </ListItem>
                         </List>
+
+                        <Box sx={{ mt: 2, p: 2, backgroundColor: theme.palette.action.hover, borderRadius: 1 }}>
+                            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+                                Project Summary
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                • Problem: {problemStatement ? `${problemStatement.substring(0, 100)}...` : 'Not defined'}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                • Selected Concept: {selectedConceptName || 'None selected'}
+                            </Typography>
+                            <Typography variant="body2" color="text.secondary">
+                                • Equipment Items: {equipmentListResults ? JSON.parse(equipmentListResults).length : 0}
+                            </Typography>
+                        </Box>
                     </Paper>
                 </Grid>
 
                 <Grid size={{ xs: 12, md: 5 }}>
                     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                        <input
+                            type="file"
+                            accept=".json"
+                            ref={fileInputRef}
+                            onChange={handleImportJSON}
+                            style={{ display: 'none' }}
+                        />
                         <Button
                             variant="contained"
                             size="large"
-                            startIcon={<SaveIcon />}
-                            onClick={handleSave}
+                            startIcon={<FileDownloadIcon />}
+                            onClick={handleExportJSON}
                             fullWidth
                         >
-                            Save Current Progress
+                            Export as JSON
                         </Button>
                         <Button
                             variant="outlined"
                             size="large"
-                            startIcon={<FolderOpenIcon />}
+                            startIcon={<FileUploadIcon />}
+                            onClick={() => fileInputRef.current?.click()}
                             fullWidth
                         >
-                            Export as JSON File
+                            Import from JSON
                         </Button>
                         <Button
                             variant="outlined"
                             color="error"
                             size="large"
+                            startIcon={<DeleteIcon />}
                             onClick={resetProject}
                             fullWidth
                         >
-                            Start New Project
+                            Reset to Mock Data
                         </Button>
                     </Box>
                 </Grid>
             </Grid>
+
+            <Snackbar
+                open={snackbar.open}
+                autoHideDuration={4000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+            >
+                <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+                    {snackbar.message}
+                </Alert>
+            </Snackbar>
         </Box>
     );
 }

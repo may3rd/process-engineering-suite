@@ -110,12 +110,14 @@ export interface DesignState {
     llmQuickModel: string;
     llmQuickTemperature: number;
     llmQuickApiKey: string;
+    llmQuickUseStructured: boolean;
 
     // LLM configuration - Deep Thinking model (for complex reasoning)
     llmDeepProvider: string;
     llmDeepModel: string;
     llmDeepTemperature: number;
     llmDeepApiKey: string;
+    llmDeepUseStructured: boolean;
 }
 
 export const AGENT_STEPS: AgentStep[] = [
