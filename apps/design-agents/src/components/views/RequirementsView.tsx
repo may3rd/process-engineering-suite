@@ -48,7 +48,7 @@ export function RequirementsView() {
                     <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
                         Problem Statement (Input)
                     </Typography>
-                    <Box sx={{ mt: 2 }}>
+                    <Box sx={{ mt: 2, mb: 2 }}>
                         <MarkdownEditor
                             value={problemStatement}
                             onChange={setProblemStatement}
