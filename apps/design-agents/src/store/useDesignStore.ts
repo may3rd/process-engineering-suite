@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { DesignState, StepStatus, OutputStatus, OutputMetadata, LLMMessage, AgentStep } from '@/data/types';
+import { AGENT_STEPS, AGENT_LABELS, getStepIndexForKey, getOutputsForStep, StepIndex } from '@/data/stepConfig';
 import {
     mockProject,
     mockProblemStatement,
@@ -247,7 +248,7 @@ export const useDesignStore = create<DesignStoreState>()(
 
             markOutputEdited: (key) => {
                 const { outputStatuses, markDownstreamOutdated } = get();
-                const currentStepForKey = getStepIndexForKey(key);
+                const currentStepForKey = getStepIndexForKey(key as string);
 
                 set({
                     outputStatuses: {
@@ -263,7 +264,7 @@ export const useDesignStore = create<DesignStoreState>()(
 
                 // Mark downstream steps as outdated
                 if (currentStepForKey !== -1) {
-                    markDownstreamOutdated(currentStepForKey);
+                    markDownstreamOutdated(currentStepForKey as StepIndex);
                 }
             },
 
@@ -343,26 +344,7 @@ export const useDesignStore = create<DesignStoreState>()(
 );
 
 // Helper function to map output keys to step indices
-// Steps: 0-Process Req, 1-Innovative, 2-Conservative, 3-Concept Detailer, 4-Component List,
-// 5-Design Basis, 6-Flowsheet, 7-Catalog, 8-Stream Estimation, 9-Equipment Sizing,
-// 10-Safety, 11-Project Manager
-function getStepIndexForKey(key: keyof DesignState): number {
-    const keyToStepMap: Record<string, number> = {
-        'processRequirements': 0,
-        'researchConcepts': 1,
-        'researchRatingResults': 2,
-        'selectedConceptName': 3,
-        'selectedConceptDetails': 3,
-        'selectedConceptEvaluation': 3,
-        'componentList': 4,
-        'designBasis': 5,
-        'flowsheetDescription': 6,
-        'equipmentListTemplate': 7,
-        'streamListTemplate': 7,
-        'streamListResults': 8,
-        'equipmentListResults': 9,
-        'safetyRiskAnalystReport': 10,
-        'projectManagerReport': 11,
-    };
-    return keyToStepMap[key] ?? -1;
+// Uses centralized stepConfig mapping
+export function getStepIndexForKeyStore(key: keyof DesignState): number {
+    return getStepIndexForKey(key as string);
 }

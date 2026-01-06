@@ -40,6 +40,7 @@ export function RunAgentButton({
                 )
             }
             size={size}
+            aria-label={label}
             sx={{
                 px: 3,
                 background: variant === 'contained'

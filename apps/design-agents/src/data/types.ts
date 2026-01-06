@@ -2,19 +2,10 @@
  * TypeScript types mirroring Python DesignState and agent schemas
  */
 
-export type AgentStep =
-    | 'process_requirements_analyst'
-    | 'innovative_researcher'
-    | 'conservative_researcher'
-    | 'concept_detailer'
-    | 'component_list_researcher'
-    | 'design_basis_analyst'
-    | 'flowsheet_design_agent'
-    | 'equipment_stream_catalog_agent'
-    | 'stream_property_estimation_agent'
-    | 'equipment_sizing_agent'
-    | 'safety_risk_analyst'
-    | 'project_manager';
+import { AgentStep, AGENT_STEPS, AGENT_LABELS } from './stepConfig';
+
+export type { AgentStep };
+export { AGENT_STEPS, AGENT_LABELS };
 
 export type StepStatus = 'pending' | 'running' | 'complete' | 'edited' | 'outdated';
 
@@ -135,33 +126,3 @@ export interface LLMMessage {
     model?: string;
     tokenCount?: number;
 }
-
-export const AGENT_STEPS: AgentStep[] = [
-    'process_requirements_analyst',
-    'innovative_researcher',
-    'conservative_researcher',
-    'concept_detailer',
-    'component_list_researcher',
-    'design_basis_analyst',
-    'flowsheet_design_agent',
-    'equipment_stream_catalog_agent',
-    'stream_property_estimation_agent',
-    'equipment_sizing_agent',
-    'safety_risk_analyst',
-    'project_manager',
-];
-
-export const AGENT_LABELS: Record<AgentStep, string> = {
-    process_requirements_analyst: 'Process Requirements',
-    innovative_researcher: 'Innovative Research',
-    conservative_researcher: 'Conservative Research',
-    concept_detailer: 'Concept Selection',
-    component_list_researcher: 'Component List',
-    design_basis_analyst: 'Design Basis',
-    flowsheet_design_agent: 'Flowsheet Design',
-    equipment_stream_catalog_agent: 'Equipment & Stream Catalog',
-    stream_property_estimation_agent: 'Stream Properties',
-    equipment_sizing_agent: 'Equipment Sizing',
-    safety_risk_analyst: 'Safety & Risk',
-    project_manager: 'Project Approval',
-};

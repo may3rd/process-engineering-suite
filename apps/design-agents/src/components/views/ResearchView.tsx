@@ -5,13 +5,10 @@ import { useDesignStore } from "@/store/useDesignStore";
 import { ResearchConcept, ConceptEvaluation } from "@/data/types";
 import { OutputStatusBadge } from "../common/OutputStatusBadge";
 import { RunAgentButton } from "../common/RunAgentButton";
+import { JSONParseBoundary } from "../common/JSONParseBoundary";
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { useState } from "react";
+import { useState, useMemo } from "react";
 
-/**
- * ResearchView component for displaying research concepts and evaluations.
- * Handles innovative and conservative research outputs, concept selection, and error states.
- */
 type MaturityColor = 'success' | 'warning' | 'error' | 'default';
 
 export function ResearchView() {
@@ -27,22 +24,34 @@ export function ResearchView() {
         setStepOutput,
     } = useDesignStore();
 
-    const [parseError, setParseError] = useState<string | null>(null);
-
     const conceptsStatus = getOutputMetadata('researchConcepts');
     const ratingsStatus = getOutputMetadata('researchRatingResults');
 
-    let concepts: ResearchConcept[] = [];
-    let evaluations: ConceptEvaluation[] = [];
+    const [conceptsParseError, setConceptsParseError] = useState<Error | null>(null);
+    const [evaluationsParseError, setEvaluationsParseError] = useState<Error | null>(null);
 
-    try {
-        if (researchConcepts) concepts = JSON.parse(researchConcepts);
-        if (researchRatingResults) evaluations = JSON.parse(researchRatingResults);
-        setParseError(null);
-    } catch (e) {
-        setParseError('Failed to parse research data. Please check the input.');
-        console.error('JSON parse error:', e);
-    }
+    const { concepts, evaluations } = useMemo(() => {
+        let parsedConcepts: ResearchConcept[] = [];
+        let parsedEvaluations: ConceptEvaluation[] = [];
+
+        if (researchConcepts) {
+            try {
+                parsedConcepts = JSON.parse(researchConcepts);
+            } catch (e) {
+                setConceptsParseError(e as Error);
+            }
+        }
+
+        if (researchRatingResults) {
+            try {
+                parsedEvaluations = JSON.parse(researchRatingResults);
+            } catch (e) {
+                setEvaluationsParseError(e as Error);
+            }
+        }
+
+        return { concepts: parsedConcepts, evaluations: parsedEvaluations };
+    }, [researchConcepts, researchRatingResults]);
 
     const canRunInnovative = stepStatuses[1] === 'pending' || stepStatuses[1] === 'edited';
     const canRunConservative = (stepStatuses[2] === 'pending' || stepStatuses[2] === 'edited') && concepts.length > 0;
@@ -50,7 +59,6 @@ export function ResearchView() {
     const hasEvaluations = evaluations.length > 0;
     const hasConceptDetails = !!selectedConceptDetails;
 
-    // Get the selected concept's evaluation for display
     const selectedEvaluation = evaluations.find(e => e.concept_name === selectedConceptName);
 
     const handleConceptSelect = (conceptName: string) => {
@@ -66,23 +74,136 @@ export function ResearchView() {
         }
     };
 
+    const renderConcepts = () => {
+        if (concepts.length > 0) {
+            return (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+                    {concepts.map((concept, idx) => (
+                        <Card
+                            key={idx}
+                            elevation={0}
+                            sx={{
+                                backgroundColor: theme.palette.mode === 'dark'
+                                    ? 'rgba(255, 255, 255, 0.05)'
+                                    : 'rgba(0, 0, 0, 0.02)',
+                                border: `1px solid ${theme.palette.divider}`,
+                            }}
+                        >
+                            <CardContent>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 1 }}>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                        {concept.name}
+                                    </Typography>
+                                    <Chip
+                                        label={concept.maturity}
+                                        size="small"
+                                        color={getMaturityColor(concept.maturity)}
+                                    />
+                                </Box>
+                                <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
+                                    {concept.description}
+                                </Typography>
+                                <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                                    Key Features:
+                                </Typography>
+                                <Box component="ul" sx={{ m: 0, pl: 2 }}>
+                                    {concept.key_features.map((feature, fIdx) => (
+                                        <Typography key={fIdx} component="li" variant="caption">
+                                            {feature}
+                                        </Typography>
+                                    ))}
+                                </Box>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </Box>
+            );
+        }
+        return (
+            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', mt: 2 }}>
+                No concepts generated yet...
+            </Typography>
+        );
+    };
+
+    const renderEvaluations = () => {
+        if (evaluations.length > 0) {
+            return (
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
+                    {evaluations.map((evaluation, idx) => (
+                        <Card
+                            key={idx}
+                            elevation={0}
+                            sx={{
+                                backgroundColor: theme.palette.mode === 'dark'
+                                    ? 'rgba(255, 255, 255, 0.05)'
+                                    : 'rgba(0, 0, 0, 0.02)',
+                                border: `1px solid ${theme.palette.divider}`,
+                            }}
+                        >
+                            <CardContent>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 1 }}>
+                                    <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                                        {evaluation.concept_name}
+                                    </Typography>
+                                    <Chip
+                                        label={`Score: ${evaluation.feasibility_score}/10`}
+                                        size="small"
+                                        color={evaluation.feasibility_score >= 7 ? 'success' : evaluation.feasibility_score >= 5 ? 'warning' : 'error'}
+                                    />
+                                </Box>
+
+                                <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                                    Risks:
+                                </Typography>
+                                <Box component="ul" sx={{ m: 0, pl: 2, mb: 1.5 }}>
+                                    {evaluation.risks.map((risk, rIdx) => (
+                                        <Typography key={rIdx} component="li" variant="caption" color="error.main">
+                                            {risk}
+                                        </Typography>
+                                    ))}
+                                </Box>
+
+                                <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
+                                    Recommendations:
+                                </Typography>
+                                <Box component="ul" sx={{ m: 0, pl: 2 }}>
+                                    {evaluation.recommendations.map((rec, recIdx) => (
+                                        <Typography key={recIdx} component="li" variant="caption" color="success.main">
+                                            {rec}
+                                        </Typography>
+                                    ))}
+                                </Box>
+                            </CardContent>
+                        </Card>
+                    ))}
+                </Box>
+            );
+        }
+        return (
+            <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', mt: 2 }}>
+                No evaluations generated yet...
+            </Typography>
+        );
+    };
+
     return (
-        <Box>
-            <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }}>
+        <Box component="section" aria-labelledby="research-title">
+            <Typography variant="h5" gutterBottom sx={{ fontWeight: 600 }} id="research-title">
                 Research & Concept Evaluation
             </Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                 Innovative concepts vs. conservative feasibility analysis
             </Typography>
 
-            {parseError && (
-                <Alert severity="error" sx={{ mb: 3 }}>
-                    {parseError}
+            {(conceptsParseError || evaluationsParseError) && (
+                <Alert severity="error" sx={{ mb: 3 }} role="alert">
+                    {conceptsParseError && <Typography>Failed to parse concepts data.</Typography>}
+                    {evaluationsParseError && <Typography>Failed to parse evaluations data.</Typography>}
                 </Alert>
             )}
 
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                {/* Innovative Researcher Output */}
                 <Paper
                     elevation={0}
                     sx={{
@@ -94,9 +215,10 @@ export function ResearchView() {
                         borderRadius: 2,
                         border: `1px solid ${theme.palette.divider}`,
                     }}
+                    component="section" aria-labelledby="innovative-title"
                 >
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }} id="innovative-title">
                             Innovative Concepts
                         </Typography>
                         {conceptsStatus && <OutputStatusBadge status={conceptsStatus.status} />}
@@ -111,55 +233,14 @@ export function ResearchView() {
                             size="small"
                         />
                     </Box>
-                    {concepts.length > 0 ? (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-                            {concepts.map((concept, idx) => (
-                                <Card
-                                    key={idx}
-                                    elevation={0}
-                                    sx={{
-                                        backgroundColor: theme.palette.mode === 'dark'
-                                            ? 'rgba(255, 255, 255, 0.05)'
-                                            : 'rgba(0, 0, 0, 0.02)',
-                                        border: `1px solid ${theme.palette.divider}`,
-                                    }}
-                                >
-                                    <CardContent>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 1 }}>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                                                {concept.name}
-                                            </Typography>
-                                            <Chip
-                                                label={concept.maturity}
-                                                size="small"
-                                                color={getMaturityColor(concept.maturity)}
-                                            />
-                                        </Box>
-                                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1.5 }}>
-                                            {concept.description}
-                                        </Typography>
-                                        <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
-                                            Key Features:
-                                        </Typography>
-                                        <Box component="ul" sx={{ m: 0, pl: 2 }}>
-                                            {concept.key_features.map((feature, fIdx) => (
-                                                <Typography key={fIdx} component="li" variant="caption">
-                                                    {feature}
-                                                </Typography>
-                                            ))}
-                                        </Box>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </Box>
-                    ) : (
-                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', mt: 2 }}>
-                            No concepts generated yet...
-                        </Typography>
-                    )}
+                    <JSONParseBoundary
+                        onError={(e) => setConceptsParseError(e)}
+                        fallback={<Alert severity="error">Failed to parse innovative concepts data.</Alert>}
+                    >
+                        {renderConcepts()}
+                    </JSONParseBoundary>
                 </Paper>
 
-                {/* Conservative Researcher Output */}
                 <Paper
                     elevation={0}
                     sx={{
@@ -171,9 +252,10 @@ export function ResearchView() {
                         borderRadius: 2,
                         border: `1px solid ${theme.palette.divider}`,
                     }}
+                    component="section" aria-labelledby="feasibility-title"
                 >
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }} id="feasibility-title">
                             Feasibility Analysis
                         </Typography>
                         {ratingsStatus && <OutputStatusBadge status={ratingsStatus.status} />}
@@ -188,64 +270,14 @@ export function ResearchView() {
                             size="small"
                         />
                     </Box>
-                    {evaluations.length > 0 ? (
-                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 2 }}>
-                            {evaluations.map((evaluation, idx) => (
-                                <Card
-                                    key={idx}
-                                    elevation={0}
-                                    sx={{
-                                        backgroundColor: theme.palette.mode === 'dark'
-                                            ? 'rgba(255, 255, 255, 0.05)'
-                                            : 'rgba(0, 0, 0, 0.02)',
-                                        border: `1px solid ${theme.palette.divider}`,
-                                    }}
-                                >
-                                    <CardContent>
-                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', mb: 1 }}>
-                                            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-                                                {evaluation.concept_name}
-                                            </Typography>
-                                            <Chip
-                                                label={`Score: ${evaluation.feasibility_score}/10`}
-                                                size="small"
-                                                color={evaluation.feasibility_score >= 7 ? 'success' : evaluation.feasibility_score >= 5 ? 'warning' : 'error'}
-                                            />
-                                        </Box>
-
-                                        <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
-                                            Risks:
-                                        </Typography>
-                                        <Box component="ul" sx={{ m: 0, pl: 2, mb: 1.5 }}>
-                                            {evaluation.risks.map((risk, rIdx) => (
-                                                <Typography key={rIdx} component="li" variant="caption" color="error.main">
-                                                    {risk}
-                                                </Typography>
-                                            ))}
-                                        </Box>
-
-                                        <Typography variant="caption" sx={{ fontWeight: 600, display: 'block', mb: 0.5 }}>
-                                            Recommendations:
-                                        </Typography>
-                                        <Box component="ul" sx={{ m: 0, pl: 2 }}>
-                                            {evaluation.recommendations.map((rec, recIdx) => (
-                                                <Typography key={recIdx} component="li" variant="caption" color="success.main">
-                                                    {rec}
-                                                </Typography>
-                                            ))}
-                                        </Box>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                        </Box>
-                    ) : (
-                        <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic', mt: 2 }}>
-                            No evaluations generated yet...
-                        </Typography>
-                    )}
+                    <JSONParseBoundary
+                        onError={(e) => setEvaluationsParseError(e)}
+                        fallback={<Alert severity="error">Failed to parse feasibility evaluations data.</Alert>}
+                    >
+                        {renderEvaluations()}
+                    </JSONParseBoundary>
                 </Paper>
 
-                {/* Concept Selection Section */}
                 {hasEvaluations && (
                     <Paper
                         elevation={0}
@@ -258,10 +290,11 @@ export function ResearchView() {
                             borderRadius: 2,
                             border: `2px solid ${theme.palette.primary.main}40`,
                         }}
+                        component="section" aria-labelledby="concept-selection-title"
                     >
                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
                             <CheckCircleIcon sx={{ color: theme.palette.primary.main }} />
-                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 600 }} id="concept-selection-title">
                                 Select Concept for Design
                             </Typography>
                         </Box>
@@ -272,6 +305,7 @@ export function ResearchView() {
                         <RadioGroup
                             value={selectedConceptName}
                             onChange={(e) => handleConceptSelect(e.target.value)}
+                            aria-labelledby="concept-selection-title"
                         >
                             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
                                 {evaluations.map((evaluation, idx) => {
@@ -345,7 +379,6 @@ export function ResearchView() {
                             </Alert>
                         )}
 
-                        {/* Concept Detailer Button */}
                         <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
                             <RunAgentButton
                                 label={hasConceptDetails ? 'Re-detail Concept' : 'Detail Selected Concept'}

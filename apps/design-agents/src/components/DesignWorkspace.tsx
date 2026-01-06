@@ -42,6 +42,7 @@ export function DesignWorkspace() {
             <Tabs
                 value={activeTab}
                 onChange={(_, newValue) => setActiveTab(newValue)}
+                aria-label="Design workspace navigation tabs"
                 sx={{
                     borderBottom: `1px solid ${theme.palette.divider}`,
                     px: 2,

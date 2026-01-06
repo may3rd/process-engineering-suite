@@ -33,6 +33,9 @@ export interface SizingInputs {
     inletPressureDrop?: number;  // kPa - calculated from inlet network
     dischargeCoefficient?: number; // Kd - manual override
     backpressureCorrectionFactor?: number; // Kb/Kw - manual override
+
+    // Two-Phase fields
+    omega?: number; // Omega parameter for two-phase flow (API-520 Annex C)
     valveType?: 'conventional' | 'balanced' | 'pilot'; // Valve operating type
     setPressure?: number; // barg - PSV set pressure (for Kw calculation)
 }

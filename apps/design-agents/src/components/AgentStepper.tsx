@@ -12,21 +12,38 @@ export function AgentStepper() {
     const theme = useTheme();
     const { currentStep, stepStatuses, setCurrentStep } = useDesignStore();
 
-    const getStepIcon = (stepIndex: number) => {
-        const status = stepStatuses[stepIndex];
-
+    const getStepStatusLabel = (status: string | undefined) => {
         switch (status) {
             case 'complete':
-                return <CheckCircleIcon sx={{ color: theme.palette.success.main }} />;
+                return 'Completed';
             case 'running':
-                return <CircularProgress size={24} />;
+                return 'In progress';
             case 'edited':
-                return <EditIcon sx={{ color: theme.palette.warning.main }} />;
+                return 'Edited - needs review';
             case 'outdated':
-                return <WarningIcon sx={{ color: theme.palette.error.main }} />;
+                return 'Outdated - needs regeneration';
             default:
-                return null;
+                return 'Pending';
         }
+    };
+
+    const getStepIcon = (stepIndex: number) => {
+        const status = stepStatuses[stepIndex];
+        const isCurrentStep = currentStep === stepIndex;
+        
+        if (status === 'complete') {
+            return <CheckCircleIcon sx={{ color: theme.palette.success.main, fontSize: 20 }} />;
+        }
+        if (status === 'running' || isCurrentStep) {
+            return <CircularProgress size={20} sx={{ color: theme.palette.primary.main }} />;
+        }
+        if (status === 'edited') {
+            return <EditIcon sx={{ color: theme.palette.warning.main, fontSize: 20 }} />;
+        }
+        if (status === 'outdated') {
+            return <WarningIcon sx={{ color: theme.palette.error.main, fontSize: 20 }} />;
+        }
+        return null;
     };
 
     return (
@@ -54,6 +71,8 @@ export function AgentStepper() {
                             <StepButton
                                 onClick={() => isClickable && setCurrentStep(index)}
                                 disabled={!isClickable}
+                                aria-label={`Step ${index + 1}: ${AGENT_LABELS[step]}, ${getStepStatusLabel(status)}`}
+                                aria-current={currentStep === index ? 'step' : undefined}
                                 sx={{
                                     '& .MuiStepLabel-label': {
                                         fontSize: '0.75rem',
@@ -64,6 +83,8 @@ export function AgentStepper() {
                                 <StepLabel
                                     StepIconComponent={() => (
                                         <Box
+                                            component="span"
+                                            aria-hidden="true"
                                             sx={{
                                                 width: 40,
                                                 height: 40,

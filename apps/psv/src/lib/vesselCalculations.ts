@@ -137,19 +137,30 @@ export function calculateWettedArea(input: VesselCalculationInput): VesselCalcul
 export function calculateFireExposureArea(
     input: VesselCalculationInput,
     isProtected: boolean = false,
-    maxHeightAboveGrade: number = 7.6
+    maxHeightAboveGrade: number = 7.6,
+    heightAboveGrade: number = 0
 ): number {
     const vessel = createVessel(input);
     const { liquidLevel } = input;
 
+    // Calculate effective fire zone height relative to vessel bottom
+    // e.g. if vessel is at 5m, and fire zone is 7.6m, only bottom 2.6m is exposed
+    const effectiveFireLimit = Math.max(0, maxHeightAboveGrade - heightAboveGrade);
+
+    if (effectiveFireLimit <= 0) {
+        // Vessel is completely above the fire zone
+        return 0;
+    }
+
     if (isProtected) {
         // For protected vessels, use total surface area up to max height
-        const effectiveHeight = Math.min(vessel.totalHeight, maxHeightAboveGrade);
+        // Limited by effective fire zone relative to vessel
+        const effectiveHeight = Math.min(vessel.totalHeight, effectiveFireLimit);
         return vessel.wettedArea(effectiveHeight);
     } else {
         // For unprotected vessels, use actual wetted surface area
-        // limited to the lesser of total height or max height above grade
-        const effectiveLevel = Math.min(liquidLevel, maxHeightAboveGrade);
+        // limited to the lesser of liquid level or effective fire zone limit
+        const effectiveLevel = Math.min(liquidLevel, effectiveFireLimit);
         return vessel.wettedArea(effectiveLevel);
     }
 }
