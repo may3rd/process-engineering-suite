@@ -218,4 +218,135 @@ describe("AreasTab", () => {
       expect(mockFetchSummaryCounts).toHaveBeenCalled();
     });
   });
+
+  describe("Search and Filtering", () => {
+    it("renders search input field", () => {
+      render(<AreasTab />);
+
+      const searchInputs = screen.getAllByPlaceholderText(/search/i);
+      expect(searchInputs.length).toBeGreaterThan(0);
+    });
+
+    it("renders status filter dropdown", () => {
+      render(<AreasTab />);
+
+      const selectElements = screen.getAllByRole("combobox");
+      expect(selectElements.length).toBeGreaterThan(0);
+    });
+
+    it("displays areas with correct status chips", () => {
+      render(<AreasTab />);
+
+      expect(screen.getByText("active")).toBeInTheDocument();
+      expect(screen.getByText("inactive")).toBeInTheDocument();
+    });
+  });
+
+  describe("Table Interactions", () => {
+    it("renders table with correct headers", () => {
+      render(<AreasTab />);
+
+      expect(screen.getByText("Code")).toBeInTheDocument();
+      expect(screen.getByText("Name")).toBeInTheDocument();
+      expect(screen.getByText("Unit")).toBeInTheDocument();
+      expect(screen.getByText("Status")).toBeInTheDocument();
+    });
+
+    it("displays area data in table rows", () => {
+      render(<AreasTab />);
+
+      expect(screen.getByText("AREA001")).toBeInTheDocument();
+      expect(screen.getByText("Test Area 1")).toBeInTheDocument();
+      expect(screen.getByText("Test Unit")).toBeInTheDocument();
+    });
+
+    it("renders action buttons for each row", () => {
+      render(<AreasTab />);
+
+      const editButtons = screen.getAllByRole("button", { name: /edit/i });
+      const deleteButtons = screen.getAllByRole("button", { name: /delete/i });
+
+      expect(editButtons.length).toBeGreaterThan(0);
+      expect(deleteButtons.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("Sorting Functionality", () => {
+    it("renders sort buttons for sortable columns", () => {
+      render(<AreasTab />);
+
+      // Check that sort buttons exist (TableSortButton components)
+      const sortButtons = document.querySelectorAll('[data-testid*="sort-"]');
+      expect(sortButtons.length).toBeGreaterThan(0);
+    });
+  });
+
+  describe("Pagination", () => {
+    it("renders pagination controls", () => {
+      render(<AreasTab />);
+
+      expect(screen.getByTestId("pagination")).toBeInTheDocument();
+    });
+
+    it("renders items per page selector", () => {
+      render(<AreasTab />);
+
+      expect(screen.getByTestId("items-per-page")).toBeInTheDocument();
+    });
+  });
+
+  describe("Asset Counts Display", () => {
+    it("shows summary counts for areas", () => {
+      render(<AreasTab />);
+
+      // The component displays counts like "1 Across all units"
+      expect(screen.getByText("1")).toBeInTheDocument();
+      expect(screen.getByText("Across all units")).toBeInTheDocument();
+    });
+  });
+
+  describe("Dialog Interactions", () => {
+    it("renders area dialog component", () => {
+      render(<AreasTab />);
+
+      // Dialog is rendered but not visible initially
+      expect(screen.getByTestId("area-dialog")).toBeInTheDocument();
+    });
+
+    it("renders delete confirmation dialog", () => {
+      render(<AreasTab />);
+
+      expect(screen.getByTestId("delete-dialog")).toBeInTheDocument();
+    });
+  });
+
+  describe("Permission-Based Features", () => {
+    it("shows edit and delete buttons for authorized users", () => {
+      render(<AreasTab />);
+
+      const editButtons = screen.getAllByRole("button", { name: /edit/i });
+      const deleteButtons = screen.getAllByRole("button", { name: /delete/i });
+
+      expect(editButtons.length).toBeGreaterThan(0);
+      expect(deleteButtons.length).toBeGreaterThan(0);
+    });
+
+    it("hides edit and delete buttons for unauthorized users", () => {
+      vi.mocked(useAuthStore).mockReturnValue({
+        canEdit: vi.fn(() => false),
+        canApprove: vi.fn(() => false),
+      });
+
+      render(<AreasTab />);
+
+      const editButtons = screen.queryAllByRole("button", { name: /edit/i });
+      const deleteButtons = screen.queryAllByRole("button", {
+        name: /delete/i,
+      });
+
+      // Buttons should not be rendered for unauthorized users
+      expect(editButtons.length).toBe(0);
+      expect(deleteButtons.length).toBe(0);
+    });
+  });
 });
