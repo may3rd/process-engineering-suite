@@ -1,33 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { Box, Paper, Typography, IconButton, useTheme } from "@mui/material";
 import {
-  Box,
-  Paper,
-  Tabs,
-  Tab,
-  Typography,
-  Button,
-  TextField,
-  IconButton,
-  Chip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Avatar,
-  useTheme,
-} from "@mui/material";
-import {
-  Add,
-  Edit,
-  Delete,
   Business,
   Apartment,
   Category,
@@ -40,7 +15,7 @@ import {
 } from "@mui/icons-material";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
-import { glassCardStyles } from "./styles";
+
 import { CustomersTab } from "./CustomersTab";
 import { PlantsTab } from "./PlantsTab";
 import { UnitsTab } from "./UnitsTab";
@@ -70,10 +45,9 @@ export function DashboardPage() {
   const theme = useTheme();
   const isDark = theme.palette.mode === "dark";
   const selectedTabBg = theme.palette.background.default;
-  const { currentUser, canManageHierarchy, canManageCustomer, canManageUsers } =
+  const { canManageHierarchy, canManageCustomer, canManageUsers } =
     useAuthStore();
-  const { setCurrentPage, dashboardTab, setDashboardTab, fetchSummaryCounts } =
-    usePsvStore();
+  const { setCurrentPage, dashboardTab, setDashboardTab } = usePsvStore();
   // Determine visible tabs based on role
   const tabs = useMemo(
     () => [
@@ -189,7 +163,7 @@ export function DashboardPage() {
             position: "relative",
           }}
         >
-          {visibleTabs.map((tab, index) => {
+          {visibleTabs.map((tab) => {
             const isSelected = activeTabLabel === tab.label;
             return (
               <Box

@@ -6,73 +6,36 @@ import {
   Box,
   Container,
   Typography,
-  Chip,
   Paper,
   Divider,
-  List,
-  ListItem,
   ListItemIcon,
   ListItemText,
-  ListItemButton,
   useTheme,
-  useMediaQuery,
-  Card,
-  CardContent,
+  Chip,
   Button,
   IconButton,
-  Tooltip,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogContentText,
   DialogActions,
-  Checkbox,
   TextField,
   Menu,
   MenuItem,
   Fade,
-  Alert,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
 import {
-  Info,
-  Warning as WarningIcon,
-  LocalFireDepartment,
-  Block,
-  BrokenImage,
-  FlashOff,
-  WaterDrop,
-  Air,
-  AttachFile,
-  Description,
-  Note,
-  CheckCircle,
-  Edit,
-  Add,
-  AddCircle,
-  Star,
-  Calculate,
-  Verified,
   Delete,
   KeyboardArrowDown,
   Drafts,
   RateReview,
   CheckCircleOutline,
   PublishedWithChanges,
-  Visibility,
-  ExpandLess,
-  FileDownload,
-  Download,
+  Verified,
   ArrowBack,
 } from "@mui/icons-material";
 import { usePsvStore } from "@/store/usePsvStore";
-import { SizingCase, ProtectiveSystem, RevisionHistory } from "@/data/types";
+import { ProtectiveSystem, RevisionHistory } from "@/data/types";
 import { SizingWorkspace } from "./SizingWorkspace";
 import { useAuthStore } from "@/store/useAuthStore";
 import {
@@ -104,7 +67,7 @@ import { AttachmentsTab } from "./tabs/AttachmentsTab";
 import { ActivityPanel } from "./ActivityPanel";
 import { ActiveViewers } from "./ActiveViewers";
 import { sortRevisionsByOriginatedAtDesc } from "@/lib/revisionSort";
-import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
+
 import { DeleteConfirmDialog } from "./shared";
 
 interface TabPanelProps {
@@ -140,7 +103,6 @@ export function ProtectiveSystemDetail() {
     selectedPsv,
     selectPsv,
     updatePsv,
-    softDeleteProtectiveSystem,
     updateSizingCase,
     scenarioList,
     sizingCaseList,
@@ -160,7 +122,7 @@ export function ProtectiveSystemDetail() {
   // const [activeTab, setActiveTab] = useState(0); // Removed local state
   const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
+  const [deleteConfirmationInput] = useState("");
 
   const [statusMenuAnchor, setStatusMenuAnchor] = useState<null | HTMLElement>(
     null,
