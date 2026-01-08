@@ -124,8 +124,13 @@ Add `NEXT_PUBLIC_USE_LOCAL_STORAGE=true` in Vercel project settings → Environm
 
 ### Demo Credentials
 
-- **Username:** `engineer`
-- **Password:** `engineer`
+All demo users can login with their username as password:
+
+- `maetee` / `linkinpark` (admin)
+- `lead` / `lead` (lead)
+- `approver` / `password` (approver)
+- `engineer` / `engineer` (engineer)
+- `dm` / `password` (division_manager)
 
 ### How It Works
 
