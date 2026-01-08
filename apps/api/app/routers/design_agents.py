@@ -13,13 +13,30 @@ import logging
 # Import ProcessDesignAgents if available
 try:
     import sys
+    import os
     from pathlib import Path
-    PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent
-    sys.path.insert(0, str(PROJECT_ROOT / "apps" / "multi-agents" / "ProcessDesignAgents"))
-    from processdesignagents.graph.process_design_graph import ProcessDesignGraph
-    from processdesignagents.default_config import DEFAULT_CONFIG
-    PROCESS_DESIGN_AGENTS_AVAILABLE = True
-except ImportError:
+
+    # Hardcode path for now - TODO: make this more robust
+    process_agents_path = Path("/Users/maetee/Code/process-engineering-suite/apps/multi-agents/ProcessDesignAgents")
+
+    logging.info(f"Process agents path: {process_agents_path}")
+    logging.info(f"Path exists: {process_agents_path.exists()}")
+
+    if process_agents_path.exists():
+        sys.path.insert(0, str(process_agents_path))
+        logging.info(f"Added to sys.path: {process_agents_path}")
+
+        from processdesignagents.graph.process_design_graph import ProcessDesignGraph
+        from processdesignagents.default_config import DEFAULT_CONFIG
+        PROCESS_DESIGN_AGENTS_AVAILABLE = True
+
+        logging.info("ProcessDesignAgents imported successfully")
+    else:
+        logging.error(f"ProcessDesignAgents path does not exist: {process_agents_path}")
+        PROCESS_DESIGN_AGENTS_AVAILABLE = False
+
+except ImportError as e:
+    logging.warning(f"ProcessDesignAgents not available: {e}")
     ProcessDesignGraph = None
     DEFAULT_CONFIG = {}
     PROCESS_DESIGN_AGENTS_AVAILABLE = False
