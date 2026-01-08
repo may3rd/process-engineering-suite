@@ -115,7 +115,7 @@ async def health_check():
     }
 
 @router.post("/workflows", response_model=WorkflowResponse)
-async def create_workflow(request: WorkflowRequest):
+async def create_workflow(request: WorkflowRequest, preserve_existing_results: bool = False):
     """Create a new design workflow."""
     if not PROCESS_DESIGN_AGENTS_AVAILABLE:
         raise HTTPException(
@@ -140,6 +140,21 @@ async def create_workflow(request: WorkflowRequest):
 
     active_workflows[workflow_id] = workflow_state
     workflow_streams[workflow_id] = asyncio.Queue()
+
+    # Preserve existing results if requested
+    if preserve_existing_results:
+        # Find the most recent workflow and copy its results
+        existing_workflows = [
+            wf for wf in active_workflows.values()
+            if wf["workflow_id"] != workflow_id and wf.get("status") in ["ready", "running"]
+        ]
+        if existing_workflows:
+            # Get the most recent workflow
+            latest_workflow = max(existing_workflows, key=lambda wf: wf["updated_at"])
+            # Copy completed outputs and step statuses
+            workflow_state["outputs"] = latest_workflow.get("outputs", {}).copy()
+            workflow_state["step_statuses"] = latest_workflow.get("step_statuses", {}).copy()
+            logger.info(f"Preserved results from workflow {latest_workflow['workflow_id']}")
 
     # Initialize graph
     try:

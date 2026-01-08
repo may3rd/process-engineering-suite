@@ -80,14 +80,20 @@ export class DesignAgentsAPI {
   }
 
   // Workflow management methods
-  async createWorkflow(request: WorkflowRequest): Promise<WorkflowResponse> {
-    const response = await fetch(`${this.baseUrl}/design-agents/workflows`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
+  async createWorkflow(
+    request: WorkflowRequest,
+    preserveExistingResults = false,
+  ): Promise<WorkflowResponse> {
+    const response = await fetch(
+      `${this.baseUrl}/design-agents/workflows?preserve_existing_results=${preserveExistingResults}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(request),
       },
-      body: JSON.stringify(request),
-    });
+    );
 
     if (!response.ok) {
       throw new Error(

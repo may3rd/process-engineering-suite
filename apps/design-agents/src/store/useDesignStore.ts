@@ -53,6 +53,7 @@ interface DesignStoreState extends DesignState {
 
   // Workflow management actions
   initializeWorkflow: () => Promise<void>;
+  reinitializeWorkflowWithNewSettings: () => Promise<void>;
   connectStreaming: () => Promise<void>;
   disconnectStreaming: () => void;
   setWorkflowStatus: (status: string) => void;
@@ -450,6 +451,64 @@ export const useDesignStore = create<DesignStoreState>()(
               error instanceof Error
                 ? error.message
                 : "Failed to initialize workflow",
+          });
+          throw error;
+        }
+      },
+
+      reinitializeWorkflowWithNewSettings: async () => {
+        const state = get();
+        const {
+          currentWorkflowId,
+          llmQuickProvider,
+          llmQuickModel,
+          llmDeepProvider,
+          llmDeepModel,
+          llmQuickTemperature,
+          problemStatement,
+        } = state;
+
+        if (!currentWorkflowId) {
+          throw new Error("No workflow to re-initialize");
+        }
+
+        try {
+          set({ workflowStatus: "updating" });
+
+          // Disconnect existing streaming
+          get().disconnectStreaming();
+
+          // Create new workflow with updated LLM settings and preserve results
+          const response = await api.createWorkflow(
+            {
+              problem_statement: problemStatement,
+              config: {
+                llm_provider: llmQuickProvider,
+                quick_think_model: llmQuickModel,
+                deep_think_model: llmDeepModel,
+                temperature: llmQuickTemperature,
+                resume_from_last: true,
+              },
+            },
+            true,
+          ); // preserve_existing_results = true
+
+          // Update to new workflow
+          set({
+            currentWorkflowId: response.workflow_id,
+            workflowStatus: response.status,
+          });
+
+          // Reconnect streaming with new workflow
+          await get().connectStreaming();
+        } catch (error) {
+          console.error("Failed to re-initialize workflow:", error);
+          set({
+            workflowStatus: "error",
+            streamError:
+              error instanceof Error
+                ? error.message
+                : "Failed to update LLM settings",
           });
           throw error;
         }
