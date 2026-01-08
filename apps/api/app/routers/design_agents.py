@@ -221,36 +221,300 @@ async def execute_workflow_step(workflow_id: str, step_index: int, request: Step
     workflow["current_step"] = step_index
     workflow["updated_at"] = datetime.now()
 
-    # Execute step with progress updates
+    # Execute with ProcessDesignGraph - run full workflow for step 0, otherwise use cached results
     try:
-        # Send initial progress update
+        graph = workflow["graph"]
+        problem_statement = workflow.get("problem_statement", "")
+
+        if not graph:
+            raise HTTPException(status_code=500, detail="ProcessDesignGraph not initialized")
+
+        # For step 0, run the full ProcessDesignGraph workflow
+        if step_index == 0:
+            # Send initial progress update
+            await send_stream_update(workflow_id, {
+                "type": "step_progress",
+                "step_index": step_index,
+                "progress": 10,
+                "message": f"Starting {STEP_NAMES[step_index]}..."
+            })
+
+            # Log the LLM configuration being used
+            config = workflow.get("config", {})
+            logger.info(f"🔧 Executing ProcessDesignGraph with LLM config:")
+            logger.info(f"   Provider: {config.get('llm_provider')}")
+            logger.info(f"   Quick Model: {config.get('quick_think_model')}")
+            logger.info(f"   Deep Model: {config.get('deep_think_model')}")
+            logger.info(f"   Temperature: {config.get('temperature')}")
+
+            # Send progress update - initializing AI agent
+            await send_stream_update(workflow_id, {
+                "type": "step_progress",
+                "step_index": step_index,
+                "progress": 25,
+                "message": f"Initializing AI agents for full workflow..."
+            })
+
+            # Actually execute the ProcessDesignGraph - this runs ALL steps
+            logger.info(f"🚀 Calling ProcessDesignGraph.propagate() for full workflow")
+            logger.info(f"📝 Problem statement: {problem_statement}")
+
+            try:
+                # Set mock API keys for debugging if not set
+                import os
+                if not os.getenv('OPENROUTER_API_KEY'):
+                    os.environ['OPENROUTER_API_KEY'] = 'mock_api_key_for_debugging'
+                    logger.warning("⚠️ Using mock OPENROUTER_API_KEY for debugging")
+                if not os.getenv('OPENAI_API_KEY'):
+                    os.environ['OPENAI_API_KEY'] = 'mock_api_key_for_debugging'
+                    logger.warning("⚠️ Using mock OPENAI_API_KEY for debugging")
+
+                # Capture stdout to see LLM messages and agent execution
+                import io
+                import sys
+                from contextlib import redirect_stdout
+
+                logger.info("🔄 Starting ProcessDesignGraph.propagate() - this will attempt LLM calls...")
+                logger.info("📋 LLM calls will be made to the configured providers")
+                logger.info("📋 If API keys are invalid, calls will fail but messages will be logged")
+
+                captured_output = io.StringIO()
+                with redirect_stdout(captured_output):
+                    result = graph.propagate(problem_statement=problem_statement)
+
+                # Get the captured output - this will contain LLM messages!
+                stdout_output = captured_output.getvalue()
+
+                # Log the full output for debugging
+                logger.info("📋 ===== PROCESS DESIGN GRAPH STDOUT OUTPUT =====")
+                for line in stdout_output.split('\n'):
+                    if line.strip():
+                        logger.info(f"📋 {line}")
+                logger.info("📋 ===== END STDOUT OUTPUT =====")
+
+                # Extract and log LLM call information
+                if "LLM Provider:" in stdout_output:
+                    logger.info("✅ Found LLM provider configuration in output")
+                if "Quick Thinking LLM:" in stdout_output:
+                    logger.info("✅ Found Quick Thinking LLM configuration in output")
+                if "Deep Thinking LLM:" in stdout_output:
+                    logger.info("✅ Found Deep Thinking LLM configuration in output")
+
+                # Look for agent execution messages
+                agent_count = stdout_output.count("Attemp")
+                if agent_count > 0:
+                    logger.info(f"📊 Found {agent_count} agent execution attempts in output")
+                    if "Max try count reached" in stdout_output:
+                        logger.error("❌ All agent executions failed - likely due to missing/invalid API keys")
+                        logger.error("💡 To fix: Set valid OPENROUTER_API_KEY and OPENAI_API_KEY environment variables")
+
+                # Log what was returned
+                logger.info(f"📄 ProcessDesignGraph returned result type: {type(result)}")
+                if isinstance(result, dict):
+                    logger.info(f"📄 ProcessDesignGraph returned result keys: {list(result.keys())}")
+                    # Log sample content from key results
+                    for key, value in list(result.items())[:5]:  # Show first 5 results
+                        if isinstance(value, str) and len(value) > 100:
+                            logger.info(f"📝 {key}: {value[:200]}...")
+                        else:
+                            logger.info(f"📝 {key}: {str(value)[:200]}")
+
+                # Store the full results in the workflow
+                workflow["full_results"] = result
+                workflow["stdout_output"] = stdout_output
+
+                # Send progress update - processing complete
+                await send_stream_update(workflow_id, {
+                    "type": "step_progress",
+                    "step_index": step_index,
+                    "progress": 75,
+                    "message": f"AI completed full workflow analysis"
+                })
+
+            except Exception as graph_error:
+                logger.error(f"❌ ProcessDesignGraph execution failed: {graph_error}")
+                logger.error(f"❌ Error details: {str(graph_error)}")
+                import traceback
+                logger.error(f"❌ Traceback: {traceback.format_exc()}")
+                # Fallback to mock data if graph execution fails
+                logger.info("🔄 Falling back to mock data due to graph execution failure")
+                result = {}
+
+        else:
+            # For steps 1-11, use cached results from step 0 execution
+            result = workflow.get("full_results", {})
+            logger.info(f"📋 Using cached results for step {step_index}")
+
+        # Extract outputs for the specific step
+        step_output = {}
+
+        if isinstance(result, dict) and result:
+            # Map ProcessDesignGraph outputs to our expected format for each step
+            output_mapping = {
+                0: ["processRequirements"],  # Process Requirements Analysis
+                1: ["researchConcepts"],     # Innovative Research
+                2: ["researchRatingResults"], # Conservative Research
+                3: ["selectedConceptDetails", "selectedConceptName", "selectedConceptEvaluation"], # Concept Selection
+                4: ["componentList"],         # Component List
+                5: ["designBasis"],          # Design Basis
+                6: ["flowsheetDescription"], # Flowsheet Design
+                7: ["equipmentListResults", "streamListResults"], # Equipment & Stream Catalog
+                8: ["streamListResults"],    # Stream Properties
+                9: ["equipmentListResults"], # Equipment Sizing
+                10: ["safetyRiskAnalystReport"], # Safety Analysis
+                11: ["projectManagerReport", "projectApproval"] # Project Approval
+            }
+
+            expected_outputs = output_mapping.get(step_index, [])
+            for output_key in expected_outputs:
+                # Look for outputs in the result with flexible matching
+                found = False
+                for result_key, result_value in result.items():
+                    # Try various matching strategies
+                    if (output_key.lower() in result_key.lower() or
+                        result_key.lower() in output_key.lower() or
+                        output_key.replace('List', '').lower() in result_key.lower() or
+                        result_key.lower().startswith(output_key.lower())):
+                        step_output[output_key] = str(result_value) if result_value is not None else ""
+                        found = True
+                        logger.info(f"✅ Mapped {result_key} -> {output_key}")
+                        break
+
+                if not found:
+                    logger.warning(f"❌ No match found for expected output: {output_key}")
+
+            # If we didn't find expected outputs, try fuzzy matching
+            if not step_output:
+                logger.warning(f"No expected outputs found for step {step_index}, trying fuzzy matching")
+                for result_key, result_value in result.items():
+                    # Look for keywords in result keys
+                    result_key_lower = result_key.lower()
+                    if any(keyword in result_key_lower for keyword in ['process', 'requirements', 'research', 'concept', 'component', 'design', 'flowsheet', 'equipment', 'stream', 'safety', 'project']):
+                        step_output[f"fuzzy_{result_key}"] = str(result_value)[:1000]  # Limit size
+                        logger.info(f"🎯 Fuzzy match: {result_key}")
+
+        # If still no outputs, use mock data as fallback
+        if not step_output:
+            logger.warning(f"No outputs extracted for step {step_index}, using mock data")
+            step_output = generate_mock_step_output(step_index)
+
+        logger.info(f"📝 Final step output for step {step_index}: {list(step_output.keys())}")
+
+        # Send final progress update
         await send_stream_update(workflow_id, {
             "type": "step_progress",
             "step_index": step_index,
-            "progress": 10,
-            "message": f"Starting {STEP_NAMES[step_index]}..."
+            "progress": 90,
+            "message": f"Finalizing results for {STEP_NAMES[step_index]}..."
         })
 
-        # Simulate different phases of LLM processing
-        await asyncio.sleep(0.5)
+        # Log the LLM configuration being used
+        config = workflow.get("config", {})
+        logger.info(f"🔧 Executing step {step_index} with LLM config: provider={config.get('llm_provider')}, model={config.get('quick_think_model')}")
+
+        # Send progress update - initializing AI agent
         await send_stream_update(workflow_id, {
             "type": "step_progress",
             "step_index": step_index,
-            "progress": 30,
+            "progress": 25,
             "message": f"Initializing AI agent for {STEP_NAMES[step_index]}..."
         })
 
-        await asyncio.sleep(0.8)
-        await send_stream_update(workflow_id, {
-            "type": "step_progress",
-            "step_index": step_index,
-            "progress": 60,
-            "message": f"AI is analyzing and processing {STEP_NAMES[step_index]}..."
-        })
+        # Actually execute the ProcessDesignGraph step
+        logger.info(f"🚀 Calling ProcessDesignGraph.propagate() for step {step_index}")
+        logger.info(f"📝 Problem statement: {workflow.get('problem_statement', 'N/A')}")
+        logger.info(f"⚙️ LLM Config: {config}")
 
-        await asyncio.sleep(0.7)
-        step_output = generate_mock_step_output(step_index)
+        try:
+            # Execute the graph - this will make actual LLM calls
+            logger.info("🔄 Starting ProcessDesignGraph.propagate() - this may take time...")
 
+            # Capture stdout to see LLM messages
+            import io
+            import sys
+            from contextlib import redirect_stdout
+
+            captured_output = io.StringIO()
+            with redirect_stdout(captured_output):
+                result = graph.propagate()
+
+            # Get the captured output
+            stdout_output = captured_output.getvalue()
+            logger.info(f"📋 ProcessDesignGraph stdout output:\n{stdout_output}")
+
+            # Log what was returned
+            logger.info(f"📄 ProcessDesignGraph returned result type: {type(result)}")
+            if isinstance(result, dict):
+                logger.info(f"📄 ProcessDesignGraph returned result keys: {list(result.keys())}")
+                # Log some sample content from key results
+                for key, value in result.items():
+                    if isinstance(value, str) and len(value) > 100:
+                        logger.info(f"📝 {key}: {value[:200]}...")
+                    else:
+                        logger.info(f"📝 {key}: {value}")
+            else:
+                logger.info(f"📄 ProcessDesignGraph returned non-dict result: {result}")
+
+            # Look for LLM-related information in the output
+            if "LLM Provider:" in stdout_output:
+                logger.info("✅ Found LLM provider information in output")
+            if "Quick Thinking LLM:" in stdout_output:
+                logger.info("✅ Found Quick Thinking LLM information in output")
+            if "Deep Thinking LLM:" in stdout_output:
+                logger.info("✅ Found Deep Thinking LLM information in output")
+
+            # Send progress update - processing complete
+            await send_stream_update(workflow_id, {
+                "type": "step_progress",
+                "step_index": step_index,
+                "progress": 75,
+                "message": f"AI completed processing {STEP_NAMES[step_index]}"
+            })
+
+            # Extract outputs from the result
+            step_output = {}
+
+            # Try to extract relevant outputs based on step
+            if isinstance(result, dict):
+                # Map ProcessDesignGraph outputs to our expected format
+                output_mapping = {
+                    0: ["processRequirements"],  # Process Requirements Analysis
+                    1: ["researchConcepts"],     # Innovative Research
+                    2: ["researchRatingResults"], # Conservative Research
+                    3: ["selectedConceptDetails", "selectedConceptName", "selectedConceptEvaluation"], # Concept Selection
+                    4: ["componentList"],         # Component List
+                    5: ["designBasis"],          # Design Basis
+                    6: ["flowsheetDescription"], # Flowsheet Design
+                    7: ["equipmentListResults", "streamListResults"], # Equipment & Stream Catalog
+                    8: ["streamListResults"],    # Stream Properties
+                    9: ["equipmentListResults"], # Equipment Sizing
+                    10: ["safetyRiskAnalystReport"], # Safety Analysis
+                    11: ["projectManagerReport", "projectApproval"] # Project Approval
+                }
+
+                expected_outputs = output_mapping.get(step_index, [])
+                for output_key in expected_outputs:
+                    # Look for outputs in the result
+                    for result_key, result_value in result.items():
+                        if output_key.lower() in result_key.lower() or result_key.lower() in output_key.lower():
+                            step_output[output_key] = str(result_value)
+                            break
+
+                # If we didn't find expected outputs, include all result data for debugging
+                if not step_output:
+                    logger.warning(f"No expected outputs found for step {step_index}, including all result data")
+                    for key, value in result.items():
+                        step_output[f"debug_{key}"] = str(value)
+
+            logger.info(f"📝 Final step output for step {step_index}: {list(step_output.keys())}")
+
+        except Exception as graph_error:
+            logger.error(f"❌ ProcessDesignGraph execution failed: {graph_error}")
+            # Fallback to mock data if graph execution fails
+            logger.info("🔄 Falling back to mock data due to graph execution failure")
+            step_output = generate_mock_step_output(step_index)
+
+        # Send final progress update
         await send_stream_update(workflow_id, {
             "type": "step_progress",
             "step_index": step_index,

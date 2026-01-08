@@ -415,7 +415,15 @@ export const useDesignStore = create<DesignStoreState>()(
 
       // Workflow management actions
       initializeWorkflow: async () => {
-        const { problemStatement } = get();
+        const {
+          problemStatement,
+          llmQuickProvider,
+          llmQuickModel,
+          llmDeepProvider,
+          llmDeepModel,
+          llmQuickTemperature,
+        } = get();
+
         if (!problemStatement.trim()) {
           throw new Error(
             "Problem statement is required to initialize workflow",
@@ -428,10 +436,10 @@ export const useDesignStore = create<DesignStoreState>()(
           const response = await api.createWorkflow({
             problem_statement: problemStatement,
             config: {
-              llm_provider: "openrouter",
-              quick_think_model: "google/gemini-2.5-flash-lite-preview-09-2025",
-              deep_think_model: "google/gemini-2.5-flash-preview-09-2025",
-              temperature: 0.7,
+              llm_provider: llmQuickProvider,
+              quick_think_model: llmQuickModel,
+              deep_think_model: llmDeepModel,
+              temperature: llmQuickTemperature,
               resume_from_last: true,
             },
           });

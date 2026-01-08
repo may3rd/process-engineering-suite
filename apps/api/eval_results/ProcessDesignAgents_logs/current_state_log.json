@@ -1,0 +1,64 @@
+{
+    "problem_statement": "Design a small hydrogen plant",
+    "agent_order": [
+        "process_requirements_analyst",
+        "innovative_researcher",
+        "conservative_researcher",
+        "concept_detailer",
+        "component_list_researcher",
+        "design_basis_analyst",
+        "flowsheet_design_agent",
+        "equipment_stream_catalog_agent",
+        "stream_property_estimation_agent",
+        "equipment_sizing_agent",
+        "safety_risk_analyst",
+        "project_manager"
+    ],
+    "completed_agents": [],
+    "pending_agents": [
+        "process_requirements_analyst",
+        "innovative_researcher",
+        "conservative_researcher",
+        "concept_detailer",
+        "component_list_researcher",
+        "design_basis_analyst",
+        "flowsheet_design_agent",
+        "equipment_stream_catalog_agent",
+        "stream_property_estimation_agent",
+        "equipment_sizing_agent",
+        "safety_risk_analyst",
+        "project_manager"
+    ],
+    "last_completed_agent": null,
+    "current_state": {
+        "messages": [
+            {
+                "type": "human",
+                "data": {
+                    "content": "Design a small hydrogen plant",
+                    "additional_kwargs": {},
+                    "response_metadata": {},
+                    "type": "human",
+                    "name": null,
+                    "id": null
+                }
+            }
+        ],
+        "problem_statement": "Design a small hydrogen plant",
+        "process_requirements": "",
+        "research_concepts": "",
+        "selected_concept_details": "",
+        "selected_concept_name": "",
+        "flowsheet_description": "",
+        "equipment_and_stream_results": "",
+        "stream_list_results": "",
+        "equipment_list_template": "",
+        "equipment_list_results": "",
+        "stream_list_template": "",
+        "project_approval": "",
+        "llm_provider": "openrouter"
+    },
+    "agent_outputs": {},
+    "is_complete": false,
+    "updated_at": "2026-01-08T07:33:27.259203Z"
+}
