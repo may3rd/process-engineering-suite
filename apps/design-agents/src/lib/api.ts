@@ -56,6 +56,7 @@ export interface StreamUpdate {
   outputs?: Record<string, any>;
   error?: string;
   timestamp?: string;
+  progress?: number;
 }
 
 // Frontend-compatible interfaces (for backward compatibility)

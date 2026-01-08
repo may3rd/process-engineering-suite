@@ -221,10 +221,42 @@ async def execute_workflow_step(workflow_id: str, step_index: int, request: Step
     workflow["current_step"] = step_index
     workflow["updated_at"] = datetime.now()
 
-    # Simulate step execution (TODO: replace with actual ProcessDesignGraph execution)
+    # Execute step with progress updates
     try:
-        await asyncio.sleep(2)  # Simulate processing time
+        # Send initial progress update
+        await send_stream_update(workflow_id, {
+            "type": "step_progress",
+            "step_index": step_index,
+            "progress": 10,
+            "message": f"Starting {STEP_NAMES[step_index]}..."
+        })
+
+        # Simulate different phases of LLM processing
+        await asyncio.sleep(0.5)
+        await send_stream_update(workflow_id, {
+            "type": "step_progress",
+            "step_index": step_index,
+            "progress": 30,
+            "message": f"Initializing AI agent for {STEP_NAMES[step_index]}..."
+        })
+
+        await asyncio.sleep(0.8)
+        await send_stream_update(workflow_id, {
+            "type": "step_progress",
+            "step_index": step_index,
+            "progress": 60,
+            "message": f"AI is analyzing and processing {STEP_NAMES[step_index]}..."
+        })
+
+        await asyncio.sleep(0.7)
         step_output = generate_mock_step_output(step_index)
+
+        await send_stream_update(workflow_id, {
+            "type": "step_progress",
+            "step_index": step_index,
+            "progress": 90,
+            "message": f"Finalizing results for {STEP_NAMES[step_index]}..."
+        })
 
         workflow["outputs"].update(step_output)
         workflow["step_statuses"][step_index] = "completed"
@@ -307,3 +339,11 @@ def generate_mock_step_output(step_index: int) -> Dict[str, Any]:
         11: {"projectManagerReport": "# Final Report", "projectApproval": "Approved"}
     }
     return mock_outputs.get(step_index, {})
+
+async def send_stream_update(workflow_id: str, update: Dict[str, Any]):
+    """Send an update to the workflow's stream."""
+    if workflow_id in workflow_streams:
+        try:
+            await workflow_streams[workflow_id].put(json.dumps(update))
+        except Exception as e:
+            logger.error(f"Failed to send stream update: {e}")

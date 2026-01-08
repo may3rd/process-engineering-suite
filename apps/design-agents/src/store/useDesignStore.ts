@@ -536,6 +536,19 @@ export const useDesignStore = create<DesignStoreState>()(
                   }
                   break;
 
+                case "step_progress":
+                  // Handle progress updates during step execution
+                  if (
+                    update.step_index !== undefined &&
+                    update.progress !== undefined
+                  ) {
+                    // Could add progress tracking here if needed
+                    console.log(
+                      `Step ${update.step_index} progress: ${update.progress}% - ${update.message || ""}`,
+                    );
+                  }
+                  break;
+
                 case "step_completed":
                   if (update.step_index !== undefined) {
                     get().setStepStatus(update.step_index, "needs_review");
