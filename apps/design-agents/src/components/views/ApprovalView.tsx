@@ -17,13 +17,16 @@ export function ApprovalView() {
         triggerNextStep,
         getOutputMetadata,
         markOutputEdited,
+        setOutputStatus,
+        setStepStatus,
+        setCurrentStep,
     } = useDesignStore();
 
     const safetyStatus = getOutputMetadata('safetyRiskAnalystReport');
     const pmStatus = getOutputMetadata('projectManagerReport');
 
-    const canRunSafety = stepStatuses[10] === 'pending' || stepStatuses[10] === 'edited';
-    const canRunPM = stepStatuses[11] === 'pending' || stepStatuses[11] === 'edited';
+    const canRunSafety = true; // Allow running freely
+    const canRunPM = true; // Allow running freely
 
     const getApprovalColor = () => {
         if (projectApproval.toLowerCase().includes('approved')) return 'success';
@@ -72,7 +75,17 @@ export function ApprovalView() {
                         <Typography variant="h6" sx={{ fontWeight: 600 }}>
                             Safety & Risk Analysis
                         </Typography>
-                        {safetyStatus && <OutputStatusBadge status={safetyStatus.status} />}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {safetyStatus && <OutputStatusBadge status={safetyStatus.status} />}
+                            <RunAgentButton
+                                label={!!safetyRiskAnalystReport.trim() ? 'Re-run Safety Check' : 'Run Safety Analysis'}
+                                onClick={triggerNextStep}
+                                disabled={!canRunSafety}
+                                isRerun={!!safetyRiskAnalystReport.trim()}
+                                loading={stepStatuses[10] === 'running'}
+                                size="small"
+                            />
+                        </Box>
                     </Box>
                     <Box sx={{ mt: 2 }}>
                         <MarkdownEditor
@@ -84,15 +97,20 @@ export function ApprovalView() {
                             minHeight={300}
                         />
                     </Box>
-                    <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
-                        <RunAgentButton
-                            label={stepStatuses[10] === 'pending' ? 'Run Safety Analysis' : 'Re-run Safety Check'}
-                            onClick={triggerNextStep}
-                            disabled={!canRunSafety}
-                            isRerun={stepStatuses[10] !== 'pending'}
-                            loading={stepStatuses[10] === 'running'}
-                        />
-                    </Box>
+                    {(safetyStatus?.status === 'needs_review' || safetyStatus?.status === 'draft') && (
+                        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                            <RunAgentButton
+                                label="Confirm & Approve"
+                                onClick={() => {
+                                    setOutputStatus('safetyRiskAnalystReport', 'approved');
+                                    setStepStatus(10, 'complete');
+                                    setCurrentStep(11);
+                                }}
+                                variant="outlined"
+                                size="small"
+                            />
+                        </Box>
+                    )}
                 </Paper>
 
                 {/* Project Manager Report */}
@@ -112,7 +130,17 @@ export function ApprovalView() {
                         <Typography variant="h6" sx={{ fontWeight: 600 }}>
                             Project Manager Report
                         </Typography>
-                        {pmStatus && <OutputStatusBadge status={pmStatus.status} />}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {pmStatus && <OutputStatusBadge status={pmStatus.status} />}
+                            <RunAgentButton
+                                label={!!projectManagerReport.trim() ? 'Regenerate Report' : 'Generate PM Report'}
+                                onClick={triggerNextStep}
+                                disabled={!canRunPM}
+                                isRerun={!!projectManagerReport.trim()}
+                                loading={stepStatuses[11] === 'running'}
+                                size="small"
+                            />
+                        </Box>
                     </Box>
                     <Box sx={{ mt: 2 }}>
                         <MarkdownEditor
@@ -124,15 +152,20 @@ export function ApprovalView() {
                             minHeight={300}
                         />
                     </Box>
-                    <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-                        <RunAgentButton
-                            label={stepStatuses[11] === 'pending' ? 'Generate PM Report' : 'Regenerate Report'}
-                            onClick={triggerNextStep}
-                            disabled={!canRunPM}
-                            isRerun={stepStatuses[11] !== 'pending'}
-                            loading={stepStatuses[11] === 'running'}
-                        />
-                    </Box>
+                    {(pmStatus?.status === 'needs_review' || pmStatus?.status === 'draft') && (
+                        <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+                            <RunAgentButton
+                                label="Confirm & Approve"
+                                onClick={() => {
+                                    setOutputStatus('projectManagerReport', 'approved');
+                                    setStepStatus(11, 'complete');
+                                    // No setCurrentStep(12) as it's the last step
+                                }}
+                                variant="outlined"
+                                size="small"
+                            />
+                        </Box>
+                    )}
                 </Paper>
             </Box>
         </Box>

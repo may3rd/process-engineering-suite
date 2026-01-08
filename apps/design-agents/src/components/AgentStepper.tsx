@@ -6,6 +6,8 @@ import { AGENT_STEPS, AGENT_LABELS } from "@/data/types";
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import EditIcon from '@mui/icons-material/Edit';
 import WarningIcon from '@mui/icons-material/Warning';
+import PlayArrowIcon from '@mui/icons-material/PlayArrow';
+import PriorityHighIcon from '@mui/icons-material/PriorityHigh';
 import CircularProgress from '@mui/material/CircularProgress';
 
 export function AgentStepper() {
@@ -18,6 +20,8 @@ export function AgentStepper() {
                 return 'Completed';
             case 'running':
                 return 'In progress';
+            case 'needs_review':
+                return 'Needs review';
             case 'edited':
                 return 'Edited - needs review';
             case 'outdated':
@@ -30,18 +34,24 @@ export function AgentStepper() {
     const getStepIcon = (stepIndex: number) => {
         const status = stepStatuses[stepIndex];
         const isCurrentStep = currentStep === stepIndex;
-        
+
         if (status === 'complete') {
             return <CheckCircleIcon sx={{ color: theme.palette.success.main, fontSize: 20 }} />;
         }
-        if (status === 'running' || isCurrentStep) {
+        if (status === 'running') {
             return <CircularProgress size={20} sx={{ color: theme.palette.primary.main }} />;
+        }
+        if (status === 'needs_review') {
+            return <PriorityHighIcon sx={{ color: theme.palette.warning.main, fontSize: 22 }} />;
+        }
+        if (isCurrentStep) {
+            return <PlayArrowIcon sx={{ color: theme.palette.success.main, fontSize: 22 }} />;
         }
         if (status === 'edited') {
             return <EditIcon sx={{ color: theme.palette.warning.main, fontSize: 20 }} />;
         }
         if (status === 'outdated') {
-            return <WarningIcon sx={{ color: theme.palette.error.main, fontSize: 20 }} />;
+            return <WarningIcon sx={{ color: theme.palette.warning.main, fontSize: 20 }} />;
         }
         return null;
     };

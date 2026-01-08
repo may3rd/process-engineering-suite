@@ -14,13 +14,19 @@ import {
     ListItemIcon,
     IconButton,
     Alert,
-    Snackbar
+    Snackbar,
+    Dialog,
+    DialogTitle,
+    DialogContent,
+    DialogContentText,
+    DialogActions
 } from "@mui/material";
 import { useDesignStore } from "@/store/useDesignStore";
 import SaveIcon from '@mui/icons-material/Save';
 import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import FileUploadIcon from '@mui/icons-material/FileUpload';
 import DeleteIcon from '@mui/icons-material/Delete';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import DescriptionIcon from '@mui/icons-material/Description';
 
 export function StorageView() {
@@ -31,6 +37,7 @@ export function StorageView() {
         message: '',
         severity: 'success'
     });
+    const [confirmStartOver, setConfirmStartOver] = useState(false);
 
     const {
         project,
@@ -59,6 +66,7 @@ export function StorageView() {
         setProject,
         setCurrentStep,
         setStepStatus,
+        startOver,
     } = useDesignStore();
 
     const handleExportJSON = () => {
@@ -244,6 +252,16 @@ export function StorageView() {
                             Import from JSON
                         </Button>
                         <Button
+                            variant="contained"
+                            color="warning"
+                            size="large"
+                            startIcon={<RestartAltIcon />}
+                            onClick={() => setConfirmStartOver(true)}
+                            fullWidth
+                        >
+                            Start Over
+                        </Button>
+                        <Button
                             variant="outlined"
                             color="error"
                             size="large"
@@ -256,6 +274,50 @@ export function StorageView() {
                     </Box>
                 </Grid>
             </Grid>
+
+            {/* Start Over Confirmation Dialog */}
+            <Dialog
+                open={confirmStartOver}
+                onClose={() => setConfirmStartOver(false)}
+                PaperProps={{
+                    sx: {
+                        backgroundColor: theme.palette.mode === 'dark'
+                            ? 'rgba(30, 41, 59, 0.95)'
+                            : 'rgba(255, 255, 255, 0.95)',
+                        backdropFilter: 'blur(20px)',
+                    }
+                }}
+            >
+                <DialogTitle>Start Over?</DialogTitle>
+                <DialogContent>
+                    <DialogContentText>
+                        This will clear all your work including:
+                    </DialogContentText>
+                    <Box component="ul" sx={{ mt: 1, pl: 2 }}>
+                        <li>Problem statement</li>
+                        <li>All generated outputs (requirements, research, design basis, etc.)</li>
+                        <li>Equipment and stream lists</li>
+                        <li>Approval reports</li>
+                    </Box>
+                    <DialogContentText sx={{ mt: 2, fontWeight: 500 }}>
+                        Your LLM settings will be preserved. This action cannot be undone.
+                    </DialogContentText>
+                </DialogContent>
+                <DialogActions>
+                    <Button onClick={() => setConfirmStartOver(false)}>Cancel</Button>
+                    <Button
+                        onClick={() => {
+                            startOver();
+                            setConfirmStartOver(false);
+                            setSnackbar({ open: true, message: 'Project cleared. Ready to start fresh!', severity: 'success' });
+                        }}
+                        color="warning"
+                        variant="contained"
+                    >
+                        Start Over
+                    </Button>
+                </DialogActions>
+            </Dialog>
 
             <Snackbar
                 open={snackbar.open}

@@ -21,6 +21,11 @@ export function SpreadsheetView() {
         stepStatuses,
         triggerNextStep,
         getOutputMetadata,
+        setOutputStatus,
+        setStepStatus,
+        setCurrentStep,
+        setActiveTab: setGlobalActiveTab,
+        setStepOutput,
     } = useDesignStore();
     const [activeTab, setActiveTab] = useState<'equipment' | 'streams'>('equipment');
     const [dataView, setDataView] = useState<'template' | 'calculated'>('calculated');
@@ -29,9 +34,9 @@ export function SpreadsheetView() {
     const equipmentStatus = getOutputMetadata('equipmentListResults');
     const streamStatus = getOutputMetadata('streamListResults');
 
-    const canRunCatalog = stepStatuses[7] === 'pending' || stepStatuses[7] === 'edited';
-    const canRunStreamEstimation = stepStatuses[8] === 'pending' || stepStatuses[8] === 'edited';
-    const canRunSizing = stepStatuses[9] === 'pending' || stepStatuses[9] === 'edited';
+    const canRunCatalog = true; // Allow running freely
+    const canRunStreamEstimation = true; // Allow running freely
+    const canRunSizing = true; // Allow running freely
 
     let equipment: EquipmentItem[] = [];
     let streams: StreamItem[] = [];
@@ -150,12 +155,37 @@ export function SpreadsheetView() {
                         </ToggleButtonGroup>
                     )}
                 </Box>
-                <Box sx={{ display: 'flex', gap: 1 }} role="group" aria-label="Agent action buttons">
+                <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }} role="group" aria-label="Agent action buttons">
+                    {(equipmentStatus?.status === 'needs_review' || equipmentStatus?.status === 'draft') && activeTab === 'equipment' && (
+                        <RunAgentButton
+                            label="Confirm & Approve"
+                            onClick={() => {
+                                setOutputStatus('equipmentListResults', 'approved');
+                                setStepStatus(7, 'complete'); // Catalog step
+                                setCurrentStep(8);
+                            }}
+                            variant="outlined"
+                            size="small"
+                        />
+                    )}
+                    {(streamStatus?.status === 'needs_review' || streamStatus?.status === 'draft') && activeTab === 'streams' && (
+                        <RunAgentButton
+                            label="Confirm & Approve"
+                            onClick={() => {
+                                setOutputStatus('streamListResults', 'approved');
+                                setStepStatus(8, 'complete'); // Estimation step
+                                setCurrentStep(9);
+                            }}
+                            variant="outlined"
+                            size="small"
+                        />
+                    )}
+
                     <RunAgentButton
                         label={stepStatuses[7] === 'pending' ? 'Generate Catalogs' : 'Regenerate'}
                         onClick={triggerNextStep}
                         disabled={!canRunCatalog}
-                        isRerun={stepStatuses[7] !== 'pending'}
+                        isRerun={equipment.length > 0}
                         loading={stepStatuses[7] === 'running'}
                         size="small"
                     />
@@ -163,7 +193,7 @@ export function SpreadsheetView() {
                         label="Estimate Streams"
                         onClick={triggerNextStep}
                         disabled={!canRunStreamEstimation}
-                        isRerun={stepStatuses[8] !== 'pending'}
+                        isRerun={streams.length > 0}
                         loading={stepStatuses[8] === 'running'}
                         size="small"
                     />
@@ -171,7 +201,7 @@ export function SpreadsheetView() {
                         label="Size Equipment"
                         onClick={triggerNextStep}
                         disabled={!canRunSizing}
-                        isRerun={stepStatuses[9] !== 'pending'}
+                        isRerun={equipment.length > 0}
                         loading={stepStatuses[9] === 'running'}
                         size="small"
                     />

@@ -7,7 +7,7 @@ import { AgentStep, AGENT_STEPS, AGENT_LABELS } from './stepConfig';
 export type { AgentStep };
 export { AGENT_STEPS, AGENT_LABELS };
 
-export type StepStatus = 'pending' | 'running' | 'complete' | 'edited' | 'outdated';
+export type StepStatus = 'pending' | 'running' | 'needs_review' | 'complete' | 'edited' | 'outdated';
 
 export type OutputStatus = 'draft' | 'needs_review' | 'approved' | 'needs_rerun' | 'outdated';
 

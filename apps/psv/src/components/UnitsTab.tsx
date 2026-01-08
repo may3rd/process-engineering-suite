@@ -40,7 +40,12 @@ import {
 import { users } from "@/data/mockData";
 import { Unit } from "@/data/types";
 import { glassCardStyles } from "./styles";
-import { DeleteConfirmDialog, TableSortButton, PaginationControls, ItemsPerPageSelector } from "./shared";
+import {
+  DeleteConfirmDialog,
+  TableSortButton,
+  PaginationControls,
+  ItemsPerPageSelector,
+} from "./shared";
 import { UnitDialog } from "./dashboard/UnitDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
@@ -98,7 +103,9 @@ export function UnitsTab() {
   const [selectedUnit, setSelectedUnit] = useState<Unit | null>(null);
   const [unitToDelete, setUnitToDelete] = useState<Unit | null>(null);
   const [searchText, setSearchText] = useState("");
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "inactive"
+  >("all");
   type SortKey = "code" | "plant" | "owner" | "areas" | "status" | "created";
   const [sortConfig, setSortConfig] = useState<SortConfig<SortKey> | null>(
     null,
@@ -135,14 +142,29 @@ export function UnitsTab() {
   const handleForceDelete = async () => {
     if (unitToDelete) {
       try {
-        const { areas, projects, protectiveSystems, equipment,
-          deleteEquipment, deleteProtectiveSystem, deleteProject, deleteArea, deleteUnit } = usePsvStore.getState();
+        const {
+          areas,
+          projects,
+          protectiveSystems,
+          equipment,
+          deleteEquipment,
+          deleteProtectiveSystem,
+          deleteProject,
+          deleteArea,
+          deleteUnit,
+        } = usePsvStore.getState();
 
-        const areasToDelete = areas.filter(a => a.unitId === unitToDelete.id);
-        const areaIds = areasToDelete.map(a => a.id);
-        const projectsToDelete = projects.filter(p => areaIds.includes(p.areaId));
-        const psvsToDelete = protectiveSystems.filter(p => areaIds.includes(p.areaId));
-        const equipmentToDeleteList = equipment.filter(e => areaIds.includes(e.areaId));
+        const areasToDelete = areas.filter((a) => a.unitId === unitToDelete.id);
+        const areaIds = areasToDelete.map((a) => a.id);
+        const projectsToDelete = projects.filter((p) =>
+          areaIds.includes(p.areaId),
+        );
+        const psvsToDelete = protectiveSystems.filter((p) =>
+          areaIds.includes(p.areaId),
+        );
+        const equipmentToDeleteList = equipment.filter((e) =>
+          areaIds.includes(e.areaId),
+        );
 
         for (const e of equipmentToDeleteList) await deleteEquipment(e.id);
         for (const psv of psvsToDelete) await deleteProtectiveSystem(psv.id);
@@ -153,7 +175,7 @@ export function UnitsTab() {
         setDeleteDialogOpen(false);
         setUnitToDelete(null);
       } catch (error) {
-        console.error('Force delete failed:', error);
+        console.error("Force delete failed:", error);
       }
     }
   };
@@ -169,27 +191,27 @@ export function UnitsTab() {
 
   const handleToggleStatus = async (unit: Unit) => {
     if (!canEdit) return;
-    const newStatus = unit.status === 'active' ? 'inactive' : 'active';
+    const newStatus = unit.status === "active" ? "inactive" : "active";
 
-    if (newStatus === 'inactive') {
+    if (newStatus === "inactive") {
       // Cascade DOWN: deactivate unit and all children (Areas, Equipment)
       await softDeleteUnit(unit.id);
     } else {
       // Activate the unit
-      await updateUnit(unit.id, { status: 'active' });
+      await updateUnit(unit.id, { status: "active" });
       // Cascade UP: also activate parent Plant and Customer
-      const { plants, customers, updatePlant, updateCustomer } = usePsvStore.getState();
-      const plant = plants.find(p => p.id === unit.plantId);
-      if (plant && plant.status === 'inactive') {
-        await updatePlant(plant.id, { status: 'active' });
-        const customer = customers.find(c => c.id === plant.customerId);
-        if (customer && customer.status === 'inactive') {
-          await updateCustomer(customer.id, { status: 'active' });
+      const { plants, customers, updatePlant, updateCustomer } =
+        usePsvStore.getState();
+      const plant = plants.find((p) => p.id === unit.plantId);
+      if (plant && plant.status === "inactive") {
+        await updatePlant(plant.id, { status: "active" });
+        const customer = customers.find((c) => c.id === plant.customerId);
+        if (customer && customer.status === "inactive") {
+          await updateCustomer(customer.id, { status: "active" });
         }
       }
     }
   };
-
 
   const getAreaCount = (unitId: string) => {
     return areas.filter((a) => a.unitId === unitId).length;
@@ -198,7 +220,7 @@ export function UnitsTab() {
   // Filter units based on search text
   const filteredUnits = units.filter((unit) => {
     // Status filter
-    if (statusFilter !== 'all' && unit.status !== statusFilter) return false;
+    if (statusFilter !== "all" && unit.status !== statusFilter) return false;
 
     if (!searchText) return true;
     const search = searchText.toLowerCase();
@@ -249,7 +271,10 @@ export function UnitsTab() {
   );
 
   // Pagination
-  const [itemsPerPage, setItemsPerPage] = useLocalStorage('dashboard_items_per_page', 15);
+  const [itemsPerPage, setItemsPerPage] = useLocalStorage(
+    "dashboard_items_per_page",
+    15,
+  );
   const pagination = usePagination(sortedUnits, {
     totalItems: sortedUnits.length,
     itemsPerPage: itemsPerPage,
@@ -309,23 +334,13 @@ export function UnitsTab() {
             {headingTitle}
           </Typography>
         </Box>
-        {canEdit && (
-          <>
-            {/* Desktop: Full button with text */}
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={handleAdd}
-              sx={{ display: { xs: "none", sm: "flex" } }}
-            >
-              Add New Unit
-            </Button>
-            {/* Mobile: Icon only */}
+        {canEdit &&
+          (isMobile ? (
+            /* Mobile: Icon only */
             <Tooltip title="Add New Unit">
               <IconButton
                 onClick={handleAdd}
                 sx={{
-                  display: { xs: "flex", sm: "none" },
                   bgcolor: "primary.main",
                   color: "white",
                   "&:hover": { bgcolor: "primary.dark" },
@@ -334,8 +349,12 @@ export function UnitsTab() {
                 <Add />
               </IconButton>
             </Tooltip>
-          </>
-        )}
+          ) : (
+            /* Desktop: Full button with text */
+            <Button variant="contained" startIcon={<Add />} onClick={handleAdd}>
+              Add New Unit
+            </Button>
+          ))}
       </Box>
 
       <Grid container spacing={{ xs: 1, sm: 2 }} sx={{ mb: 3 }}>
@@ -419,12 +438,18 @@ export function UnitsTab() {
           <FormControl size="small" sx={{ minWidth: 180 }}>
             <Select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as "all" | "active" | "inactive")
+              }
               displayEmpty
             >
               <MenuItem value="all">All ({units.length})</MenuItem>
-              <MenuItem value="active">Active ({units.filter(e => e.status === 'active').length})</MenuItem>
-              <MenuItem value="inactive">Inactive ({units.filter(e => e.status === 'inactive').length})</MenuItem>
+              <MenuItem value="active">
+                Active ({units.filter((e) => e.status === "active").length})
+              </MenuItem>
+              <MenuItem value="inactive">
+                Inactive ({units.filter((e) => e.status === "inactive").length})
+              </MenuItem>
             </Select>
           </FormControl>
         </Stack>
@@ -439,10 +464,13 @@ export function UnitsTab() {
             const areaCount = getAreaCount(unit.id);
 
             return (
-              <Card key={unit.id} sx={{
-                ...glassCardStyles,
-                opacity: unit.status === 'inactive' ? 0.6 : 1,
-              }}>
+              <Card
+                key={unit.id}
+                sx={{
+                  ...glassCardStyles,
+                  opacity: unit.status === "inactive" ? 0.6 : 1,
+                }}
+              >
                 <CardContent sx={{ pb: 1 }}>
                   <Box
                     sx={{
@@ -467,13 +495,13 @@ export function UnitsTab() {
                     <Chip
                       label={unit.status}
                       size="small"
-                      color={unit.status === 'active' ? 'success' : 'default'}
-                      variant={unit.status === 'active' ? 'filled' : 'outlined'}
+                      color={unit.status === "active" ? "success" : "default"}
+                      variant={unit.status === "active" ? "filled" : "outlined"}
                       onClick={() => handleToggleStatus(unit)}
                       sx={{
-                        textTransform: 'capitalize',
-                        cursor: canEdit ? 'pointer' : 'default',
-                        '&:hover': canEdit ? { opacity: 0.8 } : {},
+                        textTransform: "capitalize",
+                        cursor: canEdit ? "pointer" : "default",
+                        "&:hover": canEdit ? { opacity: 0.8 } : {},
                       }}
                     />
                   </Box>
@@ -603,8 +631,11 @@ export function UnitsTab() {
                       key={unit.id}
                       hover
                       sx={{
-                        opacity: unit.status === 'inactive' ? 0.5 : 1,
-                        bgcolor: unit.status === 'inactive' ? 'action.disabledBackground' : 'transparent',
+                        opacity: unit.status === "inactive" ? 0.5 : 1,
+                        bgcolor:
+                          unit.status === "inactive"
+                            ? "action.disabledBackground"
+                            : "transparent",
                         "&:last-child td": {
                           borderBottom: 0,
                         },
@@ -639,13 +670,17 @@ export function UnitsTab() {
                         <Chip
                           label={unit.status}
                           size="small"
-                          color={unit.status === 'active' ? 'success' : 'default'}
-                          variant={unit.status === 'active' ? 'filled' : 'outlined'}
+                          color={
+                            unit.status === "active" ? "success" : "default"
+                          }
+                          variant={
+                            unit.status === "active" ? "filled" : "outlined"
+                          }
                           onClick={() => handleToggleStatus(unit)}
                           sx={{
-                            textTransform: 'capitalize',
-                            cursor: canEdit ? 'pointer' : 'default',
-                            '&:hover': canEdit ? { opacity: 0.8 } : {},
+                            textTransform: "capitalize",
+                            cursor: canEdit ? "pointer" : "default",
+                            "&:hover": canEdit ? { opacity: 0.8 } : {},
                           }}
                         />
                       </TableCell>
@@ -696,7 +731,14 @@ export function UnitsTab() {
           </TableContainer>
 
           {/* Pagination for mobile */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              alignItems: "center",
+            }}
+          >
             <ItemsPerPageSelector
               value={itemsPerPage}
               onChange={setItemsPerPage}

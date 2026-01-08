@@ -28,6 +28,7 @@ interface DesignStoreState extends DesignState {
     markDownstreamOutdated: (fromStep: number) => void;
     triggerNextStep: () => Promise<void>;
     resetProject: () => void;
+    startOver: () => void;
 
     // UI actions
     setActiveTab: (tab: DesignState['activeTab']) => void;
@@ -101,7 +102,19 @@ const initialState: DesignState = {
     llmDeepApiKey: '',
     llmDeepUseStructured: false,
     activeTab: 'requirements',
-    outputStatuses: {},
+    outputStatuses: {
+        processRequirements: { status: 'needs_review', lastModified: new Date().toISOString(), modifiedBy: 'system', version: 1 },
+        researchConcepts: { status: 'needs_review', lastModified: new Date().toISOString(), modifiedBy: 'system', version: 1 },
+        researchRatingResults: { status: 'needs_review', lastModified: new Date().toISOString(), modifiedBy: 'system', version: 1 },
+        selectedConceptName: { status: 'needs_review', lastModified: new Date().toISOString(), modifiedBy: 'system', version: 1 },
+        componentList: { status: 'needs_review', lastModified: new Date().toISOString(), modifiedBy: 'system', version: 1 },
+        designBasis: { status: 'needs_review', lastModified: new Date().toISOString(), modifiedBy: 'system', version: 1 },
+        flowsheetDescription: { status: 'needs_review', lastModified: new Date().toISOString(), modifiedBy: 'system', version: 1 },
+        equipmentListResults: { status: 'needs_review', lastModified: new Date().toISOString(), modifiedBy: 'system', version: 1 },
+        streamListResults: { status: 'needs_review', lastModified: new Date().toISOString(), modifiedBy: 'system', version: 1 },
+        safetyRiskAnalystReport: { status: 'needs_review', lastModified: new Date().toISOString(), modifiedBy: 'system', version: 1 },
+        projectManagerReport: { status: 'needs_review', lastModified: new Date().toISOString(), modifiedBy: 'system', version: 1 },
+    },
     messages: [],
 };
 
@@ -149,10 +162,10 @@ export const useDesignStore = create<DesignStoreState>()(
             },
 
             triggerNextStep: async () => {
-                const { currentStep, setStepStatus, setCurrentStep, setStepOutput, setOutputStatus } = get();
+                const { currentStep, setStepStatus, setStepOutput, setOutputStatus } = get();
 
-                // Mark current step as complete
-                setStepStatus(currentStep, 'complete');
+                // Mark current step as running (shows spinner)
+                setStepStatus(currentStep, 'running');
 
                 // Simulate API call delay for the "agent"
                 await new Promise((resolve) => setTimeout(resolve, 1500));
@@ -185,8 +198,35 @@ export const useDesignStore = create<DesignStoreState>()(
                         setOutputStatus('researchRatingResults', 'needs_review');
                         break;
                     case 3:
-                        setStepOutput('selectedConceptName', 'Autothermal Reforming (ATR)');
-                        setOutputStatus('selectedConceptName', 'needs_review');
+                        // Generate detailed description of the selected concept
+                        setStepOutput('selectedConceptDetails', `# Autothermal Reforming (ATR) Process Details
+
+## Process Description
+Autothermal Reforming combines partial oxidation and steam reforming in a single reactor. The process operates at temperatures of 900-1100°C and pressures of 20-40 bar.
+
+## Key Process Parameters
+- **Reformer Outlet Temperature**: 950-1050°C
+- **Steam-to-Carbon Ratio**: 0.5-0.7
+- **Oxygen-to-Carbon Ratio**: 0.55-0.65
+- **Operating Pressure**: 25-35 bar
+
+## Main Equipment
+1. ATR Reactor with oxygen burner
+2. Feed gas preheater
+3. Steam drum and superheater
+4. Syngas cooler and waste heat recovery
+
+## Advantages
+- Suitable H₂/CO ratio for methanol synthesis
+- No external heat source required
+- Compact design compared to SMR
+- Good for large-scale applications
+
+## Considerations
+- Requires air separation unit (ASU)
+- Higher operating pressure than SMR
+- Careful oxygen/steam ratio control required`);
+                        setOutputStatus('selectedConceptDetails', 'needs_review');
                         break;
                     case 4:
                         setStepOutput('componentList', mockComponentList);
@@ -217,17 +257,57 @@ export const useDesignStore = create<DesignStoreState>()(
                         break;
                 }
 
-                // Move to next step if not at the end
-                if (currentStep < 11) {
-                    const nextStep = currentStep + 1;
-                    setCurrentStep(nextStep);
-                    setStepStatus(nextStep, 'running');
-                    // Mock completion of next step after a delay to show progress
-                    setTimeout(() => setStepStatus(nextStep, 'complete'), 1000);
-                }
+                // Mark step as needs_review - user must approve before it's complete
+                // Don't advance to next step - that happens in the approval handler
+                setStepStatus(currentStep, 'needs_review');
             },
 
             resetProject: () => set(initialState),
+
+            startOver: () => set((state) => ({
+                // Keep project metadata but reset content
+                project: { ...state.project, name: 'New Project', lastModified: new Date().toISOString() },
+                // Clear all inputs and outputs
+                problemStatement: '',
+                processRequirements: '',
+                researchConcepts: '[]',
+                researchRatingResults: '[]',
+                selectedConceptName: '',
+                selectedConceptDetails: '',
+                selectedConceptEvaluation: '',
+                componentList: '',
+                designBasis: '',
+                flowsheetDescription: '',
+                equipmentListTemplate: '',
+                equipmentListResults: '[]',
+                streamListTemplate: '',
+                streamListResults: '[]',
+                safetyRiskAnalystReport: '',
+                projectManagerReport: '',
+                projectApproval: '',
+                // Reset workflow state
+                currentStep: 0,
+                stepStatuses: {
+                    0: 'pending',
+                    1: 'pending',
+                    2: 'pending',
+                    3: 'pending',
+                    4: 'pending',
+                    5: 'pending',
+                    6: 'pending',
+                    7: 'pending',
+                    8: 'pending',
+                    9: 'pending',
+                    10: 'pending',
+                    11: 'pending',
+                },
+                outputStatuses: {},
+                // Reset to requirements tab
+                activeTab: 'requirements',
+                // Clear messages
+                messages: [],
+                // Keep LLM settings unchanged
+            })),
 
             setActiveTab: (tab) => set({ activeTab: tab }),
 

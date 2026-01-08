@@ -6,6 +6,7 @@ import { ResearchConcept, ConceptEvaluation } from "@/data/types";
 import { OutputStatusBadge } from "../common/OutputStatusBadge";
 import { RunAgentButton } from "../common/RunAgentButton";
 import { JSONParseBoundary } from "../common/JSONParseBoundary";
+import { MarkdownEditor } from "../common/MarkdownEditor";
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import { useState, useMemo } from "react";
 
@@ -22,6 +23,11 @@ export function ResearchView() {
         stepStatuses,
         triggerNextStep,
         setStepOutput,
+        setOutputStatus,
+        setStepStatus,
+        setCurrentStep,
+        setActiveTab,
+        markOutputEdited,
     } = useDesignStore();
 
     const conceptsStatus = getOutputMetadata('researchConcepts');
@@ -53,9 +59,10 @@ export function ResearchView() {
         return { concepts: parsedConcepts, evaluations: parsedEvaluations };
     }, [researchConcepts, researchRatingResults]);
 
-    const canRunInnovative = stepStatuses[1] === 'pending' || stepStatuses[1] === 'edited';
-    const canRunConservative = (stepStatuses[2] === 'pending' || stepStatuses[2] === 'edited') && concepts.length > 0;
-    const canRunConceptDetailer = (stepStatuses[3] === 'pending' || stepStatuses[3] === 'edited') && !!selectedConceptName;
+    // Allow running agents freely - only check for true dependencies, not step statuses
+    const canRunInnovative = true; // Can always run innovative research
+    const canRunConservative = concepts.length > 0; // Need concepts first
+    const canRunConceptDetailer = !!selectedConceptName; // Need a selected concept first
     const hasEvaluations = evaluations.length > 0;
     const hasConceptDetails = !!selectedConceptDetails;
 
@@ -221,18 +228,32 @@ export function ResearchView() {
                         <Typography variant="h6" sx={{ fontWeight: 600 }} id="innovative-title">
                             Innovative Concepts
                         </Typography>
-                        {conceptsStatus && <OutputStatusBadge status={conceptsStatus.status} />}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {conceptsStatus && <OutputStatusBadge status={conceptsStatus.status} />}
+                            <RunAgentButton
+                                label={concepts.length > 0 ? 'Re-run Research' : 'Run Innovative Researcher'}
+                                onClick={triggerNextStep}
+                                disabled={!canRunInnovative}
+                                isRerun={concepts.length > 0}
+                                loading={stepStatuses[1] === 'running'}
+                                size="small"
+                            />
+                        </Box>
                     </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                        <RunAgentButton
-                            label={stepStatuses[1] === 'pending' ? 'Run Innovative Researcher' : 'Re-run Research'}
-                            onClick={triggerNextStep}
-                            disabled={!canRunInnovative}
-                            isRerun={stepStatuses[1] !== 'pending'}
-                            loading={stepStatuses[1] === 'running'}
-                            size="small"
-                        />
-                    </Box>
+                    {(conceptsStatus?.status === 'needs_review' || conceptsStatus?.status === 'draft') && (
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                            <RunAgentButton
+                                label="Confirm & Approve"
+                                onClick={() => {
+                                    setOutputStatus('researchConcepts', 'approved');
+                                    setStepStatus(1, 'complete');
+                                    setCurrentStep(2);
+                                }}
+                                variant="outlined"
+                                size="small"
+                            />
+                        </Box>
+                    )}
                     <JSONParseBoundary
                         onError={(e) => setConceptsParseError(e)}
                         fallback={<Alert severity="error">Failed to parse innovative concepts data.</Alert>}
@@ -258,18 +279,32 @@ export function ResearchView() {
                         <Typography variant="h6" sx={{ fontWeight: 600 }} id="feasibility-title">
                             Feasibility Analysis
                         </Typography>
-                        {ratingsStatus && <OutputStatusBadge status={ratingsStatus.status} />}
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            {ratingsStatus && <OutputStatusBadge status={ratingsStatus.status} />}
+                            <RunAgentButton
+                                label={evaluations.length > 0 ? 'Re-analyze Feasibility' : 'Run Feasibility Analysis'}
+                                onClick={triggerNextStep}
+                                disabled={!canRunConservative}
+                                isRerun={evaluations.length > 0}
+                                loading={stepStatuses[2] === 'running'}
+                                size="small"
+                            />
+                        </Box>
                     </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
-                        <RunAgentButton
-                            label={stepStatuses[2] === 'pending' ? 'Run Feasibility Analysis' : 'Re-analyze Feasibility'}
-                            onClick={triggerNextStep}
-                            disabled={!canRunConservative}
-                            isRerun={stepStatuses[2] !== 'pending'}
-                            loading={stepStatuses[2] === 'running'}
-                            size="small"
-                        />
-                    </Box>
+                    {(ratingsStatus?.status === 'needs_review' || ratingsStatus?.status === 'draft') && (
+                        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+                            <RunAgentButton
+                                label="Confirm & Approve"
+                                onClick={() => {
+                                    setOutputStatus('researchRatingResults', 'approved');
+                                    setStepStatus(2, 'complete');
+                                    setCurrentStep(3);
+                                }}
+                                variant="outlined"
+                                size="small"
+                            />
+                        </Box>
+                    )}
                     <JSONParseBoundary
                         onError={(e) => setEvaluationsParseError(e)}
                         fallback={<Alert severity="error">Failed to parse feasibility evaluations data.</Alert>}
@@ -379,35 +414,82 @@ export function ResearchView() {
                             </Alert>
                         )}
 
-                        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
-                            <RunAgentButton
-                                label={hasConceptDetails ? 'Re-detail Concept' : 'Detail Selected Concept'}
-                                onClick={triggerNextStep}
-                                disabled={!canRunConceptDetailer}
-                                isRerun={hasConceptDetails}
-                                loading={stepStatuses[3] === 'running'}
-                            />
-                        </Box>
+                        {/* Show button to generate details if none exist yet */}
+                        {selectedConceptName && !hasConceptDetails && (
+                            <Box sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+                                <RunAgentButton
+                                    label="Detail Selected Concept"
+                                    onClick={triggerNextStep}
+                                    disabled={!canRunConceptDetailer}
+                                    isRerun={false}
+                                    loading={stepStatuses[3] === 'running'}
+                                />
+                            </Box>
+                        )}
 
                         {hasConceptDetails && (
                             <Paper
                                 elevation={0}
                                 sx={{
-                                    mt: 2,
-                                    p: 2,
+                                    mt: 3,
+                                    p: 3,
                                     backgroundColor: theme.palette.mode === 'dark'
-                                        ? 'rgba(255, 255, 255, 0.03)'
-                                        : 'rgba(0, 0, 0, 0.02)',
-                                    borderRadius: 1,
-                                    border: `1px solid ${theme.palette.divider}`,
+                                        ? stepStatuses[3] === 'needs_review'
+                                            ? 'rgba(245, 158, 11, 0.1)'
+                                            : 'rgba(255, 255, 255, 0.03)'
+                                        : stepStatuses[3] === 'needs_review'
+                                            ? 'rgba(245, 158, 11, 0.05)'
+                                            : 'rgba(0, 0, 0, 0.02)',
+                                    borderRadius: 2,
+                                    border: stepStatuses[3] === 'needs_review'
+                                        ? `2px solid ${theme.palette.warning.main}`
+                                        : `1px solid ${theme.palette.divider}`,
                                 }}
+                                component="section" aria-labelledby="concept-details-title"
                             >
-                                <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 600 }}>
-                                    Concept Details (Generated)
-                                </Typography>
-                                <Typography variant="body2" sx={{ mt: 1, whiteSpace: 'pre-wrap' }}>
-                                    {selectedConceptDetails.substring(0, 500)}{selectedConceptDetails.length > 500 ? '...' : ''}
-                                </Typography>
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                    <Typography variant="h6" sx={{ fontWeight: 600 }} id="concept-details-title">
+                                        Concept Details: {selectedConceptName}
+                                    </Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                        {getOutputMetadata('selectedConceptDetails') && (
+                                            <OutputStatusBadge status={getOutputMetadata('selectedConceptDetails')?.status || 'needs_review'} />
+                                        )}
+                                        <RunAgentButton
+                                            label={hasConceptDetails ? 'Re-detail Concept' : 'Detail Selected Concept'}
+                                            onClick={triggerNextStep}
+                                            disabled={!canRunConceptDetailer}
+                                            isRerun={hasConceptDetails}
+                                            loading={stepStatuses[3] === 'running'}
+                                            size="small"
+                                        />
+                                    </Box>
+                                </Box>
+
+                                <MarkdownEditor
+                                    value={selectedConceptDetails}
+                                    onChange={(val) => {
+                                        setStepOutput('selectedConceptDetails', val);
+                                        markOutputEdited('selectedConceptDetails');
+                                    }}
+                                    minHeight={300}
+                                />
+
+                                {(getOutputMetadata('selectedConceptDetails')?.status === 'needs_review' || getOutputMetadata('selectedConceptDetails')?.status === 'draft') && (
+                                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', pt: 2, borderTop: `1px solid ${theme.palette.divider}` }}>
+                                        <RunAgentButton
+                                            label="Confirm & Approve"
+                                            onClick={() => {
+                                                setOutputStatus('selectedConceptDetails', 'approved');
+                                                setStepStatus(3, 'complete');
+                                                setCurrentStep(4);
+                                                setActiveTab('components');
+                                            }}
+                                            variant="outlined"
+                                            size="small"
+                                        />
+                                    </Box>
+                                )}
                             </Paper>
                         )}
                     </Paper>

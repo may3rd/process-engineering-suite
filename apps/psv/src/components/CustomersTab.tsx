@@ -40,7 +40,12 @@ import {
 import { users } from "@/data/mockData";
 import { Customer } from "@/data/types";
 import { glassCardStyles } from "./styles";
-import { DeleteConfirmDialog, TableSortButton, PaginationControls, ItemsPerPageSelector } from "./shared";
+import {
+  DeleteConfirmDialog,
+  TableSortButton,
+  PaginationControls,
+  ItemsPerPageSelector,
+} from "./shared";
 import { CustomerDialog } from "./dashboard/CustomerDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
@@ -74,7 +79,9 @@ export function CustomersTab() {
     null,
   );
   const [searchText, setSearchText] = useState("");
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "inactive"
+  >("all");
   type SortKey = "code" | "owner" | "plants" | "status" | "created";
   const [sortConfig, setSortConfig] = useState<SortConfig<SortKey> | null>(
     null,
@@ -121,20 +128,40 @@ export function CustomersTab() {
     if (customerToDelete) {
       try {
         // Get child entities to delete
-        const { plants, units, areas, projects, protectiveSystems, equipment,
-          deleteEquipment, deleteProtectiveSystem, deleteProject, deleteArea,
-          deleteUnit, deletePlant, deleteCustomer } = usePsvStore.getState();
+        const {
+          plants,
+          units,
+          areas,
+          projects,
+          protectiveSystems,
+          equipment,
+          deleteEquipment,
+          deleteProtectiveSystem,
+          deleteProject,
+          deleteArea,
+          deleteUnit,
+          deletePlant,
+          deleteCustomer,
+        } = usePsvStore.getState();
 
         // Find all child entities to delete
-        const plantsToDelete = plants.filter(p => p.customerId === customerToDelete.id);
-        const plantIds = plantsToDelete.map(p => p.id);
-        const unitsToDelete = units.filter(u => plantIds.includes(u.plantId));
-        const unitIds = unitsToDelete.map(u => u.id);
-        const areasToDelete = areas.filter(a => unitIds.includes(a.unitId));
-        const areaIds = areasToDelete.map(a => a.id);
-        const projectsToDelete = projects.filter(p => areaIds.includes(p.areaId));
-        const psvsToDelete = protectiveSystems.filter(p => areaIds.includes(p.areaId));
-        const equipmentToDeleteList = equipment.filter(e => areaIds.includes(e.areaId));
+        const plantsToDelete = plants.filter(
+          (p) => p.customerId === customerToDelete.id,
+        );
+        const plantIds = plantsToDelete.map((p) => p.id);
+        const unitsToDelete = units.filter((u) => plantIds.includes(u.plantId));
+        const unitIds = unitsToDelete.map((u) => u.id);
+        const areasToDelete = areas.filter((a) => unitIds.includes(a.unitId));
+        const areaIds = areasToDelete.map((a) => a.id);
+        const projectsToDelete = projects.filter((p) =>
+          areaIds.includes(p.areaId),
+        );
+        const psvsToDelete = protectiveSystems.filter((p) =>
+          areaIds.includes(p.areaId),
+        );
+        const equipmentToDeleteList = equipment.filter((e) =>
+          areaIds.includes(e.areaId),
+        );
 
         // Delete all entities from bottom-up (children first)
         for (const e of equipmentToDeleteList) {
@@ -163,12 +190,14 @@ export function CustomersTab() {
         setCustomerToDelete(null);
         // Success toast is shown by deleteCustomer action
       } catch (error) {
-        console.error('Force delete failed:', error);
+        console.error("Force delete failed:", error);
       }
     }
   };
 
-  const handleSave = (data: Partial<Omit<Customer, "id" | "createdAt" | "updatedAt">>) => {
+  const handleSave = (
+    data: Partial<Omit<Customer, "id" | "createdAt" | "updatedAt">>,
+  ) => {
     if (selectedCustomer) {
       updateCustomer(selectedCustomer.id, data);
     } else {
@@ -179,14 +208,14 @@ export function CustomersTab() {
 
   const handleToggleStatus = async (customer: Customer) => {
     if (!canEdit) return;
-    const newStatus = customer.status === 'active' ? 'inactive' : 'active';
+    const newStatus = customer.status === "active" ? "inactive" : "active";
 
-    if (newStatus === 'inactive') {
+    if (newStatus === "inactive") {
       // Cascade DOWN: deactivate customer and all children
       await softDeleteCustomer(customer.id);
     } else {
       // Just activate the customer (no cascade up needed for top-level)
-      await updateCustomer(customer.id, { status: 'active' });
+      await updateCustomer(customer.id, { status: "active" });
     }
   };
 
@@ -199,7 +228,8 @@ export function CustomersTab() {
   // Filter customers based on search text and status
   const filteredCustomers = customers.filter((customer) => {
     // Status filter
-    if (statusFilter !== 'all' && customer.status !== statusFilter) return false;
+    if (statusFilter !== "all" && customer.status !== statusFilter)
+      return false;
 
     // Search filter
     if (!searchText) return true;
@@ -241,7 +271,10 @@ export function CustomersTab() {
   );
 
   // Pagination
-  const [itemsPerPage, setItemsPerPage] = useLocalStorage('dashboard_items_per_page', 15);
+  const [itemsPerPage, setItemsPerPage] = useLocalStorage(
+    "dashboard_items_per_page",
+    15,
+  );
   const pagination = usePagination(sortedCustomers, {
     totalItems: sortedCustomers.length,
     itemsPerPage: itemsPerPage,
@@ -314,23 +347,13 @@ export function CustomersTab() {
             Customers
           </Typography>
         </Box>
-        {canEdit && (
-          <>
-            {/* Desktop: Full button with text */}
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={handleAdd}
-              sx={{ display: { xs: "none", sm: "flex" } }}
-            >
-              Add New Customer
-            </Button>
-            {/* Mobile: Icon only */}
+        {canEdit &&
+          (isMobile ? (
+            /* Mobile: Icon only */
             <Tooltip title="Add New Customer">
               <IconButton
                 onClick={handleAdd}
                 sx={{
-                  display: { xs: "flex", sm: "none" },
                   bgcolor: "primary.main",
                   color: "white",
                   "&:hover": { bgcolor: "primary.dark" },
@@ -339,8 +362,12 @@ export function CustomersTab() {
                 <Add />
               </IconButton>
             </Tooltip>
-          </>
-        )}
+          ) : (
+            /* Desktop: Full button with text */
+            <Button variant="contained" startIcon={<Add />} onClick={handleAdd}>
+              Add New Customer
+            </Button>
+          ))}
       </Box>
 
       <Grid container spacing={{ xs: 1, sm: 2 }} sx={{ mb: 3 }}>
@@ -427,12 +454,16 @@ export function CustomersTab() {
           <FormControl size="small" sx={{ minWidth: 180 }}>
             <Select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as "all" | "active" | "inactive")
+              }
               displayEmpty
             >
               <MenuItem value="all">All ({customers.length})</MenuItem>
               <MenuItem value="active">Active ({activeCustomers})</MenuItem>
-              <MenuItem value="inactive">Inactive ({inactiveCustomers})</MenuItem>
+              <MenuItem value="inactive">
+                Inactive ({inactiveCustomers})
+              </MenuItem>
             </Select>
           </FormControl>
         </Stack>
@@ -446,10 +477,13 @@ export function CustomersTab() {
             const plantCount = getPlantCount(customer.id);
 
             return (
-              <Card key={customer.id} sx={{
-                ...glassCardStyles,
-                opacity: customer.status === 'inactive' ? 0.6 : 1,
-              }}>
+              <Card
+                key={customer.id}
+                sx={{
+                  ...glassCardStyles,
+                  opacity: customer.status === "inactive" ? 0.6 : 1,
+                }}
+              >
                 <CardContent sx={{ pb: 1 }}>
                   <Box
                     sx={{
@@ -477,12 +511,14 @@ export function CustomersTab() {
                       color={
                         customer.status === "active" ? "success" : "default"
                       }
-                      variant={customer.status === 'active' ? 'filled' : 'outlined'}
+                      variant={
+                        customer.status === "active" ? "filled" : "outlined"
+                      }
                       onClick={() => handleToggleStatus(customer)}
                       sx={{
-                        textTransform: 'capitalize',
-                        cursor: canEdit ? 'pointer' : 'default',
-                        '&:hover': canEdit ? { opacity: 0.8 } : {},
+                        textTransform: "capitalize",
+                        cursor: canEdit ? "pointer" : "default",
+                        "&:hover": canEdit ? { opacity: 0.8 } : {},
                       }}
                     />
                   </Box>
@@ -564,9 +600,15 @@ export function CustomersTab() {
             );
           })}
 
-
           {/* Pagination for mobile */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              alignItems: "center",
+            }}
+          >
             <ItemsPerPageSelector
               value={itemsPerPage}
               onChange={setItemsPerPage}
@@ -580,7 +622,6 @@ export function CustomersTab() {
               hasPrevPage={pagination.hasPrevPage}
             />
           </Box>
-
 
           {pagination.pageItems.length === 0 && (
             <Paper sx={{ ...glassCardStyles, p: 4, textAlign: "center" }}>
@@ -617,8 +658,11 @@ export function CustomersTab() {
                       key={customer.id}
                       hover
                       sx={{
-                        opacity: customer.status === 'inactive' ? 0.5 : 1,
-                        bgcolor: customer.status === 'inactive' ? 'action.disabledBackground' : 'transparent',
+                        opacity: customer.status === "inactive" ? 0.5 : 1,
+                        bgcolor:
+                          customer.status === "inactive"
+                            ? "action.disabledBackground"
+                            : "transparent",
                         "&:last-child td": {
                           borderBottom: 0,
                         },
@@ -648,13 +692,17 @@ export function CustomersTab() {
                         <Chip
                           label={customer.status}
                           size="small"
-                          color={customer.status === 'active' ? 'success' : 'default'}
-                          variant={customer.status === 'active' ? 'filled' : 'outlined'}
+                          color={
+                            customer.status === "active" ? "success" : "default"
+                          }
+                          variant={
+                            customer.status === "active" ? "filled" : "outlined"
+                          }
                           onClick={() => handleToggleStatus(customer)}
                           sx={{
-                            textTransform: 'capitalize',
-                            cursor: canEdit ? 'pointer' : 'default',
-                            '&:hover': canEdit ? { opacity: 0.8 } : {},
+                            textTransform: "capitalize",
+                            cursor: canEdit ? "pointer" : "default",
+                            "&:hover": canEdit ? { opacity: 0.8 } : {},
                           }}
                         />
                       </TableCell>
@@ -704,9 +752,16 @@ export function CustomersTab() {
             </Table>
           </TableContainer>
 
-
           {/* Pagination for desktop */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 2, px: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              pt: 2,
+              px: 2,
+            }}
+          >
             <ItemsPerPageSelector
               value={itemsPerPage}
               onChange={setItemsPerPage}

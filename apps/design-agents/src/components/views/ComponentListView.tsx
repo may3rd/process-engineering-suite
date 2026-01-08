@@ -16,10 +16,14 @@ export function ComponentListView() {
         triggerNextStep,
         getOutputMetadata,
         markOutputEdited,
+        setOutputStatus,
+        setStepStatus,
+        setCurrentStep,
+        setActiveTab,
     } = useDesignStore();
 
     const componentStatus = getOutputMetadata('componentList');
-    const canRunComponentList = stepStatuses[4] === 'pending' || stepStatuses[4] === 'edited';
+    const canRunComponentList = true; // Allow running freely
     const hasSelectedConcept = !!selectedConceptName;
 
     return (
@@ -50,14 +54,29 @@ export function ComponentListView() {
                         </Typography>
                         {componentStatus && <OutputStatusBadge status={componentStatus.status} />}
                     </Box>
-                    <RunAgentButton
-                        label={stepStatuses[4] === 'pending' ? 'Generate Component List' : 'Regenerate List'}
-                        onClick={triggerNextStep}
-                        disabled={!canRunComponentList || !hasSelectedConcept}
-                        isRerun={stepStatuses[4] !== 'pending'}
-                        loading={stepStatuses[4] === 'running'}
-                        size="small"
-                    />
+                    <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                        {(componentStatus?.status === 'needs_review' || componentStatus?.status === 'draft') && (
+                            <RunAgentButton
+                                label="Confirm & Approve"
+                                onClick={() => {
+                                    setOutputStatus('componentList', 'approved');
+                                    setStepStatus(4, 'complete');
+                                    setCurrentStep(5);
+                                    setActiveTab('design');
+                                }}
+                                variant="outlined"
+                                size="small"
+                            />
+                        )}
+                        <RunAgentButton
+                            label={stepStatuses[4] === 'pending' ? 'Generate Component List' : 'Regenerate List'}
+                            onClick={triggerNextStep}
+                            disabled={!canRunComponentList || !hasSelectedConcept}
+                            isRerun={!!componentList.trim()}
+                            loading={stepStatuses[4] === 'running'}
+                            size="small"
+                        />
+                    </Box>
                 </Box>
 
                 {!hasSelectedConcept && (

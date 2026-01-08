@@ -40,7 +40,12 @@ import {
 import { customers, users } from "@/data/mockData";
 import { Plant } from "@/data/types";
 import { glassCardStyles } from "./styles";
-import { DeleteConfirmDialog, TableSortButton, PaginationControls, ItemsPerPageSelector } from "./shared";
+import {
+  DeleteConfirmDialog,
+  TableSortButton,
+  PaginationControls,
+  ItemsPerPageSelector,
+} from "./shared";
 import { PlantDialog } from "./dashboard/PlantDialog";
 import { useAuthStore } from "@/store/useAuthStore";
 import { usePsvStore } from "@/store/usePsvStore";
@@ -98,7 +103,9 @@ export function PlantsTab() {
   const [selectedPlant, setSelectedPlant] = useState<Plant | null>(null);
   const [plantToDelete, setPlantToDelete] = useState<Plant | null>(null);
   const [searchText, setSearchText] = useState("");
-  const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "active" | "inactive"
+  >("all");
   type SortKey = "code" | "customer" | "owner" | "units" | "status" | "created";
   const [sortConfig, setSortConfig] = useState<SortConfig<SortKey> | null>(
     null,
@@ -135,17 +142,35 @@ export function PlantsTab() {
   const handleForceDelete = async () => {
     if (plantToDelete) {
       try {
-        const { units, areas, projects, protectiveSystems, equipment,
-          deleteEquipment, deleteProtectiveSystem, deleteProject, deleteArea,
-          deleteUnit, deletePlant } = usePsvStore.getState();
+        const {
+          units,
+          areas,
+          projects,
+          protectiveSystems,
+          equipment,
+          deleteEquipment,
+          deleteProtectiveSystem,
+          deleteProject,
+          deleteArea,
+          deleteUnit,
+          deletePlant,
+        } = usePsvStore.getState();
 
-        const unitsToDelete = units.filter(u => u.plantId === plantToDelete.id);
-        const unitIds = unitsToDelete.map(u => u.id);
-        const areasToDelete = areas.filter(a => unitIds.includes(a.unitId));
-        const areaIds = areasToDelete.map(a => a.id);
-        const projectsToDelete = projects.filter(p => areaIds.includes(p.areaId));
-        const psvsToDelete = protectiveSystems.filter(p => areaIds.includes(p.areaId));
-        const equipmentToDeleteList = equipment.filter(e => areaIds.includes(e.areaId));
+        const unitsToDelete = units.filter(
+          (u) => u.plantId === plantToDelete.id,
+        );
+        const unitIds = unitsToDelete.map((u) => u.id);
+        const areasToDelete = areas.filter((a) => unitIds.includes(a.unitId));
+        const areaIds = areasToDelete.map((a) => a.id);
+        const projectsToDelete = projects.filter((p) =>
+          areaIds.includes(p.areaId),
+        );
+        const psvsToDelete = protectiveSystems.filter((p) =>
+          areaIds.includes(p.areaId),
+        );
+        const equipmentToDeleteList = equipment.filter((e) =>
+          areaIds.includes(e.areaId),
+        );
 
         for (const e of equipmentToDeleteList) await deleteEquipment(e.id);
         for (const psv of psvsToDelete) await deleteProtectiveSystem(psv.id);
@@ -157,7 +182,7 @@ export function PlantsTab() {
         setDeleteDialogOpen(false);
         setPlantToDelete(null);
       } catch (error) {
-        console.error('Force delete failed:', error);
+        console.error("Force delete failed:", error);
       }
     }
   };
@@ -173,23 +198,22 @@ export function PlantsTab() {
 
   const handleToggleStatus = async (plant: Plant) => {
     if (!canEdit) return;
-    const newStatus = plant.status === 'active' ? 'inactive' : 'active';
+    const newStatus = plant.status === "active" ? "inactive" : "active";
 
-    if (newStatus === 'inactive') {
+    if (newStatus === "inactive") {
       // Cascade DOWN: deactivate plant and all children (Units, Areas, Equipment)
       await softDeletePlant(plant.id);
     } else {
       // Activate the plant
-      await updatePlant(plant.id, { status: 'active' });
+      await updatePlant(plant.id, { status: "active" });
       // Cascade UP: also activate parent Customer
       const { customers, updateCustomer } = usePsvStore.getState();
-      const customer = customers.find(c => c.id === plant.customerId);
-      if (customer && customer.status === 'inactive') {
-        await updateCustomer(customer.id, { status: 'active' });
+      const customer = customers.find((c) => c.id === plant.customerId);
+      if (customer && customer.status === "inactive") {
+        await updateCustomer(customer.id, { status: "active" });
       }
     }
   };
-
 
   const getUnitCount = (plantId: string) => {
     return units.filter((u) => u.plantId === plantId).length;
@@ -198,7 +222,7 @@ export function PlantsTab() {
   // Filter plants based on search text
   const filteredPlants = plants.filter((plant) => {
     // Status filter
-    if (statusFilter !== 'all' && plant.status !== statusFilter) return false;
+    if (statusFilter !== "all" && plant.status !== statusFilter) return false;
 
     if (!searchText) return true;
     const search = searchText.toLowerCase();
@@ -249,7 +273,10 @@ export function PlantsTab() {
   );
 
   // Pagination
-  const [itemsPerPage, setItemsPerPage] = useLocalStorage('dashboard_items_per_page', 15);
+  const [itemsPerPage, setItemsPerPage] = useLocalStorage(
+    "dashboard_items_per_page",
+    15,
+  );
   const pagination = usePagination(sortedPlants, {
     totalItems: sortedPlants.length,
     itemsPerPage: itemsPerPage,
@@ -317,23 +344,13 @@ export function PlantsTab() {
             {headingTitle}
           </Typography>
         </Box>
-        {canEdit && (
-          <>
-            {/* Desktop: Full button with text */}
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={handleAdd}
-              sx={{ display: { xs: "none", sm: "flex" } }}
-            >
-              Add New Plant
-            </Button>
-            {/* Mobile: Icon only */}
+        {canEdit &&
+          (isMobile ? (
+            /* Mobile: Icon only */
             <Tooltip title="Add New Plant">
               <IconButton
                 onClick={handleAdd}
                 sx={{
-                  display: { xs: "flex", sm: "none" },
                   bgcolor: "primary.main",
                   color: "white",
                   "&:hover": { bgcolor: "primary.dark" },
@@ -342,8 +359,12 @@ export function PlantsTab() {
                 <Add />
               </IconButton>
             </Tooltip>
-          </>
-        )}
+          ) : (
+            /* Desktop: Full button with text */
+            <Button variant="contained" startIcon={<Add />} onClick={handleAdd}>
+              Add New Plant
+            </Button>
+          ))}
       </Box>
 
       <Grid container spacing={{ xs: 1, sm: 2 }} sx={{ mb: 3 }}>
@@ -427,12 +448,19 @@ export function PlantsTab() {
           <FormControl size="small" sx={{ minWidth: 180 }}>
             <Select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
+              onChange={(e) =>
+                setStatusFilter(e.target.value as "all" | "active" | "inactive")
+              }
               displayEmpty
             >
               <MenuItem value="all">All ({plants.length})</MenuItem>
-              <MenuItem value="active">Active ({plants.filter(e => e.status === 'active').length})</MenuItem>
-              <MenuItem value="inactive">Inactive ({plants.filter(e => e.status === 'inactive').length})</MenuItem>
+              <MenuItem value="active">
+                Active ({plants.filter((e) => e.status === "active").length})
+              </MenuItem>
+              <MenuItem value="inactive">
+                Inactive ({plants.filter((e) => e.status === "inactive").length}
+                )
+              </MenuItem>
             </Select>
           </FormControl>
         </Stack>
@@ -447,10 +475,13 @@ export function PlantsTab() {
             const unitCount = getUnitCount(plant.id);
 
             return (
-              <Card key={plant.id} sx={{
-                ...glassCardStyles,
-                opacity: plant.status === 'inactive' ? 0.6 : 1,
-              }}>
+              <Card
+                key={plant.id}
+                sx={{
+                  ...glassCardStyles,
+                  opacity: plant.status === "inactive" ? 0.6 : 1,
+                }}
+              >
                 <CardContent sx={{ pb: 1 }}>
                   <Box
                     sx={{
@@ -475,13 +506,15 @@ export function PlantsTab() {
                     <Chip
                       label={plant.status}
                       size="small"
-                      color={plant.status === 'active' ? 'success' : 'default'}
-                      variant={plant.status === 'active' ? 'filled' : 'outlined'}
+                      color={plant.status === "active" ? "success" : "default"}
+                      variant={
+                        plant.status === "active" ? "filled" : "outlined"
+                      }
                       onClick={() => handleToggleStatus(plant)}
                       sx={{
-                        textTransform: 'capitalize',
-                        cursor: canEdit ? 'pointer' : 'default',
-                        '&:hover': canEdit ? { opacity: 0.8 } : {},
+                        textTransform: "capitalize",
+                        cursor: canEdit ? "pointer" : "default",
+                        "&:hover": canEdit ? { opacity: 0.8 } : {},
                       }}
                     />
                   </Box>
@@ -576,7 +609,14 @@ export function PlantsTab() {
           })}
 
           {/* Pagination for mobile */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, alignItems: "center" }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 2,
+              alignItems: "center",
+            }}
+          >
             <ItemsPerPageSelector
               value={itemsPerPage}
               onChange={setItemsPerPage}
@@ -630,8 +670,11 @@ export function PlantsTab() {
                       key={plant.id}
                       hover
                       sx={{
-                        opacity: plant.status === 'inactive' ? 0.5 : 1,
-                        bgcolor: plant.status === 'inactive' ? 'action.disabledBackground' : 'transparent',
+                        opacity: plant.status === "inactive" ? 0.5 : 1,
+                        bgcolor:
+                          plant.status === "inactive"
+                            ? "action.disabledBackground"
+                            : "transparent",
                         "&:last-child td": {
                           borderBottom: 0,
                         },
@@ -666,13 +709,17 @@ export function PlantsTab() {
                         <Chip
                           label={plant.status}
                           size="small"
-                          color={plant.status === 'active' ? 'success' : 'default'}
-                          variant={plant.status === 'active' ? 'filled' : 'outlined'}
+                          color={
+                            plant.status === "active" ? "success" : "default"
+                          }
+                          variant={
+                            plant.status === "active" ? "filled" : "outlined"
+                          }
                           onClick={() => handleToggleStatus(plant)}
                           sx={{
-                            textTransform: 'capitalize',
-                            cursor: canEdit ? 'pointer' : 'default',
-                            '&:hover': canEdit ? { opacity: 0.8 } : {},
+                            textTransform: "capitalize",
+                            cursor: canEdit ? "pointer" : "default",
+                            "&:hover": canEdit ? { opacity: 0.8 } : {},
                           }}
                         />
                       </TableCell>
@@ -723,7 +770,15 @@ export function PlantsTab() {
           </TableContainer>
 
           {/* Pagination for desktop */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", pt: 2, px: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              pt: 2,
+              px: 2,
+            }}
+          >
             <ItemsPerPageSelector
               value={itemsPerPage}
               onChange={setItemsPerPage}
