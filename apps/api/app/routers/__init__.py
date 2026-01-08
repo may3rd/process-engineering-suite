@@ -6,6 +6,7 @@ from .admin import router as admin_router
 from .auth import router as auth_router
 from .revisions import router as revisions_router
 from .audit import router as audit_router
+from .design_agents import router as design_agents_router
 
 
 __all__ = [
@@ -16,6 +17,7 @@ __all__ = [
     "auth_router",
     "revisions_router",
     "audit_router",
+    "design_agents_router",
 
 ]
 
