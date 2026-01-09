@@ -15,7 +15,8 @@ import {
   List,
   ListItem,
   ListItemIcon,
-  ListItemText
+  ListItemText,
+  IconButton
 } from '@mui/material';
 import { 
   Science as ScienceIcon, 
@@ -23,11 +24,14 @@ import {
   AutoAwesome as SparkleIcon,
   Factory as FactoryIcon,
   Lightbulb as IdeaIcon,
-  RocketLaunch as RocketIcon
+  RocketLaunch as RocketIcon,
+  Add as AddIcon,
+  Edit as EditIcon
 } from '@mui/icons-material';
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
 import { ResearchConcept } from '../../types';
+import { ConceptEditorDialog } from './ConceptEditorDialog';
 
 const MaturityChip = ({ maturity }: { maturity: string }) => {
   let color: 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' = 'default';
@@ -63,6 +67,8 @@ export const ResearchView = () => {
   const { designState, updateDesignState, updateStepStatus, activeStepId, setActiveStep, steps } = useDesignStore();
   const [loading, setLoading] = useState(false);
   const [selectedConceptIndex, setSelectedConceptIndex] = useState<number | null>(null);
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editingConceptIndex, setEditingConceptIndex] = useState<number | null>(null);
 
   // Sync selection if already exists
   // (Logic to match existing selection with generated list would go here)
@@ -118,6 +124,40 @@ export const ResearchView = () => {
       }
   };
 
+  const handleAddConcept = () => {
+    setEditingConceptIndex(null); // Null means adding
+    setEditorOpen(true);
+  };
+
+  const handleEditConcept = (index: number, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent card selection
+    setEditingConceptIndex(index);
+    setEditorOpen(true);
+  };
+
+  const handleSaveConcept = (concept: ResearchConcept) => {
+    const currentConcepts = designState.research_concepts?.concepts || [];
+    let newConcepts;
+
+    if (editingConceptIndex !== null) {
+      // Update existing
+      newConcepts = [...currentConcepts];
+      newConcepts[editingConceptIndex] = concept;
+    } else {
+      // Add new
+      newConcepts = [...currentConcepts, concept];
+    }
+
+    updateDesignState({ 
+      research_concepts: { concepts: newConcepts } 
+    });
+    
+    // If we just edited the selected concept, update selection too
+    if (selectedConceptIndex === editingConceptIndex) {
+       updateDesignState({ selected_concept: concept });
+    }
+  };
+
   const concepts = designState.research_concepts?.concepts || [];
 
   return (
@@ -133,6 +173,14 @@ export const ResearchView = () => {
           </Typography>
         </Box>
         <Stack direction="row" spacing={2}>
+             <Button 
+                startIcon={<AddIcon />} 
+                onClick={handleAddConcept} 
+                variant="outlined" 
+                color="primary"
+            >
+              Add Concept
+            </Button>
              <Button 
                 startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <ScienceIcon />} 
                 onClick={handleRunResearch} 
@@ -185,16 +233,25 @@ export const ResearchView = () => {
                                 borderColor: selectedConceptIndex === index ? 'primary.main' : 'divider',
                                 boxShadow: selectedConceptIndex === index ? 4 : 0,
                                 transform: selectedConceptIndex === index ? 'scale(1.02)' : 'none',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                position: 'relative'
                             }}
                             onClick={() => handleSelectConcept(index)}
                         >
+                            <IconButton 
+                              size="small" 
+                              sx={{ position: 'absolute', top: 8, right: 8, zIndex: 1 }}
+                              onClick={(e) => handleEditConcept(index, e)}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+
                             <CardContent sx={{ flexGrow: 1 }}>
                                 <Stack direction="row" justifyContent="space-between" alignItems="flex-start" mb={1}>
                                     <MaturityChip maturity={concept.maturity} />
                                     {selectedConceptIndex === index && <CheckIcon color="primary" />}
                                 </Stack>
-                                <Typography variant="h6" gutterBottom fontWeight="bold">
+                                <Typography variant="h6" gutterBottom fontWeight="bold" pr={4}>
                                     {concept.name}
                                 </Typography>
                                 <Typography variant="body2" color="text.secondary" paragraph>
@@ -231,6 +288,13 @@ export const ResearchView = () => {
             </Grid>
         )}
       </Box>
+
+      <ConceptEditorDialog 
+        open={editorOpen} 
+        onClose={() => setEditorOpen(false)} 
+        onSave={handleSaveConcept}
+        initialConcept={editingConceptIndex !== null ? concepts[editingConceptIndex] : undefined}
+      />
     </Box>
   );
 };
