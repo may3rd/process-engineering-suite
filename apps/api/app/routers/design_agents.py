@@ -32,19 +32,38 @@ class AgentResponse(BaseModel):
     data: Optional[Dict[str, Any]] = None
     message: Optional[str] = None
 
-def get_llm():
-    """Get the LLM instance. Assumes OPENAI_API_KEY is set."""
-    # In production, this might come from a dependency injection or setting
-    if not os.getenv("OPENAI_API_KEY"):
-        # For development/demo without key, we might mock or fail
-        logger.warning("OPENAI_API_KEY not set. Agents will fail.")
-    return ChatOpenAI(model="gpt-4o", temperature=0)
+# Default models from user feedback
+DEFAULT_QUICK_MODEL = "google/gemini-2.5-flash-lite-preview-09-2025"
+DEFAULT_DEEP_MODEL = "google/gemini-2.5-flash-preview-09-2025"
+
+def get_llm(model_type: str = "deep"):
+    """
+    Get the LLM instance using OpenRouter.
+    """
+    api_key = os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENAI_API_KEY")
+    base_url = "https://openrouter.ai/api/v1" if os.getenv("OPENROUTER_API_KEY") else None
+    
+    if not api_key:
+        logger.warning("Neither OPENROUTER_API_KEY nor OPENAI_API_KEY set. Agents will fail.")
+    
+    model = DEFAULT_DEEP_MODEL if model_type == "deep" else DEFAULT_QUICK_MODEL
+    
+    return ChatOpenAI(
+        model=model,
+        temperature=0.7,
+        openai_api_key=api_key,
+        base_url=base_url
+    )
 
 @router.get("/health")
 async def health_check():
     """Health check for the design agents module."""
     imported = create_process_requiruments_analyst is not None
-    return {"status": "design-agents-active", "modules_loaded": imported}
+    return {
+        "status": "design-agents-active", 
+        "modules_loaded": imported,
+        "provider": "openrouter" if os.getenv("OPENROUTER_API_KEY") else "openai"
+    }
 
 @router.post("/process", response_model=AgentResponse)
 async def process_design(request: DesignRequest):
@@ -59,7 +78,8 @@ async def process_design(request: DesignRequest):
 
     if agent_id == "requirements_agent":
         try:
-            llm = get_llm()
+            # Requirements analysis is a "deep" task
+            llm = get_llm(model_type="deep")
             agent_func = create_process_requiruments_analyst(llm)
             
             # Create state
