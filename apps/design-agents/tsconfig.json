@@ -1,32 +1,25 @@
 {
-    "extends": "../../packages/tsconfig/base.json",
-    "compilerOptions": {
-        "jsx": "preserve",
-        "plugins": [
-            {
-                "name": "next"
-            }
-        ],
-        "baseUrl": ".",
-        "paths": {
-            "@/*": [
-                "./src/*"
-            ],
-            "@eng-suite/physics": [
-                "../../packages/physics-engine/src/index.ts"
-            ],
-            "@eng-suite/ui-kit": [
-                "../../packages/ui-kit/src/index.ts"
-            ]
-        }
-    },
-    "include": [
-        "next-env.d.ts",
-        "**/*.ts",
-        "**/*.tsx",
-        ".next/types/**/*.ts"
-    ],
-    "exclude": [
-        "node_modules"
-    ]
+  "extends": "../../packages/typescript-config/base.json",
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  },
+  "include": ["src"]
 }
