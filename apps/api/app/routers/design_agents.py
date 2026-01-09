@@ -15,6 +15,9 @@ try:
     from processdesignagents.agents.designers.flowsheet_design_agent import create_flowsheet_design_agent
     from processdesignagents.agents.designers.equipment_stream_catalog_agent import create_equipment_stream_catalog_agent
     from processdesignagents.agents.designers.stream_property_estimation_agent import create_stream_property_estimation_agent
+    from processdesignagents.agents.designers.equipment_sizing_agent import create_equipment_sizing_agent
+    from processdesignagents.agents.analysts.safety_risk_analyst import create_safety_risk_analyst
+    from processdesignagents.agents.project_manager.project_manager import create_project_manager
     from processdesignagents.agents.utils.agent_states import create_design_state
 except ImportError as e:
     # Fallback or error logging if path setup fails
@@ -25,6 +28,9 @@ except ImportError as e:
     create_flowsheet_design_agent = None
     create_equipment_stream_catalog_agent = None
     create_stream_property_estimation_agent = None
+    create_equipment_sizing_agent = None
+    create_safety_risk_analyst = None
+    create_project_manager = None
 
 logger = logging.getLogger(__name__)
 
@@ -238,6 +244,81 @@ async def process_design(request: DesignRequest):
                 data={
                     "output": result_state.get("stream_list_results"), # JSON string
                     "full_results": result_state.get("equipment_and_stream_results"),
+                    "raw_state": {k: str(v) for k,v in result_state.items() if k != "messages"}
+                }
+            )
+
+        elif agent_id == "sizing_agent":
+            # Equipment Sizing (Deep)
+            llm = get_llm(model_type="deep")
+            agent_func = create_equipment_sizing_agent(llm)
+            
+            # This agent needs the Full Results from Step 5 (Populated streams)
+            state = create_design_state(
+                flowsheet_description=request.context.get("flowsheet"),
+                design_basis=request.context.get("design_basis"),
+                equipment_and_stream_results=request.context.get("full_simulation_results")
+            )
+            
+            logger.info("Running equipment sizing agent...")
+            result_state = agent_func(state)
+            
+            return AgentResponse(
+                status="completed",
+                message="Equipment sizing complete.",
+                data={
+                    "output": result_state.get("equipment_list_results"), # JSON string
+                    "full_results": result_state.get("equipment_and_stream_results"),
+                    "raw_state": {k: str(v) for k,v in result_state.items() if k != "messages"}
+                }
+            )
+
+        elif agent_id == "safety_agent":
+            # Safety & Risk Assessment (Deep)
+            llm = get_llm(model_type="deep")
+            agent_func = create_safety_risk_analyst(llm)
+            
+            state = create_design_state(
+                process_requirements=request.context.get("requirements"),
+                design_basis=request.context.get("design_basis"),
+                flowsheet_description=request.context.get("flowsheet"),
+                equipment_and_stream_results=request.context.get("full_results")
+            )
+            
+            logger.info("Running safety risk analyst...")
+            result_state = agent_func(state)
+            
+            return AgentResponse(
+                status="completed",
+                message="Safety assessment complete.",
+                data={
+                    "output": result_state.get("safety_risk_analyst_report"),
+                    "raw_state": {k: str(v) for k,v in result_state.items() if k != "messages"}
+                }
+            )
+
+        elif agent_id == "manager_agent":
+            # Project Review & Costing (Deep)
+            llm = get_llm(model_type="deep")
+            agent_func = create_project_manager(llm)
+            
+            state = create_design_state(
+                process_requirements=request.context.get("requirements"),
+                design_basis=request.context.get("design_basis"),
+                flowsheet_description=request.context.get("flowsheet"),
+                equipment_and_stream_results=request.context.get("full_results"),
+                safety_risk_analyst_report=request.context.get("safety_report")
+            )
+            
+            logger.info("Running project manager review agent...")
+            result_state = agent_func(state)
+            
+            return AgentResponse(
+                status="completed",
+                message="Project review complete.",
+                data={
+                    "output": result_state.get("project_manager_report"),
+                    "status": result_state.get("project_approval"),
                     "raw_state": {k: str(v) for k,v in result_state.items() if k != "messages"}
                 }
             )

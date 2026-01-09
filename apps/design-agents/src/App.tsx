@@ -7,6 +7,11 @@ import { ResearchView } from './components/views/ResearchView';
 import { SynthesisView } from './components/views/SynthesisView';
 import { PFDView } from './components/views/PFDView';
 import { SimulationView } from './components/views/SimulationView';
+import { EquipmentListView } from './components/views/EquipmentListView';
+import { SizingView } from './components/views/SizingView';
+import { SafetyView } from './components/views/SafetyView';
+import { ProjectReviewView } from './components/views/ProjectReviewView';
+import { FinalReportView } from './components/views/FinalReportView';
 
 function App() {
   const { activeStepId, steps } = useDesignStore();
@@ -25,8 +30,15 @@ function App() {
       case 'simulation':
         return <SimulationView />;
       case 'equipment':
+        return <EquipmentListView />;
       case 'sizing':
-        return <SpreadsheetView />;
+        return <SizingView />;
+      case 'safety':
+        return <SafetyView />;
+      case 'cost':
+        return <ProjectReviewView />;
+      case 'report':
+        return <FinalReportView />;
       default:
         return (
           <Paper 

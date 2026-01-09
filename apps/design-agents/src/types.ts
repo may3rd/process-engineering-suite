@@ -28,11 +28,10 @@ export interface DesignState {
   catalog_template?: string; // JSON String of Equipments/Streams (Empty)
   simulation_results?: string; // JSON String of Populated Streams
   full_simulation_results?: string; // JSON String of Equipments + Populated Streams
-  equipment_list?: any[]; // Replace with strict types later
-  stream_list?: any[];
-  sizing_results?: any;
-  safety_analysis?: any;
-  cost_estimation?: any;
+  sizing_results?: string; // JSON String of Metadata + Sized Equipments + Streams
+  safety_report?: string; // Markdown report from Safety Analyst
+  project_manager_report?: string; // Executive Approval Memo
+  project_approval_status?: string; // Approved, Conditional, etc.
   final_report?: string;
   // Add other fields as needed
 }
