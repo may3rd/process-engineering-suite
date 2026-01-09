@@ -1,38 +1,61 @@
 import { useState, useEffect } from 'react';
-import { Box, TextField, Button, Paper, Typography, Stack, CircularProgress, Divider } from '@mui/material';
-import { PlayArrow, Save } from '@mui/icons-material';
-import ReactMarkdown from 'react-markdown'; // We need to install this or use a simple display
+import { 
+  Box, 
+  TextField, 
+  Button, 
+  Paper, 
+  Typography, 
+  Stack, 
+  CircularProgress, 
+  Divider,
+  IconButton,
+  Tooltip
+} from '@mui/material';
+import { 
+  PlayArrow, 
+  Save, 
+  Edit as EditIcon, 
+  CheckCircle as ConfirmIcon,
+  AutoAwesome as MagicIcon
+} from '@mui/icons-material';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
 
 export const RequirementsView = () => {
-  const { designState, updateDesignState, updateStepStatus, activeStepId } = useDesignStore();
+  const { designState, updateDesignState, updateStepStatus, activeStepId, setActiveStep, steps } = useDesignStore();
+  
+  // Local states
   const [problemStatement, setProblemStatement] = useState(designState.problem_statement || '');
+  const [editableBasis, setEditableBasis] = useState(designState.process_requirements || '');
+  const [isEditingBasis, setIsEditingBasis] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Sync from store on mount
   useEffect(() => {
-    if (designState.problem_statement) {
-      setProblemStatement(designState.problem_statement);
-    }
-  }, [designState.problem_statement]);
+    if (designState.problem_statement) setProblemStatement(designState.problem_statement);
+    if (designState.process_requirements) setEditableBasis(designState.process_requirements);
+  }, [designState.problem_statement, designState.process_requirements]);
 
-  const handleSave = () => {
+  const handleSaveProblem = () => {
     updateDesignState({ problem_statement: problemStatement });
   };
 
+  const handleSaveBasis = () => {
+    updateDesignState({ process_requirements: editableBasis });
+    setIsEditingBasis(false);
+  };
+
   const handleRunAgent = async () => {
-    handleSave();
+    handleSaveProblem();
     setLoading(true);
     updateStepStatus(activeStepId, 'running');
     try {
-      // We send the problem statement to the agent
       const result = await runAgent('requirements_agent', { prompt: problemStatement });
-      
       if (result.status === 'completed' && result.data?.output) {
-         updateDesignState({ 
-             process_requirements: result.data.output 
-         });
+         updateDesignState({ process_requirements: result.data.output });
+         setEditableBasis(result.data.output);
          updateStepStatus(activeStepId, 'completed');
       } else {
          throw new Error(result.message || 'Unknown error');
@@ -45,22 +68,32 @@ export const RequirementsView = () => {
     }
   };
 
+  const handleConfirmAndNext = () => {
+      handleSaveBasis();
+      updateStepStatus(activeStepId, 'completed');
+      // Find index of next step
+      const currentIndex = steps.findIndex(s => s.id === activeStepId);
+      if (currentIndex < steps.length - 1) {
+          setActiveStep(steps[currentIndex + 1].id);
+      }
+  };
+
   return (
-    <Box sx={{ height: '100%', display: 'flex', gap: 2 }}>
+    <Box sx={{ height: '100%', display: 'flex', gap: 3 }}>
       {/* Left Pane: Input */}
       <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
         <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="subtitle1" fontWeight="bold">Problem Statement</Typography>
+          <Box>
+            <Typography variant="subtitle1" fontWeight="bold">1. Problem Statement</Typography>
+            <Typography variant="caption" color="text.secondary">Input your process design goals</Typography>
+          </Box>
           <Stack direction="row" spacing={1}>
-            <Button startIcon={<Save />} onClick={handleSave} variant="outlined" size="small">
-              Save
-            </Button>
             <Button 
-              startIcon={loading ? <CircularProgress size={20} /> : <PlayArrow />} 
-              onClick={handleRunAgent} 
-              variant="contained" 
-              size="small"
-              disabled={loading || !problemStatement}
+                startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <MagicIcon />} 
+                onClick={handleRunAgent} 
+                variant="contained" 
+                color="primary"
+                disabled={loading || !problemStatement}
             >
               Analyze
             </Button>
@@ -70,42 +103,86 @@ export const RequirementsView = () => {
         <TextField
           multiline
           fullWidth
-          placeholder="Describe your process here (e.g., 'Design a 50,000 BPD crude unit...')"
+          placeholder="e.g., 'Design a heat exchanger to cool ethanol...'"
           value={problemStatement}
           onChange={(e) => setProblemStatement(e.target.value)}
+          onBlur={handleSaveProblem}
           sx={{ 
             flexGrow: 1, 
             bgcolor: 'background.paper',
-            '& .MuiInputBase-root': { height: '100%', alignItems: 'flex-start', p: 2 } 
+            '& .MuiInputBase-root': { height: '100%', alignItems: 'flex-start', p: 2, fontFamily: 'monospace' } 
           }}
         />
       </Box>
 
-      {/* Right Pane: Output */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
-        <Paper sx={{ p: 2, height: '100%', overflow: 'auto', bgcolor: 'background.default' }}>
-           <Typography variant="subtitle1" fontWeight="bold" gutterBottom>
-              Design Basis (AI Analysis)
-           </Typography>
-           <Divider sx={{ mb: 2 }} />
-           
-           {designState.process_requirements ? (
-             <Box sx={{ 
+      {/* Right Pane: Output/Basis */}
+      <Box sx={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box>
+            <Typography variant="subtitle1" fontWeight="bold">2. Design Basis</Typography>
+            <Typography variant="caption" color="text.secondary">Review and edit analyzed requirements</Typography>
+          </Box>
+          <Stack direction="row" spacing={1}>
+            {!isEditingBasis ? (
+                <Button startIcon={<EditIcon />} onClick={() => setIsEditingBasis(true)} variant="outlined" size="small">
+                    Edit
+                </Button>
+            ) : (
+                <Button startIcon={<Save />} onClick={handleSaveBasis} variant="contained" color="secondary" size="small">
+                    Save Changes
+                </Button>
+            )}
+            <Button 
+                startIcon={<ConfirmIcon />} 
+                onClick={handleConfirmAndNext} 
+                variant="contained" 
+                color="success"
+                disabled={!editableBasis || isEditingBasis}
+            >
+                Confirm & Next
+            </Button>
+          </Stack>
+        </Paper>
+
+        <Paper sx={{ 
+            flexGrow: 1, 
+            p: 3, 
+            overflow: 'auto', 
+            bgcolor: 'background.default',
+            border: '1px solid',
+            borderColor: isEditingBasis ? 'secondary.main' : 'divider'
+        }}>
+          {isEditingBasis ? (
+            <TextField
+                multiline
+                fullWidth
+                value={editableBasis}
+                onChange={(e) => setEditableBasis(e.target.value)}
+                sx={{ 
+                    height: '100%',
+                    '& .MuiInputBase-root': { height: '100%', alignItems: 'flex-start', fontFamily: 'monospace' } 
+                }}
+            />
+          ) : (
+            <Box sx={{ 
                 typography: 'body2', 
-                '& h2': { fontSize: '1.2em', mt: 2, mb: 1, color: 'primary.main' },
-                '& ul': { pl: 2 },
-                '& li': { mb: 0.5 }
-             }}>
-               {/* Simple markdown rendering or just pre-wrap text */}
-               <pre style={{ whiteSpace: 'pre-wrap', fontFamily: 'inherit' }}>
-                 {designState.process_requirements}
-               </pre>
-             </Box>
-           ) : (
-             <Typography color="text.secondary" fontStyle="italic">
-               Run the analysis to generate the design basis.
-             </Typography>
-           )}
+                '& h1, & h2, & h3': { color: 'primary.main', mb: 1, mt: 2 },
+                '& ul': { pl: 3, mb: 2 },
+                '& li': { mb: 0.5 },
+                '& p': { mb: 2, lineHeight: 1.6 },
+                '& code': { bgcolor: 'action.hover', px: 0.5, borderRadius: 1 }
+            }}>
+              {editableBasis ? (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {editableBasis}
+                </ReactMarkdown>
+              ) : (
+                <Typography color="text.secondary" fontStyle="italic" sx={{ mt: 2 }}>
+                  Run analysis to generate the design basis or start typing...
+                </Typography>
+              )}
+            </Box>
+          )}
         </Paper>
       </Box>
     </Box>
