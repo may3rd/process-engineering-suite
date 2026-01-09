@@ -24,6 +24,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
+import { MarkdownEditorDialog } from '../common/MarkdownEditorDialog';
 
 export const RequirementsView = () => {
   const { designState, updateDesignState, updateStepStatus, activeStepId, setActiveStep, steps } = useDesignStore();
@@ -44,8 +45,9 @@ export const RequirementsView = () => {
     updateDesignState({ problem_statement: problemStatement });
   };
 
-  const handleSaveBasis = () => {
-    updateDesignState({ process_requirements: editableBasis });
+  const handleSaveBasis = (newContent: string) => {
+    setEditableBasis(newContent);
+    updateDesignState({ process_requirements: newContent });
     setIsEditingBasis(false);
   };
 
@@ -71,7 +73,7 @@ export const RequirementsView = () => {
   };
 
   const handleConfirmAndNext = () => {
-      handleSaveBasis();
+      // Logic for next
       updateStepStatus(activeStepId, 'completed');
       // Find index of next step
       const currentIndex = steps.findIndex(s => s.id === activeStepId);
@@ -161,21 +163,15 @@ export const RequirementsView = () => {
             <Typography variant="caption" color="text.secondary">Review and edit analyzed requirements</Typography>
           </Box>
           <Stack direction="row" spacing={1}>
-            {!isEditingBasis ? (
-                <Button startIcon={<EditIcon />} onClick={() => setIsEditingBasis(true)} variant="outlined" size="small">
-                    Edit
-                </Button>
-            ) : (
-                <Button startIcon={<Save />} onClick={handleSaveBasis} variant="contained" color="secondary" size="small">
-                    Save Changes
-                </Button>
-            )}
+            <Button startIcon={<EditIcon />} onClick={() => setIsEditingBasis(true)} variant="outlined" size="small" disabled={!editableBasis}>
+                Edit
+            </Button>
             <Button 
                 startIcon={<ConfirmIcon />} 
                 onClick={handleConfirmAndNext} 
                 variant="contained" 
                 color="success"
-                disabled={!editableBasis || isEditingBasis}
+                disabled={!editableBasis}
             >
                 Confirm & Next
             </Button>
@@ -188,46 +184,41 @@ export const RequirementsView = () => {
             overflow: 'auto', 
             bgcolor: 'background.default',
             border: '1px solid',
-            borderColor: isEditingBasis ? 'secondary.main' : 'divider'
+            borderColor: 'divider'
         }}>
-          {isEditingBasis ? (
-            <TextField
-                multiline
-                fullWidth
-                value={editableBasis}
-                onChange={(e) => setEditableBasis(e.target.value)}
-                sx={{ 
-                    height: '100%',
-                    '& .MuiInputBase-root': { height: '100%', alignItems: 'flex-start', fontFamily: 'monospace' } 
-                }}
-            />
-          ) : (
-            <Box sx={{ 
-                typography: 'body2', 
-                '& h1, & h2, & h3': { color: 'primary.main', mb: 1, mt: 2 },
-                '& ul': { pl: 3, mb: 2 },
-                '& li': { mb: 0.5 },
-                '& p': { mb: 2, lineHeight: 1.6 },
-                '& code': { bgcolor: 'action.hover', px: 0.5, borderRadius: 1 },
-                // Math styling
-                '& .katex': { fontSize: '1.1em' }
-            }}>
-              {editableBasis ? (
-                <ReactMarkdown 
-                    remarkPlugins={[remarkGfm, remarkMath]}
-                    rehypePlugins={[rehypeKatex]}
-                >
-                    {editableBasis}
-                </ReactMarkdown>
-              ) : (
-                <Typography color="text.secondary" fontStyle="italic" sx={{ mt: 2 }}>
-                  Run analysis to generate the design basis or start typing...
-                </Typography>
-              )}
-            </Box>
-          )}
+          <Box sx={{ 
+              typography: 'body2', 
+              '& h1, & h2, & h3': { color: 'primary.main', mb: 1, mt: 2 },
+              '& ul': { pl: 3, mb: 2 },
+              '& li': { mb: 0.5 },
+              '& p': { mb: 2, lineHeight: 1.6 },
+              '& code': { bgcolor: 'action.hover', px: 0.5, borderRadius: 1 },
+              // Math styling
+              '& .katex': { fontSize: '1.1em' }
+          }}>
+            {editableBasis ? (
+              <ReactMarkdown 
+                  remarkPlugins={[remarkGfm, remarkMath]}
+                  rehypePlugins={[rehypeKatex]}
+              >
+                  {editableBasis}
+              </ReactMarkdown>
+            ) : (
+              <Typography color="text.secondary" fontStyle="italic" sx={{ mt: 2 }}>
+                Run analysis to generate the design basis or start typing...
+              </Typography>
+            )}
+          </Box>
         </Paper>
       </Box>
+
+      <MarkdownEditorDialog 
+        open={isEditingBasis} 
+        onClose={() => setIsEditingBasis(false)} 
+        onSave={handleSaveBasis}
+        initialContent={editableBasis}
+        title="Edit Design Basis"
+      />
     </Box>
   );
 };
