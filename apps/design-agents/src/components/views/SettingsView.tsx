@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { 
   Box, 
   Paper, 
@@ -9,7 +9,8 @@ import {
   Button, 
   Stack, 
   Divider,
-  Alert
+  Alert,
+  Autocomplete
 } from '@mui/material';
 import { Save as SaveIcon, Settings as SettingsIcon } from '@mui/icons-material';
 import { useDesignStore } from '../../store/useDesignStore';
@@ -17,12 +18,48 @@ import { LLMSettings } from '../../types';
 
 const PROVIDERS = ['OpenRouter', 'OpenAI', 'Google'];
 
+const MODELS_BY_PROVIDER: Record<string, string[]> = {
+  OpenRouter: [
+    'google/gemini-2.5-flash-lite-preview-09-2025',
+    'google/gemini-2.5-flash-preview-09-2025',
+    'google/gemini-2.0-flash-lite-preview-02-05',
+    'google/gemini-2.0-flash-001',
+    'google/gemini-pro-1.5',
+    'google/gemini-flash-1.5',
+    'openai/gpt-4o',
+    'openai/gpt-4o-mini',
+    'anthropic/claude-3.5-sonnet',
+    'anthropic/claude-3-opus',
+    'deepseek/deepseek-r1',
+    'deepseek/deepseek-chat',
+    'meta-llama/llama-3.1-405b-instruct',
+    'meta-llama/llama-3.1-70b-instruct',
+  ],
+  OpenAI: [
+    'gpt-4o',
+    'gpt-4o-mini',
+    'gpt-4-turbo',
+    'gpt-3.5-turbo',
+    'o1-preview',
+    'o1-mini'
+  ],
+  Google: [
+    'gemini-2.5-flash',
+    'gemini-2.5-flash-lite',
+    'gemini-2.5-pro',
+    'gemini-2.0-flash',
+    'gemini-2.0-flash-lite',
+    'gemini-1.5-pro',
+    'gemini-1.5-flash'
+  ]
+};
+
 export const SettingsView = () => {
   const { designState, updateDesignState } = useDesignStore();
   const [settings, setSettings] = useState<LLMSettings>(designState.llmSettings || {
     provider: 'OpenRouter',
-    quickModel: 'google/gemini-2.5-flash-lite',
-    deepModel: 'google/gemini-2.0-flash-001',
+    quickModel: 'google/gemini-2.5-flash-lite-preview-09-2025',
+    deepModel: 'google/gemini-2.5-flash-preview-09-2025',
     temperature: 0.7,
     apiKey: ''
   });
@@ -33,6 +70,10 @@ export const SettingsView = () => {
       setSettings(prev => ({ ...prev, ...designState.llmSettings }));
     }
   }, [designState.llmSettings]);
+
+  const availableModels = useMemo(() => {
+    return MODELS_BY_PROVIDER[settings.provider] || [];
+  }, [settings.provider]);
 
   const handleSave = () => {
     updateDesignState({ llmSettings: settings });
@@ -60,7 +101,11 @@ export const SettingsView = () => {
             select
             label="AI Provider"
             value={settings.provider}
-            onChange={(e) => setSettings({ ...settings, provider: e.target.value as any })}
+            onChange={(e) => setSettings({ 
+              ...settings, 
+              provider: e.target.value as any,
+              // Reset models if not in the new list (optional UX choice, keeping existing value for now)
+            })}
             fullWidth
           >
             {PROVIDERS.map((option) => (
@@ -81,21 +126,35 @@ export const SettingsView = () => {
 
           <Box>
             <Typography gutterBottom>Quick Thinking Model</Typography>
-            <TextField
+            <Autocomplete
+              freeSolo
+              options={availableModels}
               value={settings.quickModel}
-              onChange={(e) => setSettings({ ...settings, quickModel: e.target.value })}
-              helperText="Used for simple summaries, formatting, and quick checks."
-              fullWidth
+              onInputChange={(_, newValue) => setSettings({ ...settings, quickModel: newValue })}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  helperText="Used for simple summaries, formatting, and quick checks."
+                  fullWidth 
+                />
+              )}
             />
           </Box>
 
           <Box>
             <Typography gutterBottom>Deep Thinking Model</Typography>
-            <TextField
+            <Autocomplete
+              freeSolo
+              options={availableModels}
               value={settings.deepModel}
-              onChange={(e) => setSettings({ ...settings, deepModel: e.target.value })}
-              helperText="Used for reasoning, HAZOP, sizing, and complex generation."
-              fullWidth
+              onInputChange={(_, newValue) => setSettings({ ...settings, deepModel: newValue })}
+              renderInput={(params) => (
+                <TextField 
+                  {...params} 
+                  helperText="Used for reasoning, HAZOP, sizing, and complex generation."
+                  fullWidth 
+                />
+              )}
             />
           </Box>
 
