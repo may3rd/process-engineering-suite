@@ -10,7 +10,8 @@ import {
   Toolbar,
   useTheme,
   Divider,
-  Chip
+  Chip,
+  useMediaQuery
 } from '@mui/material';
 import {
   CheckCircle as CheckIcon,
@@ -36,26 +37,23 @@ const StatusIcon = ({ status }: { status: StepStatus }) => {
   }
 };
 
-export const Sidebar = () => {
+interface SidebarProps {
+  mobileOpen?: boolean;
+  onClose?: () => void;
+}
+
+export const Sidebar = ({ mobileOpen = false, onClose }: SidebarProps) => {
   const { steps, activeStepId, setActiveStep } = useDesignStore();
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
-  return (
-    <Drawer
-      variant="permanent"
-      sx={{
-        width: DRAWER_WIDTH,
-        flexShrink: 0,
-        [`& .MuiDrawer-paper`]: {
-          width: DRAWER_WIDTH,
-          boxSizing: 'border-box',
-          backgroundColor: theme.palette.background.paper,
-          borderRight: `1px solid ${theme.palette.divider}`,
-          display: 'flex',
-          flexDirection: 'column',
-        },
-      }}
-    >
+  const handleStepClick = (stepId: string) => {
+    setActiveStep(stepId);
+    if (isMobile && onClose) onClose();
+  };
+
+  const drawerContent = (
+    <>
       <Toolbar>
          <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
             Design Agents
@@ -68,7 +66,7 @@ export const Sidebar = () => {
             <ListItem key={step.id} disablePadding>
               <ListItemButton
                 selected={activeStepId === step.id}
-                onClick={() => setActiveStep(step.id)}
+                onClick={() => handleStepClick(step.id)}
                 sx={{
                     borderRadius: 2,
                     mx: 1,
@@ -98,7 +96,7 @@ export const Sidebar = () => {
         <ListItem disablePadding>
           <ListItemButton 
             selected={activeStepId === 'settings'}
-            onClick={() => setActiveStep('settings')}
+            onClick={() => handleStepClick('settings')}
             sx={{ borderRadius: 2, mx: 1, my: 1 }}
           >
             <ListItemIcon sx={{ minWidth: 40 }}>
@@ -108,6 +106,51 @@ export const Sidebar = () => {
           </ListItemButton>
         </ListItem>
       </List>
-    </Drawer>
+    </>
+  );
+
+  return (
+    <Box
+      component="nav"
+      sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}
+    >
+      {/* Mobile Drawer */}
+      <Drawer
+        variant="temporary"
+        open={mobileOpen}
+        onClose={onClose}
+        ModalProps={{ keepMounted: true }}
+        sx={{
+          display: { xs: 'block', md: 'none' },
+          '& .MuiDrawer-paper': { 
+            boxSizing: 'border-box', 
+            width: DRAWER_WIDTH,
+            backgroundColor: theme.palette.background.paper,
+            backgroundImage: 'none'
+          },
+        }}
+      >
+        {drawerContent}
+      </Drawer>
+
+      {/* Desktop Drawer */}
+      <Drawer
+        variant="permanent"
+        sx={{
+          display: { xs: 'none', md: 'block' },
+          '& .MuiDrawer-paper': {
+            boxSizing: 'border-box',
+            width: DRAWER_WIDTH,
+            backgroundColor: theme.palette.background.paper,
+            borderRight: `1px solid ${theme.palette.divider}`,
+            display: 'flex',
+            flexDirection: 'column',
+          },
+        }}
+        open
+      >
+        {drawerContent}
+      </Drawer>
+    </Box>
   );
 };

@@ -132,9 +132,21 @@ export const SafetyView = () => {
       </Paper>
 
       {/* Main Content */}
-      <Box sx={{ flexGrow: 1, display: 'flex', gap: 3, overflow: 'hidden' }}>
+      <Box sx={{ 
+        flexGrow: 1, 
+        display: 'flex', 
+        flexDirection: { xs: 'column', lg: 'row' }, 
+        gap: 3, 
+        overflow: { xs: 'visible', lg: 'hidden' } // Allow scroll on mobile stack
+      }}>
           {/* Left: Summary Panel (Optional) */}
-          <Paper sx={{ width: 300, p: 2, display: { xs: 'none', lg: 'flex' }, flexDirection: 'column', bgcolor: 'action.hover' }}>
+          <Paper sx={{ 
+            width: { xs: '100%', lg: 300 }, 
+            p: 2, 
+            display: { xs: 'none', lg: 'flex' }, // Keep hidden on small mobile, show on large
+            flexDirection: 'column', 
+            bgcolor: 'action.hover' 
+          }}>
               <Typography variant="subtitle2" gutterBottom color="primary">Assessment Scope</Typography>
               <Typography variant="caption" paragraph>
                   Focuses on credible deviations (More/Less/No) for Temperature, Pressure, and Flow across all major units.
@@ -150,7 +162,14 @@ export const SafetyView = () => {
           </Paper>
 
           {/* Right: Report Area */}
-          <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2, overflow: 'hidden' }}>
+          <Box sx={{ 
+            flex: 1, 
+            display: 'flex', 
+            flexDirection: 'column', 
+            gap: 2, 
+            overflow: { xs: 'visible', lg: 'hidden' },
+            minHeight: { xs: '500px', lg: 'auto' }
+          }}>
               <Paper sx={{ p: 1, display: 'flex', justifyContent: 'flex-end', borderBottom: 'none' }}>
                   {!isEditing ? (
                       <Button startIcon={<EditIcon />} onClick={() => setIsEditing(true)} size="small" disabled={!localReport}>Edit Report</Button>

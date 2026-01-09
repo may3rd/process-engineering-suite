@@ -83,9 +83,20 @@ export const FinalReportView = () => {
   };
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', gap: 3 }}>
+    <Box sx={{ 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: { xs: 'column', md: 'row' },
+      gap: 3 
+    }}>
       {/* Navigation Sidebar */}
-      <Paper sx={{ width: 280, p: 2, display: { xs: 'none', md: 'flex' }, flexDirection: 'column', bgcolor: 'action.hover' }}>
+      <Paper sx={{ 
+        width: { xs: '100%', md: 280 }, 
+        p: 2, 
+        display: { xs: 'none', md: 'flex' }, // Hide TOC on mobile for now, or make collapsible
+        flexDirection: 'column', 
+        bgcolor: 'action.hover' 
+      }}>
           <Typography variant="subtitle2" gutterBottom color="primary" sx={{ px: 1 }}>Table of Contents</Typography>
           <List dense>
               {sections.map(s => (
@@ -108,7 +119,7 @@ export const FinalReportView = () => {
       {/* Report Content */}
       <Paper sx={{ 
           flexGrow: 1, 
-          p: 6, 
+          p: { xs: 2, md: 6 }, 
           overflow: 'auto', 
           bgcolor: 'background.paper',
           color: 'text.primary',

@@ -75,9 +75,20 @@ export const SynthesisView = () => {
   };
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', gap: 3 }}>
+    <Box sx={{ 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: { xs: 'column', lg: 'row' }, 
+      gap: 3 
+    }}>
       {/* Left Pane: Selection Summary */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ 
+        flex: 1, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: 2,
+        minHeight: { xs: 'auto', lg: 'auto' }
+      }}>
         <Paper sx={{ p: 2 }}>
           <Typography variant="subtitle1" fontWeight="bold">Selected Technology</Typography>
           <Typography variant="h6" color="primary.main" gutterBottom>
@@ -112,7 +123,13 @@ export const SynthesisView = () => {
       </Box>
 
       {/* Right Pane: Detailed Output */}
-      <Box sx={{ flex: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ 
+        flex: 2, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: 2,
+        minHeight: { xs: '500px', lg: 'auto' }
+      }}>
         <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="subtitle1" fontWeight="bold">Detailed Design Basis</Typography>
           <Stack direction="row" spacing={1}>

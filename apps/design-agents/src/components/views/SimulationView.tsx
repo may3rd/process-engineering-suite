@@ -209,9 +209,9 @@ export const SimulationView = () => {
       </Box>
 
       {/* Content */}
-      <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
+      <Box sx={{ flexGrow: 1, overflow: 'hidden' }}> {/* Prevent double scroll */}
           {activeTab === 0 && (
-              <Box>
+              <Box sx={{ height: '100%', overflow: 'auto' }}>
                   {!catalogData ? (
                       <Box sx={{ p: 4, textAlign: 'center', opacity: 0.5 }}>
                           <StructureIcon sx={{ fontSize: 60, mb: 2 }} />
@@ -223,7 +223,7 @@ export const SimulationView = () => {
               </Box>
           )}
           {activeTab === 1 && (
-              <Box>
+              <Box sx={{ height: '100%', overflow: 'auto' }}>
                   {!simulationData ? (
                       <Box sx={{ p: 4, textAlign: 'center', opacity: 0.5 }}>
                           <SimIcon sx={{ fontSize: 60, mb: 2 }} />

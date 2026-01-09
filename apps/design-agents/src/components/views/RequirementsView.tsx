@@ -81,9 +81,20 @@ export const RequirementsView = () => {
   };
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', gap: 3 }}>
+    <Box sx={{ 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: { xs: 'column', lg: 'row' }, // Stack on mobile/tablet
+      gap: 3 
+    }}>
       {/* Left Pane: Input */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ 
+        flex: 1, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: 2,
+        minHeight: { xs: '300px', lg: 'auto' } // Ensure height on mobile
+      }}>
         <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box>
             <Typography variant="subtitle1" fontWeight="bold">1. Problem Statement</Typography>
@@ -118,7 +129,13 @@ export const RequirementsView = () => {
       </Box>
 
       {/* Right Pane: Output/Basis */}
-      <Box sx={{ flex: 1.2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ 
+        flex: 1.2, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: 2,
+        minHeight: { xs: '400px', lg: 'auto' } 
+      }}>
         <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box>
             <Typography variant="subtitle1" fontWeight="bold">2. Design Basis</Typography>

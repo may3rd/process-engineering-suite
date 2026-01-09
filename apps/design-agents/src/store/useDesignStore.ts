@@ -25,8 +25,8 @@ export const useDesignStore = create<DesignStore>()(
       designState: {
         llmSettings: {
           provider: 'OpenRouter',
-          quickModel: 'google/gemini-2.5-flash-lite',
-          deepModel: 'google/gemini-3-flash-preview',
+          quickModel: 'x-ai/grok-4.1-fast',
+          deepModel: 'x-ai/grok-4.1-fast',
           temperature: 0.7
         }
       },

@@ -62,8 +62,8 @@ export const SettingsView = () => {
   const { designState, updateDesignState } = useDesignStore();
   const [settings, setSettings] = useState<LLMSettings>(designState.llmSettings || {
     provider: 'OpenRouter',
-    quickModel: 'google/gemini-2.5-flash-lite',
-    deepModel: 'google/gemini-3-flash-preview',
+    quickModel: 'x-ai/grok-4.1-fast',
+    deepModel: 'x-ai/grok-4.1-fast',
     temperature: 0.7,
     apiKey: ''
   });

@@ -77,9 +77,20 @@ export const PFDView = () => {
   };
 
   return (
-    <Box sx={{ height: '100%', display: 'flex', gap: 3 }}>
+    <Box sx={{ 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: { xs: 'column', lg: 'row' }, 
+      gap: 3 
+    }}>
       {/* Left Pane: Context */}
-      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ 
+        flex: 1, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: 2,
+        minHeight: { xs: '300px', lg: 'auto' }
+      }}>
         <Paper sx={{ p: 2, flexGrow: 1, overflow: 'auto', bgcolor: 'background.default' }}>
           <Typography variant="subtitle1" fontWeight="bold" gutterBottom>Context: Detailed Design Basis</Typography>
           <Box sx={{ 
@@ -106,7 +117,13 @@ export const PFDView = () => {
       </Box>
 
       {/* Right Pane: PFD Output */}
-      <Box sx={{ flex: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ 
+        flex: 2, 
+        display: 'flex', 
+        flexDirection: 'column', 
+        gap: 2,
+        minHeight: { xs: '500px', lg: 'auto' }
+      }}>
         <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box>
             <Typography variant="subtitle1" fontWeight="bold">Process Flow Diagram (Description)</Typography>
