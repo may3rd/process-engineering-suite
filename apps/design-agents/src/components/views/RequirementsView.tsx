@@ -76,13 +76,16 @@ export const RequirementsView = () => {
       // Find index of next step
       const currentIndex = steps.findIndex(s => s.id === activeStepId);
       if (currentIndex < steps.length - 1) {
-          setActiveStep(steps[currentIndex + 1].id);
+          const nextStep = steps[currentIndex + 1];
+          if (nextStep) {
+              setActiveStep(nextStep.id);
+          }
       }
   };
 
   return (
     <Box sx={{ 
-      height: '100%', 
+      height: 'calc(100vh - 180px)', 
       display: 'flex', 
       flexDirection: { xs: 'column', lg: 'row' }, // Stack on mobile/tablet
       gap: 3 

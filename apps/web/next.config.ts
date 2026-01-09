@@ -39,6 +39,11 @@ const psvOrigin = createProxyTarget(
   "https://process-engineering-suite-psv.vercel.app",
   "http://localhost:3003",
 );
+const designAgentsOrigin = createProxyTarget(
+  "DESIGN_AGENTS_URL",
+  "https://process-engineering-suite-design-agents.vercel.app",
+  "http://localhost:3004",
+);
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -60,6 +65,14 @@ const nextConfig: NextConfig = {
       {
         source: "/psv/:path*",
         destination: `${psvOrigin}/psv/:path*`,
+      },
+      {
+        source: "/design-agents",
+        destination: `${designAgentsOrigin}/design-agents/index.html`,
+      },
+      {
+        source: "/design-agents/:path*",
+        destination: `${designAgentsOrigin}/design-agents/:path*`,
       },
     ];
   },

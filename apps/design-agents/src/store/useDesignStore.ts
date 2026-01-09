@@ -20,7 +20,7 @@ interface DesignStore {
 export const useDesignStore = create<DesignStore>()(
   devtools(
     (set) => ({
-      activeStepId: DESIGN_STEPS[0].id,
+      activeStepId: DESIGN_STEPS[0]?.id ?? '',
       steps: DESIGN_STEPS,
       designState: {
         llmSettings: {
@@ -47,7 +47,7 @@ export const useDesignStore = create<DesignStore>()(
 
       reset: () =>
         set({
-          activeStepId: DESIGN_STEPS[0].id,
+          activeStepId: DESIGN_STEPS[0]?.id ?? '',
           steps: DESIGN_STEPS,
           designState: {},
         }),

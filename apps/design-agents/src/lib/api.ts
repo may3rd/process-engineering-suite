@@ -1,13 +1,9 @@
-const API_BASE = 'http://localhost:3000'; // Proxy redirects to 8000 usually, or direct to 8000 if no proxy. 
-// Wait, we configured CORS on port 8000 (API). We should hit 8000 directly or via Next.js rewrites.
-// Since this is Vite (Port 3004), we likely need to hit http://localhost:8000 directly.
-
 import { useDesignStore } from '../store/useDesignStore';
 
 const API_URL = 'http://localhost:8000';
 
 export async function checkHealth() {
-  const res = await fetch(`${API_URL}/health`);
+  const res = await fetch(`${API_URL}/design-agents/health`);
   return res.json();
 }
 
