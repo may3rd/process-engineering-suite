@@ -18,6 +18,7 @@ import {
   Article as DocIcon
 } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { useDesignStore } from '../../store/useDesignStore';
@@ -52,6 +53,30 @@ export const FinalReportView = () => {
       a.click();
   };
 
+  const handleExportWord = async () => {
+      try {
+          const response = await fetch('http://localhost:8000/design-agents/export/docx', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ markdown_content: fullReport })
+          });
+          
+          if (!response.ok) throw new Error("Export failed");
+          
+          const blob = await response.blob();
+          const url = window.URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `Design_Report_${new Date().toISOString().slice(0,10)}.docx`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+      } catch (e) {
+          console.error(e);
+          alert("Failed to export Word document.");
+      }
+  };
+
   const scrollToSection = (id: string) => {
       const element = document.getElementById(id);
       if (element) element.scrollIntoView({ behavior: 'smooth' });
@@ -75,7 +100,8 @@ export const FinalReportView = () => {
           <Divider sx={{ my: 2 }} />
           <Stack spacing={1}>
               <Button startIcon={<CopyIcon />} size="small" variant="outlined" onClick={handleCopy}>Copy MD</Button>
-              <Button startIcon={<DownloadIcon />} size="small" variant="contained" onClick={handleDownload}>Download .md</Button>
+              <Button startIcon={<DownloadIcon />} size="small" variant="outlined" onClick={handleDownload}>Download .md</Button>
+              <Button startIcon={<DocIcon />} size="small" variant="contained" onClick={handleExportWord}>Export to Word</Button>
           </Stack>
       </Paper>
 

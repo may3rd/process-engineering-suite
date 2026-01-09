@@ -22,7 +22,14 @@ export const useDesignStore = create<DesignStore>()(
     (set) => ({
       activeStepId: DESIGN_STEPS[0].id,
       steps: DESIGN_STEPS,
-      designState: {},
+      designState: {
+        llmSettings: {
+          provider: 'OpenRouter',
+          quickModel: 'google/gemini-2.5-flash-lite',
+          deepModel: 'google/gemini-2.0-flash-001',
+          temperature: 0.7
+        }
+      },
 
       setActiveStep: (stepId) => set({ activeStepId: stepId }),
 

@@ -18,7 +18,16 @@ export interface ResearchConcept {
   feasibility_score?: number; // Added later by ranking agent
 }
 
+export interface LLMSettings {
+  provider: 'OpenRouter' | 'OpenAI' | 'Google';
+  quickModel: string;
+  deepModel: string;
+  temperature: number;
+  apiKey?: string;
+}
+
 export interface DesignState {
+  llmSettings?: LLMSettings;
   problem_statement?: string; // User input
   process_requirements?: string; // AI Analysis
   research_concepts?: { concepts: ResearchConcept[] }; // AI Research Output

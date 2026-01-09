@@ -17,7 +17,8 @@ import {
   RadioButtonUnchecked as PendingIcon,
   Error as ErrorIcon,
   PlayCircle as RunningIcon,
-  AccessTime as OutdatedIcon
+  AccessTime as OutdatedIcon,
+  Settings as SettingsIcon
 } from '@mui/icons-material';
 import { useDesignStore } from '../../store/useDesignStore';
 import { StepStatus } from '../../types';
@@ -50,6 +51,8 @@ export const Sidebar = () => {
           boxSizing: 'border-box',
           backgroundColor: theme.palette.background.paper,
           borderRight: `1px solid ${theme.palette.divider}`,
+          display: 'flex',
+          flexDirection: 'column',
         },
       }}
     >
@@ -59,7 +62,7 @@ export const Sidebar = () => {
           </Typography>
       </Toolbar>
       <Divider />
-      <Box sx={{ overflow: 'auto', mt: 2 }}>
+      <Box sx={{ overflow: 'auto', flexGrow: 1, mt: 2 }}>
         <List>
           {steps.map((step) => (
             <ListItem key={step.id} disablePadding>
@@ -90,6 +93,21 @@ export const Sidebar = () => {
           ))}
         </List>
       </Box>
+      <Divider />
+      <List>
+        <ListItem disablePadding>
+          <ListItemButton 
+            selected={activeStepId === 'settings'}
+            onClick={() => setActiveStep('settings')}
+            sx={{ borderRadius: 2, mx: 1, my: 1 }}
+          >
+            <ListItemIcon sx={{ minWidth: 40 }}>
+              <SettingsIcon />
+            </ListItemIcon>
+            <ListItemText primary="LLM Settings" />
+          </ListItemButton>
+        </ListItem>
+      </List>
     </Drawer>
   );
 };

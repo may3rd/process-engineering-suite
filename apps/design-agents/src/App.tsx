@@ -12,6 +12,7 @@ import { SizingView } from './components/views/SizingView';
 import { SafetyView } from './components/views/SafetyView';
 import { ProjectReviewView } from './components/views/ProjectReviewView';
 import { FinalReportView } from './components/views/FinalReportView';
+import { SettingsView } from './components/views/SettingsView';
 
 function App() {
   const { activeStepId, steps } = useDesignStore();
@@ -39,6 +40,8 @@ function App() {
         return <ProjectReviewView />;
       case 'report':
         return <FinalReportView />;
+      case 'settings':
+        return <SettingsView />;
       default:
         return (
           <Paper 
