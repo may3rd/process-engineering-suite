@@ -20,9 +20,10 @@ const PROVIDERS = ['OpenRouter', 'OpenAI', 'Google'];
 
 const MODELS_BY_PROVIDER: Record<string, string[]> = {
   OpenRouter: [
-    'google/gemini-2.5-flash-lite-preview-09-2025',
-    'google/gemini-2.5-flash-preview-09-2025',
-    'google/gemini-2.0-flash-lite-preview-02-05',
+    'google/gemini-3-flash-preview',
+    'google/gemini-3-pro-preview',
+    'google/gemini-2.5-flash',
+    'google/gemini-2.5-flash-lite',
     'google/gemini-2.0-flash-001',
     'google/gemini-pro-1.5',
     'google/gemini-flash-1.5',
@@ -34,6 +35,9 @@ const MODELS_BY_PROVIDER: Record<string, string[]> = {
     'deepseek/deepseek-chat',
     'meta-llama/llama-3.1-405b-instruct',
     'meta-llama/llama-3.1-70b-instruct',
+    'x-ai/grok-4.1-fast',
+    'x-ai/grok-4-fast',
+    'x-ai/grok-4'
   ],
   OpenAI: [
     'gpt-4o',
@@ -58,8 +62,8 @@ export const SettingsView = () => {
   const { designState, updateDesignState } = useDesignStore();
   const [settings, setSettings] = useState<LLMSettings>(designState.llmSettings || {
     provider: 'OpenRouter',
-    quickModel: 'google/gemini-2.5-flash-lite-preview-09-2025',
-    deepModel: 'google/gemini-2.5-flash-preview-09-2025',
+    quickModel: 'google/gemini-2.5-flash-lite',
+    deepModel: 'google/gemini-3-flash-preview',
     temperature: 0.7,
     apiKey: ''
   });
