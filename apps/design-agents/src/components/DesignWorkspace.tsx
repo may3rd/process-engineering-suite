@@ -23,6 +23,7 @@ import { LLMSettingsView } from "./views/LLMSettingsView";
 import { StorageView } from "./views/StorageView";
 import { ExportView } from "./views/ExportView";
 import { TranscriptView } from "./views/TranscriptView";
+import { ActivityMonitor } from "./common/ActivityMonitor";
 
 type ViewTab =
   | "requirements"
@@ -246,6 +247,9 @@ export function DesignWorkspace() {
           {activeTab === "export" && <ExportView />}
         </Box>
       </Box>
+
+      {/* Live Activity Monitor */}
+      <ActivityMonitor />
     </>
   );
 }

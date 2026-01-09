@@ -14,7 +14,7 @@ export type OutputStatus = 'draft' | 'needs_review' | 'approved' | 'needs_rerun'
 export interface OutputMetadata {
     status: OutputStatus;
     lastModified: string;
-    modifiedBy: 'user' | 'ai';
+    modifiedBy: 'user' | 'ai' | 'system';
     version: number;
 }
 
@@ -112,6 +112,20 @@ export interface DesignState {
 
     // LLM message transcript for debugging
     messages: LLMMessage[];
+    
+    // Live activity monitoring
+    activityLogs: ActivityLog[];
+}
+
+/**
+ * Activity Log entry for live monitoring
+ */
+export interface ActivityLog {
+    id: string;
+    timestamp: string;
+    stepIndex?: number;
+    message: string;
+    type: 'info' | 'success' | 'error' | 'warning';
 }
 
 /**

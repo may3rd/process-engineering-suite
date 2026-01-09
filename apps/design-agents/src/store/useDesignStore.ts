@@ -7,6 +7,7 @@ import {
   OutputMetadata,
   LLMMessage,
   AgentStep,
+  ActivityLog,
 } from "@/data/types";
 import {
   AGENT_STEPS,
@@ -84,9 +85,13 @@ interface DesignStoreState extends DesignState {
   // Message transcript actions
   addMessage: (message: Omit<LLMMessage, "id" | "timestamp">) => void;
   clearMessages: () => void;
+
+  // Activity Log actions
+  addActivityLog: (log: Omit<ActivityLog, "id" | "timestamp">) => void;
+  clearActivityLogs: () => void;
 }
 
-const initialState: DesignState = {
+const initialState = {
   project: mockProject,
   problemStatement: mockProblemStatement,
   processRequirements: mockProcessRequirements,
@@ -119,7 +124,7 @@ const initialState: DesignState = {
     9: "complete",
     10: "complete",
     11: "complete",
-  },
+  } as Record<number, StepStatus>,
   llmQuickProvider: "openrouter",
   llmQuickModel: "google/gemini-2.0-flash-exp",
   llmQuickTemperature: 0.5,
@@ -130,7 +135,7 @@ const initialState: DesignState = {
   llmDeepTemperature: 0.7,
   llmDeepApiKey: "",
   llmDeepUseStructured: false,
-  activeTab: "requirements",
+  activeTab: "requirements" as DesignState["activeTab"],
   outputStatuses: {
     processRequirements: {
       status: "needs_review",
@@ -198,8 +203,9 @@ const initialState: DesignState = {
       modifiedBy: "system",
       version: 1,
     },
-  },
+  } as Record<string, OutputMetadata>,
   messages: [],
+  activityLogs: [],
 
   // Workflow management state
   currentWorkflowId: null,
@@ -335,6 +341,7 @@ export const useDesignStore = create<DesignStoreState>()(
           activeTab: "requirements",
           // Clear messages
           messages: [],
+          activityLogs: [],
           // Keep LLM settings unchanged
         })),
 
@@ -541,6 +548,11 @@ export const useDesignStore = create<DesignStoreState>()(
                 case "step_started":
                   if (update.step_index !== undefined) {
                     get().setStepStatus(update.step_index, "running");
+                    get().addActivityLog({
+                      stepIndex: update.step_index,
+                      message: update.message || "Step started",
+                      type: "info",
+                    });
                   }
                   break;
 
@@ -550,16 +562,22 @@ export const useDesignStore = create<DesignStoreState>()(
                     update.step_index !== undefined &&
                     update.progress !== undefined
                   ) {
-                    // Could add progress tracking here if needed
-                    console.log(
-                      `Step ${update.step_index} progress: ${update.progress}% - ${update.message || ""}`,
-                    );
+                    get().addActivityLog({
+                      stepIndex: update.step_index,
+                      message: update.message || `Progress: ${update.progress}%`,
+                      type: "info",
+                    });
                   }
                   break;
 
                 case "step_completed":
                   if (update.step_index !== undefined) {
                     get().setStepStatus(update.step_index, "needs_review");
+                    get().addActivityLog({
+                      stepIndex: update.step_index,
+                      message: "Step completed successfully",
+                      type: "success",
+                    });
 
                     // Update outputs if provided
                     if (update.outputs) {
@@ -580,6 +598,11 @@ export const useDesignStore = create<DesignStoreState>()(
                 case "step_error":
                   if (update.step_index !== undefined) {
                     get().setStepStatus(update.step_index, "outdated");
+                    get().addActivityLog({
+                      stepIndex: update.step_index,
+                      message: update.error || "Step execution failed",
+                      type: "error",
+                    });
                   }
                   set({ streamError: update.error || "Step execution failed" });
                   break;
@@ -588,6 +611,10 @@ export const useDesignStore = create<DesignStoreState>()(
                   set({
                     workflowStatus: "error",
                     streamError: update.error || "Workflow error",
+                  });
+                  get().addActivityLog({
+                    message: update.error || "Workflow error",
+                    type: "error",
                   });
                   break;
               }
@@ -622,6 +649,21 @@ export const useDesignStore = create<DesignStoreState>()(
       setStreamError: (error) => set({ streamError: error }),
 
       clearMessages: () => set({ messages: [] }),
+
+      // Activity Log actions
+      addActivityLog: (log) =>
+        set((state) => ({
+          activityLogs: [
+            ...state.activityLogs,
+            {
+              ...log,
+              id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              timestamp: new Date().toISOString(),
+            },
+          ],
+        })),
+
+      clearActivityLogs: () => set({ activityLogs: [] }),
     }),
     {
       name: "design-agents-project",
