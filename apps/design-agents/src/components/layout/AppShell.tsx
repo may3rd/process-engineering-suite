@@ -1,7 +1,9 @@
 import { useState } from 'react';
-import { Box, CssBaseline, AppBar, Toolbar, IconButton, useTheme, useMediaQuery } from '@mui/material';
+import { Box, CssBaseline, IconButton } from '@mui/material';
 import { Menu as MenuIcon } from '@mui/icons-material';
 import { Sidebar } from './Sidebar';
+import { TopToolbar } from '../TopToolbar';
+import { useThemeContext } from '../../ThemeContext';
 
 const DRAWER_WIDTH = 280;
 
@@ -11,55 +13,59 @@ interface AppShellProps {
 
 export const AppShell = ({ children }: AppShellProps) => {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-
+  const { toggleColorMode, mode } = useThemeContext();
+  
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box sx={{ display: 'flex', minHeight: '100vh', flexDirection: 'column' }}>
       <CssBaseline />
       
-      {/* Mobile App Bar */}
-      <AppBar
-        position="fixed"
-        sx={{
-          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
-          ml: { md: `${DRAWER_WIDTH}px` },
-          bgcolor: 'background.default',
-          backgroundImage: 'none',
-          boxShadow: 'none',
-          borderBottom: 1,
-          borderColor: 'divider',
+      {/* Fixed Top Toolbar */}
+      <Box 
+        sx={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          right: 0, 
           zIndex: (theme) => theme.zIndex.drawer + 1,
-          display: { md: 'none' } // Hide on desktop if we want clean look, or keep it if we want titles there
+          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
+          ml: { md: `${DRAWER_WIDTH}px` }
         }}
       >
-        <Toolbar>
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
+        <TopToolbar 
+          onToggleTheme={toggleColorMode} 
+          isDarkMode={mode === 'dark'} 
+          // Pass handleDrawerToggle to TopToolbar if we want the menu icon there on mobile
+          // But currently we put the MenuIcon in the AppShell logic.
+          // Let's modify TopToolbar to accept a "MobileMenuButton" or put it here.
+        />
+        {/* Mobile Menu Button Overlay (if not inside TopToolbar) */}
+        <Box sx={{ position: 'absolute', top: 12, left: 16, display: { md: 'none' }, zIndex: 2000 }}>
+           <IconButton
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { md: 'none' } }}
+            sx={{ bgcolor: 'background.paper', boxShadow: 1 }}
           >
             <MenuIcon />
           </IconButton>
-        </Toolbar>
-      </AppBar>
+        </Box>
+      </Box>
 
+      {/* Sidebar (Desktop Persistent / Mobile Drawer) */}
       <Sidebar mobileOpen={mobileOpen} onClose={handleDrawerToggle} />
       
+      {/* Main Content Area */}
       <Box
         component="main"
         sx={{
           flexGrow: 1,
           p: { xs: 2, md: 3 },
-          width: { sm: `calc(100% - ${DRAWER_WIDTH}px)` },
-          mt: { xs: 8, md: 0 }, // Add margin top on mobile for AppBar
-          height: '100vh',
+          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
+          ml: { md: `${DRAWER_WIDTH}px` },
+          mt: '64px', // Height of TopToolbar
+          height: 'calc(100vh - 64px)',
           overflow: 'auto'
         }}
       >
