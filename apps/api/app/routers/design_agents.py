@@ -10,21 +10,21 @@ from pathlib import Path
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 
-# Import from the multi-agents app (now in sys.path)
+# Import from the internal service (refactored from multi-agents)
 try:
-    from processdesignagents.agents.analysts.process_requirements_analyst import create_process_requiruments_analyst
-    from processdesignagents.agents.researchers.innovative_researcher import create_innovative_researcher
-    from processdesignagents.agents.researchers.detail_concept_researcher import create_concept_detailer
-    from processdesignagents.agents.designers.flowsheet_design_agent import create_flowsheet_design_agent
-    from processdesignagents.agents.designers.equipment_stream_catalog_agent import create_equipment_stream_catalog_agent
-    from processdesignagents.agents.designers.stream_property_estimation_agent import create_stream_property_estimation_agent
-    from processdesignagents.agents.designers.equipment_sizing_agent import create_equipment_sizing_agent
-    from processdesignagents.agents.analysts.safety_risk_analyst import create_safety_risk_analyst
-    from processdesignagents.agents.project_manager.project_manager import create_project_manager
-    from processdesignagents.agents.utils.agent_states import create_design_state
+    from apps.api.app.services.process_design_agents.agents.analysts.process_requirements_analyst import create_process_requiruments_analyst
+    from apps.api.app.services.process_design_agents.agents.researchers.innovative_researcher import create_innovative_researcher
+    from apps.api.app.services.process_design_agents.agents.researchers.detail_concept_researcher import create_concept_detailer
+    from apps.api.app.services.process_design_agents.agents.designers.flowsheet_design_agent import create_flowsheet_design_agent
+    from apps.api.app.services.process_design_agents.agents.designers.equipment_stream_catalog_agent import create_equipment_stream_catalog_agent
+    from apps.api.app.services.process_design_agents.agents.designers.stream_property_estimation_agent import create_stream_property_estimation_agent
+    from apps.api.app.services.process_design_agents.agents.designers.equipment_sizing_agent import create_equipment_sizing_agent
+    from apps.api.app.services.process_design_agents.agents.analysts.safety_risk_analyst import create_safety_risk_analyst
+    from apps.api.app.services.process_design_agents.agents.project_manager.project_manager import create_project_manager
+    from apps.api.app.services.process_design_agents.agents.utils.agent_states import create_design_state
 except ImportError as e:
     # Fallback or error logging if path setup fails
-    logging.error(f"Failed to import processdesignagents: {e}")
+    logging.error(f"Failed to import process_design_agents: {e}")
     create_process_requiruments_analyst = None
     create_innovative_researcher = None
     create_concept_detailer = None
