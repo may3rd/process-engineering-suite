@@ -1,6 +1,7 @@
 import { Typography, Paper, Box } from '@mui/material';
 import { AppShell } from './components/layout/AppShell';
 import { useDesignStore } from './store/useDesignStore';
+import { useLogStore } from './store/useLogStore';
 import { RequirementsView } from './components/views/RequirementsView';
 import { SpreadsheetView } from './components/views/SpreadsheetView';
 import { ResearchView } from './components/views/ResearchView';
@@ -13,9 +14,13 @@ import { SafetyView } from './components/views/SafetyView';
 import { ProjectReviewView } from './components/views/ProjectReviewView';
 import { FinalReportView } from './components/views/FinalReportView';
 import { SettingsView } from './components/views/SettingsView';
+import { AuroraBackground } from './components/common/AuroraBackground';
+import { ActivityMonitor } from './components/common/ActivityMonitor/ActivityMonitor';
+import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
   const { activeStepId, steps } = useDesignStore();
+  const { logs, isActive } = useLogStore();
   const activeStep = steps.find(s => s.id === activeStepId);
 
   const renderContent = () => {
@@ -68,6 +73,7 @@ function App() {
 
   return (
     <AppShell>
+      <AuroraBackground />
       <Box sx={{ mb: 2 }}>
         <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
           {activeStep?.label}
@@ -77,8 +83,28 @@ function App() {
         </Typography>
       </Box>
 
+      {/* Activity Monitor Overlay */}
+      <AnimatePresence>
+        {(isActive || logs.length > 0) && (
+           <Box sx={{ mb: 4 }}>
+             <ActivityMonitor logs={logs} isActive={isActive} />
+           </Box>
+        )}
+      </AnimatePresence>
+
       <Box sx={{ flexGrow: 1, height: 'calc(100vh - 160px)' }}>
-        {renderContent()}
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeStepId}
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3 }}
+            style={{ height: '100%' }}
+          >
+            {renderContent()}
+          </motion.div>
+        </AnimatePresence>
       </Box>
     </AppShell>
   );
