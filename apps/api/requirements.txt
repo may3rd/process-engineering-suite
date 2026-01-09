@@ -22,28 +22,7 @@ python-dateutil>=2.8
 weasyprint>=67.0
 jinja2>=3.1.6
 
-# ProcessDesignAgents dependencies
-langgraph
-langchain>=1.0.0
-langchain-openai
-langchain-anthropic
-langchain-google-genai
-openai
-scipy
-numpy
-pulp
-sympy
-graphviz
-python-dotenv
-pubchempy
-pandas
-tabulate
-rich
-questionary
-typer
-python-docx
-pypandoc
-grandalf
-json_repair
-pydantic
-coolprop
+# AI/Agents
+langchain>=0.1.0
+langgraph>=0.0.1
+langchain-openai>=0.0.1
