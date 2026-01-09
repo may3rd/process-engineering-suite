@@ -10,7 +10,8 @@ export interface AgentStep {
 
 // Mirroring the Python DesignState (simplified for now)
 export interface DesignState {
-  process_requirements?: string;
+  problem_statement?: string; // User input
+  process_requirements?: string; // AI Analysis
   flowsheet_description?: string;
   equipment_list?: any[]; // Replace with strict types later
   stream_list?: any[];

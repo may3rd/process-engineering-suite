@@ -14,6 +14,7 @@ logger = logging.getLogger(__name__)
 # Add the project root to the Python path for package imports
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(PROJECT_ROOT / "apps/multi-agents/ProcessDesignAgents"))
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
