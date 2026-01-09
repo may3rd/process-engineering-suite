@@ -20,6 +20,9 @@ import {
 } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css'; // Import KaTeX CSS
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
 
@@ -170,10 +173,15 @@ export const RequirementsView = () => {
                 '& ul': { pl: 3, mb: 2 },
                 '& li': { mb: 0.5 },
                 '& p': { mb: 2, lineHeight: 1.6 },
-                '& code': { bgcolor: 'action.hover', px: 0.5, borderRadius: 1 }
+                '& code': { bgcolor: 'action.hover', px: 0.5, borderRadius: 1 },
+                // Math styling
+                '& .katex': { fontSize: '1.1em' }
             }}>
               {editableBasis ? (
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <ReactMarkdown 
+                    remarkPlugins={[remarkGfm, remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
+                >
                     {editableBasis}
                 </ReactMarkdown>
               ) : (
