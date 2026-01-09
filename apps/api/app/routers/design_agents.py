@@ -11,12 +11,14 @@ from langchain_core.messages import HumanMessage
 try:
     from processdesignagents.agents.analysts.process_requirements_analyst import create_process_requiruments_analyst
     from processdesignagents.agents.researchers.innovative_researcher import create_innovative_researcher
+    from processdesignagents.agents.researchers.detail_concept_researcher import create_concept_detailer
     from processdesignagents.agents.utils.agent_states import create_design_state
 except ImportError as e:
     # Fallback or error logging if path setup fails
     logging.error(f"Failed to import processdesignagents: {e}")
     create_process_requiruments_analyst = None
     create_innovative_researcher = None
+    create_concept_detailer = None
 
 logger = logging.getLogger(__name__)
 
@@ -124,6 +126,38 @@ async def process_design(request: DesignRequest):
                 message="Research concepts generated.",
                 data={
                     "output": concepts_obj, # Send as object, frontend can handle it
+                    "raw_state": {k: str(v) for k,v in result_state.items() if k != "messages"}
+                }
+            )
+
+        elif agent_id == "synthesis_agent":
+            # Detailed Design Basis Generation (Deep)
+            llm = get_llm(model_type="deep")
+            agent_func = create_concept_detailer(llm)
+            
+            # This agent expects 'research_rating_results' containing the selected concept in a list
+            selected_concept = request.context.get("selected_concept")
+            requirements = request.prompt # Passed from frontend as prompt
+            
+            # The agent expects a JSON string of concepts to pick from
+            # Since we already picked it in the UI, we'll wrap it in the format it expects
+            fake_evaluations = json.dumps({
+                "concepts": [selected_concept]
+            })
+            
+            state = create_design_state(
+                process_requirements=requirements,
+                research_rating_results=fake_evaluations
+            )
+            
+            logger.info(f"Running synthesis agent for concept: {selected_concept.get('name')}")
+            result_state = agent_func(state)
+            
+            return AgentResponse(
+                status="completed",
+                message="Detailed design basis generated.",
+                data={
+                    "output": result_state.get("selected_concept_details"),
                     "raw_state": {k: str(v) for k,v in result_state.items() if k != "messages"}
                 }
             )

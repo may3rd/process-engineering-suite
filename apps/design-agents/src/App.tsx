@@ -4,6 +4,7 @@ import { useDesignStore } from './store/useDesignStore';
 import { RequirementsView } from './components/views/RequirementsView';
 import { SpreadsheetView } from './components/views/SpreadsheetView';
 import { ResearchView } from './components/views/ResearchView';
+import { SynthesisView } from './components/views/SynthesisView';
 
 function App() {
   const { activeStepId, steps } = useDesignStore();
@@ -15,6 +16,8 @@ function App() {
         return <RequirementsView />;
       case 'research':
         return <ResearchView />;
+      case 'synthesis':
+        return <SynthesisView />;
       case 'equipment':
       case 'sizing':
         return <SpreadsheetView />;

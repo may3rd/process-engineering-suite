@@ -23,6 +23,7 @@ export interface DesignState {
   process_requirements?: string; // AI Analysis
   research_concepts?: { concepts: ResearchConcept[] }; // AI Research Output
   selected_concept?: ResearchConcept; // User Selection
+  selected_concept_details?: string; // Detailed Design Basis (AI Analysis)
   flowsheet_description?: string;
   equipment_list?: any[]; // Replace with strict types later
   stream_list?: any[];
