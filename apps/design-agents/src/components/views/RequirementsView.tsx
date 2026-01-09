@@ -123,10 +123,26 @@ export const RequirementsView = () => {
           value={problemStatement}
           onChange={(e) => setProblemStatement(e.target.value)}
           onBlur={handleSaveProblem}
+          variant="outlined"
+          InputProps={{
+            sx: {
+              height: '100%',
+              alignItems: 'flex-start',
+              p: 2,
+              fontFamily: 'monospace',
+              bgcolor: 'background.paper',
+              '& textarea': {
+                height: '100% !important',
+                overflowY: 'auto !important',
+                caretColor: 'text.primary' // Explicitly set caret color
+              }
+            }
+          }}
           sx={{ 
-            flexGrow: 1, 
-            bgcolor: 'background.paper',
-            '& .MuiInputBase-root': { height: '100%', alignItems: 'flex-start', p: 2, fontFamily: 'monospace' } 
+            flexGrow: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            '& .MuiInputBase-root': { height: '100%' },
           }}
         />
       </Box>
