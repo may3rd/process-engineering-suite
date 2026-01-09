@@ -19,6 +19,16 @@ const darkTheme = createTheme({
     },
   },
   components: {
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundImage: 'none',
+          backgroundColor: 'rgba(30, 41, 59, 0.7)', // Semi-transparent Slate 800
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(255, 255, 255, 0.08)',
+        },
+      },
+    },
     MuiCssBaseline: {
       styleOverrides: {
         body: {
