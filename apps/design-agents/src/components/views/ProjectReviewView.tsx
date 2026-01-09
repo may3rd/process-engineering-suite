@@ -25,7 +25,8 @@ import {
   TrendingUp as GrowthIcon
 } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
 
@@ -183,7 +184,7 @@ export const ProjectReviewView = () => {
                               '& ul': { pl: 3, mb: 2 },
                               '& li': { mb: 1.5 }
                           }}>
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
                                   {designState.project_manager_report}
                               </ReactMarkdown>
                           </Box>

@@ -2,6 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import { CssBaseline, ThemeProvider, createTheme } from '@mui/material'
+import 'katex/dist/katex.min.css'; // Import KaTeX CSS globally
 
 // Basic dark theme placeholder - will be refined later
 const darkTheme = createTheme({

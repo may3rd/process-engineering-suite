@@ -17,7 +17,8 @@ import {
   TableChart as TableIcon
 } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
 
@@ -85,7 +86,7 @@ export const PFDView = () => {
              color: 'text.secondary',
              '& h2': { fontSize: '1.1em', fontWeight: 'bold', mt: 1, mb: 0.5 }
           }}>
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
                   {designState.selected_concept_details || "*No design basis available*"}
               </ReactMarkdown>
           </Box>
@@ -160,7 +161,7 @@ export const PFDView = () => {
                 '& th': { bgcolor: 'action.hover', fontWeight: 'bold' },
                 '& ul': { pl: 3, mb: 2 }
             }}>
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
                     {localFlowsheet}
                 </ReactMarkdown>
             </Box>

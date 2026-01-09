@@ -18,7 +18,8 @@ import {
   Article as DocIcon
 } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
 import { useDesignStore } from '../../store/useDesignStore';
 
 export const FinalReportView = () => {
@@ -110,7 +111,7 @@ export const FinalReportView = () => {
                       '& p': { lineHeight: 1.8, mb: 2 },
                       '& li': { mb: 1 }
                   }}>
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
                           {`# ${s.title}\n\n${s.content || "*Section incomplete*"}`}
                       </ReactMarkdown>
                   </Box>
