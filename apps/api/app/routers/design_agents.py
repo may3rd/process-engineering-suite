@@ -3,17 +3,20 @@ from pydantic import BaseModel
 from typing import List, Optional, Dict, Any
 import logging
 import os
+import json
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
 
 # Import from the multi-agents app (now in sys.path)
 try:
     from processdesignagents.agents.analysts.process_requirements_analyst import create_process_requiruments_analyst
+    from processdesignagents.agents.researchers.innovative_researcher import create_innovative_researcher
     from processdesignagents.agents.utils.agent_states import create_design_state
 except ImportError as e:
     # Fallback or error logging if path setup fails
     logging.error(f"Failed to import processdesignagents: {e}")
     create_process_requiruments_analyst = None
+    create_innovative_researcher = None
 
 logger = logging.getLogger(__name__)
 
@@ -69,23 +72,20 @@ async def health_check():
 async def process_design(request: DesignRequest):
     """
     Trigger a design agent step.
-    Currently supports: 'requirements_agent'
+    Supports: 'requirements_agent', 'research_agent'
     """
     agent_id = request.context.get("agent_id") or request.context.get("agentId")
     
     if not create_process_requiruments_analyst:
         raise HTTPException(status_code=500, detail="Agent modules not loaded properly.")
 
-    if agent_id == "requirements_agent":
-        try:
-            # Requirements analysis is a "deep" task
+    try:
+        if agent_id == "requirements_agent":
+            # Requirements analysis (Deep)
             llm = get_llm(model_type="deep")
             agent_func = create_process_requiruments_analyst(llm)
             
-            # Create state
             state = create_design_state(problem_statement=request.prompt)
-            
-            # Run agent
             logger.info(f"Running requirements agent for: {request.prompt[:50]}...")
             result_state = agent_func(state)
             
@@ -97,10 +97,40 @@ async def process_design(request: DesignRequest):
                     "raw_state": {k: str(v) for k,v in result_state.items() if k != "messages"}
                 }
             )
+
+        elif agent_id == "research_agent":
+            # Concept Generation (Deep)
+            # The prompt here is actually the "Process Requirements" from the previous step
+            llm = get_llm(model_type="deep")
+            agent_func = create_innovative_researcher(llm)
             
-        except Exception as e:
-            logger.error(f"Agent execution failed: {e}")
-            raise HTTPException(status_code=500, detail=str(e))
+            # We initialize state with the REQUIREMENTS, not the problem statement
+            state = create_design_state(process_requirements=request.prompt)
+            logger.info(f"Running research agent with requirements length: {len(request.prompt)}")
+            
+            result_state = agent_func(state)
+            
+            # The agent returns a JSON string in 'research_concepts'
+            raw_concepts = result_state.get("research_concepts")
+            
+            # Ensure it's valid JSON before sending
+            try:
+                concepts_obj = json.loads(raw_concepts) if isinstance(raw_concepts, str) else raw_concepts
+            except Exception:
+                concepts_obj = {"concepts": []} # Fallback
+                
+            return AgentResponse(
+                status="completed",
+                message="Research concepts generated.",
+                data={
+                    "output": concepts_obj, # Send as object, frontend can handle it
+                    "raw_state": {k: str(v) for k,v in result_state.items() if k != "messages"}
+                }
+            )
+
+    except Exception as e:
+        logger.error(f"Agent execution failed: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
 
     return AgentResponse(
         status="error",

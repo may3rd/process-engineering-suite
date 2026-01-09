@@ -3,6 +3,7 @@ import { AppShell } from './components/layout/AppShell';
 import { useDesignStore } from './store/useDesignStore';
 import { RequirementsView } from './components/views/RequirementsView';
 import { SpreadsheetView } from './components/views/SpreadsheetView';
+import { ResearchView } from './components/views/ResearchView';
 
 function App() {
   const { activeStepId, steps } = useDesignStore();
@@ -12,6 +13,8 @@ function App() {
     switch (activeStepId) {
       case 'requirements':
         return <RequirementsView />;
+      case 'research':
+        return <ResearchView />;
       case 'equipment':
       case 'sizing':
         return <SpreadsheetView />;

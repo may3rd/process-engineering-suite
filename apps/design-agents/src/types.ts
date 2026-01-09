@@ -9,9 +9,20 @@ export interface AgentStep {
 }
 
 // Mirroring the Python DesignState (simplified for now)
+export interface ResearchConcept {
+  name: string;
+  maturity: 'conventional' | 'innovative' | 'state_of_the_art';
+  description: string;
+  unit_operations: string[];
+  key_benefits: string[];
+  feasibility_score?: number; // Added later by ranking agent
+}
+
 export interface DesignState {
   problem_statement?: string; // User input
   process_requirements?: string; // AI Analysis
+  research_concepts?: { concepts: ResearchConcept[] }; // AI Research Output
+  selected_concept?: ResearchConcept; // User Selection
   flowsheet_description?: string;
   equipment_list?: any[]; // Replace with strict types later
   stream_list?: any[];
