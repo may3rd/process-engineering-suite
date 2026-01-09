@@ -25,6 +25,9 @@ export interface DesignState {
   selected_concept?: ResearchConcept; // User Selection
   selected_concept_details?: string; // Detailed Design Basis (AI Analysis)
   flowsheet_description?: string;
+  catalog_template?: string; // JSON String of Equipments/Streams (Empty)
+  simulation_results?: string; // JSON String of Populated Streams
+  full_simulation_results?: string; // JSON String of Equipments + Populated Streams
   equipment_list?: any[]; // Replace with strict types later
   stream_list?: any[];
   sizing_results?: any;

@@ -40,10 +40,10 @@ export const PFDView = () => {
     updateStepStatus(activeStepId, 'running');
     try {
       const result = await runAgent('pfd_agent', { 
+        prompt: designState.process_requirements || "Generate PFD", // Prompt is required by API schema
         requirements: designState.process_requirements,
         concept_name: designState.selected_concept?.name,
         concept_details: designState.selected_concept_details,
-        // design_basis: designState.selected_concept_details // Using details as basis
       });
       
       if (result.status === 'completed' && result.data?.output) {

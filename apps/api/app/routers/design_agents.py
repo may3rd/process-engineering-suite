@@ -13,6 +13,8 @@ try:
     from processdesignagents.agents.researchers.innovative_researcher import create_innovative_researcher
     from processdesignagents.agents.researchers.detail_concept_researcher import create_concept_detailer
     from processdesignagents.agents.designers.flowsheet_design_agent import create_flowsheet_design_agent
+    from processdesignagents.agents.designers.equipment_stream_catalog_agent import create_equipment_stream_catalog_agent
+    from processdesignagents.agents.designers.stream_property_estimation_agent import create_stream_property_estimation_agent
     from processdesignagents.agents.utils.agent_states import create_design_state
 except ImportError as e:
     # Fallback or error logging if path setup fails
@@ -21,6 +23,8 @@ except ImportError as e:
     create_innovative_researcher = None
     create_concept_detailer = None
     create_flowsheet_design_agent = None
+    create_equipment_stream_catalog_agent = None
+    create_stream_property_estimation_agent = None
 
 logger = logging.getLogger(__name__)
 
@@ -185,6 +189,55 @@ async def process_design(request: DesignRequest):
                 message="Flowsheet description generated.",
                 data={
                     "output": result_state.get("flowsheet_description"),
+                    "raw_state": {k: str(v) for k,v in result_state.items() if k != "messages"}
+                }
+            )
+
+        elif agent_id == "catalog_agent":
+            # Equipment & Stream Catalog (Deep)
+            llm = get_llm(model_type="deep")
+            agent_func = create_equipment_stream_catalog_agent(llm)
+            
+            state = create_design_state(
+                flowsheet_description=request.context.get("flowsheet"),
+                design_basis=request.context.get("design_basis"),
+                process_requirements=request.context.get("requirements"),
+                selected_concept_details=request.context.get("concept_details")
+            )
+            
+            logger.info("Running catalog agent...")
+            result_state = agent_func(state)
+            
+            return AgentResponse(
+                status="completed",
+                message="Equipment and stream catalog generated.",
+                data={
+                    "output": result_state.get("equipment_and_stream_template"), # JSON string
+                    "raw_state": {k: str(v) for k,v in result_state.items() if k != "messages"}
+                }
+            )
+
+        elif agent_id == "simulation_agent":
+            # Stream Property Estimation (Deep)
+            llm = get_llm(model_type="deep")
+            agent_func = create_stream_property_estimation_agent(llm)
+            
+            # This agent needs the Template from the previous step
+            state = create_design_state(
+                flowsheet_description=request.context.get("flowsheet"),
+                design_basis=request.context.get("design_basis"),
+                equipment_and_stream_template=request.context.get("catalog_template")
+            )
+            
+            logger.info("Running simulation (property estimation) agent...")
+            result_state = agent_func(state)
+            
+            return AgentResponse(
+                status="completed",
+                message="Stream properties estimated.",
+                data={
+                    "output": result_state.get("stream_list_results"), # JSON string
+                    "full_results": result_state.get("equipment_and_stream_results"),
                     "raw_state": {k: str(v) for k,v in result_state.items() if k != "messages"}
                 }
             )
