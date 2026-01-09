@@ -4,8 +4,8 @@ import os
 
 def load_config():
     return {
-        "deep_think_llm": "google/gemini-2.5-flash-lite",  # Retain for future; requires OpenAI
-        "quick_think_llm": "google/gemini-2.5-flash-lite",
+        "deep_think_llm": "x-ai/grok-4.1-fast",  # Retain for future; requires OpenAI
+        "quick_think_llm": "x-ai/grok-4.1-fast",
         "deep_think_temperature": 0.0,
         "quick_think_temperature": 0.0,
         "backend_url": "https://openrouter.ai/api/v1",
@@ -30,8 +30,8 @@ DEFAULT_CONFIG = {
     ),
     # LLM settings
     "llm_provider": "openrouter",
-    "deep_think_llm": "google/gemini-2.5-flash-lite-preview-09-2025",
-    "quick_think_llm": "google/gemini-2.5-flash-lite-preview-09-2025",
+    "deep_think_llm": "x-ai/grok-4.1-fast",
+    "quick_think_llm": "x-ai/grok-4.1-fast",
     "backend_url": "https://openrouter.ai/api/v1",
     "deep_think_temperature": 0.7,
     "quick_think_temperature": 0.7,

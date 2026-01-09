@@ -6,6 +6,7 @@ import { AppCard } from "../components/AppCard";
 import CalculateIcon from "@mui/icons-material/Calculate";
 import TuneIcon from "@mui/icons-material/Tune";
 import ScienceIcon from "@mui/icons-material/Science";
+import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import { Timeline } from "@mui/icons-material";
 import { motion, Variants } from "framer-motion";
 
@@ -30,7 +31,7 @@ const tools = [
     title: "Process Design Agents",
     description:
       "Multi-Agent system for process design. Includes agents for equipment sizing, piping, and more.",
-    icon: <TuneIcon fontSize="large" />,
+    icon: <AutoFixHighIcon fontSize="large" />,
     href: "/design-agents",
     status: "active" as const,
   },

@@ -57,8 +57,8 @@ class ExportRequest(BaseModel):
     template_path: Optional[str] = None
 
 # Default models
-DEFAULT_QUICK_MODEL = "google/gemini-2.5-flash-lite-preview-09-2025"
-DEFAULT_DEEP_MODEL = "google/gemini-3-flash-preview"
+DEFAULT_QUICK_MODEL = "x-ai/grok-4.1-fast"
+DEFAULT_DEEP_MODEL = "x-ai/grok-4.1-fast"
 
 def get_llm(model_type: str = "deep", config: Dict[str, Any] = None):
     """
