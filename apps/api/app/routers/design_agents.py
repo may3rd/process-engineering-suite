@@ -12,6 +12,7 @@ try:
     from processdesignagents.agents.analysts.process_requirements_analyst import create_process_requiruments_analyst
     from processdesignagents.agents.researchers.innovative_researcher import create_innovative_researcher
     from processdesignagents.agents.researchers.detail_concept_researcher import create_concept_detailer
+    from processdesignagents.agents.designers.flowsheet_design_agent import create_flowsheet_design_agent
     from processdesignagents.agents.utils.agent_states import create_design_state
 except ImportError as e:
     # Fallback or error logging if path setup fails
@@ -19,6 +20,7 @@ except ImportError as e:
     create_process_requiruments_analyst = None
     create_innovative_researcher = None
     create_concept_detailer = None
+    create_flowsheet_design_agent = None
 
 logger = logging.getLogger(__name__)
 
@@ -158,6 +160,31 @@ async def process_design(request: DesignRequest):
                 message="Detailed design basis generated.",
                 data={
                     "output": result_state.get("selected_concept_details"),
+                    "raw_state": {k: str(v) for k,v in result_state.items() if k != "messages"}
+                }
+            )
+
+        elif agent_id == "pfd_agent":
+            # PFD Generation (Deep)
+            llm = get_llm(model_type="deep")
+            agent_func = create_flowsheet_design_agent(llm)
+            
+            # Construct state with inputs
+            state = create_design_state(
+                process_requirements=request.context.get("requirements"),
+                selected_concept_name=request.context.get("concept_name"),
+                selected_concept_details=request.context.get("concept_details"),
+                design_basis=request.context.get("concept_details") # Using details as basis if explicit basis not separate
+            )
+            
+            logger.info(f"Running PFD agent for concept: {request.context.get('concept_name')}")
+            result_state = agent_func(state)
+            
+            return AgentResponse(
+                status="completed",
+                message="Flowsheet description generated.",
+                data={
+                    "output": result_state.get("flowsheet_description"),
                     "raw_state": {k: str(v) for k,v in result_state.items() if k != "messages"}
                 }
             )
