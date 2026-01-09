@@ -8,16 +8,18 @@ import {
 import { 
   Brightness4, 
   Brightness7, 
-  AutoFixHigh as AgentIcon 
+  AutoFixHigh as AgentIcon,
+  Menu as MenuIcon
 } from '@mui/icons-material';
 import { StatusIndicator } from './common/StatusIndicator';
 
 interface TopToolbarProps {
   onToggleTheme: () => void;
   isDarkMode: boolean;
+  onMenuClick?: () => void;
 }
 
-export const TopToolbar = ({ onToggleTheme, isDarkMode }: TopToolbarProps) => {
+export const TopToolbar = ({ onToggleTheme, isDarkMode, onMenuClick }: TopToolbarProps) => {
   const theme = useTheme();
 
   return (
@@ -28,12 +30,21 @@ export const TopToolbar = ({ onToggleTheme, isDarkMode }: TopToolbarProps) => {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
-        bgcolor: 'background.paper', // Or transparent if using glassmorphism in layout
+        bgcolor: 'background.paper',
         borderBottom: `1px solid ${theme.palette.divider}`,
       }}
     >
       {/* Left: Brand / Title */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        {onMenuClick && (
+          <IconButton 
+            onClick={onMenuClick} 
+            edge="start" 
+            sx={{ display: { md: 'none' }, mr: 1 }}
+          >
+            <MenuIcon />
+          </IconButton>
+        )}
         <AgentIcon sx={{ color: 'primary.main', fontSize: 28 }} />
         <Box>
           <Typography variant="subtitle1" fontWeight="bold" lineHeight={1.2}>

@@ -30,27 +30,15 @@ export const AppShell = ({ children }: AppShellProps) => {
           top: 0, 
           left: 0, 
           right: 0, 
-          zIndex: (theme) => theme.zIndex.drawer + 1,
-          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
-          ml: { md: `${DRAWER_WIDTH}px` }
+          zIndex: (theme) => theme.zIndex.drawer + 1, // Clipped drawer (Toolbar above Drawer)
+          width: '100%',
         }}
       >
         <TopToolbar 
           onToggleTheme={toggleColorMode} 
           isDarkMode={mode === 'dark'} 
-          // Pass handleDrawerToggle to TopToolbar if we want the menu icon there on mobile
-          // But currently we put the MenuIcon in the AppShell logic.
-          // Let's modify TopToolbar to accept a "MobileMenuButton" or put it here.
+          onMenuClick={handleDrawerToggle}
         />
-        {/* Mobile Menu Button Overlay (if not inside TopToolbar) */}
-        <Box sx={{ position: 'absolute', top: 12, left: 16, display: { md: 'none' }, zIndex: 2000 }}>
-           <IconButton
-            onClick={handleDrawerToggle}
-            sx={{ bgcolor: 'background.paper', boxShadow: 1 }}
-          >
-            <MenuIcon />
-          </IconButton>
-        </Box>
       </Box>
 
       {/* Sidebar (Desktop Persistent / Mobile Drawer) */}

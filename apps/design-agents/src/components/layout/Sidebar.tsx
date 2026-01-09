@@ -54,11 +54,7 @@ export const Sidebar = ({ mobileOpen = false, onClose }: SidebarProps) => {
 
   const drawerContent = (
     <>
-      <Toolbar>
-         <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
-            Design Agents
-          </Typography>
-      </Toolbar>
+      <Toolbar />
       <Divider />
       <Box sx={{ overflow: 'auto', flexGrow: 1, mt: 2 }}>
         <List>
