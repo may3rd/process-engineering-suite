@@ -1,5 +1,5 @@
 import { Global, css } from '@emotion/react';
-import { useThemeContext } from './ThemeContext';
+import { useThemeContext } from '../../ThemeContext';
 
 export const AuroraBackground = () => {
   const { mode } = useThemeContext();

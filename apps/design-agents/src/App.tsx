@@ -20,8 +20,23 @@ import { motion, AnimatePresence } from 'framer-motion';
 
 function App() {
   const { activeStepId, steps } = useDesignStore();
-  const { logs, isActive } = useLogStore();
+  const { logs, isActive, clearLogs, setActive } = useLogStore();
   const activeStep = steps.find(s => s.id === activeStepId);
+
+  // Auto-close monitor logic could go here, but we'll let user close it or close on next action
+  const handleCloseMonitor = () => {
+      // We only clear logs if we want to reset for next time, 
+      // or we can keep them until next run. 
+      // Let's just hide it by clearing logs if we treat 'logs.length > 0' as visibility trigger.
+      clearLogs();
+  };
+
+  const handleCancelAgent = () => {
+      // In a real app, we would abort the fetch controller.
+      // For now, just force UI state to stop.
+      setActive(false);
+      // Ideally we should also tell the backend to cancel, but we don't have that plumbing yet.
+  };
 
   const renderContent = () => {
     switch (activeStepId) {
@@ -83,12 +98,14 @@ function App() {
         </Typography>
       </Box>
 
-      {/* Activity Monitor Overlay */}
       <AnimatePresence>
         {(isActive || logs.length > 0) && (
-           <Box sx={{ mb: 4 }}>
-             <ActivityMonitor logs={logs} isActive={isActive} />
-           </Box>
+             <ActivityMonitor 
+                logs={logs} 
+                isActive={isActive} 
+                onClose={handleCloseMonitor}
+                onCancel={handleCancelAgent}
+             />
         )}
       </AnimatePresence>
 
