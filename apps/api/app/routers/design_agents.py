@@ -134,14 +134,14 @@ async def process_design(request: DesignRequest):
             llm = get_llm("deep", llm_config)
             agent_func = create_process_requiruments_analyst(llm)
             state = create_design_state(problem_statement=request.prompt)
-            result_state = agent_func(state)
+            result_state = await run_in_threadpool(agent_func, state)
             return AgentResponse(status="completed", message="Requirements analysis complete.", data={"output": result_state.get("process_requirements")})
 
         elif agent_id == "research_agent":
             llm = get_llm("deep", llm_config)
             agent_func = create_innovative_researcher(llm)
             state = create_design_state(process_requirements=request.prompt)
-            result_state = agent_func(state)
+            result_state = await run_in_threadpool(agent_func, state)
             raw_concepts = result_state.get("research_concepts")
             try:
                 concepts_obj = json.loads(raw_concepts) if isinstance(raw_concepts, str) else raw_concepts
@@ -155,7 +155,7 @@ async def process_design(request: DesignRequest):
             selected_concept = request.context.get("selected_concept")
             fake_evaluations = json.dumps({"concepts": [selected_concept]})
             state = create_design_state(process_requirements=request.prompt, research_rating_results=fake_evaluations)
-            result_state = agent_func(state)
+            result_state = await run_in_threadpool(agent_func, state)
             return AgentResponse(status="completed", message="Detailed design basis generated.", data={"output": result_state.get("selected_concept_details")})
 
         elif agent_id == "pfd_agent":
@@ -167,7 +167,7 @@ async def process_design(request: DesignRequest):
                 selected_concept_details=request.context.get("concept_details"),
                 design_basis=request.context.get("concept_details")
             )
-            result_state = agent_func(state)
+            result_state = await run_in_threadpool(agent_func, state)
             return AgentResponse(status="completed", message="Flowsheet description generated.", data={"output": result_state.get("flowsheet_description")})
 
         elif agent_id == "catalog_agent":
@@ -179,7 +179,7 @@ async def process_design(request: DesignRequest):
                 process_requirements=request.context.get("requirements"),
                 selected_concept_details=request.context.get("concept_details")
             )
-            result_state = agent_func(state)
+            result_state = await run_in_threadpool(agent_func, state)
             return AgentResponse(status="completed", message="Catalog generated.", data={"output": result_state.get("equipment_and_stream_template")})
 
         elif agent_id == "simulation_agent":
@@ -190,7 +190,7 @@ async def process_design(request: DesignRequest):
                 design_basis=request.context.get("design_basis"),
                 equipment_and_stream_template=request.context.get("catalog_template")
             )
-            result_state = agent_func(state)
+            result_state = await run_in_threadpool(agent_func, state)
             return AgentResponse(status="completed", message="Simulation complete.", data={"output": result_state.get("stream_list_results"), "full_results": result_state.get("equipment_and_stream_results")})
 
         elif agent_id == "sizing_agent":
@@ -201,7 +201,7 @@ async def process_design(request: DesignRequest):
                 design_basis=request.context.get("design_basis"),
                 equipment_and_stream_results=request.context.get("full_simulation_results")
             )
-            result_state = agent_func(state)
+            result_state = await run_in_threadpool(agent_func, state)
             return AgentResponse(status="completed", message="Sizing complete.", data={"output": result_state.get("equipment_list_results"), "full_results": result_state.get("equipment_and_stream_results")})
 
         elif agent_id == "cost_agent":
@@ -213,7 +213,7 @@ async def process_design(request: DesignRequest):
                 equipment_list_results=request.context.get("equipment_list"), # Expecting the detailed list from sizing
                 equipment_and_stream_results=request.context.get("full_results") # Fallback
             )
-            result_state = agent_func(state)
+            result_state = await run_in_threadpool(agent_func, state)
             return AgentResponse(status="completed", message="Cost estimation complete.", data={"output": result_state.get("cost_estimation_report")})
 
         elif agent_id == "safety_agent":
@@ -225,7 +225,7 @@ async def process_design(request: DesignRequest):
                 flowsheet_description=request.context.get("flowsheet"),
                 equipment_and_stream_results=request.context.get("full_results")
             )
-            result_state = agent_func(state)
+            result_state = await run_in_threadpool(agent_func, state)
             return AgentResponse(status="completed", message="Safety analysis complete.", data={"output": result_state.get("safety_risk_analyst_report")})
 
         elif agent_id == "manager_agent":
@@ -238,7 +238,7 @@ async def process_design(request: DesignRequest):
                 equipment_and_stream_results=request.context.get("full_results"),
                 safety_risk_analyst_report=request.context.get("safety_report")
             )
-            result_state = agent_func(state)
+            result_state = await run_in_threadpool(agent_func, state)
             return AgentResponse(status="completed", message="Project review complete.", data={"output": result_state.get("project_manager_report"), "status": result_state.get("project_approval")})
 
     except Exception as e:

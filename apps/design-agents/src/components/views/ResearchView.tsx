@@ -207,7 +207,7 @@ export const ResearchView = () => {
                                     Key Benefits
                                 </Typography>
                                 <List dense disablePadding>
-                                    {concept.key_benefits.map((benefit, i) => (
+                                    {(concept.key_benefits || []).map((benefit, i) => (
                                         <ListItem key={i} disablePadding sx={{ mb: 0.5 }}>
                                             <ListItemIcon sx={{ minWidth: 24 }}>
                                                 <SparkleIcon fontSize="inherit" color="warning" />

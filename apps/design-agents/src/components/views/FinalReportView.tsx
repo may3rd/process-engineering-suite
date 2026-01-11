@@ -28,7 +28,7 @@ export const FinalReportView = () => {
 
   const sections = useMemo(() => [
     { id: 'reqs', title: '1. Process Requirements', content: designState.process_requirements },
-    { id: 'concept', title: '2. Selected Concept', content: `**${designState.selected_concept?.name}**\n\n${designState.selected_concept?.description}` },
+    { id: 'concept', title: '2. Selected Concept', content: designState.selected_concept ? `**${designState.selected_concept.name}**\n\n${designState.selected_concept.description}` : "*No concept selected*" },
     { id: 'basis', title: '3. Detailed Design Basis', content: designState.selected_concept_details },
     { id: 'pfd', title: '4. Flowsheet Description', content: designState.flowsheet_description },
     { id: 'cost', title: '5. Class 5 Cost Estimate', content: designState.cost_estimation_report },

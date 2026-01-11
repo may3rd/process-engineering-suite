@@ -127,9 +127,9 @@ export const SizingView = () => {
                                   ))}
                               </Stack>
                               <Typography variant="caption" display="block">
-                                  <strong>Margins:</strong> Duty: {metadata.design_margins?.duty_margin * 100}% | 
-                                  Power: {metadata.design_margins?.power_margin * 100}% | 
-                                  Pressure: {metadata.design_margins?.pressure_margin * 100}%
+                                  <strong>Margins:</strong> Duty: {(metadata.design_margins?.duty_margin || 0) * 100}% | 
+                                  Power: {(metadata.design_margins?.power_margin || 0) * 100}% | 
+                                  Pressure: {(metadata.design_margins?.pressure_margin || 0) * 100}%
                               </Typography>
                           </CardContent>
                       </Card>
