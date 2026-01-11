@@ -9,14 +9,17 @@ import {
   CircularProgress, 
   Divider,
   IconButton,
-  Tooltip
+  Tooltip,
+  Alert,
+  AlertTitle
 } from '@mui/material';
 import { 
   PlayArrow, 
   Save, 
   Edit as EditIcon, 
   CheckCircle as ConfirmIcon,
-  AutoAwesome as MagicIcon
+  AutoAwesome as MagicIcon,
+  Settings as SettingsIcon
 } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -26,13 +29,14 @@ import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
 
 export const RequirementsView = () => {
-  const { designState, updateDesignState, updateStepStatus, activeStepId, setActiveStep, steps } = useDesignStore();
+  const { designState, updateDesignState, updateStepStatus, activeStepId, setActiveStep, steps, setActiveStep: setViewStep } = useDesignStore();
   
   // Local states
   const [problemStatement, setProblemStatement] = useState(designState.problem_statement || '');
   const [editableBasis, setEditableBasis] = useState(designState.process_requirements || '');
   const [isEditingBasis, setIsEditingBasis] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Sync from store on mount
   useEffect(() => {
@@ -52,6 +56,7 @@ export const RequirementsView = () => {
   const handleRunAgent = async () => {
     handleSaveProblem();
     setLoading(true);
+    setError(null);
     updateStepStatus(activeStepId, 'running');
     try {
       const result = await runAgent('requirements_agent', { prompt: problemStatement });
@@ -65,6 +70,7 @@ export const RequirementsView = () => {
     } catch (e) {
       console.error(e);
       updateStepStatus(activeStepId, 'failed');
+      setError(e instanceof Error ? e.message : 'Unknown error');
     } finally {
       setLoading(false);
     }
@@ -82,6 +88,8 @@ export const RequirementsView = () => {
           }
       }
   };
+
+  const isApiKeyError = error?.toLowerCase().includes('api key');
 
   return (
     <Box sx={{ 
@@ -115,6 +123,31 @@ export const RequirementsView = () => {
             </Button>
           </Stack>
         </Paper>
+
+        {error && (
+            <Alert 
+                severity="error" 
+                onClose={() => setError(null)}
+                action={isApiKeyError && (
+                    <Button color="inherit" size="small" onClick={() => {
+                        // Navigate to settings (hacky if we don't have a direct route ID for settings in store)
+                        // Assuming user knows where settings is, or we can prompt a dialog.
+                        // For now just clear error.
+                        setError(null);
+                    }}>
+                        Dismiss
+                    </Button>
+                )}
+            >
+                <AlertTitle>Analysis Failed</AlertTitle>
+                {error}
+                {isApiKeyError && (
+                    <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+                        Please ensure your API Key is configured in the Settings tab or .env file.
+                    </Typography>
+                )}
+            </Alert>
+        )}
 
         <TextField
           multiline

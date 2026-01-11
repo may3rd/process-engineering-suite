@@ -12,6 +12,8 @@ interface DesignStore {
   // Data
   designState: DesignState;
   updateDesignState: (partial: Partial<DesignState>) => void;
+  serverConfigured: boolean; // True if backend has env key
+  setServerConfigured: (configured: boolean) => void;
 
   // Actions
   reset: () => void;
@@ -30,6 +32,8 @@ export const useDesignStore = create<DesignStore>()(
           temperature: 0.7
         }
       },
+      serverConfigured: false,
+      setServerConfigured: (configured) => set({ serverConfigured: configured }),
 
       setActiveStep: (stepId) => set({ activeStepId: stepId }),
 

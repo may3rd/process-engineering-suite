@@ -67,7 +67,29 @@ export async function runAgent(agentId: string, payload: any) {
 
     clearInterval(interval);
 
-    if (!res.ok) throw new Error('Agent failed');
+    if (!res.ok) {
+        if (res.status === 401 || res.status === 403) {
+            // Try to get detail from server first
+            try {
+                const errData = await res.json();
+                if (errData.detail) throw new Error(errData.detail);
+            } catch (e) {
+                if (e instanceof Error && (e.message.includes('API KEY') || e.message.includes('API Error'))) throw e;
+            }
+            throw new Error('API Error: Please check your API key.');
+        }
+        if (res.status === 500) {
+            // Try to read error details if available
+            try {
+                const errData = await res.json();
+                if (errData.detail) throw new Error(`Server Error: ${errData.detail}`);
+            } catch (jsonError) {
+                // If JSON parsing fails, just throw generic
+            }
+            throw new Error('Agent failed (Server Error 500)');
+        }
+        throw new Error(`Agent failed with status ${res.status}`);
+    }
     const data = await res.json();
     
     addLog(`Agent completed successfully.`, 'success');

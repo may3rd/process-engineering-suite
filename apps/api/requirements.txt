@@ -21,6 +21,7 @@ python-dateutil>=2.8
 # PDF Generation
 weasyprint>=67.0
 jinja2>=3.1.6
+pypandoc>=1.16.2
 
 # AI/Agents
 langchain>=0.1.0
@@ -30,3 +31,6 @@ langchain-core>=0.1.0
 python-dotenv>=1.0.0
 CoolProp>=6.6.0
 langsmith>=0.1.0
+sympy>=1.12
+json_repair>=0.10.0
+regex>=2023.10.3

@@ -70,12 +70,20 @@ def get_llm(model_type: str = "deep", config: Dict[str, Any] = None):
     provider = config.get("provider", "OpenRouter")
     api_key = config.get("apiKey") or os.getenv("OPENROUTER_API_KEY") or os.getenv("OPENAI_API_KEY")
     
+    # DEBUG: Check if API key is present
+    if api_key:
+        masked_key = f"{api_key[:4]}...{api_key[-4:]}" if len(api_key) > 8 else "***"
+        logger.info(f"Using API Key: {masked_key} for provider {provider}")
+    else:
+        logger.warning(f"NO API KEY FOUND for provider {provider}. Config apiKey: {bool(config.get('apiKey'))}, Env OPENROUTER: {bool(os.getenv('OPENROUTER_API_KEY'))}")
+
     base_url = None
     if provider == "OpenRouter":
         base_url = "https://openrouter.ai/api/v1"
     
     if not api_key:
-        logger.warning("No API key found. Agents will fail.")
+        logger.error(f"API Key missing for provider {provider}")
+        raise HTTPException(status_code=401, detail="API KEY is missing")
     
     # 2. Determine Model
     if model_type == "deep":
@@ -97,10 +105,13 @@ def get_llm(model_type: str = "deep", config: Dict[str, Any] = None):
 async def health_check():
     """Health check for the design agents module."""
     imported = create_process_requiruments_analyst is not None
+    # Check if either key is present in env
+    has_env_key = bool(os.getenv("OPENROUTER_API_KEY")) or bool(os.getenv("OPENAI_API_KEY"))
     return {
         "status": "design-agents-active", 
         "modules_loaded": imported,
-        "provider": "openrouter" if os.getenv("OPENROUTER_API_KEY") else "openai"
+        "provider": "openrouter" if os.getenv("OPENROUTER_API_KEY") else "openai",
+        "has_env_key": has_env_key
     }
 
 @router.post("/process", response_model=AgentResponse)
@@ -217,6 +228,11 @@ async def process_design(request: DesignRequest):
 
     except Exception as e:
         logger.error(f"Agent execution failed: {e}")
+        # Propagate 401 errors
+        error_str = str(e)
+        if "401" in error_str or "Unauthorized" in error_str or "API KEY is missing" in error_str:
+            raise HTTPException(status_code=401, detail="API Error: Please check your API key.")
+            
         raise HTTPException(status_code=500, detail=str(e))
 
     return AgentResponse(status="error", message=f"Unknown agent: {agent_id}")

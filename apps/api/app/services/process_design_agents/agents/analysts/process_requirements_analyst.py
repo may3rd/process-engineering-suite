@@ -37,7 +37,8 @@ def create_process_requiruments_analyst(llm):
             try_count += 1
             if try_count > 10:
                 print("+ Max try count reached.", flush=True)
-                exit(-1)
+                # Instead of exit(-1), raise exception so API can handle it
+                raise Exception("Max retry count reached")
             try:
                 response = chain.invoke({"messages": list(state.get("messages", []))})
                 requirements_summary = (
@@ -49,7 +50,14 @@ def create_process_requiruments_analyst(llm):
                 else:
                     print("DEBUG: The respones message is too short. Try again.")
             except Exception as e:
-                print(f"Attemp {try_count} has failed.")
+                # Check for 401 Unauthorized in the exception message or attributes
+                # LangChain/OpenAI exceptions usually contain the status code
+                error_str = str(e)
+                if "401" in error_str or "Unauthorized" in error_str:
+                    print(f"Auth Error detected: {e}", flush=True)
+                    raise e # Re-raise immediately, do not retry
+                
+                print(f"Attemp {try_count} has failed. Error: {e}")
         print(f"{requirements_summary}", flush=True)
         return {
             "process_requirements": requirements_summary,
