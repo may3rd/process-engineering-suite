@@ -21,6 +21,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
+import { MarkdownEditorDialog } from '../common/MarkdownEditorDialog';
 
 export const SynthesisView = () => {
   const { designState, updateDesignState, updateStepStatus, activeStepId, setActiveStep, steps } = useDesignStore();
@@ -61,13 +62,16 @@ export const SynthesisView = () => {
     }
   };
 
-  const handleSave = () => {
-      updateDesignState({ selected_concept_details: localDetails });
+  const handleSave = (newContent: string) => {
+      setLocalDetails(newContent);
+      updateDesignState({ selected_concept_details: newContent });
       setIsEditing(false);
   };
 
   const handleConfirmAndNext = () => {
-      handleSave();
+      // If manually edited but not saved, save it
+      updateDesignState({ selected_concept_details: localDetails });
+      updateStepStatus(activeStepId, 'completed');
       const currentIndex = steps.findIndex(s => s.id === activeStepId);
       if (currentIndex < steps.length - 1) {
           setActiveStep(steps[currentIndex + 1].id);
@@ -134,21 +138,15 @@ export const SynthesisView = () => {
         <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="subtitle1" fontWeight="bold">Detailed Design Basis</Typography>
           <Stack direction="row" spacing={1}>
-             {!isEditing ? (
-                 <Button startIcon={<EditIcon />} onClick={() => setIsEditing(true)} variant="outlined" size="small" disabled={!localDetails}>
-                     Edit
-                 </Button>
-             ) : (
-                 <Button startIcon={<SaveIcon />} onClick={handleSave} variant="contained" color="secondary" size="small">
-                     Save
-                 </Button>
-             )}
+             <Button startIcon={<EditIcon />} onClick={() => setIsEditing(true)} variant="outlined" size="small" disabled={!localDetails}>
+                 Edit
+             </Button>
              <Button 
                 startIcon={<ConfirmIcon />} 
                 onClick={handleConfirmAndNext} 
                 variant="contained" 
                 color="success"
-                disabled={!localDetails || isEditing}
+                disabled={!localDetails}
              >
                 Confirm & Next
              </Button>
@@ -160,21 +158,10 @@ export const SynthesisView = () => {
             p: 3, 
             overflow: 'auto', 
             bgcolor: 'background.default',
-            border: isEditing ? '1px solid' : 'none',
+            border: 'none',
             borderColor: 'secondary.main'
         }}>
-          {isEditing ? (
-              <TextField
-                  multiline
-                  fullWidth
-                  value={localDetails}
-                  onChange={(e) => setLocalDetails(e.target.value)}
-                  sx={{ 
-                      height: '100%',
-                      '& .MuiInputBase-root': { height: '100%', alignItems: 'flex-start', fontFamily: 'monospace' } 
-                  }}
-              />
-          ) : localDetails ? (
+          {localDetails ? (
             <Box sx={{ 
                 typography: 'body2', 
                 '& h2': { color: 'primary.main', borderBottom: '1px solid', borderColor: 'divider', pb: 0.5, mt: 3, mb: 2 },
@@ -194,6 +181,14 @@ export const SynthesisView = () => {
           )}
         </Paper>
       </Box>
+
+      <MarkdownEditorDialog 
+        open={isEditing} 
+        onClose={() => setIsEditing(false)} 
+        onSave={handleSave}
+        initialContent={localDetails}
+        title="Edit Detailed Design Basis"
+      />
     </Box>
   );
 };
