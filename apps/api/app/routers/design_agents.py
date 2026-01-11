@@ -9,6 +9,7 @@ import pypandoc
 from pathlib import Path
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
+from starlette.concurrency import run_in_threadpool
 
 # Import from the internal service (refactored from multi-agents)
 try:
@@ -19,6 +20,7 @@ try:
     from apps.api.app.services.process_design_agents.agents.designers.equipment_stream_catalog_agent import create_equipment_stream_catalog_agent
     from apps.api.app.services.process_design_agents.agents.designers.stream_property_estimation_agent import create_stream_property_estimation_agent
     from apps.api.app.services.process_design_agents.agents.designers.equipment_sizing_agent import create_equipment_sizing_agent
+    from apps.api.app.services.process_design_agents.agents.analysts.cost_estimator_agent import create_cost_estimator_agent
     from apps.api.app.services.process_design_agents.agents.analysts.safety_risk_analyst import create_safety_risk_analyst
     from apps.api.app.services.process_design_agents.agents.project_manager.project_manager import create_project_manager
     from apps.api.app.services.process_design_agents.agents.utils.agent_states import create_design_state
@@ -32,6 +34,7 @@ except ImportError as e:
     create_equipment_stream_catalog_agent = None
     create_stream_property_estimation_agent = None
     create_equipment_sizing_agent = None
+    create_cost_estimator_agent = None
     create_safety_risk_analyst = None
     create_project_manager = None
 
@@ -200,6 +203,18 @@ async def process_design(request: DesignRequest):
             )
             result_state = agent_func(state)
             return AgentResponse(status="completed", message="Sizing complete.", data={"output": result_state.get("equipment_list_results"), "full_results": result_state.get("equipment_and_stream_results")})
+
+        elif agent_id == "cost_agent":
+            llm = get_llm("deep", llm_config)
+            agent_func = create_cost_estimator_agent(llm)
+            state = create_design_state(
+                design_basis=request.context.get("design_basis"),
+                flowsheet_description=request.context.get("flowsheet"),
+                equipment_list_results=request.context.get("equipment_list"), # Expecting the detailed list from sizing
+                equipment_and_stream_results=request.context.get("full_results") # Fallback
+            )
+            result_state = agent_func(state)
+            return AgentResponse(status="completed", message="Cost estimation complete.", data={"output": result_state.get("cost_estimation_report")})
 
         elif agent_id == "safety_agent":
             llm = get_llm("deep", llm_config)

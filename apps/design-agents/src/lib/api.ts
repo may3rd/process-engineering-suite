@@ -154,6 +154,13 @@ function getMockSteps(agentId: string): string[] {
                 "Estimating vessel dimensions...",
                 "Determining pump hydraulic power..."
             ];
+        case 'cost_agent':
+            return [
+                "Analyzing equipment scope...",
+                "Applying installation factors...",
+                "Benchmarking against cost curves...",
+                "Generating Class 5 Estimate..."
+            ];
         case 'safety_agent':
             return [
                 "Initializing HAZOP matrix...",

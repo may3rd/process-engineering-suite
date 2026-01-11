@@ -78,25 +78,37 @@ export const SynthesisView = () => {
     <Box sx={{ 
       height: '100%', 
       display: 'flex', 
-      flexDirection: { xs: 'column', lg: 'row' }, 
+      flexDirection: 'column', 
       gap: 3 
     }}>
-      {/* Left Pane: Selection Summary */}
+      {/* Top Pane: Selection Summary */}
       <Box sx={{ 
-        flex: 1, 
+        flex: '0 0 auto', 
         display: 'flex', 
         flexDirection: 'column', 
         gap: 2,
-        minHeight: { xs: 'auto', lg: 'auto' }
       }}>
         <Paper sx={{ p: 2 }}>
-          <Typography variant="subtitle1" fontWeight="bold">Selected Technology</Typography>
-          <Typography variant="h6" color="primary.main" gutterBottom>
-             {designState.selected_concept?.name || "None Selected"}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-             {designState.selected_concept?.description}
-          </Typography>
+          <Stack direction="row" justifyContent="space-between" alignItems="flex-start">
+            <Box>
+                <Typography variant="subtitle1" fontWeight="bold">Selected Technology</Typography>
+                <Typography variant="h6" color="primary.main" gutterBottom>
+                    {designState.selected_concept?.name || "None Selected"}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                    {designState.selected_concept?.description}
+                </Typography>
+            </Box>
+            <Button 
+                startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <MagicIcon />} 
+                onClick={handleRunSynthesis} 
+                variant="contained" 
+                size="medium"
+                disabled={loading || !designState.selected_concept}
+            >
+                Generate Design Basis
+            </Button>
+          </Stack>
           
           <Divider sx={{ my: 2 }} />
           
@@ -109,26 +121,15 @@ export const SynthesisView = () => {
               ))}
           </Box>
         </Paper>
-
-        <Button 
-            startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <MagicIcon />} 
-            onClick={handleRunSynthesis} 
-            variant="contained" 
-            fullWidth
-            size="large"
-            disabled={loading || !designState.selected_concept}
-        >
-            Generate Detailed Design Basis
-        </Button>
       </Box>
 
-      {/* Right Pane: Detailed Output */}
+      {/* Bottom Pane: Detailed Output */}
       <Box sx={{ 
-        flex: 2, 
+        flex: 1,
         display: 'flex', 
         flexDirection: 'column', 
         gap: 2,
-        minHeight: { xs: '500px', lg: 'auto' }
+        minHeight: '400px'
       }}>
         <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="subtitle1" fontWeight="bold">Detailed Design Basis</Typography>

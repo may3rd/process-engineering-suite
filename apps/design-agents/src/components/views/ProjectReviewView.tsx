@@ -118,7 +118,7 @@ export const ProjectReviewView = () => {
                 color="primary"
                 disabled={loading || !designState.safety_report}
              >
-                {designState.project_manager_report ? "Update Review" : "Generate Approval Memo"}
+                {designState.project_manager_report ? "Update" : "Generate"}
              </Button>
              <Button 
                 startIcon={<ConfirmIcon />} 
@@ -127,7 +127,7 @@ export const ProjectReviewView = () => {
                 color="success"
                 disabled={!designState.project_manager_report}
              >
-                Finalize & Generate Report
+                Finalize
              </Button>
         </Stack>
       </Paper>

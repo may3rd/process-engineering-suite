@@ -30,6 +30,7 @@ class DesignState(TypedDict):
     design_basis: NotRequired[str]
     safety_risk_analyst_report: NotRequired[str]
     project_manager_report: NotRequired[str]
+    cost_estimation_report: NotRequired[str]
 
 
 def create_design_state(
@@ -54,6 +55,7 @@ def create_design_state(
     design_basis: Optional[str] = None,
     safety_risk_analyst_report: Optional[str] = None,
     project_manager_report: Optional[str] = None,
+    cost_estimation_report: Optional[str] = None,
 ) -> DesignState:
     """Factory to create a DesignState with sensible defaults."""
 
@@ -78,6 +80,7 @@ def create_design_state(
         "design_basis": design_basis,
         "safety_risk_analyst_report": safety_risk_analyst_report,
         "project_manager_report": project_manager_report,
+        "cost_estimation_report": cost_estimation_report,
     }
 
     return state

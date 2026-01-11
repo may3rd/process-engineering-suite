@@ -31,8 +31,9 @@ export const FinalReportView = () => {
     { id: 'concept', title: '2. Selected Concept', content: `**${designState.selected_concept?.name}**\n\n${designState.selected_concept?.description}` },
     { id: 'basis', title: '3. Detailed Design Basis', content: designState.selected_concept_details },
     { id: 'pfd', title: '4. Flowsheet Description', content: designState.flowsheet_description },
-    { id: 'safety', title: '5. Safety Assessment', content: designState.safety_report },
-    { id: 'approval', title: '6. Executive Approval Memo', content: designState.project_manager_report },
+    { id: 'cost', title: '5. Class 5 Cost Estimate', content: designState.cost_estimation_report },
+    { id: 'safety', title: '6. Safety Assessment', content: designState.safety_report },
+    { id: 'approval', title: '7. Executive Approval Memo', content: designState.project_manager_report },
   ], [designState]);
 
   const fullReport = useMemo(() => {

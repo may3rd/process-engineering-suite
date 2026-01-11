@@ -3,6 +3,7 @@ from .utils.agent_states import DesignState
 from .analysts.design_basis_analyst import create_design_basis_analyst
 from .analysts.process_requirements_analyst import create_process_requiruments_analyst
 from .analysts.safety_risk_analyst import create_safety_risk_analyst
+from .analysts.cost_estimator_agent import create_cost_estimator_agent
 from .designers.equipment_sizing_agent import create_equipment_sizing_agent
 from .designers.equipment_stream_catalog_agent import create_equipment_stream_catalog_agent
 from .designers.flowsheet_design_agent import create_flowsheet_design_agent
@@ -27,4 +28,5 @@ __all__ = [
     "create_equipment_sizing_agent",
     "create_safety_risk_analyst",
     "create_project_manager",
+    "create_cost_estimator_agent",
 ]

@@ -80,22 +80,40 @@ export const PFDView = () => {
     <Box sx={{ 
       height: '100%', 
       display: 'flex', 
-      flexDirection: { xs: 'column', lg: 'row' }, 
+      flexDirection: 'column', 
       gap: 3 
     }}>
-      {/* Left Pane: Context */}
+      {/* Top Pane: Context */}
       <Box sx={{ 
-        flex: 1, 
+        flex: '0 0 auto', 
         display: 'flex', 
         flexDirection: 'column', 
         gap: 2,
-        minHeight: { xs: '300px', lg: 'auto' }
+        maxHeight: '30vh' 
       }}>
-        <Paper sx={{ p: 2, flexGrow: 1, overflow: 'auto', bgcolor: 'background.default' }}>
-          <Typography variant="subtitle1" fontWeight="bold" gutterBottom>Context: Detailed Design Basis</Typography>
+        <Paper sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Stack direction="row" justifyContent="space-between" alignItems="center">
+             <Typography variant="subtitle1" fontWeight="bold">Context: Detailed Design Basis</Typography>
+             <Button 
+                startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <MagicIcon />} 
+                onClick={handleRunPFD} 
+                variant="contained" 
+                size="medium"
+                disabled={loading || !designState.selected_concept_details}
+            >
+                Generate Flowsheet
+            </Button>
+          </Stack>
+          
           <Box sx={{ 
              typography: 'caption', 
              color: 'text.secondary',
+             overflowY: 'auto',
+             maxHeight: '150px',
+             border: '1px solid',
+             borderColor: 'divider',
+             borderRadius: 1,
+             p: 1,
              '& h2': { fontSize: '1.1em', fontWeight: 'bold', mt: 1, mb: 0.5 }
           }}>
               <ReactMarkdown remarkPlugins={[remarkGfm, remarkMath]} rehypePlugins={[rehypeKatex]}>
@@ -103,26 +121,15 @@ export const PFDView = () => {
               </ReactMarkdown>
           </Box>
         </Paper>
-
-        <Button 
-            startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <MagicIcon />} 
-            onClick={handleRunPFD} 
-            variant="contained" 
-            fullWidth
-            size="large"
-            disabled={loading || !designState.selected_concept_details}
-        >
-            Generate Flowsheet (PFD)
-        </Button>
       </Box>
 
-      {/* Right Pane: PFD Output */}
+      {/* Bottom Pane: PFD Output */}
       <Box sx={{ 
-        flex: 2, 
+        flex: 1, 
         display: 'flex', 
         flexDirection: 'column', 
         gap: 2,
-        minHeight: { xs: '500px', lg: 'auto' }
+        minHeight: '400px'
       }}>
         <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box>

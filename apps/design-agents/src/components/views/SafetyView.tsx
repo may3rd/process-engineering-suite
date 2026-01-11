@@ -135,40 +135,44 @@ export const SafetyView = () => {
       <Box sx={{ 
         flexGrow: 1, 
         display: 'flex', 
-        flexDirection: { xs: 'column', lg: 'row' }, 
+        flexDirection: 'column', 
         gap: 3, 
-        overflow: { xs: 'visible', lg: 'hidden' } // Allow scroll on mobile stack
       }}>
-          {/* Left: Summary Panel (Optional) */}
+          {/* Top: Summary Panel */}
           <Paper sx={{ 
-            width: { xs: '100%', lg: 300 }, 
+            flex: '0 0 auto',
             p: 2, 
-            display: { xs: 'none', lg: 'flex' }, // Keep hidden on small mobile, show on large
-            flexDirection: 'column', 
-            bgcolor: 'action.hover' 
+            display: 'flex', 
+            flexDirection: { xs: 'column', md: 'row' }, // Horizontal on desktop
+            gap: 2,
+            bgcolor: 'action.hover',
+            alignItems: { md: 'center' }
           }}>
-              <Typography variant="subtitle2" gutterBottom color="primary">Assessment Scope</Typography>
-              <Typography variant="caption" paragraph>
-                  Focuses on credible deviations (More/Less/No) for Temperature, Pressure, and Flow across all major units.
-              </Typography>
-              <Divider sx={{ my: 1 }} />
-              <Typography variant="subtitle2" gutterBottom color="secondary">Compliance Checklist</Typography>
-              <Typography variant="caption">
-                  - ASME Section VIII (Vessels)<br/>
-                  - API 520/521 (Relief)<br/>
-                  - NFPA Standards<br/>
-                  - Environmental VOC Limits
-              </Typography>
+              <Box>
+                <Typography variant="subtitle2" gutterBottom color="primary">Assessment Scope</Typography>
+                <Typography variant="caption">
+                    Focuses on credible deviations (More/Less/No) for Temperature, Pressure, and Flow across all major units.
+                </Typography>
+              </Box>
+              <Divider orientation="vertical" flexItem sx={{ display: { xs: 'none', md: 'block' } }} />
+              <Box>
+                <Typography variant="subtitle2" gutterBottom color="secondary">Compliance Checklist</Typography>
+                <Typography variant="caption" sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                    <span>• ASME Section VIII (Vessels)</span>
+                    <span>• API 520/521 (Relief)</span>
+                    <span>• NFPA Standards</span>
+                    <span>• Environmental VOC Limits</span>
+                </Typography>
+              </Box>
           </Paper>
 
-          {/* Right: Report Area */}
+          {/* Bottom: Report Area */}
           <Box sx={{ 
             flex: 1, 
             display: 'flex', 
             flexDirection: 'column', 
             gap: 2, 
-            overflow: { xs: 'visible', lg: 'hidden' },
-            minHeight: { xs: '500px', lg: 'auto' }
+            minHeight: '400px'
           }}>
               <Paper sx={{ p: 1, display: 'flex', justifyContent: 'flex-end', borderBottom: 'none' }}>
                   {!isEditing ? (

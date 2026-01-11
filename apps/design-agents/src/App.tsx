@@ -14,6 +14,7 @@ import { SafetyView } from './components/views/SafetyView';
 import { ProjectReviewView } from './components/views/ProjectReviewView';
 import { FinalReportView } from './components/views/FinalReportView';
 import { SettingsView } from './components/views/SettingsView';
+import { CostView } from './components/views/CostView';
 import { AuroraBackground } from './components/common/AuroraBackground';
 import { ActivityMonitor } from './components/common/ActivityMonitor/ActivityMonitor';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -57,6 +58,8 @@ function App() {
       case 'safety':
         return <SafetyView />;
       case 'cost':
+        return <CostView />;
+      case 'review':
         return <ProjectReviewView />;
       case 'report':
         return <FinalReportView />;
