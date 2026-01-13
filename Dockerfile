@@ -37,7 +37,6 @@ COPY apps/api/requirements.txt apps/api/
 COPY packages/ui-kit/package.json packages/ui-kit/
 COPY packages/physics-engine/package.json packages/physics-engine/
 COPY packages/api-std/package.json packages/api-std/
-COPY packages/vessels/package.json packages/vessels/
 COPY packages/tsconfig/ packages/tsconfig/
 # Note: In a real robust setup we'd use 'turbo prune', but for now we copy manifests manually 
 # or just copy everything if the repo isn't huge. Given context constraints, let's copy root manifests.

@@ -51,7 +51,7 @@ TMPDIR=./.tmp vitest run path/to/test.test.tsx
 TMPDIR=./.tmp vitest run -t "test name or pattern"
 ```
 
-### Python Packages (services/calc-engine/hydraulics, packages/vessels, services/calc-engine)
+### Python Packages (services/calc-engine/hydraulics, services/calc-engine)
 
 ```bash
 # From package directory
