@@ -56,13 +56,17 @@ export const FinalReportView = () => {
 
   const handleExportWord = async () => {
       try {
-          const response = await fetch('http://localhost:8000/design-agents/export/docx', {
+          // Use 127.0.0.1 to match api.ts configuration
+          const response = await fetch('http://127.0.0.1:8000/design-agents/export/docx', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ markdown_content: fullReport })
           });
           
-          if (!response.ok) throw new Error("Export failed");
+          if (!response.ok) {
+              const errText = await response.text();
+              throw new Error(`Export failed: ${response.status} ${errText}`);
+          }
           
           const blob = await response.blob();
           const url = window.URL.createObjectURL(blob);

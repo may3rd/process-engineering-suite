@@ -12,11 +12,13 @@ interface DesignStore {
   // Data
   designState: DesignState;
   updateDesignState: (partial: Partial<DesignState>) => void;
+  setDesignState: (state: DesignState) => void;
   serverConfigured: boolean; // True if backend has env key
   setServerConfigured: (configured: boolean) => void;
 
   // Actions
   reset: () => void;
+  clearProject: () => void;
 }
 
 export const useDesignStore = create<DesignStore>()(
@@ -50,12 +52,23 @@ export const useDesignStore = create<DesignStore>()(
             designState: { ...state.designState, ...partial },
           })),
 
+        setDesignState: (state) => set({ designState: state }),
+
         reset: () =>
           set({
             activeStepId: DESIGN_STEPS[0]?.id ?? '',
             steps: DESIGN_STEPS,
             designState: {},
           }),
+
+        clearProject: () => 
+          set((state) => ({
+            activeStepId: DESIGN_STEPS[0]?.id ?? '',
+            steps: DESIGN_STEPS.map(s => ({ ...s, status: 'pending' })),
+            designState: {
+              llmSettings: state.designState.llmSettings
+            }
+          })),
       }),
       {
         name: 'design-agent-storage', // name of the item in the storage (must be unique)

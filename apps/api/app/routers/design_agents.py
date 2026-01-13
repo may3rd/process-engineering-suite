@@ -6,6 +6,7 @@ import logging
 import os
 import json
 import pypandoc
+import tempfile
 from pathlib import Path
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import HumanMessage
@@ -273,7 +274,7 @@ async def export_to_word(request: ExportRequest):
             raise HTTPException(status_code=404, detail="Word template not found.")
 
         # Create temporary input/output files
-        temp_dir = Path("/tmp")
+        temp_dir = Path(tempfile.gettempdir())
         input_file = temp_dir / f"input_{os.getpid()}.md"
         output_file = temp_dir / f"design_dossier_{os.getpid()}.docx"
 
