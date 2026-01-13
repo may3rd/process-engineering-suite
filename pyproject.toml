@@ -12,12 +12,12 @@ dependencies = []
 [tool.uv.workspace]
 members = [
   "apps/api",                # your FastAPI backend
-  "packages/hydraulics",     # only the real Python packages
+  "services/calc-engine/hydraulics",     # only the real Python packages
   # add more later like "packages/thermo", "packages/psv", etc.
 ]
 
 # Makes these imports work:
 #   from engsuite.hydraulics import ...
 [tool.uv.sources]
-engsuite-hydraulics = { path = "packages/hydraulics", editable = true }
+engsuite-hydraulics = { path = "services/calc-engine/hydraulics", editable = true }
 # engsuite-thermo = { path = "packages/thermo", editable = true }   # when you add it

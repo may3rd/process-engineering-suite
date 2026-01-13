@@ -36,14 +36,6 @@ export default defineConfig({
         __dirname,
         "../../packages/physics-engine/src/*",
       ),
-      "@eng-suite/vessels": path.resolve(
-        __dirname,
-        "../../packages/vessels-calc/src/index.ts",
-      ),
-      "@eng-suite/vessels/*": path.resolve(
-        __dirname,
-        "../../packages/vessels-calc/src/*",
-      ),
       react: path.resolve(__dirname, "../../node_modules/react"),
       "react/jsx-runtime": path.resolve(
         __dirname,

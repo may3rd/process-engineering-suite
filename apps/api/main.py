@@ -14,6 +14,8 @@ logger = logging.getLogger(__name__)
 # Add the project root to the Python path for package imports
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
+sys.path.insert(0, str(PROJECT_ROOT / "services/calc-engine"))
+sys.path.insert(0, str(PROJECT_ROOT / "services/calc-engine/hydraulics"))
 sys.path.insert(0, str(PROJECT_ROOT / "apps/multi-agents/ProcessDesignAgents"))
 
 from fastapi import FastAPI, HTTPException
@@ -36,14 +38,14 @@ from apps.api.schemas import (
     InletValidationResponse,
     FluidRequest,
 )
-from packages.hydraulics.src.models.pipe_section import Fitting, PipeSection
-from packages.hydraulics.src.models.components import ControlValve, Orifice
-from packages.hydraulics.src.models.fluid import Fluid
-from packages.hydraulics.src.models.network import Network
-from packages.hydraulics.src.solver.network_solver import NetworkSolver
-from packages.hydraulics.src.utils.units import convert
-from packages.hydraulics.src.models.results import CalculationOutput, ResultSummary, StatePoint, PressureDropDetails
-from packages.hydraulics.src.single_edge import EdgeCalculationInput, calculate_single_edge
+from hydraulics.models.pipe_section import Fitting, PipeSection
+from hydraulics.models.components import ControlValve, Orifice
+from hydraulics.models.fluid import Fluid
+from hydraulics.models.network import Network
+from hydraulics.solver.network_solver import NetworkSolver
+from hydraulics.utils.units import convert
+from hydraulics.models.results import CalculationOutput, ResultSummary, StatePoint, PressureDropDetails
+from hydraulics.single_edge import EdgeCalculationInput, calculate_single_edge
 
 app = FastAPI(
     title="Process Engineering Suite API",
@@ -52,7 +54,17 @@ app = FastAPI(
 )
 
 # Include data routers (PSV data, hierarchy, auth, etc.)
-from apps.api.app.routers import hierarchy_router, psv_router, supporting_router, admin_router, auth_router, revisions_router, audit_router, design_agents_router
+from apps.api.app.routers import (
+    hierarchy_router,
+    psv_router,
+    supporting_router,
+    admin_router,
+    auth_router,
+    revisions_router,
+    audit_router,
+    design_agents_router,
+    vessels_router,
+)
 
 app.include_router(hierarchy_router)
 app.include_router(psv_router)
@@ -62,6 +74,7 @@ app.include_router(auth_router)
 app.include_router(revisions_router)
 app.include_router(audit_router)
 app.include_router(design_agents_router)
+app.include_router(vessels_router)
 
 
 # Configure CORS for local development
@@ -418,12 +431,12 @@ async def solve_length(request: LengthEstimationRequest):
     a specific pressure drop.
     """
     from .schemas import LengthEstimationRequest, LengthEstimationResponse
-    from packages.hydraulics.src.single_edge import (
+    from hydraulics.single_edge import (
         solve_length_from_pressure_drop,
         LengthEstimationInput,
     )
-    from packages.hydraulics.src.models.pipe_section import Fitting
-    from packages.hydraulics.src.utils.units import convert
+    from hydraulics.models.pipe_section import Fitting
+    from hydraulics.utils.units import convert
     
     logger.info(f"📥 Received length estimation request for pipe: {request.id}")
     logger.debug(f"   Target ΔP: {request.targetPressureDrop/1000:.2f} kPa")

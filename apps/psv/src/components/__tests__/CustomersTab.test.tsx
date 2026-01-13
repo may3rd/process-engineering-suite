@@ -384,7 +384,16 @@ describe("CustomersTab", () => {
   });
 });
 
-    // Mock the getState method
+describe("CustomersTab", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+
+    const mockStore = createMockStore();
+
+    vi.mocked(usePsvStore).mockImplementation((selector) => {
+      return selector ? selector(mockStore) : mockStore;
+    });
+
     vi.mocked(usePsvStore).getState = vi.fn(() => mockStore);
 
     vi.mocked(useAuthStore).mockReturnValue({
@@ -482,7 +491,6 @@ describe("CustomersTab", () => {
       // Summary counts loading is handled by useEffect
       // The test verifies the component renders successfully
       expect(screen.getByText("Test Customer")).toBeInTheDocument();
-    });
     });
   });
 

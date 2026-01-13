@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, vi, type MockedFunction } from "vitest";
 import { ApiClient } from "../api";
 
 // Mock fetch globally
@@ -6,12 +6,12 @@ global.fetch = vi.fn();
 
 describe("ApiClient", () => {
   let apiClient: ApiClient;
-  let mockFetch: vi.MockedFunction<typeof fetch>;
+  let mockFetch: MockedFunction<typeof fetch>;
   let mockLocalStorage: Record<string, string>;
 
   beforeEach(() => {
     // Reset mocks
-    mockFetch = global.fetch as vi.MockedFunction<typeof fetch>;
+    mockFetch = global.fetch as MockedFunction<typeof fetch>;
     mockFetch.mockReset();
 
     // Mock localStorage

@@ -51,7 +51,7 @@ TMPDIR=./.tmp vitest run path/to/test.test.tsx
 TMPDIR=./.tmp vitest run -t "test name or pattern"
 ```
 
-### Python Packages (packages/hydraulics, packages/vessels)
+### Python Packages (services/calc-engine/hydraulics, packages/vessels, services/calc-engine)
 
 ```bash
 # From package directory
@@ -164,10 +164,11 @@ pytest -k "pattern"       # Run tests matching pattern
 
 ## Repository Structure
 
-- `apps/`: Next.js applications (psv, network-editor, docs, api, web)
-- `packages/`: Shared packages (ui-kit, physics-engine, hydraulics, vessels, typescript-config)
+- `apps/`: Next.js applications (api, design-agents, docs, network-editor, psv, web)
+- `packages/`: Shared packages (api-client, api-std, eslint-config, physics-engine, schemas, tsconfig, typescript-config, ui, ui-kit, utils, vessels)
 - `conductor/`: Development guidelines and track metadata
 - `infra/`: Docker and infrastructure configs
+- `services/`: Backend services (calc-engine)
 
 ## Single Image Deployment (Postgres Included)
 
@@ -177,3 +178,278 @@ pytest -k "pattern"       # Run tests matching pattern
 - See `README.md` for the full `docker run` examples and notes on backups.
 
 When making changes, always match the existing code style and patterns in the file you're editing. Run `bun run lint` (TypeScript) or `ruff check` (Python) before committing.
+
+# AI Agent Guidelines for Process Engineering Suite (PES)
+
+This document defines **architecture, execution model, build commands, testing procedures, and code style rules**
+for automated coding agents (Codex) and human contributors working in this monorepo.
+
+This file is **authoritative**. If any other document conflicts with it, **this file wins**.
+
+---
+
+## Rule Zero (Non-Negotiable)
+
+> **No engineering equations are implemented in TypeScript. Ever.**
+
+- TypeScript is used for **UI, orchestration, APIs, persistence, and visualization**
+- **All engineering calculations live in Python**
+- If a task requires equations and the target file is TypeScript, **stop and relocate to Python**
+
+Violating this rule invalidates calculation traceability and introduces technical debt.
+
+---
+
+## High-Level Architecture (Hybrid-by-Design)
+
+```
+UI (TypeScript)
+  │
+  ▼
+API / Orchestrator (TypeScript)
+  │   JSON / OpenAPI
+  ▼
+Calculation Engine (Python)
+  │
+  ▼
+Engineering Database
+```
+
+### Responsibilities by Layer
+
+| Layer | Language | Responsibilities | Explicitly Forbidden |
+|---|---|---|---|
+| UI / Editors | TypeScript | Input forms, visualization, interaction | Engineering math |
+| API / Orchestrator | TypeScript | Auth, RBAC, run lifecycle, persistence, reporting | Equations, correction factors |
+| Calculation Engine | Python | All engineering equations, standards, checks | UI logic, auth |
+| Database | SQL / Object | Inputs, outputs, provenance, versions | Hidden logic |
+
+---
+
+## Execution Model (Authoritative)
+
+All engineering calculations use a **worker-based execution model** to ensure scalability and predictable performance.
+
+### Execution Principles
+
+- API threads **must never** execute engineering math
+- Python calculations run in **isolated worker processes**
+- Concurrency is **explicitly bounded**
+- Excess requests are **queued**, not blocked or rejected
+
+### Execution Flow
+
+```
+UI (TypeScript)
+  │
+  ▼
+API / Orchestrator (TypeScript)
+  │  - validate schema
+  │  - persist input snapshot
+  │  - assign calc_id + version
+  ▼
+Job Dispatch
+  │
+  ▼
+Python Worker Pool (multiprocess)
+  │  - deterministic calculation
+  │  - units, correlations, checks
+  │  - results + provenance
+  ▼
+API Persistence & Reporting
+```
+
+### Concurrency Model
+
+- Process-based workers (not threads)
+- Typical sizing:
+  - 1 worker per CPU core
+  - Start with 2–4 workers per instance
+- Queueing is acceptable and preferred over blocking
+
+Engineers may see:
+> “Calculating… (queued)”
+
+This is expected behavior.
+
+### Sync vs Async Policy
+
+| Calculation Type | Mode |
+|---|---|
+| RO sizing, venting, valve sizing | Synchronous |
+| Multiphase hydraulics, large networks | Asynchronous (job ID + polling) |
+
+### Forbidden Patterns
+
+- Spawning Python per request
+- Running math inside TypeScript
+- Blocking API threads with long calculations
+- Duplicating formulas across languages
+
+---
+
+## Repository Structure (Authoritative)
+
+```
+process-engineering-suite/
+├─ apps/
+│  ├─ api/               # Orchestration API (TypeScript)
+│  ├─ design-agents/     # Design agent tooling (TypeScript)
+│  ├─ docs/              # Documentation site (TypeScript)
+│  ├─ network-editor/    # Network topology editor (TypeScript)
+│  ├─ psv/               # PSV workflow app (TypeScript)
+│  └─ web/               # Dashboard UI (TypeScript)
+│
+├─ services/
+│  └─ calc-engine/       # Engineering calculations (Python ONLY)
+│     ├─ hydraulics/      # Network hydraulics (Python)
+│     └─ pes_calc/        # PES calculation engine (Python)
+│
+├─ packages/
+│  ├─ api-client/        # API client SDKs (TypeScript)
+│  ├─ api-std/           # API standards and shared contracts (TypeScript)
+│  ├─ eslint-config/     # ESLint shared configuration
+│  ├─ physics-engine/    # Shared physics helpers (TypeScript)
+│  ├─ schemas/           # Schemas and contracts (TypeScript)
+│  ├─ tsconfig/          # Shared tsconfig presets
+│  ├─ typescript-config/ # TypeScript tooling defaults
+│  ├─ ui/                # Shared UI primitives (TypeScript)
+│  ├─ ui-kit/            # Shared UI components (TypeScript)
+│  ├─ utils/             # Shared utilities (TypeScript)
+│  └─ vessels/           # Vessel sizing (Python)
+│
+├─ docs/
+│  ├─ architecture/      # ADRs and diagrams
+│  └─ standards/         # Engineering standards references
+│
+├─ infra/                # Docker and deployment
+└─ AGENTS.md
+```
+
+---
+
+## Engineering Scope (Year-1)
+
+Excel calculators being replaced:
+
+- Hydraulics (single-phase via Network Editor, multi-phase via PES)
+- Restriction orifice sizing
+- Pump calculations
+- Control valve sizing
+- Vessel and tank sizing
+- 2-phase and 3-phase separators
+- API 2000 atmospheric / low-pressure tank venting
+
+**PSV sizing is handled by the PSV Suite and integrated, not re-implemented.**
+
+---
+
+## Build Commands
+
+**Always use `bun`. Never `npm` or `yarn`.**
+
+### Root Level (Monorepo)
+
+```bash
+bun turbo run build
+bun turbo run lint
+bun turbo run check-types
+bun run format
+bun turbo run dev --parallel
+```
+
+---
+
+### TypeScript / Next.js Apps
+
+```bash
+bun run build
+bun run dev
+bun run lint
+bun run check-types
+bun run test
+bun run test:run
+```
+
+---
+
+### Python Calculation Engine
+
+```bash
+ruff check .
+ruff format .
+mypy
+pytest
+pytest -v tests/test_specific.py
+```
+
+---
+
+## Code Style Guidelines
+
+### TypeScript
+
+- Named exports only (no default exports)
+- `const` by default, no `var`
+- Strict typing; avoid `any`
+- Explicit semicolons, single quotes
+- `===` / `!==` only
+- **No comments unless explicitly requested**
+
+### React / Next.js
+
+- Zustand for global state
+- Material UI (MUI) with `sx`
+- Use `@eng-suite/ui-kit` glass styles
+- iOS-style deferred commit inputs in Network Editor
+- Vitest + Testing Library
+
+---
+
+### Python
+
+- 4-space indentation, max 100 chars
+- Type annotations required for public APIs
+- No bare `except`
+- Docstrings required
+- **No comments unless explicitly requested**
+
+---
+
+## Testing Policy
+
+- Golden-case regression tests derived from Excel are mandatory
+- Numerical tolerance must be explicit
+- CI must fail if results change without a version bump
+- API records `calc_id`, `calc_version`, `schema_version` for every run
+
+---
+
+## Performance Standards (User-Perceived)
+
+- Most calculations: < 1 second
+- Complex cases: 1–3 seconds
+- Queueing acceptable
+- Deterministic results > speed
+
+---
+
+## Guidance for Automated Agents (Codex)
+
+When generating or modifying code:
+
+- Put engineering logic **only** in `services/calc-engine/`
+- Put UI, orchestration, persistence in `apps/` or `packages/`
+- Respect the worker execution model
+- Never introduce math into TypeScript
+- Never duplicate calculation logic
+
+Violations introduce latency, inconsistency, and loss of trust.
+
+---
+
+## Summary
+
+PES is an **engineering system**, not a spreadsheet replacement app.
+
+Correctness, traceability, scalability, and reproducibility take priority over convenience or development speed.

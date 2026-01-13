@@ -2,21 +2,23 @@
 
 ## Overview
 
-The PSV app now includes the `@eng-suite/vessels` package for accurate vessel wetted area calculations. This is primarily used for fire case scenarios in PSV sizing (API-521).
+The PSV app now uses the calc-engine vessel service for accurate wetted area calculations. This is primarily used for fire case scenarios in PSV sizing (API-521).
 
 ## Quick Start
 
-### Basic Import
+### API Usage
 
 ```typescript
-import { VerticalTorisphericalVessel } from '@eng-suite/vessels';
+import { calculateWettedArea } from '@/lib/vesselCalculations';
 
-// Create a vessel
-const vessel = new VerticalTorisphericalVessel(3.5, 10.0);
+const result = await calculateWettedArea({
+  vesselType: 'vertical-torispherical',
+  diameter: 3.5,
+  length: 10.0,
+  liquidLevel: 6.5
+});
 
-// Calculate wetted area at 6.5m liquid level
-const wettedArea = vessel.wettedArea(6.5);
-console.log(`Wetted area: ${wettedArea.toFixed(2)} m²`);
+console.log(`Wetted area: ${result.wettedArea.toFixed(2)} m²`);
 ```
 
 ### Using the Utility Function
@@ -24,7 +26,7 @@ console.log(`Wetted area: ${wettedArea.toFixed(2)} m²`);
 ```typescript
 import { calculateWettedArea } from '@/lib/vesselCalculations';
 
-const result = calculateWettedArea({
+const result = await calculateWettedArea({
   vesselType: 'vertical-torispherical',
   diameter: 3.5,
   length: 10.0,
@@ -44,7 +46,7 @@ For PSV fire sizing according to API-521:
 import { calculateFireExposureArea } from '@/lib/vesselCalculations';
 
 // Unprotected vessel
-const exposureArea = calculateFireExposureArea(
+const exposureArea = await calculateFireExposureArea(
   {
     vesselType: 'vertical-torispherical',
     diameter: 3.5,
@@ -93,8 +95,8 @@ In your fire case form, add fields for:
 import { calculateFireExposureArea } from '@/lib/vesselCalculations';
 
 // In your fire case calculation function
-function calculateFireRelief(scenario: FireCase) {
-  const wettedArea = calculateFireExposureArea(
+async function calculateFireRelief(scenario: FireCase) {
+  const wettedArea = await calculateFireExposureArea(
     {
       vesselType: scenario.vesselType,
       diameter: scenario.vesselDiameter,
@@ -265,6 +267,6 @@ console.log('✅ Vessel calculations working correctly');
 
 ## Need Help?
 
-- See full API docs in `packages/vessels-calc/README.md`
-- Check vessel class source in `packages/vessels-calc/src/vessels/`
+- Vessel geometry lives in `services/calc-engine/pes_calc/vessels/`
+- API endpoints: `POST /vessels/wetted-area`, `POST /vessels/fire-exposure`
 - Compare with Python implementation for validation

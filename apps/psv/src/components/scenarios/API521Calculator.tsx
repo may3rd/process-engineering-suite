@@ -66,12 +66,83 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
     const [localConfig, setLocalConfig] = useState(config);
     const [results, setResults] = useState<any>(null);
     const [errors, setErrors] = useState<string[]>([]);
+    const [quickWettedAreas, setQuickWettedAreas] = useState<Record<string, number | null>>({});
 
     const updateConfig = (updates: Partial<typeof config>) => {
         const newConfig = { ...localConfig, ...updates };
         setLocalConfig(newConfig);
         onChange(newConfig, results);
     };
+
+    useEffect(() => {
+        let isActive = true;
+
+        const loadQuickAreas = async () => {
+            const entries = await Promise.all(
+                equipment.map(async (eq) => {
+                    try {
+                        const details = eq.details as VesselDetails | TankDetails;
+                        if (!details) {
+                            return { id: eq.id, area: null };
+                        }
+
+                        const liquidLevelConfig = localConfig.liquidLevels.get(eq.id) || {
+                            value: 0,
+                            unit: 'm',
+                        };
+
+                        const liquidLevelValue = typeof liquidLevelConfig.value === 'string'
+                            ? parseFloat(liquidLevelConfig.value) || 0
+                            : liquidLevelConfig.value ?? 0;
+
+                        if (liquidLevelValue <= 0) {
+                            return { id: eq.id, area: null };
+                        }
+
+                        const liquidLevelM = convertUnit(
+                            liquidLevelValue,
+                            liquidLevelConfig.unit,
+                            'm'
+                        );
+
+                        const vesselType = getVesselType(eq, details);
+
+                        const wettedArea = await calculateFireExposureArea(
+                            {
+                                vesselType: vesselType as VesselCalculationInput['vesselType'],
+                                diameter: details.innerDiameter / 1000,
+                                length: 'tangentToTangentLength' in details
+                                    ? details.tangentToTangentLength / 1000
+                                    : details.height / 1000,
+                                liquidLevel: liquidLevelM,
+                            },
+                            details.insulated || false
+                        );
+
+                        return { id: eq.id, area: wettedArea };
+                    } catch {
+                        return { id: eq.id, area: null };
+                    }
+                })
+            );
+
+            if (!isActive) {
+                return;
+            }
+
+            const nextAreas: Record<string, number | null> = {};
+            entries.forEach((entry) => {
+                nextAreas[entry.id] = entry.area;
+            });
+            setQuickWettedAreas(nextAreas);
+        };
+
+        loadQuickAreas();
+
+        return () => {
+            isActive = false;
+        };
+    }, [equipment, localConfig.liquidLevels]);
 
     const handleCalculate = async () => {
         try {
@@ -131,7 +202,7 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
                 const vesselType = getVesselType(eq, details);
 
                 // Calculate wetted area
-                const wettedArea = calculateFireExposureArea(
+                const wettedArea = await calculateFireExposureArea(
                     {
                         vesselType: vesselType as VesselCalculationInput['vesselType'],
                         diameter: details.innerDiameter / 1000, // mm to m
@@ -194,7 +265,9 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
         const orientation = 'orientation' in details ? details.orientation : 'vertical';
         const headType = 'headType' in details ? details.headType : 'torispherical';
 
-        return `${orientation}-${headType}`;
+        const normalizedHead = headType === 'ellipsoidal' ? 'elliptical' : headType;
+
+        return `${orientation}-${normalizedHead}`;
     };
 
     return (
@@ -321,48 +394,7 @@ export function API521Calculator({ equipment, config, onChange }: API521Calculat
                             unit: 'm',
                         };
 
-                        // Calculate quick wetted area for real-time display
-                        const calculateQuickWettedArea = (): number | null => {
-                            try {
-                                const details = eq.details as VesselDetails | TankDetails;
-
-                                // Convert liquid level to number (treat empty/invalid as 0)
-                const liquidLevelValue = typeof liquidLevel.value === 'string'
-                    ? parseFloat(liquidLevel.value) || 0
-                    : liquidLevel.value ?? 0;
-
-                                if (!details || liquidLevelValue <= 0) return null;
-
-                                // Convert liquid level to meters
-                                const liquidLevelM = convertUnit(
-                                    liquidLevelValue,
-                                    liquidLevel.unit,
-                                    'm'
-                                );
-
-                                // Determine vessel type
-                                const vesselType = getVesselType(eq, details);
-
-                                // Calculate wetted area
-                                const wettedArea = calculateFireExposureArea(
-                                    {
-                                        vesselType: vesselType as VesselCalculationInput['vesselType'],
-                                        diameter: details.innerDiameter / 1000, // mm to m
-                                        length: 'tangentToTangentLength' in details
-                                            ? details.tangentToTangentLength / 1000
-                                            : details.height / 1000,
-                                        liquidLevel: liquidLevelM,
-                                    },
-                                    details.insulated || false
-                                );
-
-                                return wettedArea;
-                            } catch (error) {
-                                return null;
-                            }
-                        };
-
-                        const quickWettedArea = calculateQuickWettedArea();
+                        const quickWettedArea = quickWettedAreas[eq.id] ?? null;
 
                         return (
                             <Accordion key={eq.id} sx={{ mb: 1 }}>

@@ -22,9 +22,10 @@ RUN pip install --no-cache-dir -r requirements.txt
 # We expect the build context to be the repository root
 COPY apps/api /app/apps/api
 COPY packages /app/packages
+COPY services /app/services
 
-# Add /app to PYTHONPATH so "packages.hydraulics" is importable
-ENV PYTHONPATH=/app
+# Add /app and calc-engine hydraulics to PYTHONPATH
+ENV PYTHONPATH=/app:/app/services/calc-engine:/app/services/calc-engine/hydraulics
 
 # Expose port
 EXPOSE 8000

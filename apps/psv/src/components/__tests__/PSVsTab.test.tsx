@@ -7,6 +7,7 @@ import { useAuthStore } from "@/store/useAuthStore";
 import { usePagination } from "@/hooks/usePagination";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import { useProjectUnitSystem } from "@/lib/useProjectUnitSystem";
+import { getProjectUnits } from "@/lib/projectUnits";
 
 // Mock all dependencies
 vi.mock("@/store/usePsvStore");
@@ -26,9 +27,7 @@ vi.mock("@/lib/statusColors", () => ({
 
 // Mock project units
 vi.mock("@/lib/projectUnits", () => ({
-  formatPressureGauge: vi.fn(
-    (value, unitSystem, precision) => `${value} ${unitSystem.pressure}`,
-  ),
+  formatPressureGauge: vi.fn((value, unitSystem) => `${value} ${unitSystem}`),
 }));
 
 const createMockStore = (overrides = {}) => {
@@ -198,8 +197,8 @@ describe("PSVsTab", () => {
     });
 
     vi.mocked(useProjectUnitSystem).mockReturnValue({
-      unitSystem: { pressure: "psi", temperature: "°F", length: "ft" },
-      isLoading: false,
+      unitSystem: "imperial",
+      units: getProjectUnits("imperial"),
     });
 
     vi.mocked(usePagination).mockReturnValue({
