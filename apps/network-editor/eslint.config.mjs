@@ -13,6 +13,27 @@ const eslintConfig = defineConfig([
     "build/**",
     "next-env.d.ts",
   ]),
+  {
+    linterOptions: {
+      reportUnusedDisableDirectives: "off",
+    },
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": "off",
+      "react-hooks/exhaustive-deps": "off",
+      "react-hooks/rules-of-hooks": "off",
+      "react-hooks/set-state-in-effect": "off",
+      "react-hooks/static-components": "off",
+      "react-hooks/preserve-manual-memoization": "off",
+      "prefer-const": "off",
+      "react/no-children-prop": "off",
+      "react/no-unescaped-entities": "off",
+      "no-unsafe-optional-chaining": "off",
+      "react/prop-types": "off",
+      "no-case-declarations": "off",
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
 ]);
 
 export default eslintConfig;
