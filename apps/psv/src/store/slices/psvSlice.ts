@@ -189,14 +189,9 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
 
     softDeleteSizingCase: async (id) => {
         try {
-            const state = get();
-            const sizingCase = state.sizingCaseList.find(c => c.id === id);
-            if (!sizingCase) throw new Error('Sizing case not found');
-
-            await get().updateSizingCase({ ...sizingCase, isActive: false });
-            toast.success('Sizing case deactivated');
+            await get().deleteSizingCase(id);
         } catch (error) {
-            toast.error('Failed to deactivate sizing case');
+            toast.error('Failed to delete sizing case');
             throw error;
         }
     },
@@ -495,14 +490,9 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
 
     softDeleteScenario: async (id) => {
         try {
-            const state = get();
-            const scenario = state.scenarioList.find(s => s.id === id);
-            if (!scenario) throw new Error('Scenario not found');
-
-            await get().updateScenario({ ...scenario, isActive: false });
-            toast.success('Scenario deactivated');
+            await get().deleteScenario(id);
         } catch (error) {
-            toast.error('Failed to deactivate scenario');
+            toast.error('Failed to delete scenario');
             throw error;
         }
     },

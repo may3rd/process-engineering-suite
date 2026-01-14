@@ -107,6 +107,7 @@ export function ProtectiveSystemDetail() {
     scenarioList,
     sizingCaseList,
     deleteSizingCase,
+    softDeleteProtectiveSystem,
     getCurrentRevision,
     loadRevisionHistory,
     activeTab,
@@ -276,44 +277,9 @@ export function ProtectiveSystemDetail() {
     };
   }, []);
 
-  // If editing a case, show the workspace
-  if (editingCaseId) {
-    const caseToEdit = sizingCaseList.find((c) => c.id === editingCaseId);
-    if (caseToEdit) {
-      return (
-        <SizingWorkspace
-          sizingCase={caseToEdit}
-          inletNetwork={selectedPsv?.inletNetwork}
-          outletNetwork={selectedPsv?.outletNetwork}
-          psvSetPressure={selectedPsv?.setPressure || 0}
-          onClose={() => setEditingCaseId(null)}
-          onSave={(updated, context) => {
-            updateSizingCase(updated);
-            if (context?.networkChanged && selectedPsv) {
-              sizingCaseList
-                .filter((c) => c.id !== updated.id && c.status !== "draft")
-                .forEach((c) => updateSizingCase({ ...c, status: "draft" }));
-            }
-            setEditingCaseId(null);
-          }}
-          onSaveNetworks={(updatedInlet, updatedOutlet) => {
-            if (selectedPsv) {
-              updatePsv({
-                ...selectedPsv,
-                inletNetwork: updatedInlet,
-                outletNetwork: updatedOutlet,
-              });
-            }
-          }}
-          psvTag={selectedPsv?.tag}
-          onDelete={() => {
-            deleteSizingCase(caseToEdit.id);
-            setEditingCaseId(null);
-          }}
-        />
-      );
-    }
-  }
+  const caseToEdit = editingCaseId
+    ? sizingCaseList.find((c) => c.id === editingCaseId)
+    : undefined;
 
   const handleEditClick = useCallback(() => {
     if (selectedPsv) {
@@ -341,15 +307,14 @@ export function ProtectiveSystemDetail() {
   const handleConfirmDelete = useCallback(async () => {
     if (selectedPsv) {
       try {
-        const { deletePsv } = usePsvStore.getState();
-        await deletePsv(selectedPsv.id);
+        await softDeleteProtectiveSystem(selectedPsv.id);
         selectPsv(null);
       } catch (error) {
         console.error("Failed to delete PSV:", error);
       }
       setDeleteDialogOpen(false);
     }
-  }, [selectedPsv, selectPsv, setDeleteDialogOpen]);
+  }, [selectedPsv, selectPsv, setDeleteDialogOpen, softDeleteProtectiveSystem]);
 
   const handleForceDelete = useCallback(async () => {
     if (selectedPsv && deleteConfirmationInput === selectedPsv.tag) {
@@ -388,6 +353,39 @@ export function ProtectiveSystemDetail() {
 
   if (!selectedPsv) {
     return null;
+  }
+
+  if (editingCaseId && caseToEdit) {
+    return (
+      <SizingWorkspace
+        sizingCase={caseToEdit}
+        inletNetwork={selectedPsv.inletNetwork}
+        outletNetwork={selectedPsv.outletNetwork}
+        psvSetPressure={selectedPsv.setPressure || 0}
+        onClose={() => setEditingCaseId(null)}
+        onSave={(updated, context) => {
+          updateSizingCase(updated);
+          if (context?.networkChanged) {
+            sizingCaseList
+              .filter((c) => c.id !== updated.id && c.status !== "draft")
+              .forEach((c) => updateSizingCase({ ...c, status: "draft" }));
+          }
+          setEditingCaseId(null);
+        }}
+        onSaveNetworks={(updatedInlet, updatedOutlet) => {
+          updatePsv({
+            ...selectedPsv,
+            inletNetwork: updatedInlet,
+            outletNetwork: updatedOutlet,
+          });
+        }}
+        psvTag={selectedPsv.tag}
+        onDelete={() => {
+          deleteSizingCase(caseToEdit.id);
+          setEditingCaseId(null);
+        }}
+      />
+    );
   }
 
   const getStatusIcon = (status: string) => {

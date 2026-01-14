@@ -134,18 +134,23 @@ export function AreasTab() {
   const [sortConfig, setSortConfig] = useState<SortConfig<SortKey> | null>(
     null,
   );
+  const isParentInactive = selectedUnit?.status === 'inactive';
+  const canAddArea = canEdit && !isParentInactive;
 
   const handleAdd = () => {
+    if (isParentInactive) return;
     setSelectedArea(null);
     setDialogOpen(true);
   };
 
   const handleEdit = (area: Area) => {
+    if (area.status !== 'active') return;
     setSelectedArea(area);
     setDialogOpen(true);
   };
 
   const handleDelete = (area: Area) => {
+    if (area.status !== 'active') return;
     setAreaToDelete(area);
     setDeleteDialogOpen(true);
   };
@@ -352,27 +357,36 @@ export function AreasTab() {
           <Typography variant="h5" fontWeight={600}>
             {headingTitle}
           </Typography>
+          {selectedUnit?.status === 'inactive' && (
+            <Chip label="Inactive" size="small" variant="outlined" />
+          )}
         </Box>
         {canEdit && (
           <>
-            {/* Desktop: Full button with text */}
             <Button
               variant="contained"
               startIcon={<Add />}
               onClick={handleAdd}
+              disabled={!canAddArea}
               sx={{ display: { xs: "none", sm: "flex" } }}
             >
               Add New Area
             </Button>
-            {/* Mobile: Icon only */}
-            <Tooltip title="Add New Area">
+            <Tooltip
+              title={
+                canAddArea ? "Add New Area" : "Activate unit to add areas"
+              }
+            >
               <IconButton
                 onClick={handleAdd}
+                disabled={!canAddArea}
                 sx={{
                   display: { xs: "flex", sm: "none" },
-                  bgcolor: "primary.main",
-                  color: "white",
-                  "&:hover": { bgcolor: "primary.dark" },
+                  bgcolor: canAddArea
+                    ? "primary.main"
+                    : "action.disabledBackground",
+                  color: canAddArea ? "white" : "text.disabled",
+                  "&:hover": canAddArea ? { bgcolor: "primary.dark" } : {},
                 }}
               >
                 <Add />
@@ -604,20 +618,32 @@ export function AreasTab() {
                   <CardActions
                     sx={{ justifyContent: "flex-end", pt: 0, px: 2, pb: 1.5 }}
                   >
-                    <Tooltip title="Edit">
+                    <Tooltip
+                      title={
+                        area.status === 'active' ? 'Edit' : 'Activate to edit'
+                      }
+                    >
                       <IconButton
                         size="medium"
                         onClick={() => handleEdit(area)}
+                        disabled={area.status !== 'active'}
                         sx={{ color: "primary.main" }}
                       >
                         <Edit fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Delete">
+                    <Tooltip
+                      title={
+                        area.status === 'active'
+                          ? 'Deactivate'
+                          : 'Activate to edit'
+                      }
+                    >
                       <IconButton
                         size="medium"
                         color="error"
                         onClick={() => handleDelete(area)}
+                        disabled={area.status !== 'active'}
                       >
                         <Delete fontSize="small" />
                       </IconButton>
@@ -746,19 +772,33 @@ export function AreasTab() {
                       <TableCell align="right">
                         {canEdit && (
                           <>
-                            <Tooltip title="Edit">
+                            <Tooltip
+                              title={
+                                area.status === 'active'
+                                  ? 'Edit'
+                                  : 'Activate to edit'
+                              }
+                            >
                               <IconButton
                                 size="small"
                                 onClick={() => handleEdit(area)}
+                                disabled={area.status !== 'active'}
                               >
                                 <Edit fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="Delete">
+                            <Tooltip
+                              title={
+                                area.status === 'active'
+                                  ? 'Deactivate'
+                                  : 'Activate to edit'
+                              }
+                            >
                               <IconButton
                                 size="small"
                                 color="error"
                                 onClick={() => handleDelete(area)}
+                                disabled={area.status !== 'active'}
                               >
                                 <Delete fontSize="small" />
                               </IconButton>

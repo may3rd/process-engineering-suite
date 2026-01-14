@@ -117,18 +117,23 @@ export function ProjectsTab() {
   const [sortConfig, setSortConfig] = useState<SortConfig<SortKey> | null>(
     null,
   );
+  const isParentInactive = selectedArea?.status === "inactive";
+  const canAddProject = canEdit && !isParentInactive;
 
   const handleAdd = () => {
+    if (isParentInactive) return;
     setSelectedProject(null);
     setDialogOpen(true);
   };
 
   const handleEdit = (project: Project) => {
+    if (!project.isActive) return;
     setSelectedProject(project);
     setDialogOpen(true);
   };
 
   const handleDelete = (project: Project) => {
+    if (!project.isActive) return;
     setProjectToDelete(project);
     setDeleteDialogOpen(true);
   };
@@ -345,25 +350,40 @@ export function ProjectsTab() {
           <Typography variant="h5" fontWeight={600}>
             {headingTitle}
           </Typography>
+          {selectedArea?.status === "inactive" && (
+            <Chip label="Inactive" size="small" variant="outlined" />
+          )}
         </Box>
         {canEdit &&
           (isMobile ? (
-            /* Mobile: Icon only */
-            <Tooltip title="Add New Project">
+            <Tooltip
+              title={
+                canAddProject
+                  ? "Add New Project"
+                  : "Activate area to add projects"
+              }
+            >
               <IconButton
                 onClick={handleAdd}
+                disabled={!canAddProject}
                 sx={{
-                  bgcolor: "primary.main",
-                  color: "white",
-                  "&:hover": { bgcolor: "primary.dark" },
+                  bgcolor: canAddProject
+                    ? "primary.main"
+                    : "action.disabledBackground",
+                  color: canAddProject ? "white" : "text.disabled",
+                  "&:hover": canAddProject ? { bgcolor: "primary.dark" } : {},
                 }}
               >
                 <Add />
               </IconButton>
             </Tooltip>
           ) : (
-            /* Desktop: Full button with text */
-            <Button variant="contained" startIcon={<Add />} onClick={handleAdd}>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={handleAdd}
+              disabled={!canAddProject}
+            >
               Add New Project
             </Button>
           ))}
@@ -602,20 +622,30 @@ export function ProjectsTab() {
                   <CardActions
                     sx={{ justifyContent: "flex-end", pt: 0, px: 2, pb: 1.5 }}
                   >
-                    <Tooltip title="Edit">
+                    <Tooltip
+                      title={
+                        project.isActive ? "Edit" : "Activate to edit"
+                      }
+                    >
                       <IconButton
                         size="medium"
                         onClick={() => handleEdit(project)}
+                        disabled={!project.isActive}
                         sx={{ color: "primary.main" }}
                       >
                         <Edit fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Delete">
+                    <Tooltip
+                      title={
+                        project.isActive ? "Deactivate" : "Activate to edit"
+                      }
+                    >
                       <IconButton
                         size="medium"
                         color="error"
                         onClick={() => handleDelete(project)}
+                        disabled={!project.isActive}
                       >
                         <Delete fontSize="small" />
                       </IconButton>
@@ -763,19 +793,31 @@ export function ProjectsTab() {
                       <TableCell align="right">
                         {canEdit && (
                           <>
-                            <Tooltip title="Edit">
+                            <Tooltip
+                              title={
+                                project.isActive ? "Edit" : "Activate to edit"
+                              }
+                            >
                               <IconButton
                                 size="small"
                                 onClick={() => handleEdit(project)}
+                                disabled={!project.isActive}
                               >
                                 <Edit fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="Delete">
+                            <Tooltip
+                              title={
+                                project.isActive
+                                  ? "Deactivate"
+                                  : "Activate to edit"
+                              }
+                            >
                               <IconButton
                                 size="small"
                                 color="error"
                                 onClick={() => handleDelete(project)}
+                                disabled={!project.isActive}
                               >
                                 <Delete fontSize="small" />
                               </IconButton>

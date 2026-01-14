@@ -100,11 +100,13 @@ export function CustomersTab() {
   };
 
   const handleEdit = (customer: Customer) => {
+    if (customer.status !== "active") return;
     setSelectedCustomer(customer);
     setDialogOpen(true);
   };
 
   const handleDelete = (customer: Customer) => {
+    if (customer.status !== "active") return;
     setCustomerToDelete(customer);
     setDeleteDialogOpen(true);
   };
@@ -576,20 +578,34 @@ export function CustomersTab() {
                   <CardActions
                     sx={{ justifyContent: "flex-end", pt: 0, px: 2, pb: 1.5 }}
                   >
-                    <Tooltip title="Edit">
+                    <Tooltip
+                      title={
+                        customer.status === "active"
+                          ? "Edit"
+                          : "Activate to edit"
+                      }
+                    >
                       <IconButton
                         size="medium"
                         onClick={() => handleEdit(customer)}
+                        disabled={customer.status !== "active"}
                         sx={{ color: "primary.main" }}
                       >
                         <Edit fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Delete">
+                    <Tooltip
+                      title={
+                        customer.status === "active"
+                          ? "Deactivate"
+                          : "Activate to edit"
+                      }
+                    >
                       <IconButton
                         size="medium"
                         color="error"
                         onClick={() => handleDelete(customer)}
+                        disabled={customer.status !== "active"}
                       >
                         <Delete fontSize="small" />
                       </IconButton>
@@ -714,19 +730,33 @@ export function CustomersTab() {
                       <TableCell align="right">
                         {canEdit && (
                           <>
-                            <Tooltip title="Edit">
+                            <Tooltip
+                              title={
+                                customer.status === "active"
+                                  ? "Edit"
+                                  : "Activate to edit"
+                              }
+                            >
                               <IconButton
                                 size="small"
                                 onClick={() => handleEdit(customer)}
+                                disabled={customer.status !== "active"}
                               >
                                 <Edit fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="Delete">
+                            <Tooltip
+                              title={
+                                customer.status === "active"
+                                  ? "Deactivate"
+                                  : "Activate to edit"
+                              }
+                            >
                               <IconButton
                                 size="small"
                                 color="error"
                                 onClick={() => handleDelete(customer)}
+                                disabled={customer.status !== "active"}
                               >
                                 <Delete fontSize="small" />
                               </IconButton>

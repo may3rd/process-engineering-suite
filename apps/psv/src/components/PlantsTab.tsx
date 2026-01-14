@@ -110,18 +110,23 @@ export function PlantsTab() {
   const [sortConfig, setSortConfig] = useState<SortConfig<SortKey> | null>(
     null,
   );
+  const isParentInactive = selectedCustomer?.status === "inactive";
+  const canAddPlant = canEdit && !isParentInactive;
 
   const handleAdd = () => {
+    if (isParentInactive) return;
     setSelectedPlant(null);
     setDialogOpen(true);
   };
 
   const handleEdit = (plant: Plant) => {
+    if (plant.status !== "active") return;
     setSelectedPlant(plant);
     setDialogOpen(true);
   };
 
   const handleDelete = (plant: Plant) => {
+    if (plant.status !== "active") return;
     setPlantToDelete(plant);
     setDeleteDialogOpen(true);
   };
@@ -343,17 +348,29 @@ export function PlantsTab() {
           <Typography variant="h5" fontWeight={600}>
             {headingTitle}
           </Typography>
+          {selectedCustomer?.status === "inactive" && (
+            <Chip label="Inactive" size="small" variant="outlined" />
+          )}
         </Box>
         {canEdit &&
           (isMobile ? (
             /* Mobile: Icon only */
-            <Tooltip title="Add New Plant">
+            <Tooltip
+              title={
+                canAddPlant
+                  ? "Add New Plant"
+                  : "Activate customer to add plants"
+              }
+            >
               <IconButton
                 onClick={handleAdd}
+                disabled={!canAddPlant}
                 sx={{
-                  bgcolor: "primary.main",
-                  color: "white",
-                  "&:hover": { bgcolor: "primary.dark" },
+                  bgcolor: canAddPlant
+                    ? "primary.main"
+                    : "action.disabledBackground",
+                  color: canAddPlant ? "white" : "text.disabled",
+                  "&:hover": canAddPlant ? { bgcolor: "primary.dark" } : {},
                 }}
               >
                 <Add />
@@ -361,7 +378,12 @@ export function PlantsTab() {
             </Tooltip>
           ) : (
             /* Desktop: Full button with text */
-            <Button variant="contained" startIcon={<Add />} onClick={handleAdd}>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={handleAdd}
+              disabled={!canAddPlant}
+            >
               Add New Plant
             </Button>
           ))}
@@ -584,20 +606,34 @@ export function PlantsTab() {
                   <CardActions
                     sx={{ justifyContent: "flex-end", pt: 0, px: 2, pb: 1.5 }}
                   >
-                    <Tooltip title="Edit">
+                    <Tooltip
+                      title={
+                        plant.status === "active"
+                          ? "Edit"
+                          : "Activate to edit"
+                      }
+                    >
                       <IconButton
                         size="medium"
                         onClick={() => handleEdit(plant)}
+                        disabled={plant.status !== "active"}
                         sx={{ color: "primary.main" }}
                       >
                         <Edit fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Delete">
+                    <Tooltip
+                      title={
+                        plant.status === "active"
+                          ? "Deactivate"
+                          : "Activate to edit"
+                      }
+                    >
                       <IconButton
                         size="medium"
                         color="error"
                         onClick={() => handleDelete(plant)}
+                        disabled={plant.status !== "active"}
                       >
                         <Delete fontSize="small" />
                       </IconButton>
@@ -731,19 +767,33 @@ export function PlantsTab() {
                       <TableCell align="right">
                         {canEdit && (
                           <>
-                            <Tooltip title="Edit">
+                            <Tooltip
+                              title={
+                                plant.status === "active"
+                                  ? "Edit"
+                                  : "Activate to edit"
+                              }
+                            >
                               <IconButton
                                 size="small"
                                 onClick={() => handleEdit(plant)}
+                                disabled={plant.status !== "active"}
                               >
                                 <Edit fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="Delete">
+                            <Tooltip
+                              title={
+                                plant.status === "active"
+                                  ? "Deactivate"
+                                  : "Activate to edit"
+                              }
+                            >
                               <IconButton
                                 size="small"
                                 color="error"
                                 onClick={() => handleDelete(plant)}
+                                disabled={plant.status !== "active"}
                               >
                                 <Delete fontSize="small" />
                               </IconButton>

@@ -210,7 +210,7 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
                 massFlowRate: scenario.relievingRate,
                 molecularWeight: 28,
                 temperature: scenario.relievingTemp,
-                pressure: selectedPsv.setPressure * (1 + (scenario.accumulationPct / 100)),
+                pressure: scenario.relievingPressure,
                 compressibilityZ: 1.0,
                 specificHeatRatio: 1.4,
                 backpressure: 0,
@@ -307,8 +307,9 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
 
             {(() => {
                 const governingScenario = scenarioList.find(s => s.isGoverning);
+                const sizedStatuses: SizingCase['status'][] = ['calculated', 'verified', 'approved'];
                 const governingSizingCase = governingScenario
-                    ? sizingCaseList.find(c => c.scenarioId === governingScenario.id && c.status === 'calculated')
+                    ? sizingCaseList.find(c => c.scenarioId === governingScenario.id && sizedStatuses.includes(c.status))
                     : null;
                 const governingNotSized = governingScenario && !governingSizingCase;
 
@@ -378,16 +379,25 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
 
             {sortedSizingCases.length > 0 ? (
                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    {sortedSizingCases.map((sizing) => (
-                        <Card key={sizing.id}>
-                            <CardContent>
+                    {sortedSizingCases.map((sizing) => {
+                        const scenario = scenarioList.find(s => s.id === sizing.scenarioId);
+                        const relievingPressure = scenario?.relievingPressure ?? sizing.inputs.pressure;
+                        const setPressure = sizing.inputs.setPressure ?? scenario?.setPressure ?? selectedPsv.setPressure;
+                        const accumulationPercent = scenario?.accumulationPct ??
+                            (setPressure && relievingPressure
+                                ? ((relievingPressure - setPressure) / setPressure) * 100
+                                : undefined);
+
+                        return (
+                            <Card key={sizing.id}>
+                                <CardContent>
                                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                                     <Box>
                                         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                             <Typography variant="h6" fontWeight={600}>
                                                 {getScenarioName(sizing.scenarioId)}
                                             </Typography>
-                                            {scenarioList.find(s => s.id === sizing.scenarioId)?.isGoverning && (
+                                            {scenario?.isGoverning && (
                                                 <Chip
                                                     icon={<Star sx={{ fontSize: 14 }} />}
                                                     label="Governing"
@@ -456,41 +466,25 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
                                                 </Typography>
                                             </Box>
                                             <Box>
-                                                <Typography variant="caption" color="text.secondary">MW</Typography>
-                                                <Typography variant="body2" fontWeight={500}>{sizing.inputs.molecularWeight}</Typography>
-                                            </Box>
-                                            <Box>
                                                 <Typography variant="caption" color="text.secondary">Temperature</Typography>
                                                 <Typography variant="body2" fontWeight={500}>
                                                     {formatTemperatureC(sizing.inputs.temperature, unitSystem, 1)}
                                                 </Typography>
                                             </Box>
                                             <Box>
-                                                <Typography variant="caption" color="text.secondary">Pressure</Typography>
+                                                <Typography variant="caption" color="text.secondary">Accumulation</Typography>
                                                 <Typography variant="body2" fontWeight={500}>
-                                                    {formatPressureGauge(sizing.inputs.pressure, unitSystem, 2)}
+                                                    {accumulationPercent !== undefined
+                                                        ? `${accumulationPercent.toFixed(1)}%`
+                                                        : '-'}
                                                 </Typography>
                                             </Box>
                                             <Box>
-                                                <Typography variant="caption" color="text.secondary">Z Factor</Typography>
-                                                <Typography variant="body2" fontWeight={500}>{sizing.inputs?.compressibilityZ ?? '-'}</Typography>
-                                            </Box>
-                                            <Box>
-                                                <Typography variant="caption" color="text.secondary">k (Cp/Cv)</Typography>
-                                                <Typography variant="body2" fontWeight={500}>{sizing.inputs?.specificHeatRatio ?? '-'}</Typography>
-                                            </Box>
-                                            <Box>
-                                                <Typography variant="caption" color="text.secondary">Backpressure</Typography>
+                                                <Typography variant="caption" color="text.secondary">Relieving Pressure</Typography>
                                                 <Typography variant="body2" fontWeight={500}>
-                                                    {typeof sizing.inputs?.backpressure === 'number'
-                                                        ? formatPressureGauge(sizing.inputs.backpressure, unitSystem, 3)
-                                                        : (sizing.inputs?.backpressure ?? '-')}
-                                                </Typography>
-                                            </Box>
-                                            <Box>
-                                                <Typography variant="caption" color="text.secondary">BP Type</Typography>
-                                                <Typography variant="body2" fontWeight={500} sx={{ textTransform: 'capitalize' }}>
-                                                    {sizing.inputs?.backpressureType?.replace('_', ' ') ?? '-'}
+                                                    {relievingPressure !== undefined
+                                                        ? formatPressureGauge(relievingPressure, unitSystem, 2)
+                                                        : '-'}
                                                 </Typography>
                                             </Box>
                                         </Box>
@@ -589,9 +583,10 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
                                         </List>
                                     </Box>
                                 )}
-                            </CardContent>
-                        </Card>
-                    ))}
+                                </CardContent>
+                            </Card>
+                        );
+                    })}
                     <Menu
                         anchorEl={statusMenu?.anchorEl}
                         open={Boolean(statusMenu)}

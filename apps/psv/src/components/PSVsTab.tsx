@@ -37,6 +37,7 @@ import {
   Bolt,
   AssignmentTurnedIn,
   Block,
+  CheckCircle,
 } from "@mui/icons-material";
 import { areas, units, users } from "@/data/mockData";
 import { ProtectiveSystem } from "@/data/types";
@@ -66,6 +67,7 @@ export function PSVsTab() {
   const canEdit = useAuthStore((state) => state.canEdit());
   const canApprove = useAuthStore((state) => state.canApprove());
   const { unitSystem } = useProjectUnitSystem();
+  const selectedArea = usePsvStore((state) => state.selectedArea);
   const {
     addProtectiveSystem,
     updateProtectiveSystem,
@@ -91,7 +93,8 @@ export function PSVsTab() {
   const [searchText, setSearchText] = useState("");
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "inactive"
-  >("active");
+  >("all");
+  const canAddPsv = canEdit && selectedArea?.status !== "inactive";
   type SortKey =
     | "tag"
     | "area"
@@ -105,11 +108,13 @@ export function PSVsTab() {
   );
 
   const handleAdd = () => {
+    if (!canAddPsv) return;
     setSelectedPSV(null);
     setDialogOpen(true);
   };
 
   const handleEdit = (psv: ProtectiveSystem) => {
+    if (!psv.isActive) return;
     setSelectedPSV(psv);
     setDialogOpen(true);
   };
@@ -333,25 +338,38 @@ export function PSVsTab() {
           <Typography variant="h5" fontWeight={600}>
             PSVs & Protective Devices
           </Typography>
+          {selectedArea?.status === "inactive" && (
+            <Chip label="Inactive" size="small" variant="outlined" />
+          )}
         </Box>
         {canEdit &&
           (isMobile ? (
-            /* Mobile: Icon only */
-            <Tooltip title="Add New PSV">
+            <Tooltip
+              title={
+                canAddPsv ? "Add New PSV" : "Activate area to add PSVs"
+              }
+            >
               <IconButton
                 onClick={handleAdd}
+                disabled={!canAddPsv}
                 sx={{
-                  bgcolor: "primary.main",
-                  color: "white",
-                  "&:hover": { bgcolor: "primary.dark" },
+                  bgcolor: canAddPsv
+                    ? "primary.main"
+                    : "action.disabledBackground",
+                  color: canAddPsv ? "white" : "text.disabled",
+                  "&:hover": canAddPsv ? { bgcolor: "primary.dark" } : {},
                 }}
               >
                 <Add />
               </IconButton>
             </Tooltip>
           ) : (
-            /* Desktop: Full button with text */
-            <Button variant="contained" startIcon={<Add />} onClick={handleAdd}>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={handleAdd}
+              disabled={!canAddPsv}
+            >
               Add New PSV
             </Button>
           ))}
@@ -463,7 +481,13 @@ export function PSVsTab() {
             const owner = users.find((u) => u.id === psv.ownerId);
 
             return (
-              <Card key={psv.id} sx={{ ...glassCardStyles }}>
+              <Card
+                key={psv.id}
+                sx={{
+                  ...glassCardStyles,
+                  opacity: psv.isActive ? 1 : 0.55,
+                }}
+              >
                 <CardContent sx={{ pb: 1 }}>
                   {/* Tag and Status */}
                   <Box
@@ -590,22 +614,23 @@ export function PSVsTab() {
                   <CardActions
                     sx={{ justifyContent: "flex-end", pt: 0, px: 2, pb: 1.5 }}
                   >
-                    <Tooltip title="Edit">
+                    <Tooltip title={psv.isActive ? "Edit" : "Activate to edit"}>
                       <IconButton
                         size="medium"
                         onClick={() => handleEdit(psv)}
+                        disabled={!psv.isActive}
                         sx={{ color: "primary.main" }}
                       >
                         <Edit fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Delete">
+                    <Tooltip title={psv.isActive ? "Deactivate" : "Activate"}>
                       <IconButton
                         size="medium"
-                        color="error"
-                        onClick={() => handleDelete(psv)}
+                        color={psv.isActive ? "error" : "success"}
+                        onClick={() => handleToggleStatus(psv)}
                       >
-                        <Delete fontSize="small" />
+                        {psv.isActive ? <Delete fontSize="small" /> : <CheckCircle fontSize="small" />}
                       </IconButton>
                     </Tooltip>
                   </CardActions>
@@ -681,6 +706,7 @@ export function PSVsTab() {
                       key={psv.id}
                       hover
                       sx={{
+                        opacity: psv.isActive ? 1 : 0.5,
                         "&:last-child td": {
                           borderBottom: 0,
                         },
@@ -744,21 +770,22 @@ export function PSVsTab() {
                       <TableCell align="right">
                         {canEdit && (
                           <>
-                            <Tooltip title="Edit">
+                            <Tooltip title={psv.isActive ? "Edit" : "Activate to edit"}>
                               <IconButton
                                 size="small"
                                 onClick={() => handleEdit(psv)}
+                                disabled={!psv.isActive}
                               >
                                 <Edit fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="Delete">
+                            <Tooltip title={psv.isActive ? "Deactivate" : "Activate"}>
                               <IconButton
                                 size="small"
-                                color="error"
-                                onClick={() => handleDelete(psv)}
+                                color={psv.isActive ? "error" : "success"}
+                                onClick={() => handleToggleStatus(psv)}
                               >
-                                <Delete fontSize="small" />
+                                {psv.isActive ? <Delete fontSize="small" /> : <CheckCircle fontSize="small" />}
                               </IconButton>
                             </Tooltip>
                           </>

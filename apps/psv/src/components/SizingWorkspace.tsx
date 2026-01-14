@@ -999,339 +999,320 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                             Enter the fluid properties and operating conditions for this sizing case.
                         </Typography>
 
-                        {/* Flow Conditions */}
                         <Card sx={glassCardStyles}>
-                            <CardContent>
-                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                    Flow Conditions
-                                </Typography>
-                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-                                    <UnitSelector
-                                        label="Mass Flow Rate"
-                                        value={currentCase.inputs.massFlowRate !== undefined ? toDisplay(currentCase.inputs.massFlowRate, 'flow') : null}
-                                        unit={preferences.flow}
-                                        availableUnits={FLOW_UNITS}
-                                        onChange={(val, unit) => {
-                                            if (unit !== preferences.flow) {
-                                                setUnit('flow', unit);
-                                            }
-                                            // val is in DISPLAY units. handleInputChange handles conversion to base.
-                                            // BUT handleInputChange expects a raw value and manual unit handling for non-string
-                                            // Let's reuse handleInputChange logic but be careful about the type
-                                            handleInputChange('massFlowRate', val !== null ? val : '', 'flow', unit);
-                                        }}
-                                    />
-                                    <TextField
-                                        label="Sizing Method"
-                                        select
-                                        value={currentCase.method}
-                                        onChange={(e) => {
-                                            setCurrentCase({ ...currentCase, method: e.target.value as SizingCase['method'] });
-                                            setIsDirty(true);
-                                            setIsCalculated(false);
-                                        }}
-                                        fullWidth
-                                    >
-                                        <MenuItem value="gas">Gas / Vapor</MenuItem>
-                                        <MenuItem value="liquid">Liquid</MenuItem>
-                                        <MenuItem value="steam">Steam</MenuItem>
-                                        <MenuItem value="two_phase">Two-Phase</MenuItem>
-                                    </TextField>
-                                </Box>
+                            <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                                    <Box>
+                                        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                            Flow Conditions
+                                        </Typography>
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                                            <UnitSelector
+                                                label="Mass Flow Rate"
+                                                value={currentCase.inputs.massFlowRate !== undefined ? toDisplay(currentCase.inputs.massFlowRate, 'flow') : null}
+                                                unit={preferences.flow}
+                                                availableUnits={FLOW_UNITS}
+                                                onChange={(val, unit) => {
+                                                    if (unit !== preferences.flow) {
+                                                        setUnit('flow', unit);
+                                                    }
+                                                    handleInputChange('massFlowRate', val !== null ? val : '', 'flow', unit);
+                                                }}
+                                            />
+                                            <TextField
+                                                label="Sizing Method"
+                                                select
+                                                value={currentCase.method}
+                                                onChange={(e) => {
+                                                    setCurrentCase({ ...currentCase, method: e.target.value as SizingCase['method'] });
+                                                    setIsDirty(true);
+                                                    setIsCalculated(false);
+                                                }}
+                                                fullWidth
+                                            >
+                                                <MenuItem value="gas">Gas / Vapor</MenuItem>
+                                                <MenuItem value="liquid">Liquid</MenuItem>
+                                                <MenuItem value="steam">Steam</MenuItem>
+                                                <MenuItem value="two_phase">Two-Phase</MenuItem>
+                                            </TextField>
+                                        </Box>
 
-                                {/* Vapor Fraction - only for two-phase */}
-                                {currentCase.method === 'two_phase' && (
-                                    <Box sx={{ mt: 2 }}>
-                                        <NumericInput
-                                            label="Vapor Mass Fraction"
-                                            value={currentCase.inputs.vaporFraction !== undefined ? currentCase.inputs.vaporFraction * 100 : undefined}
-                                            onChange={(val) => handleInputChange('vaporFraction', val !== undefined ? val / 100 : '', undefined)}
-                                            min={0}
-                                            max={100}
-                                            endAdornment="%"
-                                            helperText="Percentage of vapor by mass (0-100%)"
-                                        />
-                                    </Box>
-                                )}
-                            </CardContent>
-                        </Card>
-
-                        {/* Pressure & Temperature */}
-                        <Card sx={glassCardStyles}>
-                            <CardContent>
-                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                    Pressure & Temperature
-                                </Typography>
-                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-                                    <UnitSelector
-                                        label="Relieving Pressure"
-                                        value={toDisplay(currentCase.inputs.pressure, 'pressure')}
-                                        unit={preferences.pressure}
-                                        availableUnits={PRESSURE_UNITS}
-                                        onChange={(val, unit) => {
-                                            if (unit !== preferences.pressure) setUnit('pressure', unit);
-                                            handleInputChange('pressure', val !== null ? val : '', 'pressure', unit);
-                                        }}
-                                    />
-                                    <UnitSelector
-                                        label="Relieving Temperature"
-                                        value={toDisplay(currentCase.inputs.temperature, 'temperature')}
-                                        unit={preferences.temperature}
-                                        availableUnits={TEMPERATURE_UNITS}
-                                        onChange={(val, unit) => {
-                                            if (unit !== preferences.temperature) setUnit('temperature', unit);
-                                            handleInputChange('temperature', val !== null ? val : '', 'temperature', unit);
-                                        }}
-                                    />
-                                </Box>
-                            </CardContent>
-                        </Card>
-
-
-                        {/* Gas Phase Properties */}
-                        {(currentCase.method === 'gas' || currentCase.method === 'steam' || currentCase.method === 'two_phase') && (
-                            <Card sx={glassCardStyles}>
-                                <CardContent>
-                                    <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                        Gas/Vapor Phase Properties
-                                    </Typography>
-                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
-                                        <NumericInput
-                                            label="Molecular Weight"
-                                            value={currentCase.inputs.molecularWeight}
-                                            onChange={(val) => handleInputChange('molecularWeight', val !== undefined ? val : '')}
-                                            endAdornment="g/mol"
-                                        />
-                                        <NumericInput
-                                            label="Compressibility (Z)"
-                                            value={currentCase.inputs.compressibilityZ}
-                                            onChange={(val) => handleInputChange('compressibilityZ', val !== undefined ? val : '')}
-                                            step={0.01}
-                                            min={0}
-                                            max={2}
-                                        />
-                                        <NumericInput
-                                            label="Specific Heat Ratio (k)"
-                                            value={currentCase.inputs.specificHeatRatio}
-                                            onChange={(val) => handleInputChange('specificHeatRatio', val !== undefined ? val : '')}
-                                            step={0.01}
-                                            min={1}
-                                            max={2}
-                                        />
-                                    </Box>
-                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mt: 2 }}>
-                                        <UnitSelector
-                                            label="Gas Viscosity"
-                                            value={toDisplay(currentCase.inputs.gasViscosity || currentCase.inputs.viscosity, 'viscosity')}
-                                            unit={preferences.viscosity}
-                                            availableUnits={VISCOSITY_UNITS}
-                                            onChange={(val, unit) => {
-                                                if (unit !== preferences.viscosity) setUnit('viscosity', unit);
-                                                handleInputChange('gasViscosity', val !== null ? val : '', 'viscosity', unit);
-                                            }}
-                                        />
-                                        <Box /> {/* Empty space */}
-                                    </Box>
-                                </CardContent>
-                            </Card>
-                        )}
-
-                        {/* Liquid Phase Properties */}
-                        {(currentCase.method === 'liquid' || currentCase.method === 'two_phase') && (
-                            <Card sx={glassCardStyles}>
-                                <CardContent>
-                                    <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                        Liquid Phase Properties
-                                    </Typography>
-                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-                                        <UnitSelector
-                                            label="Liquid Density"
-                                            value={toDisplay(currentCase.inputs.liquidDensity || currentCase.inputs.density, 'density')}
-                                            unit={preferences.density}
-                                            availableUnits={DENSITY_UNITS}
-                                            onChange={(val, unit) => {
-                                                if (unit !== preferences.density) setUnit('density', unit);
-                                                handleInputChange('liquidDensity', val !== null ? val : '', 'density', unit);
-                                            }}
-                                        />
-                                        <UnitSelector
-                                            label="Liquid Viscosity"
-                                            value={toDisplay(currentCase.inputs.liquidViscosity || currentCase.inputs.viscosity, 'viscosity')}
-                                            unit={preferences.viscosity}
-                                            availableUnits={VISCOSITY_UNITS}
-                                            onChange={(val, unit) => {
-                                                if (unit !== preferences.viscosity) setUnit('viscosity', unit);
-                                                handleInputChange('liquidViscosity', val !== null ? val : '', 'viscosity', unit);
-                                            }}
-                                        />
-                                    </Box>
-                                </CardContent>
-                            </Card>
-                        )}
-
-                        {/* Backpressure & Hydraulic Validation */}
-                        <Card sx={glassCardStyles}>
-                            <CardContent>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                                    <Typography variant="subtitle1" fontWeight={600}>
-                                        Backpressure & Hydraulic Validation
-                                    </Typography>
-                                    <Tooltip
-                                        title={
-                                            <Box>
-                                                <Typography variant="body2" fontWeight={600} gutterBottom>
-                                                    Backpressure Types:
-                                                </Typography>
-                                                <Typography variant="body2" gutterBottom>
-                                                    • <strong>Superimposed:</strong> Constant backpressure that exists in the discharge system before the valve opens (e.g., from a header or atmospheric pressure).
-                                                </Typography>
-                                                <Typography variant="body2">
-                                                    • <strong>Built-up:</strong> Backpressure that develops in the discharge system only after the valve opens, caused by flow resistance.
-                                                </Typography>
+                                        {currentCase.method === 'two_phase' && (
+                                            <Box sx={{ mt: 2 }}>
+                                                <NumericInput
+                                                    label="Vapor Mass Fraction"
+                                                    value={currentCase.inputs.vaporFraction !== undefined ? currentCase.inputs.vaporFraction * 100 : undefined}
+                                                    onChange={(val) => handleInputChange('vaporFraction', val !== undefined ? val / 100 : '', undefined)}
+                                                    min={0}
+                                                    max={100}
+                                                    endAdornment="%"
+                                                    helperText="Percentage of vapor by mass (0-100%)"
+                                                />
                                             </Box>
-                                        }
-                                        arrow
-                                        placement="right"
-                                    >
-                                        <HelpOutline sx={{ fontSize: 18, color: 'text.secondary', cursor: 'help' }} />
-                                    </Tooltip>
-                                </Box>
-
-                                {/* Backpressure Source Toggle */}
-                                <FormControl component="fieldset" sx={{ mb: 2 }}>
-                                    <FormLabel component="legend">Backpressure Source</FormLabel>
-                                    <RadioGroup
-                                        row
-                                        value={currentCase.inputs.backpressureSource || 'manual'}
-                                        onChange={(e) => {
-                                            setCurrentCase({
-                                                ...currentCase,
-                                                inputs: {
-                                                    ...currentCase.inputs,
-                                                    backpressureSource: e.target.value as 'manual' | 'calculated',
-                                                },
-                                            });
-                                            setIsDirty(true);
-                                            setIsCalculated(false);
-                                        }}
-                                    >
-                                        <FormControlLabel value="manual" control={<Radio />} label="Manual Entry" />
-                                        <FormControlLabel value="calculated" control={<Radio />} label="Calculate from Outlet Piping" />
-                                    </RadioGroup>
-                                </FormControl>
-
-                                {/* Manual Backpressure Input */}
-                                {currentCase.inputs.backpressureSource !== 'calculated' && (
-                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 2 }}>
-                                        <UnitSelector
-                                            label="Backpressure"
-                                            value={toDisplay(currentCase.inputs.backpressure, 'backpressure')}
-                                            unit={preferences.backpressure}
-                                            availableUnits={PRESSURE_UNITS}
-                                            onChange={(val, unit) => {
-                                                if (unit !== preferences.backpressure) setUnit('backpressure', unit);
-                                                handleInputChange('backpressure', val !== null ? val : '', 'backpressure', unit);
-                                            }}
-                                        />
-                                        <TextField
-                                            label="Backpressure Type"
-                                            select
-                                            value={currentCase.inputs.backpressureType || 'superimposed'}
-                                            onChange={(e) => handleInputChange('backpressureType', e.target.value)}
-                                            fullWidth
-                                        >
-                                            <MenuItem value="superimposed">Superimposed</MenuItem>
-                                            <MenuItem value="built_up">Built-up</MenuItem>
-                                        </TextField>
-                                    </Box>
-                                )}
-
-                                {/* Display Calculated Backpressure (if mode is calculated) */}
-                                {currentCase.inputs.backpressureSource === 'calculated' && (
-                                    <Box sx={{ mb: 2 }}>
-                                        {/* Destination Pressure Input */}
-                                        <TextField
-                                            label="Destination Pressure"
-                                            type="number"
-                                            value={toDisplay(currentCase.inputs.destinationPressure || 0, 'pressure')}
-                                            onChange={(e) => handleInputChange('destinationPressure', e.target.value, 'pressure')}
-                                            slotProps={{
-                                                input: {
-                                                    endAdornment: (
-                                                        <InputAdornment position="end">
-                                                            <TextField
-                                                                select
-                                                                variant="standard"
-                                                                value={preferences.pressure}
-                                                                onChange={(e) => setUnit('pressure', e.target.value)}
-                                                                sx={{ minWidth: 60 }}
-                                                            >
-                                                                {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                            </TextField>
-                                                        </InputAdornment>
-                                                    ),
-                                                }
-                                            }}
-                                            helperText="Pressure at outlet discharge point (e.g., flare header, atmospheric)"
-                                            fullWidth
-                                            sx={{ mb: 2 }}
-                                        />
-
-                                        {/* Show calculated result */}
-                                        {currentCase.inputs.calculatedBackpressure !== undefined && (
-                                            <Alert severity="success">
-                                                <Typography variant="body2" fontWeight={600}>
-                                                    Calculated Built-up Backpressure: {currentCase.inputs.calculatedBackpressure.toFixed(3)} barg
-                                                </Typography>
-                                                <Typography variant="caption">
-                                                    Based on {localOutletNetwork?.pipes?.length || 0} pipes in outlet network.
-                                                </Typography>
-                                            </Alert>
-                                        )}
-
-                                        {/* Prompt to add pipes if none */}
-                                        {(!localOutletNetwork || !localOutletNetwork.pipes || localOutletNetwork.pipes.length === 0) && (
-                                            <Alert severity="info">
-                                                <Typography variant="body2">
-                                                    Add pipes to the Outlet Piping tab to calculate backpressure.
-                                                </Typography>
-                                            </Alert>
                                         )}
                                     </Box>
-                                )}
-
-                                {/* Inlet Pressure Drop Validation */}
-                                <Box sx={{ mt: 2 }}>
-                                    <Typography variant="body2" fontWeight={600} color="text.secondary" gutterBottom>
-                                        Inlet Pressure Drop Validation
-                                    </Typography>
-                                    {currentCase.outputs?.inletValidation ? (
-                                        <Alert
-                                            severity={currentCase.outputs?.inletValidation?.severity}
-                                            icon={currentCase.outputs?.inletValidation?.isValid ? <CheckCircle /> : <WarningIcon />}
-                                        >
-                                            <Typography variant="body2">
-                                                {currentCase.outputs?.inletPressureDrop !== undefined
-                                                    ? toDisplayDelta(currentCase.outputs.inletPressureDrop, 'pressure', 3)
-                                                    : '—'} {getDeltaUnit('pressure') + " "}
-                                                ({currentCase.outputs?.inletPressureDropPercent?.toFixed(2) || '—'}% of set pressure)
-                                            </Typography>
-                                            <Typography variant="caption">
-                                                {currentCase.outputs.inletValidation.message}
-                                            </Typography>
-                                        </Alert>
-                                    ) : (
-                                        <Alert severity="info">
-                                            <Typography variant="body2">
-                                                Run calculation to validate inlet pressure drop.
-                                            </Typography>
-                                            <Typography variant="caption">
-                                                API 520 guideline: Inlet ΔP should be &lt; 3% of set pressure to avoid valve chattering.
-                                            </Typography>
-                                        </Alert>
+                                    <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                    <Box>
+                                        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                            Pressure & Temperature
+                                        </Typography>
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                                            <UnitSelector
+                                                label="Relieving Pressure"
+                                                value={toDisplay(currentCase.inputs.pressure, 'pressure')}
+                                                unit={preferences.pressure}
+                                                availableUnits={PRESSURE_UNITS}
+                                                onChange={(val, unit) => {
+                                                    if (unit !== preferences.pressure) setUnit('pressure', unit);
+                                                    handleInputChange('pressure', val !== null ? val : '', 'pressure', unit);
+                                                }}
+                                            />
+                                            <UnitSelector
+                                                label="Relieving Temperature"
+                                                value={toDisplay(currentCase.inputs.temperature, 'temperature')}
+                                                unit={preferences.temperature}
+                                                availableUnits={TEMPERATURE_UNITS}
+                                                onChange={(val, unit) => {
+                                                    if (unit !== preferences.temperature) setUnit('temperature', unit);
+                                                    handleInputChange('temperature', val !== null ? val : '', 'temperature', unit);
+                                                }}
+                                            />
+                                        </Box>
+                                    </Box>
+                                    {(currentCase.method === 'gas' || currentCase.method === 'steam' || currentCase.method === 'two_phase') && (
+                                        <>
+                                            <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                            <Box>
+                                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                                    Gas/Vapor Phase Properties
+                                                </Typography>
+                                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
+                                                    <NumericInput
+                                                        label="Molecular Weight"
+                                                        value={currentCase.inputs.molecularWeight}
+                                                        onChange={(val) => handleInputChange('molecularWeight', val !== undefined ? val : '')}
+                                                        endAdornment="g/mol"
+                                                    />
+                                                    <NumericInput
+                                                        label="Compressibility (Z)"
+                                                        value={currentCase.inputs.compressibilityZ}
+                                                        onChange={(val) => handleInputChange('compressibilityZ', val !== undefined ? val : '')}
+                                                        step={0.01}
+                                                        min={0}
+                                                        max={2}
+                                                    />
+                                                    <NumericInput
+                                                        label="Specific Heat Ratio (k)"
+                                                        value={currentCase.inputs.specificHeatRatio}
+                                                        onChange={(val) => handleInputChange('specificHeatRatio', val !== undefined ? val : '')}
+                                                        step={0.01}
+                                                        min={1}
+                                                        max={2}
+                                                    />
+                                                </Box>
+                                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mt: 2 }}>
+                                                    <UnitSelector
+                                                        label="Gas Viscosity"
+                                                        value={toDisplay(currentCase.inputs.gasViscosity || currentCase.inputs.viscosity, 'viscosity')}
+                                                        unit={preferences.viscosity}
+                                                        availableUnits={VISCOSITY_UNITS}
+                                                        onChange={(val, unit) => {
+                                                            if (unit !== preferences.viscosity) setUnit('viscosity', unit);
+                                                            handleInputChange('gasViscosity', val !== null ? val : '', 'viscosity', unit);
+                                                        }}
+                                                    />
+                                                    <Box />
+                                                </Box>
+                                            </Box>
+                                        </>
                                     )}
-                                </Box>
-                            </CardContent>
+                                    {(currentCase.method === 'liquid' || currentCase.method === 'two_phase') && (
+                                        <>
+                                            <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                            <Box>
+                                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                                    Liquid Phase Properties
+                                                </Typography>
+                                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                                                    <UnitSelector
+                                                        label="Liquid Density"
+                                                        value={toDisplay(currentCase.inputs.liquidDensity || currentCase.inputs.density, 'density')}
+                                                        unit={preferences.density}
+                                                        availableUnits={DENSITY_UNITS}
+                                                        onChange={(val, unit) => {
+                                                            if (unit !== preferences.density) setUnit('density', unit);
+                                                            handleInputChange('liquidDensity', val !== null ? val : '', 'density', unit);
+                                                        }}
+                                                    />
+                                                    <UnitSelector
+                                                        label="Liquid Viscosity"
+                                                        value={toDisplay(currentCase.inputs.liquidViscosity || currentCase.inputs.viscosity, 'viscosity')}
+                                                        unit={preferences.viscosity}
+                                                        availableUnits={VISCOSITY_UNITS}
+                                                        onChange={(val, unit) => {
+                                                            if (unit !== preferences.viscosity) setUnit('viscosity', unit);
+                                                            handleInputChange('liquidViscosity', val !== null ? val : '', 'viscosity', unit);
+                                                        }}
+                                                    />
+                                                </Box>
+                                            </Box>
+                                        </>
+                                    )}
+                                    <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                    <Box>
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                            <Typography variant="subtitle1" fontWeight={600}>
+                                                Backpressure & Hydraulic Validation
+                                            </Typography>
+                                            <Tooltip
+                                                title={
+                                                    <Box>
+                                                        <Typography variant="body2" fontWeight={600} gutterBottom>
+                                                            Backpressure Types:
+                                                        </Typography>
+                                                        <Typography variant="body2" gutterBottom>
+                                                            • <strong>Superimposed:</strong> Constant backpressure that exists in the discharge system before the valve opens (e.g., from a header or atmospheric pressure).
+                                                        </Typography>
+                                                        <Typography variant="body2">
+                                                            • <strong>Built-up:</strong> Backpressure that develops in the discharge system only after the valve opens, caused by flow resistance.
+                                                        </Typography>
+                                                    </Box>
+                                                }
+                                                arrow
+                                                placement="right"
+                                            >
+                                                <HelpOutline sx={{ fontSize: 18, color: 'text.secondary', cursor: 'help' }} />
+                                            </Tooltip>
+                                        </Box>
+
+                                        <FormControl component="fieldset" sx={{ mb: 2 }}>
+                                            <FormLabel component="legend">Backpressure Source</FormLabel>
+                                            <RadioGroup
+                                                row
+                                                value={currentCase.inputs.backpressureSource || 'manual'}
+                                                onChange={(e) => {
+                                                    setCurrentCase({
+                                                        ...currentCase,
+                                                        inputs: {
+                                                            ...currentCase.inputs,
+                                                            backpressureSource: e.target.value as 'manual' | 'calculated',
+                                                        },
+                                                    });
+                                                    setIsDirty(true);
+                                                    setIsCalculated(false);
+                                                }}
+                                            >
+                                                <FormControlLabel value="manual" control={<Radio />} label="Manual Entry" />
+                                                <FormControlLabel value="calculated" control={<Radio />} label="Calculate from Outlet Piping" />
+                                            </RadioGroup>
+                                        </FormControl>
+
+                                        {currentCase.inputs.backpressureSource !== 'calculated' && (
+                                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 2 }}>
+                                                <UnitSelector
+                                                    label="Backpressure"
+                                                    value={toDisplay(currentCase.inputs.backpressure, 'backpressure')}
+                                                    unit={preferences.backpressure}
+                                                    availableUnits={PRESSURE_UNITS}
+                                                    onChange={(val, unit) => {
+                                                        if (unit !== preferences.backpressure) setUnit('backpressure', unit);
+                                                        handleInputChange('backpressure', val !== null ? val : '', 'backpressure', unit);
+                                                    }}
+                                                />
+                                                <TextField
+                                                    label="Backpressure Type"
+                                                    select
+                                                    value={currentCase.inputs.backpressureType || 'superimposed'}
+                                                    onChange={(e) => handleInputChange('backpressureType', e.target.value)}
+                                                    fullWidth
+                                                >
+                                                    <MenuItem value="superimposed">Superimposed</MenuItem>
+                                                    <MenuItem value="built_up">Built-up</MenuItem>
+                                                </TextField>
+                                            </Box>
+                                        )}
+
+                                        {currentCase.inputs.backpressureSource === 'calculated' && (
+                                            <Box sx={{ mb: 2 }}>
+                                                <TextField
+                                                    label="Destination Pressure"
+                                                    type="number"
+                                                    value={toDisplay(currentCase.inputs.destinationPressure || 0, 'pressure')}
+                                                    onChange={(e) => handleInputChange('destinationPressure', e.target.value, 'pressure')}
+                                                    slotProps={{
+                                                        input: {
+                                                            endAdornment: (
+                                                                <InputAdornment position="end">
+                                                                    <TextField
+                                                                        select
+                                                                        variant="standard"
+                                                                        value={preferences.pressure}
+                                                                        onChange={(e) => setUnit('pressure', e.target.value)}
+                                                                        sx={{ minWidth: 60 }}
+                                                                    >
+                                                                        {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                                    </TextField>
+                                                                </InputAdornment>
+                                                            ),
+                                                        }
+                                                    }}
+                                                    helperText="Pressure at outlet discharge point (e.g., flare header, atmospheric)"
+                                                    fullWidth
+                                                    sx={{ mb: 2 }}
+                                                />
+
+                                                {currentCase.inputs.calculatedBackpressure !== undefined && (
+                                                    <Alert severity="success">
+                                                        <Typography variant="body2" fontWeight={600}>
+                                                            Calculated Built-up Backpressure: {currentCase.inputs.calculatedBackpressure.toFixed(3)} barg
+                                                        </Typography>
+                                                        <Typography variant="caption">
+                                                            Based on {localOutletNetwork?.pipes?.length || 0} pipes in outlet network.
+                                                        </Typography>
+                                                    </Alert>
+                                                )}
+
+                                                {(!localOutletNetwork || !localOutletNetwork.pipes || localOutletNetwork.pipes.length === 0) && (
+                                                    <Alert severity="info">
+                                                        <Typography variant="body2">
+                                                            Add pipes to the Outlet Piping tab to calculate backpressure.
+                                                        </Typography>
+                                                    </Alert>
+                                                )}
+                                            </Box>
+                                        )}
+
+                                        <Box sx={{ mt: 2 }}>
+                                            <Typography variant="body2" fontWeight={600} color="text.secondary" gutterBottom>
+                                                Inlet Pressure Drop Validation
+                                            </Typography>
+                                            {currentCase.outputs?.inletValidation ? (
+                                                <Alert
+                                                    severity={currentCase.outputs?.inletValidation?.severity}
+                                                    icon={currentCase.outputs?.inletValidation?.isValid ? <CheckCircle /> : <WarningIcon />}
+                                                >
+                                                    <Typography variant="body2">
+                                                        {currentCase.outputs?.inletPressureDrop !== undefined
+                                                            ? toDisplayDelta(currentCase.outputs.inletPressureDrop, 'pressure', 3)
+                                                            : '—'} {getDeltaUnit('pressure') + " "}
+                                                        ({currentCase.outputs?.inletPressureDropPercent?.toFixed(2) || '—'}% of set pressure)
+                                                    </Typography>
+                                                    <Typography variant="caption">
+                                                        {currentCase.outputs.inletValidation.message}
+                                                    </Typography>
+                                                </Alert>
+                                            ) : (
+                                                <Alert severity="info">
+                                                    <Typography variant="body2">
+                                                        Run calculation to validate inlet pressure drop.
+                                                    </Typography>
+                                                    <Typography variant="caption">
+                                                        API 520 guideline: Inlet ΔP should be &lt; 3% of set pressure to avoid valve chattering.
+                                                    </Typography>
+                                                </Alert>
+                                            )}
+                                        </Box>
+                                    </Box>
+                                </CardContent>
                         </Card>
                     </Box>
                 </TabPanel>
@@ -1644,150 +1625,145 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                             Configure the PSV parameters and select the appropriate orifice size.
                         </Typography>
 
-                        {/* Sizing Standard */}
                         <Card sx={glassCardStyles}>
                             <CardContent>
-                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                    Sizing Standard
-                                </Typography>
-                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-                                    <TextField
-                                        label="Design Standard"
-                                        select
-                                        value={currentCase.standard}
-                                        onChange={(e) => {
-                                            setCurrentCase({ ...currentCase, standard: e.target.value as SizingCase['standard'] });
-                                            setIsDirty(true);
-                                            setIsCalculated(false);
-                                        }}
-                                        fullWidth
-                                    >
-                                        <MenuItem value="API-520">API-520</MenuItem>
-                                        <MenuItem value="API-521">API-521</MenuItem>
-                                        <MenuItem value="API-2000">API-2000</MenuItem>
-                                        <MenuItem value="ASME-VIII">ASME-VIII</MenuItem>
-                                        <MenuItem value="ISO-4126">ISO-4126</MenuItem>
-                                    </TextField>
-                                    <TextField
-                                        label="Sizing Method"
-                                        value={currentCase.method.toUpperCase()}
-                                        InputProps={{ readOnly: true }}
-                                        fullWidth
-                                        helperText="Set in Conditions tab"
-                                    />
-                                </Box>
-                            </CardContent>
-                        </Card>
-
-                        {/* Valve Parameters */}
-                        <Card sx={glassCardStyles}>
-                            <CardContent>
-                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                    Valve Parameters
-                                </Typography>
-                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-                                    <NumericInput
-                                        label="Discharge Coefficient (Kd)"
-                                        value={currentCase.inputs?.dischargeCoefficient ?? (currentCase.outputs?.dischargeCoefficient as number | undefined)}
-                                        onChange={(val) => {
-                                            setCurrentCase({
-                                                ...currentCase,
-                                                inputs: {
-                                                    ...currentCase.inputs,
-                                                    dischargeCoefficient: val
-                                                }
-                                            });
-                                            setIsDirty(true);
-                                            setIsCalculated(false);
-                                        }}
-                                        helperText="Per API-520 (0.975 for gas, 0.65 for liquid)"
-                                    />
-                                    <NumericInput
-                                        label={currentCase.method === 'liquid' ? "Backpressure Correction (Kw)" : "Backpressure Correction (Kb)"}
-                                        value={currentCase.inputs?.backpressureCorrectionFactor ?? (currentCase.outputs?.backpressureCorrectionFactor as number | undefined)}
-                                        onChange={(val) => {
-                                            setCurrentCase({
-                                                ...currentCase,
-                                                inputs: {
-                                                    ...currentCase.inputs,
-                                                    backpressureCorrectionFactor: val
-                                                }
-                                            });
-                                            setIsDirty(true);
-                                            setIsCalculated(false);
-                                        }}
-                                        helperText={currentCase.method === 'liquid' ? "Per API-520 Figure 32 (balanced bellows)" : "Calculated from backpressure ratio"}
-                                    />
-                                </Box>
-                            </CardContent>
-                        </Card>
-
-                        {/* Orifice Selection */}
-                        <Card sx={glassCardStyles}>
-                            <CardContent>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                                    <Typography variant="subtitle1" fontWeight={600}>
-                                        Orifice Selection
-                                    </Typography>
-                                    <FormControlLabel
-                                        control={
-                                            <Switch
-                                                checked={manualOrificeMode}
-                                                onChange={(e) => setManualOrificeMode(e.target.checked)}
-                                            />
-                                        }
-                                        label="Manual Selection"
-                                    />
-                                </Box>
-
-                                {/* Valve Count */}
-                                <Box sx={{ mb: 3 }}>
-                                    <StepperInput
-                                        label="Number of Valves"
-                                        value={numberOfValves}
-                                        onChange={(val) => setNumberOfValves(val)}
-                                        min={1}
-                                        helperText={numberOfValves > 1 ? `${numberOfValves} × parallel valves` : undefined}
-                                    />
-                                </Box>
-
-                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2, mb: 3 }}>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                                     <Box>
-                                        <Typography variant="caption" color="text.secondary">
-                                            {numberOfValves > 1 ? 'Required Area (per valve)' : 'Required Area'}
+                                        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                            Sizing Standard
                                         </Typography>
-                                        <Typography variant="h5" fontWeight={600} color="primary.main">
-                                            {Math.round((currentCase.outputs?.requiredArea ?? 0) / numberOfValves).toLocaleString()} mm²
-                                        </Typography>
-                                        {numberOfValves > 1 && (
-                                            <Typography variant="caption" color="text.secondary">
-                                                Total: {(currentCase.outputs?.requiredArea ?? 0).toLocaleString()} mm²
-                                            </Typography>
-                                        )}
-                                    </Box>
-                                    <TextField
-                                        label="Selected Orifice"
-                                        select
-                                        value={manualOrificeMode ? currentCase.outputs?.selectedOrifice : getAutoSelectedOrifice().designation}
-                                        onChange={(e) => handleOrificeChange(e.target.value)}
-                                        disabled={!manualOrificeMode}
-                                        fullWidth
-                                    >
-                                        {ORIFICE_SIZES.map(o => (
-                                            <MenuItem
-                                                key={o.designation}
-                                                value={o.designation}
-                                                disabled={o.area < ((currentCase.outputs?.requiredArea ?? 0) / numberOfValves)}
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                                            <TextField
+                                                label="Design Standard"
+                                                select
+                                                value={currentCase.standard}
+                                                onChange={(e) => {
+                                                    setCurrentCase({ ...currentCase, standard: e.target.value as SizingCase['standard'] });
+                                                    setIsDirty(true);
+                                                    setIsCalculated(false);
+                                                }}
+                                                fullWidth
                                             >
-                                                {o.designation} — {o.area.toLocaleString()} mm²
-                                            </MenuItem>
-                                        ))}
-                                    </TextField>
+                                                <MenuItem value="API-520">API-520</MenuItem>
+                                                <MenuItem value="API-521">API-521</MenuItem>
+                                                <MenuItem value="API-2000">API-2000</MenuItem>
+                                                <MenuItem value="ASME-VIII">ASME-VIII</MenuItem>
+                                                <MenuItem value="ISO-4126">ISO-4126</MenuItem>
+                                            </TextField>
+                                            <TextField
+                                                label="Sizing Method"
+                                                value={currentCase.method.toUpperCase()}
+                                                InputProps={{ readOnly: true }}
+                                                fullWidth
+                                                helperText="Set in Conditions tab"
+                                            />
+                                        </Box>
+                                    </Box>
+                                    <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
                                     <Box>
-                                        <Typography variant="caption" color="text.secondary">Orifice Area</Typography>
-                                        <Typography variant="h5" fontWeight={600}>
-                                            {(manualOrificeMode ? currentCase.outputs?.orificeArea : getAutoSelectedOrifice().area).toLocaleString()} mm²
+                                        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                            Valve Parameters
                                         </Typography>
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                                            <NumericInput
+                                                label="Discharge Coefficient (Kd)"
+                                                value={currentCase.inputs?.dischargeCoefficient ?? (currentCase.outputs?.dischargeCoefficient as number | undefined)}
+                                                onChange={(val) => {
+                                                    setCurrentCase({
+                                                        ...currentCase,
+                                                        inputs: {
+                                                            ...currentCase.inputs,
+                                                            dischargeCoefficient: val
+                                                        }
+                                                    });
+                                                    setIsDirty(true);
+                                                    setIsCalculated(false);
+                                                }}
+                                                helperText="Per API-520 (0.975 for gas, 0.65 for liquid)"
+                                            />
+                                            <NumericInput
+                                                label={currentCase.method === 'liquid' ? "Backpressure Correction (Kw)" : "Backpressure Correction (Kb)"}
+                                                value={currentCase.inputs?.backpressureCorrectionFactor ?? (currentCase.outputs?.backpressureCorrectionFactor as number | undefined)}
+                                                onChange={(val) => {
+                                                    setCurrentCase({
+                                                        ...currentCase,
+                                                        inputs: {
+                                                            ...currentCase.inputs,
+                                                            backpressureCorrectionFactor: val
+                                                        }
+                                                    });
+                                                    setIsDirty(true);
+                                                    setIsCalculated(false);
+                                                }}
+                                                helperText={currentCase.method === 'liquid' ? "Per API-520 Figure 32 (balanced bellows)" : "Calculated from backpressure ratio"}
+                                            />
+                                        </Box>
+                                    </Box>
+                                    <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                    <Box>
+                                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                            <Typography variant="subtitle1" fontWeight={600}>
+                                                Orifice Selection
+                                            </Typography>
+                                            <FormControlLabel
+                                                control={
+                                                    <Switch
+                                                        checked={manualOrificeMode}
+                                                        onChange={(e) => setManualOrificeMode(e.target.checked)}
+                                                    />
+                                                }
+                                                label="Manual Selection"
+                                            />
+                                        </Box>
+
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 2 }}>
+                                            <StepperInput
+                                                label="Number of Valves"
+                                                value={numberOfValves}
+                                                onChange={(val) => setNumberOfValves(val)}
+                                                min={1}
+                                                helperText={numberOfValves > 1 ? `${numberOfValves} × parallel valves` : undefined}
+                                            />
+                                            <TextField
+                                                label="Selected Orifice"
+                                                select
+                                                value={manualOrificeMode ? currentCase.outputs?.selectedOrifice : getAutoSelectedOrifice().designation}
+                                                onChange={(e) => handleOrificeChange(e.target.value)}
+                                                disabled={!manualOrificeMode}
+                                                fullWidth
+                                            >
+                                                {ORIFICE_SIZES.map(o => (
+                                                    <MenuItem
+                                                        key={o.designation}
+                                                        value={o.designation}
+                                                        disabled={o.area < ((currentCase.outputs?.requiredArea ?? 0) / numberOfValves)}
+                                                    >
+                                                        {o.designation} — {o.area.toLocaleString()} mm²
+                                                    </MenuItem>
+                                                ))}
+                                            </TextField>
+                                        </Box>
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 3 }}>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">
+                                                    {numberOfValves > 1 ? 'Required Area (per valve)' : 'Required Area'}
+                                                </Typography>
+                                                <Typography variant="h5" fontWeight={600} color="primary.main">
+                                                    {Math.round((currentCase.outputs?.requiredArea ?? 0) / numberOfValves).toLocaleString()} mm²
+                                                </Typography>
+                                                {numberOfValves > 1 && (
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Total: {(currentCase.outputs?.requiredArea ?? 0).toLocaleString()} mm²
+                                                    </Typography>
+                                                )}
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Orifice Area</Typography>
+                                                <Typography variant="h5" fontWeight={600}>
+                                                    {(manualOrificeMode ? currentCase.outputs?.orificeArea : getAutoSelectedOrifice().area).toLocaleString()} mm²
+                                                </Typography>
+                                            </Box>
+                                        </Box>
                                     </Box>
                                 </Box>
 
@@ -2056,65 +2032,66 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                             Summary of sizing calculations, pressure drops, and recommendations.
                         </Typography>
 
-                        {/* Summary Card */}
-                        <Card sx={{
-                            ...glassCardStyles,
-                            mb: 3,
+                        <Card sx={glassCardStyles}>
+                            <CardContent>
+                                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+
+                        <Box sx={{
+                            p: 2.5,
+                            borderRadius: 3,
                             background: isDark
                                 ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)'
                                 : 'linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(59, 130, 246, 0.03) 100%)',
                             border: `1px solid ${isDark ? 'rgba(56, 189, 248, 0.2)' : 'rgba(2, 132, 199, 0.15)'}`,
                         }}>
-                            <CardContent>
-                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                    Sizing Summary
-                                </Typography>
-                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(5, 1fr)' }, gap: 3 }}>
-                                    <Box>
-                                        <Typography variant="caption" color="text.secondary">Selected Orifice</Typography>
-                                        <Typography variant="h3" fontWeight={700} color="primary.main">
-                                            {currentCase.outputs?.selectedOrifice ?? '-'}
-                                        </Typography>
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="caption" color="text.secondary">Orifice Area</Typography>
-                                        <Typography variant="h5" fontWeight={600}>
-                                            {currentCase.outputs?.orificeArea?.toLocaleString() ?? '-'} mm²
-                                        </Typography>
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="caption" color="text.secondary">% Used</Typography>
-                                        <Typography variant="h5" fontWeight={600} color={
-                                            ((currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100) > 90
-                                                ? 'warning.main'
-                                                : 'text.primary'
-                                        }>
-                                            {((currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100).toFixed(1)}%
-                                        </Typography>
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="caption" color="text.secondary">Rated Capacity</Typography>
-                                        <Typography variant="h5" fontWeight={600}>
-                                            {(((currentCase.outputs?.ratedCapacity ?? 0) / (currentCase.outputs?.numberOfValves || 1)) * numberOfValves).toLocaleString()} kg/h
-                                        </Typography>
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="caption" color="text.secondary">Number of Valves</Typography>
-                                        <Typography variant="h5" fontWeight={600}>
-                                            {numberOfValves}
-                                        </Typography>
-                                    </Box>
+                            <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                Sizing Summary
+                            </Typography>
+                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(5, 1fr)' }, gap: 3 }}>
+                                <Box>
+                                    <Typography variant="caption" color="text.secondary">Selected Orifice</Typography>
+                                    <Typography variant="h3" fontWeight={700} color="primary.main">
+                                        {currentCase.outputs?.selectedOrifice ?? '-'}
+                                    </Typography>
                                 </Box>
-                            </CardContent>
-                        </Card>
+                                <Box>
+                                    <Typography variant="caption" color="text.secondary">Orifice Area</Typography>
+                                    <Typography variant="h5" fontWeight={600}>
+                                        {currentCase.outputs?.orificeArea?.toLocaleString() ?? '-'} mm²
+                                    </Typography>
+                                </Box>
+                                <Box>
+                                    <Typography variant="caption" color="text.secondary">% Used</Typography>
+                                    <Typography variant="h5" fontWeight={600} color={
+                                        ((currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100) > 90
+                                            ? 'warning.main'
+                                            : 'text.primary'
+                                    }>
+                                        {((currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100).toFixed(1)}%
+                                    </Typography>
+                                </Box>
+                                <Box>
+                                    <Typography variant="caption" color="text.secondary">Rated Capacity</Typography>
+                                    <Typography variant="h5" fontWeight={600}>
+                                        {(((currentCase.outputs?.ratedCapacity ?? 0) / (currentCase.outputs?.numberOfValves || 1)) * numberOfValves).toLocaleString()} kg/h
+                                    </Typography>
+                                </Box>
+                                <Box>
+                                    <Typography variant="caption" color="text.secondary">Number of Valves</Typography>
+                                    <Typography variant="h5" fontWeight={600}>
+                                        {numberOfValves}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </Box>
+                        <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
 
                         {/* Hydraulic Calculations */}
-                        <Card sx={glassCardStyles}>
-                            <CardContent>
-                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                    Hydraulic Calculations
-                                </Typography>
-                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+                        <Box>
+                            <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                Hydraulic Calculations
+                            </Typography>
+                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
                                     {/* Inlet Pressure Drop */}
                                     <Box>
                                         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
@@ -2172,57 +2149,49 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                         </Box>
                                     </Box>
                                 </Box>
-                            </CardContent>
-                        </Card >
-
-                        {/* Flow Analysis */}
-                        <Card sx={glassCardStyles}>
-                            <CardContent>
-                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                    Flow Analysis
-                                </Typography>
-                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
-                                    <Box>
-                                        <Typography variant="caption" color="text.secondary">Flow Type</Typography>
-                                        <Box sx={{ mt: 0.5 }}>
-                                            {(() => {
-                                                if (currentCase.method === 'liquid') {
-                                                    return <Chip label="Liquid Relief" color="info" />;
-                                                }
-                                                if (currentCase.method === 'steam') {
-                                                    return <Chip label="Steam Relief" color="warning" />;
-                                                }
-                                                return (
-                                                    <Chip
-                                                        label={currentCase.outputs.isCriticalFlow ? 'Critical Flow' : 'Subcritical Flow'}
-                                                        color={currentCase.outputs.isCriticalFlow ? 'success' : 'info'}
-                                                    />
-                                                );
-                                            })()}
-                                        </Box>
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="caption" color="text.secondary">Discharge Coefficient</Typography>
-                                        <Typography variant="h6" fontWeight={600}>
-                                            {currentCase.outputs?.dischargeCoefficient ?? '-'}
-                                        </Typography>
-                                    </Box>
-                                    <Box>
-                                        <Typography variant="caption" color="text.secondary">BP Correction Factor</Typography>
-                                        <Typography variant="h6" fontWeight={600}>
-                                            {currentCase.outputs?.backpressureCorrectionFactor ?? '-'}
-                                        </Typography>
+                            </Box>
+                            <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                        <Box>
+                            <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                Flow Analysis
+                            </Typography>
+                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
+                                <Box>
+                                    <Typography variant="caption" color="text.secondary">Flow Type</Typography>
+                                    <Box sx={{ mt: 0.5 }}>
+                                        {(() => {
+                                            if (currentCase.method === 'liquid') {
+                                                return <Chip label="Liquid Relief" color="info" />;
+                                            }
+                                            if (currentCase.method === 'steam') {
+                                                return <Chip label="Steam Relief" color="warning" />;
+                                            }
+                                            return (
+                                                <Chip
+                                                    label={currentCase.outputs.isCriticalFlow ? 'Critical Flow' : 'Subcritical Flow'}
+                                                    color={currentCase.outputs.isCriticalFlow ? 'success' : 'info'}
+                                                />
+                                            );
+                                        })()}
                                     </Box>
                                 </Box>
-                            </CardContent>
-                        </Card >
+                                <Box>
+                                    <Typography variant="caption" color="text.secondary">Discharge Coefficient</Typography>
+                                    <Typography variant="h6" fontWeight={600}>
+                                        {currentCase.outputs?.dischargeCoefficient ?? '-'}
+                                    </Typography>
+                                </Box>
+                                <Box>
+                                    <Typography variant="caption" color="text.secondary">BP Correction Factor</Typography>
+                                    <Typography variant="h6" fontWeight={600}>
+                                        {currentCase.outputs?.backpressureCorrectionFactor ?? '-'}
+                                    </Typography>
+                                </Box>
+                            </Box>
+                        </Box>
 
-                        {/* Messages & Warnings */}
                         {(() => {
-                            // Compute live percentUsed based on current numberOfValves
                             const livePercentUsed = (currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100;
-
-                            // Filter messages - remove "exceeds largest" warning if multi-valve makes it fit
                             const filteredMessages = (currentCase.outputs?.messages ?? []).filter(msg => {
                                 if (msg.includes('WARNING: Required area exceeds largest standard orifice') && livePercentUsed <= 100) {
                                     return false;
@@ -2233,8 +2202,9 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                             if (filteredMessages.length === 0) return null;
 
                             return (
-                                <Card sx={glassCardStyles}>
-                                    <CardContent>
+                                <>
+                                    <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                    <Box>
                                         <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
                                             Notes & Warnings
                                         </Typography>
@@ -2248,34 +2218,32 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                                 </ListItem>
                                             ))}
                                         </List>
-                                    </CardContent>
-                                </Card>
+                                    </Box>
+                                </>
                             );
                         })()}
 
-                        {/* Status Alert */}
                         {(() => {
-                            // Compute live percentUsed based on current numberOfValves
                             const livePercentUsed = (currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100;
                             const isAdequatelySized = livePercentUsed <= 100;
 
                             return (
-                                <Alert
-                                    severity={isAdequatelySized ? 'success' : 'error'}
-                                    sx={{ mb: 3 }}
-                                >
-                                    {isAdequatelySized
-                                        ? `${numberOfValves > 1 ? `${numberOfValves} x ` : ''}Orifice ${currentCase.outputs?.selectedOrifice ?? '-'} is adequately sized with ${(100 - livePercentUsed).toFixed(1)}% margin.`
-                                        : `${numberOfValves > 1 ? `${numberOfValves} x ` : ''}Orifice ${currentCase.outputs?.selectedOrifice ?? '-'} is undersized. Select a larger orifice.`
-                                    }
-                                </Alert>
+                                <>
+                                    <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                    <Alert severity={isAdequatelySized ? 'success' : 'error'}>
+                                        {isAdequatelySized
+                                            ? `${numberOfValves > 1 ? `${numberOfValves} x ` : ''}Orifice ${currentCase.outputs?.selectedOrifice ?? '-'} is adequately sized with ${(100 - livePercentUsed).toFixed(1)}% margin.`
+                                            : `${numberOfValves > 1 ? `${numberOfValves} x ` : ''}Orifice ${currentCase.outputs?.selectedOrifice ?? '-'} is undersized. Select a larger orifice.`
+                                        }
+                                    </Alert>
+                                </>
                             );
                         })()}
 
-                        {/* Hydraulic Calculations Report */}
-                        {
-                            (inletHydraulicResult?.segments?.length || outletHydraulicResult?.segments?.length) && (
-                                <Box sx={{ mb: 3 }}>
+                        {(inletHydraulicResult?.segments?.length || outletHydraulicResult?.segments?.length) && (
+                            <>
+                                <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                <Box>
                                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
                                         <Typography variant="subtitle1" fontWeight={600}>
                                             Hydraulic Calculations Report
@@ -2347,15 +2315,14 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                         </>
                                     )}
                                 </Box>
-                            )
-                        }
+                            </>
+                        )}
 
-                        {/* Inlet Pressure Drop Validation Alert */}
-                        {
-                            currentCase.outputs?.inletValidation && (
+                        {currentCase.outputs?.inletValidation && (
+                            <>
+                                <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
                                 <Alert
                                     severity={currentCase.outputs.inletValidation.severity}
-                                    sx={{ mb: 3 }}
                                     icon={
                                         currentCase.outputs.inletValidation.isValid ?
                                             <CheckCircle /> :
@@ -2372,13 +2339,13 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                         </Typography>
                                     )}
                                 </Alert>
-                            )
-                        }
+                            </>
+                        )}
 
-                        {/* Combined Hydraulic Warnings */}
-                        {
-                            hydraulicWarnings.length > 0 && (
-                                <Alert severity="warning" sx={{ mb: 3 }}>
+                        {hydraulicWarnings.length > 0 && (
+                            <>
+                                <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                <Alert severity="warning">
                                     <strong>Hydraulic Calculation Warnings:</strong>
                                     <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
                                         {hydraulicWarnings.map((warning, idx) => (
@@ -2386,10 +2353,10 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                         ))}
                                     </Box>
                                 </Alert>
-                            )
-                        }
+                            </>
+                        )}
 
-                        {/* Export Actions */}
+                        <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
                         <Box sx={{ display: 'flex', gap: 2 }}>
                             <Button variant="outlined" startIcon={<Download />}>
                                 Export PDF Report
@@ -2398,6 +2365,9 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                                 Export to Excel
                             </Button>
                         </Box>
+                        </Box>
+                    </CardContent>
+                </Card>
                     </Box >
                 </TabPanel >
             </Box >

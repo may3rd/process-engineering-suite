@@ -110,18 +110,23 @@ export function UnitsTab() {
   const [sortConfig, setSortConfig] = useState<SortConfig<SortKey> | null>(
     null,
   );
+  const isParentInactive = selectedPlant?.status === "inactive";
+  const canAddUnit = canEdit && !isParentInactive;
 
   const handleAdd = () => {
+    if (isParentInactive) return;
     setSelectedUnit(null);
     setDialogOpen(true);
   };
 
   const handleEdit = (unit: Unit) => {
+    if (unit.status !== "active") return;
     setSelectedUnit(unit);
     setDialogOpen(true);
   };
 
   const handleDelete = (unit: Unit) => {
+    if (unit.status !== "active") return;
     setUnitToDelete(unit);
     setDeleteDialogOpen(true);
   };
@@ -333,17 +338,27 @@ export function UnitsTab() {
           <Typography variant="h5" fontWeight={600}>
             {headingTitle}
           </Typography>
+          {selectedPlant?.status === "inactive" && (
+            <Chip label="Inactive" size="small" variant="outlined" />
+          )}
         </Box>
         {canEdit &&
           (isMobile ? (
             /* Mobile: Icon only */
-            <Tooltip title="Add New Unit">
+            <Tooltip
+              title={
+                canAddUnit ? "Add New Unit" : "Activate plant to add units"
+              }
+            >
               <IconButton
                 onClick={handleAdd}
+                disabled={!canAddUnit}
                 sx={{
-                  bgcolor: "primary.main",
-                  color: "white",
-                  "&:hover": { bgcolor: "primary.dark" },
+                  bgcolor: canAddUnit
+                    ? "primary.main"
+                    : "action.disabledBackground",
+                  color: canAddUnit ? "white" : "text.disabled",
+                  "&:hover": canAddUnit ? { bgcolor: "primary.dark" } : {},
                 }}
               >
                 <Add />
@@ -351,7 +366,12 @@ export function UnitsTab() {
             </Tooltip>
           ) : (
             /* Desktop: Full button with text */
-            <Button variant="contained" startIcon={<Add />} onClick={handleAdd}>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={handleAdd}
+              disabled={!canAddUnit}
+            >
               Add New Unit
             </Button>
           ))}
@@ -571,20 +591,34 @@ export function UnitsTab() {
                   <CardActions
                     sx={{ justifyContent: "flex-end", pt: 0, px: 2, pb: 1.5 }}
                   >
-                    <Tooltip title="Edit">
+                    <Tooltip
+                      title={
+                        unit.status === "active"
+                          ? "Edit"
+                          : "Activate to edit"
+                      }
+                    >
                       <IconButton
                         size="medium"
                         onClick={() => handleEdit(unit)}
+                        disabled={unit.status !== "active"}
                         sx={{ color: "primary.main" }}
                       >
                         <Edit fontSize="small" />
                       </IconButton>
                     </Tooltip>
-                    <Tooltip title="Delete">
+                    <Tooltip
+                      title={
+                        unit.status === "active"
+                          ? "Deactivate"
+                          : "Activate to edit"
+                      }
+                    >
                       <IconButton
                         size="medium"
                         color="error"
                         onClick={() => handleDelete(unit)}
+                        disabled={unit.status !== "active"}
                       >
                         <Delete fontSize="small" />
                       </IconButton>
@@ -692,19 +726,33 @@ export function UnitsTab() {
                       <TableCell align="right">
                         {canEdit && (
                           <>
-                            <Tooltip title="Edit">
+                            <Tooltip
+                              title={
+                                unit.status === "active"
+                                  ? "Edit"
+                                  : "Activate to edit"
+                              }
+                            >
                               <IconButton
                                 size="small"
                                 onClick={() => handleEdit(unit)}
+                                disabled={unit.status !== "active"}
                               >
                                 <Edit fontSize="small" />
                               </IconButton>
                             </Tooltip>
-                            <Tooltip title="Delete">
+                            <Tooltip
+                              title={
+                                unit.status === "active"
+                                  ? "Deactivate"
+                                  : "Activate to edit"
+                              }
+                            >
                               <IconButton
                                 size="small"
                                 color="error"
                                 onClick={() => handleDelete(unit)}
+                                disabled={unit.status !== "active"}
                               >
                                 <Delete fontSize="small" />
                               </IconButton>
