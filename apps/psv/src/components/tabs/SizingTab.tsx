@@ -72,10 +72,11 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const { unitSystem, units } = useProjectUnitSystem();
-    const { sizingCaseList, scenarioList, selectedPsv, addSizingCase, updateSizingCase, softDeleteSizingCase } = usePsvStore();
-    const canEdit = useAuthStore((state) => state.canEdit());
-    const canApprove = useAuthStore((state) => state.canApprove());
-    const canCheck = useAuthStore((state) => ['lead', 'approver', 'admin'].includes(state.currentUser?.role || ''));
+    const { sizingCaseList, scenarioList, selectedPsv, selectedProject, addSizingCase, updateSizingCase, softDeleteSizingCase } = usePsvStore();
+    const isParentInactive = !selectedPsv?.isActive || selectedProject?.isActive === false;
+    const canEdit = useAuthStore((state) => state.canEdit()) && !isParentInactive;
+    const canApprove = useAuthStore((state) => state.canApprove()) && !isParentInactive;
+    const canCheck = useAuthStore((state) => ['lead', 'approver', 'admin'].includes(state.currentUser?.role || '')) && !isParentInactive;
     const currentUser = useAuthStore((state) => state.currentUser);
 
     const [dialogOpen, setDialogOpen] = useState(false);
@@ -391,198 +392,198 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
                         return (
                             <Card key={sizing.id}>
                                 <CardContent>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-                                    <Box>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                            <Typography variant="h6" fontWeight={600}>
-                                                {getScenarioName(sizing.scenarioId)}
-                                            </Typography>
-                                            {scenario?.isGoverning && (
+                                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+                                        <Box>
+                                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                                <Typography variant="h6" fontWeight={600}>
+                                                    {getScenarioName(sizing.scenarioId)}
+                                                </Typography>
+                                                {scenario?.isGoverning && (
+                                                    <Chip
+                                                        icon={<Star sx={{ fontSize: 14 }} />}
+                                                        label="Governing"
+                                                        size="small"
+                                                        color="warning"
+                                                        variant="outlined"
+                                                        sx={{ height: 22, '& .MuiChip-icon': { ml: 0.5 } }}
+                                                    />
+                                                )}
                                                 <Chip
-                                                    icon={<Star sx={{ fontSize: 14 }} />}
-                                                    label="Governing"
+                                                    label={getSizingStatusLabel(sizing.status)}
                                                     size="small"
-                                                    color="warning"
-                                                    variant="outlined"
-                                                    sx={{ height: 22, '& .MuiChip-icon': { ml: 0.5 } }}
+                                                    color={getSizingStatusColor(sizing.status)}
+                                                    sx={{ textTransform: 'capitalize', cursor: hasStatusActions(sizing) ? 'pointer' : 'default' }}
+                                                    onClick={hasStatusActions(sizing) ? (event) => handleStatusMenuOpen(event, sizing) : undefined}
                                                 />
-                                            )}
-                                            <Chip
-                                                label={getSizingStatusLabel(sizing.status)}
-                                                size="small"
-                                                color={getSizingStatusColor(sizing.status)}
-                                                sx={{ textTransform: 'capitalize', cursor: hasStatusActions(sizing) ? 'pointer' : 'default' }}
-                                                onClick={hasStatusActions(sizing) ? (event) => handleStatusMenuOpen(event, sizing) : undefined}
-                                            />
+                                            </Box>
+                                            <Typography variant="body2" color="text.secondary">
+                                                {sizing.standard} • {sizing.method.toUpperCase()} method
+                                            </Typography>
                                         </Box>
-                                        <Typography variant="body2" color="text.secondary">
-                                            {sizing.standard} • {sizing.method.toUpperCase()} method
-                                        </Typography>
-                                    </Box>
-                                    <Box sx={{ display: 'flex', gap: 1 }}>
-                                        {canEdit ? (
-                                            <>
-                                                <Tooltip title="Edit">
+                                        <Box sx={{ display: 'flex', gap: 1 }}>
+                                            {canEdit ? (
+                                                <>
+                                                    <Tooltip title="Edit">
+                                                        <IconButton size="small" onClick={() => onEdit?.(sizing.id)}>
+                                                            <Edit fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                    <Tooltip title="Deactivate">
+                                                        <IconButton size="small" color="error" onClick={() => handleDeleteClick(sizing)}>
+                                                            <Delete fontSize="small" />
+                                                        </IconButton>
+                                                    </Tooltip>
+                                                </>
+                                            ) : (
+                                                <Tooltip title="View Details">
                                                     <IconButton size="small" onClick={() => onEdit?.(sizing.id)}>
-                                                        <Edit fontSize="small" />
+                                                        <Visibility fontSize="small" />
                                                     </IconButton>
                                                 </Tooltip>
-                                                <Tooltip title="Deactivate">
-                                                    <IconButton size="small" color="error" onClick={() => handleDeleteClick(sizing)}>
-                                                        <Delete fontSize="small" />
-                                                    </IconButton>
-                                                </Tooltip>
-                                            </>
-                                        ) : (
-                                            <Tooltip title="View Details">
-                                                <IconButton size="small" onClick={() => onEdit?.(sizing.id)}>
-                                                    <Visibility fontSize="small" />
-                                                </IconButton>
-                                            </Tooltip>
-                                        )}
-                                    </Box>
-                                </Box>
-
-                                <Box
-                                    sx={{
-                                        display: 'grid',
-                                        gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
-                                        gap: 3,
-                                    }}
-                                >
-                                    <Box
-                                        sx={{
-                                            p: 2,
-                                            borderRadius: 2,
-                                            backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
-                                        }}
-                                    >
-                                        <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Inputs</Typography>
-                                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
-                                            <Box>
-                                                <Typography variant="caption" color="text.secondary">Mass Flow</Typography>
-                                                <Typography variant="body2" fontWeight={500}>
-                                                    {formatMassFlowKgH(sizing.inputs.massFlowRate, unitSystem, 0)}
-                                                </Typography>
-                                            </Box>
-                                            <Box>
-                                                <Typography variant="caption" color="text.secondary">Temperature</Typography>
-                                                <Typography variant="body2" fontWeight={500}>
-                                                    {formatTemperatureC(sizing.inputs.temperature, unitSystem, 1)}
-                                                </Typography>
-                                            </Box>
-                                            <Box>
-                                                <Typography variant="caption" color="text.secondary">Accumulation</Typography>
-                                                <Typography variant="body2" fontWeight={500}>
-                                                    {accumulationPercent !== undefined
-                                                        ? `${accumulationPercent.toFixed(1)}%`
-                                                        : '-'}
-                                                </Typography>
-                                            </Box>
-                                            <Box>
-                                                <Typography variant="caption" color="text.secondary">Relieving Pressure</Typography>
-                                                <Typography variant="body2" fontWeight={500}>
-                                                    {relievingPressure !== undefined
-                                                        ? formatPressureGauge(relievingPressure, unitSystem, 2)
-                                                        : '-'}
-                                                </Typography>
-                                            </Box>
+                                            )}
                                         </Box>
                                     </Box>
 
                                     <Box
                                         sx={{
-                                            p: 2,
-                                            borderRadius: 2,
-                                            backgroundColor: isDark ? 'rgba(56, 189, 248, 0.08)' : 'rgba(2, 132, 199, 0.05)',
-                                            border: `1px solid ${isDark ? 'rgba(56, 189, 248, 0.2)' : 'rgba(2, 132, 199, 0.15)'}`,
+                                            display: 'grid',
+                                            gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+                                            gap: 3,
                                         }}
                                     >
-                                        <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Results</Typography>
-                                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
-                                            <Box>
-                                                <Typography variant="caption" color="text.secondary">Required Area</Typography>
-                                                <Typography variant="body2" fontWeight={600} color="primary.main">
-                                                    {sizing.outputs?.requiredArea !== undefined && sizing.outputs?.requiredArea !== null
-                                                        ? `${formatLocaleNumber(convertValue(sizing.outputs.requiredArea, 'mm2', units.area.unit), 1)} ${units.area.label}`
-                                                        : '-'}
-                                                </Typography>
+                                        <Box
+                                            sx={{
+                                                p: 2,
+                                                borderRadius: 2,
+                                                backgroundColor: isDark ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.03)',
+                                            }}
+                                        >
+                                            <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Inputs</Typography>
+                                            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+                                                <Box>
+                                                    <Typography variant="caption" color="text.secondary">Mass Flow</Typography>
+                                                    <Typography variant="body2" fontWeight={500}>
+                                                        {formatMassFlowKgH(sizing.inputs.massFlowRate, unitSystem, 0)}
+                                                    </Typography>
+                                                </Box>
+                                                <Box>
+                                                    <Typography variant="caption" color="text.secondary">Temperature</Typography>
+                                                    <Typography variant="body2" fontWeight={500}>
+                                                        {formatTemperatureC(sizing.inputs.temperature, unitSystem, 1)}
+                                                    </Typography>
+                                                </Box>
+                                                <Box>
+                                                    <Typography variant="caption" color="text.secondary">Accumulation</Typography>
+                                                    <Typography variant="body2" fontWeight={500}>
+                                                        {accumulationPercent !== undefined
+                                                            ? `${accumulationPercent.toFixed(1)}%`
+                                                            : '-'}
+                                                    </Typography>
+                                                </Box>
+                                                <Box>
+                                                    <Typography variant="caption" color="text.secondary">Relieving Pressure</Typography>
+                                                    <Typography variant="body2" fontWeight={500}>
+                                                        {relievingPressure !== undefined
+                                                            ? formatPressureGauge(relievingPressure, unitSystem, 2)
+                                                            : '-'}
+                                                    </Typography>
+                                                </Box>
                                             </Box>
-                                            <Box>
-                                                <Typography variant="caption" color="text.secondary">Selected Orifice</Typography>
-                                                <Typography variant="h5" fontWeight={700} color="primary.main">
-                                                    {sizing.outputs?.selectedOrifice ?? '-'}
-                                                </Typography>
-                                            </Box>
-                                            <Box>
-                                                <Typography variant="caption" color="text.secondary">
-                                                    {(sizing.outputs?.numberOfValves || 1) > 1 ? 'Total Orifice Area' : 'Orifice Area'}
-                                                </Typography>
-                                                <Typography variant="body2" fontWeight={500}>
+                                        </Box>
+
+                                        <Box
+                                            sx={{
+                                                p: 2,
+                                                borderRadius: 2,
+                                                backgroundColor: isDark ? 'rgba(56, 189, 248, 0.08)' : 'rgba(2, 132, 199, 0.05)',
+                                                border: `1px solid ${isDark ? 'rgba(56, 189, 248, 0.2)' : 'rgba(2, 132, 199, 0.15)'}`,
+                                            }}
+                                        >
+                                            <Typography variant="subtitle2" sx={{ mb: 1.5 }}>Results</Typography>
+                                            <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1.5 }}>
+                                                <Box>
+                                                    <Typography variant="caption" color="text.secondary">Required Area</Typography>
+                                                    <Typography variant="body2" fontWeight={600} color="primary.main">
+                                                        {sizing.outputs?.requiredArea !== undefined && sizing.outputs?.requiredArea !== null
+                                                            ? `${formatLocaleNumber(convertValue(sizing.outputs.requiredArea, 'mm2', units.area.unit), 1)} ${units.area.label}`
+                                                            : '-'}
+                                                    </Typography>
+                                                </Box>
+                                                <Box>
+                                                    <Typography variant="caption" color="text.secondary">Selected Orifice</Typography>
+                                                    <Typography variant="h5" fontWeight={700} color="primary.main">
+                                                        {sizing.outputs?.selectedOrifice ?? '-'}
+                                                    </Typography>
+                                                </Box>
+                                                <Box>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        {(sizing.outputs?.numberOfValves || 1) > 1 ? 'Total Orifice Area' : 'Orifice Area'}
+                                                    </Typography>
+                                                    <Typography variant="body2" fontWeight={500}>
+                                                        {(() => {
+                                                            const areaMm2 = (sizing.outputs?.orificeArea ?? 0) * (sizing.outputs?.numberOfValves || 1);
+                                                            return `${formatLocaleNumber(convertValue(areaMm2, 'mm2', units.area.unit), 1)} ${units.area.label}`;
+                                                        })()}
+                                                    </Typography>
+                                                </Box>
+                                                <Box>
+                                                    <Typography variant="caption" color="text.secondary">% Used</Typography>
+                                                    <Typography variant="body2" fontWeight={600} color={
+                                                        ((sizing.outputs?.requiredArea ?? 0) / ((sizing.outputs?.orificeArea ?? 1) * (sizing.outputs?.numberOfValves || 1)) * 100) > 90 ? 'warning.main' : 'text.primary'
+                                                    }>
+                                                        {((sizing.outputs?.requiredArea ?? 0) / ((sizing.outputs?.orificeArea ?? 1) * (sizing.outputs?.numberOfValves || 1)) * 100).toFixed(1)}%
+                                                    </Typography>
+                                                </Box>
+                                                <Box>
+                                                    <Typography variant="caption" color="text.secondary">Number of Valves</Typography>
+                                                    <Typography variant="body2" fontWeight={600} color={(sizing.outputs?.numberOfValves ?? 1) > 1 ? 'info.main' : 'text.primary'}>
+                                                        {sizing.outputs?.numberOfValves || 1}
+                                                    </Typography>
+                                                </Box>
+                                                <Box>
+                                                    <Typography variant="caption" color="text.secondary">Rated Capacity</Typography>
+                                                    <Typography variant="body2" fontWeight={500}>
+                                                        {sizing.outputs?.ratedCapacity !== undefined && sizing.outputs?.ratedCapacity !== null
+                                                            ? formatMassFlowKgH(sizing.outputs.ratedCapacity, unitSystem, 0)
+                                                            : '-'}
+                                                    </Typography>
+                                                </Box>
+                                                <Box>
+                                                    <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>Flow Type</Typography>
                                                     {(() => {
-                                                        const areaMm2 = (sizing.outputs?.orificeArea ?? 0) * (sizing.outputs?.numberOfValves || 1);
-                                                        return `${formatLocaleNumber(convertValue(areaMm2, 'mm2', units.area.unit), 1)} ${units.area.label}`;
+                                                        if (sizing.method === 'liquid') {
+                                                            return <Chip label="Liquid Relief" size="small" color="info" />;
+                                                        }
+                                                        if (sizing.method === 'steam') {
+                                                            return <Chip label="Steam Relief" size="small" color="warning" />;
+                                                        }
+                                                        return (
+                                                            <Chip
+                                                                label={sizing.outputs?.isCriticalFlow ? 'Critical' : 'Subcritical'}
+                                                                size="small"
+                                                                color={sizing.outputs?.isCriticalFlow ? 'success' : 'info'}
+                                                            />
+                                                        );
                                                     })()}
-                                                </Typography>
-                                            </Box>
-                                            <Box>
-                                                <Typography variant="caption" color="text.secondary">% Used</Typography>
-                                                <Typography variant="body2" fontWeight={600} color={
-                                                    ((sizing.outputs?.requiredArea ?? 0) / ((sizing.outputs?.orificeArea ?? 1) * (sizing.outputs?.numberOfValves || 1)) * 100) > 90 ? 'warning.main' : 'text.primary'
-                                                }>
-                                                    {((sizing.outputs?.requiredArea ?? 0) / ((sizing.outputs?.orificeArea ?? 1) * (sizing.outputs?.numberOfValves || 1)) * 100).toFixed(1)}%
-                                                </Typography>
-                                            </Box>
-                                            <Box>
-                                                <Typography variant="caption" color="text.secondary">Number of Valves</Typography>
-                                                <Typography variant="body2" fontWeight={600} color={(sizing.outputs?.numberOfValves ?? 1) > 1 ? 'info.main' : 'text.primary'}>
-                                                    {sizing.outputs?.numberOfValves || 1}
-                                                </Typography>
-                                            </Box>
-                                            <Box>
-                                                <Typography variant="caption" color="text.secondary">Rated Capacity</Typography>
-                                                <Typography variant="body2" fontWeight={500}>
-                                                    {sizing.outputs?.ratedCapacity !== undefined && sizing.outputs?.ratedCapacity !== null
-                                                        ? formatMassFlowKgH(sizing.outputs.ratedCapacity, unitSystem, 0)
-                                                        : '-'}
-                                                </Typography>
-                                            </Box>
-                                            <Box>
-                                                <Typography variant="caption" color="text.secondary" sx={{ mr: 1 }}>Flow Type</Typography>
-                                                {(() => {
-                                                    if (sizing.method === 'liquid') {
-                                                        return <Chip label="Liquid Relief" size="small" color="info" />;
-                                                    }
-                                                    if (sizing.method === 'steam') {
-                                                        return <Chip label="Steam Relief" size="small" color="warning" />;
-                                                    }
-                                                    return (
-                                                        <Chip
-                                                            label={sizing.outputs?.isCriticalFlow ? 'Critical' : 'Subcritical'}
-                                                            size="small"
-                                                            color={sizing.outputs?.isCriticalFlow ? 'success' : 'info'}
-                                                        />
-                                                    );
-                                                })()}
+                                                </Box>
                                             </Box>
                                         </Box>
                                     </Box>
-                                </Box>
 
-                                {sizing.outputs?.messages?.length > 0 && (
-                                    <Box sx={{ mt: 2 }}>
-                                        <List dense disablePadding>
-                                            {sizing.outputs?.messages?.map((msg, idx) => (
-                                                <ListItem key={idx} disablePadding sx={{ py: 0.25 }}>
-                                                    <ListItemIcon sx={{ minWidth: 28 }}>
-                                                        <Info sx={{ fontSize: 16, color: 'info.main' }} />
-                                                    </ListItemIcon>
-                                                    <ListItemText primary={msg} primaryTypographyProps={{ variant: 'body2' }} />
-                                                </ListItem>
-                                            ))}
-                                        </List>
-                                    </Box>
-                                )}
+                                    {sizing.outputs?.messages?.length > 0 && (
+                                        <Box sx={{ mt: 2 }}>
+                                            <List dense disablePadding>
+                                                {sizing.outputs?.messages?.map((msg, idx) => (
+                                                    <ListItem key={idx} disablePadding sx={{ py: 0.25 }}>
+                                                        <ListItemIcon sx={{ minWidth: 28 }}>
+                                                            <Info sx={{ fontSize: 16, color: 'info.main' }} />
+                                                        </ListItemIcon>
+                                                        <ListItemText primary={msg} primaryTypographyProps={{ variant: 'body2' }} />
+                                                    </ListItem>
+                                                ))}
+                                            </List>
+                                        </Box>
+                                    )}
                                 </CardContent>
                             </Card>
                         );

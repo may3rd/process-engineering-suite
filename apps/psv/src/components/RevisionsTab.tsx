@@ -64,10 +64,11 @@ interface RevisionsTabProps {
 }
 
 export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps) {
-    const { selectedPsv, updatePsv, loadRevisionHistory, updateRevision } = usePsvStore();
+    const { selectedPsv, selectedProject, updatePsv, loadRevisionHistory, updateRevision } = usePsvStore();
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const currentUser = useAuthStore((state) => state.currentUser);
-    const canEdit = useAuthStore((state) => state.canEdit());
+    const isParentInactive = !selectedPsv?.isActive || selectedProject?.isActive === false;
+    const canEdit = useAuthStore((state) => state.canEdit()) && !isParentInactive;
     const canCreateRevision = isAuthenticated && canEdit;
 
     const canApproveSignature = useMemo(() => {
@@ -83,8 +84,8 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
 
     const canManualEdit = useMemo(() => {
         const role = currentUser?.role;
-        return isAuthenticated && !!role && ['lead', 'approver', 'admin'].includes(role);
-    }, [currentUser?.role, isAuthenticated]);
+        return isAuthenticated && !!role && ['lead', 'approver', 'admin'].includes(role) && !isParentInactive;
+    }, [currentUser?.role, isAuthenticated, isParentInactive]);
 
     const reload = async (): Promise<RevisionHistory[]> => {
         await loadRevisionHistory('protective_system', entityId);

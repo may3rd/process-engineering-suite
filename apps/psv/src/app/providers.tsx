@@ -204,7 +204,7 @@ export function Providers({ children }: { children: ReactNode }) {
             <ColorModeContext.Provider value={colorMode}>
                 <ThemeProvider theme={theme}>
                     <CssBaseline />
-                    <Toaster theme={mode} position="top-right" />
+                    <Toaster theme={mode} position="top-right" closeButton />
                     <SessionGuard>
                         {children}
                     </SessionGuard>

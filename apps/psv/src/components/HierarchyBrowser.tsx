@@ -171,6 +171,16 @@ export function HierarchyBrowser() {
     const canAddItem = () => {
         if (!isMounted) return false;
         if (!currentLevel) return false;
+
+        // Prevent adding children if the parent is inactive
+        const isParentInactive =
+            (currentLevel.level === 'plant' && selectedCustomer?.status === 'inactive') ||
+            (currentLevel.level === 'unit' && selectedPlant?.status === 'inactive') ||
+            (currentLevel.level === 'area' && selectedUnit?.status === 'inactive') ||
+            (currentLevel.level === 'project' && selectedArea?.status === 'inactive');
+
+        if (isParentInactive) return false;
+
         switch (currentLevel.level) {
             case 'customer': return canManageCustomer;
             case 'plant':

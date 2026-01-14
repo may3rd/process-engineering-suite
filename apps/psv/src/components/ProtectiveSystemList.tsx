@@ -229,6 +229,7 @@ export function ProtectiveSystemList() {
                         variant="contained"
                         startIcon={<Add />}
                         onClick={() => setWizardOpen(true)}
+                        disabled={!selectedProject.isActive}
                         sx={{ textTransform: 'none', height: 40, whiteSpace: 'nowrap' }}
                     >
                         New PSV/RD

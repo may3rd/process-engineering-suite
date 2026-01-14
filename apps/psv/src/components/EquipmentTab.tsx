@@ -68,6 +68,7 @@ export function EquipmentTab() {
   } = usePsvStore();
   const equipment = usePsvStore((state) => state.equipment);
   const equipmentLinkList = usePsvStore((state) => state.equipmentLinkList);
+  const selectedArea = usePsvStore((state) => state.selectedArea);
 
   const [isLoadingInit, setIsLoadingInit] = useState(false);
 
@@ -103,7 +104,11 @@ export function EquipmentTab() {
     null,
   );
 
+  const isParentInactive = selectedArea?.status === "inactive";
+  const canAddEquipment = canEdit && !isParentInactive;
+
   const handleAdd = () => {
+    if (isParentInactive) return;
     setSelectedEquipment(null);
     setDialogOpen(true);
   };
@@ -328,19 +333,29 @@ export function EquipmentTab() {
               variant="contained"
               startIcon={<Add />}
               onClick={handleAdd}
+              disabled={!canAddEquipment}
               sx={{ display: { xs: "none", sm: "flex" } }}
             >
               Add New Equipment
             </Button>
             {/* Mobile: Icon only */}
-            <Tooltip title="Add New Equipment">
+            <Tooltip
+              title={
+                canAddEquipment
+                  ? "Add New Equipment"
+                  : "Activate area to add equipment"
+              }
+            >
               <IconButton
                 onClick={handleAdd}
+                disabled={!canAddEquipment}
                 sx={{
                   display: { xs: "flex", sm: "none" },
-                  bgcolor: "primary.main",
-                  color: "white",
-                  "&:hover": { bgcolor: "primary.dark" },
+                  bgcolor: canAddEquipment
+                    ? "primary.main"
+                    : "action.disabledBackground",
+                  color: canAddEquipment ? "white" : "text.disabled",
+                  "&:hover": canAddEquipment ? { bgcolor: "primary.dark" } : {},
                 }}
               >
                 <Add />

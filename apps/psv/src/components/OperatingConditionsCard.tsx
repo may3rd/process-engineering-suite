@@ -50,7 +50,8 @@ const VALVE_TYPE_OPTIONS: { value: ValveOperatingType; label: string; short: str
 
 export function OperatingConditionsCard({ psv }: OperatingConditionsCardProps) {
     const { updatePsv, selectedProject } = usePsvStore();
-    const canEdit = useAuthStore((state) => state.canEdit());
+    const isParentInactive = !psv.isActive || selectedProject?.isActive === false;
+    const canEdit = useAuthStore((state) => state.canEdit()) && !isParentInactive;
     const [open, setOpen] = useState(false);
     const unitSystem: UnitSystem = selectedProject?.unitSystem || 'metric';
     const [formData, setFormData] = useState({

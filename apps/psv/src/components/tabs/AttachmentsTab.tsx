@@ -24,9 +24,10 @@ import { DeleteConfirmDialog } from "@/components/shared/DeleteConfirmDialog";
 import { useState } from 'react';
 
 export function AttachmentsTab() {
-    const { selectedPsv, attachmentList, deleteAttachment, softDeleteAttachment, addAttachment } = usePsvStore();
+    const { selectedPsv, selectedProject, attachmentList, deleteAttachment, softDeleteAttachment, addAttachment } = usePsvStore();
     const { currentUser } = useAuthStore();
-    const canEdit = useAuthStore((state) => state.canEdit());
+    const isParentInactive = !selectedPsv?.isActive || selectedProject?.isActive === false;
+    const canEdit = useAuthStore((state) => state.canEdit()) && !isParentInactive;
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

@@ -61,8 +61,9 @@ export function ScenariosTab() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const { unitSystem } = useProjectUnitSystem();
-    const { scenarioList, selectedPsv, addScenario, updateScenario, softDeleteScenario } = usePsvStore();
-    const canEdit = useAuthStore((state) => state.canEdit());
+    const { scenarioList, selectedPsv, selectedProject, addScenario, updateScenario, softDeleteScenario } = usePsvStore();
+    const isParentInactive = !selectedPsv?.isActive || selectedProject?.isActive === false;
+    const canEdit = useAuthStore((state) => state.canEdit()) && !isParentInactive;
 
     const [editorOpen, setEditorOpen] = useState(false);
     const [editingScenario, setEditingScenario] = useState<OverpressureScenario | undefined>(undefined);

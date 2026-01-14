@@ -110,16 +110,18 @@ export function ProtectiveSystemDetail() {
     softDeleteProtectiveSystem,
     getCurrentRevision,
     loadRevisionHistory,
+    selectedProject,
     activeTab,
     setActiveTab,
   } = usePsvStore();
+  const isParentInactive = selectedProject?.isActive === false;
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const canEdit = useAuthStore((state) => state.canEdit());
-  const canApprove = useAuthStore((state) => state.canApprove());
+  const canEdit = useAuthStore((state) => state.canEdit()) && !isParentInactive;
+  const canApprove = useAuthStore((state) => state.canApprove()) && !isParentInactive;
   const canCheck = useAuthStore((state) =>
     ["lead", "approver", "admin"].includes(state.currentUser?.role || ""),
-  );
-  const canIssue = canCheck || canApprove;
+  ) && !isParentInactive;
+  const canIssue = (canCheck || canApprove) && !isParentInactive;
   // const [activeTab, setActiveTab] = useState(0); // Removed local state
   const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -472,20 +474,20 @@ export function ProtectiveSystemDetail() {
                   </MenuItem>
                   {isAuthenticated
                     ? [
-                        <Divider key="revision-divider" />,
-                        ...psvRevisions.map((revision) => (
-                          <MenuItem
-                            key={revision.id}
-                            selected={revision.id === revisionMenuCurrentId}
-                            onClick={() => handleRevisionSelect(revision.id)}
-                          >
-                            <ListItemText
-                              primary={`Rev. ${revision.revisionCode}`}
-                              secondary={revision.description || undefined}
-                            />
-                          </MenuItem>
-                        )),
-                      ]
+                      <Divider key="revision-divider" />,
+                      ...psvRevisions.map((revision) => (
+                        <MenuItem
+                          key={revision.id}
+                          selected={revision.id === revisionMenuCurrentId}
+                          onClick={() => handleRevisionSelect(revision.id)}
+                        >
+                          <ListItemText
+                            primary={`Rev. ${revision.revisionCode}`}
+                            secondary={revision.description || undefined}
+                          />
+                        </MenuItem>
+                      )),
+                    ]
                     : null}
                 </Menu>
                 <Chip
@@ -847,12 +849,12 @@ export function ProtectiveSystemDetail() {
 
                     "&:hover": !isSelected
                       ? {
-                          color: isDark ? "#fff" : "#000",
-                          backgroundColor: isDark
-                            ? "rgba(255,255,255,0.05)"
-                            : "rgba(0,0,0,0.04)",
-                          borderRadius: "8px 8px 0 0",
-                        }
+                        color: isDark ? "#fff" : "#000",
+                        backgroundColor: isDark
+                          ? "rgba(255,255,255,0.05)"
+                          : "rgba(0,0,0,0.04)",
+                        borderRadius: "8px 8px 0 0",
+                      }
                       : {},
                   }}
                 >

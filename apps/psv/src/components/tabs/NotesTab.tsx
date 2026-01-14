@@ -39,6 +39,7 @@ import { DeleteConfirmDialog } from "../shared/DeleteConfirmDialog";
 export function NotesTab() {
   const {
     selectedPsv,
+    selectedProject,
     todoList,
     commentList,
     noteList,
@@ -56,7 +57,8 @@ export function NotesTab() {
     deleteNote,
     softDeleteNote,
   } = usePsvStore();
-  const canEdit = useAuthStore((state) => state.canEdit());
+  const isParentInactive = !selectedPsv?.isActive || selectedProject?.isActive === false;
+  const canEdit = useAuthStore((state) => state.canEdit()) && !isParentInactive;
   const currentUser = useAuthStore((state) => state.currentUser);
 
   const [addTaskOpen, setAddTaskOpen] = useState(false);
@@ -310,7 +312,7 @@ export function NotesTab() {
                             size="small"
                             color={
                               new Date(todo.dueDate) < new Date() &&
-                              !todo.completed
+                                !todo.completed
                                 ? "error"
                                 : "default"
                             }

@@ -21,8 +21,9 @@ interface TagsCardProps {
 }
 
 export function TagsCard({ psv }: TagsCardProps) {
-  const { addPsvTag, removePsvTag } = usePsvStore();
-  const canEdit = useAuthStore((state) => state.canEdit());
+  const { addPsvTag, removePsvTag, selectedProject } = usePsvStore();
+  const isParentInactive = !psv.isActive || selectedProject?.isActive === false;
+  const canEdit = useAuthStore((state) => state.canEdit()) && !isParentInactive;
   const [isAdding, setIsAdding] = useState(false);
   const [newTag, setNewTag] = useState("");
 
