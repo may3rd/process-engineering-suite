@@ -56,6 +56,7 @@ export interface PsvSlice {
     updateProtectiveSystem: (id: string, updates: Partial<Omit<ProtectiveSystem, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
     deleteProtectiveSystem: (id: string) => Promise<void>;
     softDeleteProtectiveSystem: (id: string) => Promise<void>;
+    reactivateProtectiveSystem: (id: string) => Promise<void>;
     addEquipment: (data: Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
     updateEquipment: (id: string, updates: Partial<Omit<Equipment, 'id' | 'createdAt' | 'updatedAt'>>) => Promise<void>;
     deleteEquipment: (id: string) => Promise<void>;
@@ -888,6 +889,45 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
             }
         } catch (error) {
             toast.error('Failed to deactivate PSV');
+            throw error;
+        }
+    },
+
+    reactivateProtectiveSystem: async (id) => {
+        try {
+            const state = get();
+            const psv = state.protectiveSystems.find(p => p.id === id);
+            if (!psv) throw new Error('PSV not found');
+
+            const updated = await dataService.updateProtectiveSystem(id, { isActive: true });
+
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'update',
+                    'protective_system',
+                    id,
+                    `${psv.tag} : ${psv.name}`,
+                    currentUser.id,
+                    currentUser.name,
+                    {
+                        userRole: currentUser.role,
+                        description: 'Reactivated PSV',
+                        projectId: state.selectedProject?.id,
+                    }
+                );
+            }
+
+            set((state: PsvStore) => {
+                return {
+                    psvList: state.psvList.map(p => p.id === updated.id ? updated : p),
+                    protectiveSystems: state.protectiveSystems.map(p => p.id === updated.id ? updated : p),
+                    selectedPsv: state.selectedPsv?.id === updated.id ? updated : state.selectedPsv,
+                };
+            });
+            toast.success('PSV reactivated');
+        } catch (error) {
+            toast.error('Failed to reactivate PSV');
             throw error;
         }
     },

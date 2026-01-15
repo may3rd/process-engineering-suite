@@ -109,6 +109,7 @@ export function ProtectiveSystemDetail() {
     deleteSizingCase,
     softDeleteSizingCase,
     softDeleteProtectiveSystem,
+    reactivateProtectiveSystem,
     getCurrentRevision,
     loadRevisionHistory,
     selectedProject,
@@ -119,7 +120,7 @@ export function ProtectiveSystemDetail() {
   const isPsvActive = selectedPsv?.isActive !== false;
   const isParentInactive = selectedProject?.isActive === false;
   const canEditAuth = useAuthStore((state) => state.canEdit());
-  const canEdit = canEditAuth && isPsvActive && !isParentInactive;
+  const canEdit = canEditAuth && !isParentInactive;
 
   const [psvRevisions, setPsvRevisions] = useState<RevisionHistory[]>([]);
   const [revisionMenuAnchor, setRevisionMenuAnchor] = useState<null | HTMLElement>(null);
@@ -310,13 +311,23 @@ export function ProtectiveSystemDetail() {
     if (selectedPsv) {
       try {
         await softDeleteProtectiveSystem(selectedPsv.id);
-        selectPsv(null);
+        // We don't select null here anymore, we stay on the page but it becomes inactive
       } catch (error) {
         console.error("Failed to delete PSV:", error);
       }
       setDeleteDialogOpen(false);
     }
-  }, [selectedPsv, selectPsv, setDeleteDialogOpen, softDeleteProtectiveSystem]);
+  }, [selectedPsv, setDeleteDialogOpen, softDeleteProtectiveSystem]);
+
+  const handleReactivatePsv = useCallback(async () => {
+    if (selectedPsv) {
+      try {
+        await reactivateProtectiveSystem(selectedPsv.id);
+      } catch (error) {
+        console.error("Failed to reactivate PSV:", error);
+      }
+    }
+  }, [selectedPsv, reactivateProtectiveSystem]);
 
   const handleForceDelete = useCallback(async () => {
     if (selectedPsv && deleteConfirmationInput === selectedPsv.tag) {
@@ -595,15 +606,38 @@ export function ProtectiveSystemDetail() {
                 width: { xs: "100%", sm: "auto" },
               }}
             >
-              <Button
-                variant="outlined"
-                color="error"
-                startIcon={<Delete />}
-                onClick={handleDeletePsv}
-                sx={{ flex: { xs: 1, sm: "none" } }}
-              >
-                Delete
-              </Button>
+              {isPsvActive ? (
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<Delete />}
+                  onClick={handleDeletePsv}
+                  sx={{ flex: { xs: 1, sm: "none" } }}
+                >
+                  Delete
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    variant="contained"
+                    color="success"
+                    startIcon={<CheckCircleOutline />}
+                    onClick={handleReactivatePsv}
+                    sx={{ flex: { xs: 1, sm: "none" } }}
+                  >
+                    Reactivate
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="error"
+                    startIcon={<Delete />}
+                    onClick={handleDeletePsv}
+                    sx={{ flex: { xs: 1, sm: "none" } }}
+                  >
+                    Remove
+                  </Button>
+                </>
+              )}
             </Box>
           )}
         </Box>
@@ -708,6 +742,28 @@ export function ProtectiveSystemDetail() {
                   }}
                 />
               </Box>
+              {canEdit && !isPsvActive && (
+                <Box sx={{ display: 'flex', gap: 1 }}>
+                  <Button
+                    size="small"
+                    variant="contained"
+                    color="success"
+                    startIcon={<CheckCircleOutline />}
+                    onClick={handleReactivatePsv}
+                  >
+                    Reactivate
+                  </Button>
+                  <Button
+                    size="small"
+                    variant="outlined"
+                    color="error"
+                    startIcon={<Delete />}
+                    onClick={handleDeletePsv}
+                  >
+                    Remove
+                  </Button>
+                </Box>
+              )}
             </Box>
           </Container>
         </Paper>
@@ -756,8 +812,10 @@ export function ProtectiveSystemDetail() {
         onConfirm={handleConfirmDelete}
         onForceDelete={handleForceDelete}
         allowForceDelete={canApprove}
-        title="Deactivate Protective System"
+        mode={isPsvActive ? "deactivate" : "remove"}
+        title={isPsvActive ? "Deactivate Protective System" : "Permanently Remove Protective System"}
         itemName={selectedPsv.tag}
+        confirmPhrase={isPsvActive ? undefined : selectedPsv.tag}
         children={[
           { label: "scenario", count: scenarioList.length },
           { label: "sizing case", count: sizingCaseList.length },
