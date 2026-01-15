@@ -153,7 +153,7 @@ export const ConceptEditorDialog = ({ open, initialConcept, onClose, onSave }: C
             <Stack direction="row" flexWrap="wrap" gap={1}>
               {concept.unit_operations.map((item, i) => (
                 <Box 
-                  key={i} 
+                  key={`${i}-${item}`} 
                   sx={{ 
                     display: 'flex', 
                     alignItems: 'center', 
@@ -190,7 +190,7 @@ export const ConceptEditorDialog = ({ open, initialConcept, onClose, onSave }: C
             <Stack spacing={1}>
               {concept.key_benefits.map((item, i) => (
                 <Box 
-                  key={i} 
+                  key={`${i}-${item}`} 
                   sx={{ 
                     display: 'flex', 
                     alignItems: 'center', 

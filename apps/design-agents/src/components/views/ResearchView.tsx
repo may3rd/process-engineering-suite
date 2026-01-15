@@ -173,7 +173,7 @@ export const ResearchView = () => {
         ) : (
             <Grid container spacing={3}>
                 {concepts.map((concept, index) => (
-                    <Grid item xs={12} md={6} lg={4} key={index}>
+                    <Grid item xs={12} md={6} lg={4} key={concept.name}>
                         <Card 
                             variant="outlined" 
                             sx={{ 
@@ -208,7 +208,7 @@ export const ResearchView = () => {
                                 </Typography>
                                 <List dense disablePadding>
                                     {(concept.key_benefits || []).map((benefit, i) => (
-                                        <ListItem key={i} disablePadding sx={{ mb: 0.5 }}>
+                                        <ListItem key={`${concept.name}-benefit-${i}`} disablePadding sx={{ mb: 0.5 }}>
                                             <ListItemIcon sx={{ minWidth: 24 }}>
                                                 <SparkleIcon fontSize="inherit" color="warning" />
                                             </ListItemIcon>

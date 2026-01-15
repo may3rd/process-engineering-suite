@@ -24,7 +24,7 @@ import { useDesignStore } from '../store/useDesignStore';
 // HOWEVER, maybe the browser interprets "localhost" as IPv6 (::1) and the server listens on IPv4 (127.0.0.1).
 // Let's try 127.0.0.1 to be safe.
 
-const API_URL = 'http://127.0.0.1:8000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
 
 export async function checkHealth() {
   const res = await fetch(`${API_URL}/design-agents/health`);

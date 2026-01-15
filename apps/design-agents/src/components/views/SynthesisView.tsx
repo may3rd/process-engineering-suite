@@ -118,8 +118,8 @@ export const SynthesisView = () => {
           
           <Typography variant="subtitle2" gutterBottom>Key Units</Typography>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-              {designState.selected_concept?.unit_operations?.map((unit, i) => (
-                  <Paper key={i} variant="outlined" sx={{ px: 1, py: 0.5, bgcolor: 'action.hover' }}>
+              {designState.selected_concept?.unit_operations?.map((unit) => (
+                  <Paper key={unit} variant="outlined" sx={{ px: 1, py: 0.5, bgcolor: 'action.hover' }}>
                       <Typography variant="caption">{unit}</Typography>
                   </Paper>
               ))}

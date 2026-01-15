@@ -122,8 +122,8 @@ export const SizingView = () => {
                           <CardContent>
                               <Typography variant="subtitle2" gutterBottom color="primary">Design Standards & Assumptions</Typography>
                               <Stack direction="row" spacing={1} mb={2} flexWrap="wrap">
-                                  {metadata.design_codes?.map((code: string, i: number) => (
-                                      <Chip key={i} label={code} size="small" variant="filled" sx={{ mb: 1 }} />
+                                  {metadata.design_codes?.map((code: string) => (
+                                      <Chip key={code} label={code} size="small" variant="filled" sx={{ mb: 1 }} />
                                   ))}
                               </Stack>
                               <Typography variant="caption" display="block">
@@ -137,8 +137,8 @@ export const SizingView = () => {
 
                   {/* Equipment Accordions */}
                   <Grid item xs={12}>
-                      {equipments.map((eq: any, i: number) => (
-                          <Accordion key={i} variant="outlined" sx={{ mb: 1 }}>
+                      {equipments.map((eq: any) => (
+                          <Accordion key={eq.id} variant="outlined" sx={{ mb: 1 }}>
                               <AccordionSummary expandIcon={<ExpandMoreIcon />}>
                                   <Stack direction="row" spacing={2} alignItems="center" sx={{ width: '100%' }}>
                                       <Typography sx={{ fontWeight: 'bold', minWidth: 80 }}>{eq.id}</Typography>
@@ -152,8 +152,8 @@ export const SizingView = () => {
                                           <Typography variant="subtitle2" gutterBottom color="secondary">Calculated Parameters</Typography>
                                           <Table size="small">
                                               <TableBody>
-                                                  {eq.sizing_parameters?.map((param: any, j: number) => (
-                                                      <TableRow key={j}>
+                                                  {eq.sizing_parameters?.map((param: any) => (
+                                                      <TableRow key={param.name}>
                                                           <TableCell sx={{ pl: 0, border: 'none', textTransform: 'capitalize' }}>
                                                               {param.name.replace(/_/g, ' ')}
                                                           </TableCell>

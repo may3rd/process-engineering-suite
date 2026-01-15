@@ -133,7 +133,7 @@ export const SimulationView = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {data.streams.map((stream: any, i: number) => {
+              {data.streams.map((stream: any) => {
                   const props = stream.properties || {};
                   // Helper to extract value whether it's direct or in {value, unit} object
                   const getVal = (key: string) => {
@@ -144,7 +144,7 @@ export const SimulationView = () => {
                   };
 
                   return (
-                    <TableRow key={i} hover>
+                    <TableRow key={stream.id} hover>
                         <TableCell sx={{ fontWeight: 'bold' }}>{stream.id}</TableCell>
                         <TableCell>{stream.name}</TableCell>
                         <TableCell>{stream.phase}</TableCell>
