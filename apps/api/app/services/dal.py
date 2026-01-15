@@ -131,7 +131,7 @@ class DataAccessLayer(ABC):
     
     @abstractmethod
     async def delete_scenario(self, scenario_id: str) -> bool:
-        """Delete a scenario."""
+        """Soft delete a scenario."""
         pass
     
     # --- Sizing Cases ---
@@ -153,7 +153,7 @@ class DataAccessLayer(ABC):
     
     @abstractmethod
     async def delete_sizing_case(self, case_id: str) -> bool:
-        """Delete a sizing case."""
+        """Soft delete a sizing case."""
         pass
     
     # --- Equipment ---
@@ -190,7 +190,7 @@ class DataAccessLayer(ABC):
     
     @abstractmethod
     async def delete_equipment(self, equipment_id: str) -> bool:
-        """Delete an equipment."""
+        """Soft delete an equipment."""
         pass
     
     # --- Attachments ---
@@ -229,7 +229,7 @@ class DataAccessLayer(ABC):
 
     @abstractmethod
     async def delete_note(self, note_id: str) -> bool:
-        """Delete a note."""
+        """Soft delete a note."""
         pass
     
     # --- Comments ---
@@ -248,6 +248,11 @@ class DataAccessLayer(ABC):
     async def update_comment(self, comment_id: str, data: dict) -> dict:
         """Update an existing comment."""
         pass
+
+    @abstractmethod
+    async def delete_comment(self, comment_id: str) -> bool:
+        """Soft delete a comment."""
+        pass
     
     # --- Todos ---
     
@@ -264,6 +269,11 @@ class DataAccessLayer(ABC):
     @abstractmethod
     async def update_todo(self, todo_id: str, data: dict) -> dict:
         """Update a todo."""
+        pass
+
+    @abstractmethod
+    async def delete_todo(self, todo_id: str) -> bool:
+        """Soft delete a todo."""
         pass
     
     # --- Revision History ---

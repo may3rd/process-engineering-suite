@@ -35,6 +35,8 @@ export const createCollaborationSlice: StateCreator<PsvStore, [], [], Collaborat
 
     addTodo: async (todo) => {
         try {
+            const state = get();
+            if (state.selectedPsv?.isActive === false) throw new Error('Cannot add task to inactive PSV');
             const created = await dataService.createTodo(todo);
             const currentUser = useAuthStore.getState().currentUser;
             if (currentUser) {
@@ -123,6 +125,7 @@ export const createCollaborationSlice: StateCreator<PsvStore, [], [], Collaborat
     toggleTodo: async (id) => {
         try {
             const state = get();
+            if (state.selectedPsv?.isActive === false) throw new Error('Cannot update task of inactive PSV');
             const todo = state.todoList.find((t) => t.id === id);
             if (!todo) return;
 
@@ -155,6 +158,8 @@ export const createCollaborationSlice: StateCreator<PsvStore, [], [], Collaborat
 
     updateTodo: async (id, updates) => {
         try {
+            const state = get();
+            if (state.selectedPsv?.isActive === false) throw new Error('Cannot update task of inactive PSV');
             const updated = await dataService.updateTodo(id, updates);
             set((state: PsvStore) => ({
                 todoList: state.todoList.map((t) => (t.id === id ? updated : t)),
@@ -169,6 +174,8 @@ export const createCollaborationSlice: StateCreator<PsvStore, [], [], Collaborat
 
     addNote: async (note) => {
         try {
+            const state = get();
+            if (state.selectedPsv?.isActive === false) throw new Error('Cannot add note to inactive PSV');
             const created = await dataService.createNote(note);
             const currentUser = useAuthStore.getState().currentUser;
             if (currentUser) {
@@ -199,6 +206,7 @@ export const createCollaborationSlice: StateCreator<PsvStore, [], [], Collaborat
     updateNote: async (id, updates) => {
         try {
             const state = get();
+            if (state.selectedPsv?.isActive === false) throw new Error('Cannot update note of inactive PSV');
             const existing = state.noteList.find(n => n.id === id);
             const updated = await dataService.updateNote(id, {
                 ...updates,
@@ -291,6 +299,8 @@ export const createCollaborationSlice: StateCreator<PsvStore, [], [], Collaborat
 
     addComment: async (comment) => {
         try {
+            const state = get();
+            if (state.selectedPsv?.isActive === false) throw new Error('Cannot add comment to inactive PSV');
             const created = await dataService.createComment(comment);
             set((state: PsvStore) => ({
                 commentList: [...state.commentList, created]
@@ -305,6 +315,8 @@ export const createCollaborationSlice: StateCreator<PsvStore, [], [], Collaborat
 
     updateComment: async (id, updates) => {
         try {
+            const state = get();
+            if (state.selectedPsv?.isActive === false) throw new Error('Cannot update comment of inactive PSV');
             const updated = await dataService.updateComment(id, {
                 ...updates,
                 updatedAt: updates.updatedAt || new Date().toISOString(),

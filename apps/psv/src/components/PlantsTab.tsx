@@ -348,10 +348,9 @@ export function PlantsTab() {
           <Typography variant="h5" fontWeight={600}>
             {headingTitle}
           </Typography>
-          {selectedCustomer?.status === "inactive" && (
-            <Chip label="Inactive" size="small" variant="outlined" />
-          )}
-        </Box>
+                                  {selectedCustomer?.status === "inactive" && (
+                                      <Chip label="Inactive" size="small" color="default" />
+                                  )}        </Box>
         {canEdit &&
           (isMobile ? (
             /* Mobile: Icon only */

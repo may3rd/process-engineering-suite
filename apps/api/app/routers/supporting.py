@@ -28,6 +28,7 @@ class EquipmentResponse(BaseModel):
     design_temp_unit: Optional[str] = Field(default="C", serialization_alias="designTempUnit", alias="designTempUnit")
     owner_id: Optional[str] = Field(default=None, serialization_alias="ownerId", alias="ownerId")
     status: Optional[str] = Field(default="active")
+    is_active: bool = Field(default=True, serialization_alias="isActive", alias="isActive")
     location_ref: Optional[str] = Field(default=None, serialization_alias="locationRef", alias="locationRef")
     details: Optional[dict] = None
     created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
@@ -87,6 +88,7 @@ class CommentResponse(BaseModel):
     id: str
     protective_system_id: str = Field(serialization_alias="protectiveSystemId", alias="protectiveSystemId")
     body: str
+    is_active: bool = Field(default=True, serialization_alias="isActive", alias="isActive")
     created_by: str = Field(serialization_alias="createdBy", alias="createdBy")
     created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
     updated_at: Optional[datetime] = Field(default=None, serialization_alias="updatedAt", alias="updatedAt")
@@ -104,6 +106,7 @@ class CommentUpdate(BaseModel):
     model_config = ConfigDict(extra='ignore')
     body: Optional[str] = None
     updatedBy: Optional[str] = None
+    isActive: Optional[bool] = None
 
 
 # --- Project Notes ---
@@ -113,6 +116,7 @@ class ProjectNoteResponse(BaseModel):
     id: str
     protective_system_id: str = Field(serialization_alias="protectiveSystemId", alias="protectiveSystemId")
     body: str
+    is_active: bool = Field(default=True, serialization_alias="isActive", alias="isActive")
     created_by: str = Field(serialization_alias="createdBy", alias="createdBy")
     created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
     updated_by: Optional[str] = Field(default=None, serialization_alias="updatedBy", alias="updatedBy")
@@ -130,6 +134,7 @@ class ProjectNoteUpdate(BaseModel):
     model_config = ConfigDict(extra='ignore')
     body: Optional[str] = None
     updatedBy: Optional[str] = None
+    isActive: Optional[bool] = None
 
 
 # --- Todo Schemas ---
@@ -142,6 +147,7 @@ class TodoResponse(BaseModel):
     completed: bool = False
     assigned_to: Optional[str] = Field(default=None, serialization_alias="assignedTo", alias="assignedTo")
     due_date: Optional[date] = Field(default=None, serialization_alias="dueDate", alias="dueDate")
+    is_active: bool = Field(default=True, serialization_alias="isActive", alias="isActive")
     created_by: str = Field(serialization_alias="createdBy", alias="createdBy")
     created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
 
@@ -161,6 +167,7 @@ class TodoUpdate(BaseModel):
     completed: Optional[bool] = None
     assignedTo: Optional[str] = None
     dueDate: Optional[str] = None
+    isActive: Optional[bool] = None
 
 
 # --- Equipment Endpoints ---
@@ -201,6 +208,7 @@ class EquipmentUpdate(BaseModel):
     designTempUnit: Optional[str] = None
     ownerId: Optional[str] = None  # THIS WAS MISSING!
     status: Optional[str] = None
+    isActive: Optional[bool] = None
     details: Optional[dict] = None
 
 

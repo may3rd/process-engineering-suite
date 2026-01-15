@@ -27,7 +27,8 @@ export function AttachmentsTab() {
     const { selectedPsv, selectedProject, attachmentList, deleteAttachment, softDeleteAttachment, addAttachment } = usePsvStore();
     const { currentUser } = useAuthStore();
     const isParentInactive = !selectedPsv?.isActive || selectedProject?.isActive === false;
-    const canEdit = useAuthStore((state) => state.canEdit()) && !isParentInactive;
+    const canEditAuth = useAuthStore((state) => state.canEdit());
+    const canEdit = canEditAuth && !isParentInactive;
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);

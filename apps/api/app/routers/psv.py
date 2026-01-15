@@ -115,6 +115,7 @@ class ScenarioResponse(BaseModel):
     # Markdown-formatted case consideration notes shown in PSV Detail -> Scenario Section.
     case_consideration: Optional[str] = Field(default=None, serialization_alias="caseConsideration", alias="caseConsideration")
     fire_calculation: Optional[dict] = Field(default=None, serialization_alias="fireCalculation", alias="fireCalculation")
+    is_active: bool = Field(default=True, serialization_alias="isActive", alias="isActive")
     created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
     updated_at: Optional[datetime] = Field(default=None, serialization_alias="updatedAt", alias="updatedAt")
 
@@ -154,6 +155,7 @@ class ScenarioUpdate(BaseModel):
     currentRevisionId: Optional[str] = None
     # Keep optional so existing clients can omit it without clearing the stored value.
     caseConsideration: Optional[str] = None
+    isActive: Optional[bool] = None
 
 
 class SizingCaseResponse(BaseModel):
@@ -169,6 +171,7 @@ class SizingCaseResponse(BaseModel):
     status: Optional[str] = Field(default="draft")
     created_by: Optional[str] = Field(default=None, serialization_alias="createdBy", alias="createdBy")
     approved_by: Optional[str] = Field(default=None, serialization_alias="approvedBy", alias="approvedBy")
+    is_active: bool = Field(default=True, serialization_alias="isActive", alias="isActive")
     created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
     updated_at: Optional[datetime] = Field(default=None, serialization_alias="updatedAt", alias="updatedAt")
 
@@ -191,6 +194,7 @@ class SizingCaseUpdate(BaseModel):
     status: Optional[str] = None
     approvedBy: Optional[str] = None
     currentRevisionId: Optional[str] = None
+    isActive: Optional[bool] = None
 
 
 # --- PSV Endpoints ---

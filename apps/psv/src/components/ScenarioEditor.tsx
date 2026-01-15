@@ -235,7 +235,7 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
+    // const [deleteConfirmationInput, setDeleteConfirmationInput] = useState(""); // Removed redundant input
 
     // Get decimal place settings from user preferences
     const { decimalPlaces } = useDisplaySettings();
@@ -267,7 +267,7 @@ export function ScenarioEditor({ initialData, psvId, onSave, onCancel, onDelete 
     }, [isFormValid]);
 
     const handleConfirmDelete = () => {
-        if (onDelete && initialData && deleteConfirmationInput === "delete scenario") {
+        if (onDelete && initialData) {
             onDelete(initialData.id);
         }
     };
@@ -613,18 +613,18 @@ Summary of findings and recommendations...`}
                         <CardContent>
                             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <Box>
-                                    <Typography variant="subtitle2" gutterBottom>Delete this scenario</Typography>
+                                    <Typography variant="subtitle2" gutterBottom>Deactivate this scenario</Typography>
                                     <Typography variant="body2" color="text.secondary">
-                                        Once deleted, this scenario cannot be recovered.
+                                        This will move the scenario to the inactive list. It can be restored later.
                                     </Typography>
                                 </Box>
                                 <Button
                                     variant="outlined"
                                     color="error"
-                                    onClick={() => setDeleteDialogOpen(true)}
+                                    onClick={handleConfirmDelete}
                                     startIcon={<Delete />}
                                 >
-                                    Delete Scenario
+                                    Deactivate Scenario
                                 </Button>
                             </Box>
                         </CardContent>
@@ -632,38 +632,7 @@ Summary of findings and recommendations...`}
                 </Box>
             )}
 
-            {/* Delete Confirmation Dialog */}
-            <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-                <DialogTitle>Delete Scenario?</DialogTitle>
-                <DialogContent>
-                    <DialogContentText sx={{ mb: 2 }}>
-                        This action cannot be undone. This will permanently delete this overpressure scenario.
-                    </DialogContentText>
-                    <Typography variant="body2" gutterBottom>
-                        Please type <strong>delete scenario</strong> to confirm.
-                    </Typography>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        fullWidth
-                        variant="outlined"
-                        value={deleteConfirmationInput}
-                        onChange={(e) => setDeleteConfirmationInput(e.target.value)}
-                        placeholder="delete scenario"
-                    />
-                </DialogContent>
-                <DialogActions>
-                    <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
-                    <Button
-                        variant="contained"
-                        color="error"
-                        onClick={handleConfirmDelete}
-                        disabled={deleteConfirmationInput !== "delete scenario"}
-                    >
-                        Delete Scenario
-                    </Button>
-                </DialogActions>
-            </Dialog>
+
         </Box>
     );
 }

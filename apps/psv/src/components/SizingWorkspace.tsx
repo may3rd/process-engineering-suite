@@ -131,8 +131,9 @@ const DENSITY_UNITS = ['kg/m³', 'lb/ft³'];
 export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSetPressure, onClose, onSave, onSaveNetworks, psvTag, onDelete }: SizingWorkspaceProps) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
-    const canEdit = useAuthStore((state) => state.canEdit());
-    const { addWarning, clearWarnings, getWarnings } = usePsvStore();
+    const { addWarning, clearWarnings, getWarnings, selectedPsv } = usePsvStore();
+    const canEditAuth = useAuthStore((state) => state.canEdit());
+    const canEdit = canEditAuth && selectedPsv?.isActive !== false;
     const [activeTab, setActiveTab] = useState(0);
     const [currentCase, setCurrentCase] = useState<SizingCase>(sizingCase);
     const [manualOrificeMode, setManualOrificeMode] = useState(false);
@@ -275,6 +276,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
 
     // Handle input changes for SizingInputs (converts Display Value -> Base Value)
     const handleInputChange = (field: keyof SizingInputs, displayValue: number | string, unitType?: UnitType, explicitUnit?: string) => {
+        if (!canEdit) return;
         // Handle strings (non-numeric fields)
         if (typeof displayValue === 'string' && !unitType) {
             setCurrentCase({
@@ -320,6 +322,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
 
     // Handle orifice selection
     const handleOrificeChange = (designation: string) => {
+        if (!canEdit) return;
         const orifice = ORIFICE_SIZES.find(o => o.designation === designation);
         if (orifice) {
             const percentUsed = (currentCase.outputs.requiredArea / orifice.area) * 100;
@@ -348,6 +351,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
 
     // Helper to manage Inlet Network
     const handleAddInletPipe = () => {
+        if (!canEdit) return;
         const newPipe: PipeProps = {
             id: uuidv4(),
             name: `Pipe-${(localInletNetwork?.pipes.length || 0) + 1}`,
@@ -370,6 +374,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
     };
 
     const handleAddOutletPipe = () => {
+        if (!canEdit) return;
         const newPipe: PipeProps = {
             id: uuidv4(),
             name: `Pipe-${(localOutletNetwork?.pipes.length || 0) + 1}`,
@@ -402,6 +407,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
     };
 
     const handleSavePipe = (updatedPipe: PipeProps) => {
+        if (!canEdit) return;
         if (editingPipeType === 'inlet') {
             if (!localInletNetwork) return;
             const updatedNetwork = {
@@ -425,6 +431,7 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
     };
 
     const handleDeletePipe = (id: string, type: 'inlet' | 'outlet') => {
+        if (!canEdit) return;
         if (type === 'inlet') {
             if (!localInletNetwork) return;
             const updatedNetwork = {
@@ -1001,318 +1008,333 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
 
                         <Card sx={glassCardStyles}>
                             <CardContent sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                                    <Box>
-                                        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                            Flow Conditions
-                                        </Typography>
-                                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-                                            <UnitSelector
-                                                label="Mass Flow Rate"
-                                                value={currentCase.inputs.massFlowRate !== undefined ? toDisplay(currentCase.inputs.massFlowRate, 'flow') : null}
-                                                unit={preferences.flow}
-                                                availableUnits={FLOW_UNITS}
-                                                onChange={(val, unit) => {
-                                                    if (unit !== preferences.flow) {
-                                                        setUnit('flow', unit);
-                                                    }
-                                                    handleInputChange('massFlowRate', val !== null ? val : '', 'flow', unit);
-                                                }}
-                                            />
-                                            <TextField
-                                                label="Sizing Method"
-                                                select
-                                                value={currentCase.method}
-                                                onChange={(e) => {
-                                                    setCurrentCase({ ...currentCase, method: e.target.value as SizingCase['method'] });
-                                                    setIsDirty(true);
-                                                    setIsCalculated(false);
-                                                }}
-                                                fullWidth
-                                            >
-                                                <MenuItem value="gas">Gas / Vapor</MenuItem>
-                                                <MenuItem value="liquid">Liquid</MenuItem>
-                                                <MenuItem value="steam">Steam</MenuItem>
-                                                <MenuItem value="two_phase">Two-Phase</MenuItem>
-                                            </TextField>
-                                        </Box>
+                                <Box>
+                                    <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                        Flow Conditions
+                                    </Typography>
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                                        <UnitSelector
+                                            label="Mass Flow Rate"
+                                            value={currentCase.inputs.massFlowRate !== undefined ? toDisplay(currentCase.inputs.massFlowRate, 'flow') : null}
+                                            unit={preferences.flow}
+                                            availableUnits={FLOW_UNITS}
+                                            onChange={(val, unit) => {
+                                                if (unit !== preferences.flow) {
+                                                    setUnit('flow', unit);
+                                                }
+                                                handleInputChange('massFlowRate', val !== null ? val : '', 'flow', unit);
+                                            }}
+                                            disabled={!canEdit}
+                                        />
+                                        <TextField
+                                            label="Sizing Method"
+                                            select
+                                            value={currentCase.method}
+                                            onChange={(e) => {
+                                                setCurrentCase({ ...currentCase, method: e.target.value as SizingCase['method'] });
+                                                setIsDirty(true);
+                                                setIsCalculated(false);
+                                            }}
+                                            fullWidth
+                                            disabled={!canEdit}
+                                        >
+                                            <MenuItem value="gas">Gas / Vapor</MenuItem>
+                                            <MenuItem value="liquid">Liquid</MenuItem>
+                                            <MenuItem value="steam">Steam</MenuItem>
+                                            <MenuItem value="two_phase">Two-Phase</MenuItem>
+                                        </TextField>
+                                    </Box>
 
-                                        {currentCase.method === 'two_phase' && (
-                                            <Box sx={{ mt: 2 }}>
+                                    {currentCase.method === 'two_phase' && (
+                                        <Box sx={{ mt: 2 }}>
+                                            <NumericInput
+                                                label="Vapor Mass Fraction"
+                                                value={currentCase.inputs.vaporFraction !== undefined ? currentCase.inputs.vaporFraction * 100 : undefined}
+                                                onChange={(val) => handleInputChange('vaporFraction', val !== undefined ? val / 100 : '', undefined)}
+                                                min={0}
+                                                max={100}
+                                                endAdornment="%"
+                                                helperText="Percentage of vapor by mass (0-100%)"
+                                                disabled={!canEdit}
+                                            />
+                                        </Box>
+                                    )}
+                                </Box>
+                                <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                <Box>
+                                    <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                        Pressure & Temperature
+                                    </Typography>
+                                    <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                                        <UnitSelector
+                                            label="Relieving Pressure"
+                                            value={toDisplay(currentCase.inputs.pressure, 'pressure')}
+                                            unit={preferences.pressure}
+                                            availableUnits={PRESSURE_UNITS}
+                                            onChange={(val, unit) => {
+                                                if (unit !== preferences.pressure) setUnit('pressure', unit);
+                                                handleInputChange('pressure', val !== null ? val : '', 'pressure', unit);
+                                            }}
+                                            disabled={!canEdit}
+                                        />
+                                        <UnitSelector
+                                            label="Relieving Temperature"
+                                            value={toDisplay(currentCase.inputs.temperature, 'temperature')}
+                                            unit={preferences.temperature}
+                                            availableUnits={TEMPERATURE_UNITS}
+                                            onChange={(val, unit) => {
+                                                if (unit !== preferences.temperature) setUnit('temperature', unit);
+                                                handleInputChange('temperature', val !== null ? val : '', 'temperature', unit);
+                                            }}
+                                            disabled={!canEdit}
+                                        />
+                                    </Box>
+                                </Box>
+                                {(currentCase.method === 'gas' || currentCase.method === 'steam' || currentCase.method === 'two_phase') && (
+                                    <>
+                                        <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                        <Box>
+                                            <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                                Gas/Vapor Phase Properties
+                                            </Typography>
+                                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
                                                 <NumericInput
-                                                    label="Vapor Mass Fraction"
-                                                    value={currentCase.inputs.vaporFraction !== undefined ? currentCase.inputs.vaporFraction * 100 : undefined}
-                                                    onChange={(val) => handleInputChange('vaporFraction', val !== undefined ? val / 100 : '', undefined)}
+                                                    label="Molecular Weight"
+                                                    value={currentCase.inputs.molecularWeight}
+                                                    onChange={(val) => handleInputChange('molecularWeight', val !== undefined ? val : '')}
+                                                    endAdornment="g/mol"
+                                                    disabled={!canEdit}
+                                                />
+                                                <NumericInput
+                                                    label="Compressibility (Z)"
+                                                    value={currentCase.inputs.compressibilityZ}
+                                                    onChange={(val) => handleInputChange('compressibilityZ', val !== undefined ? val : '')}
+                                                    step={0.01}
                                                     min={0}
-                                                    max={100}
-                                                    endAdornment="%"
-                                                    helperText="Percentage of vapor by mass (0-100%)"
+                                                    max={2}
+                                                    disabled={!canEdit}
+                                                />
+                                                <NumericInput
+                                                    label="Specific Heat Ratio (k)"
+                                                    value={currentCase.inputs.specificHeatRatio}
+                                                    onChange={(val) => handleInputChange('specificHeatRatio', val !== undefined ? val : '')}
+                                                    step={0.01}
+                                                    min={1}
+                                                    max={2}
+                                                    disabled={!canEdit}
                                                 />
                                             </Box>
-                                        )}
-                                    </Box>
-                                    <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
-                                    <Box>
-                                        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                            Pressure & Temperature
+                                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mt: 2 }}>
+                                                <UnitSelector
+                                                    label="Gas Viscosity"
+                                                    value={toDisplay(currentCase.inputs.gasViscosity || currentCase.inputs.viscosity, 'viscosity')}
+                                                    unit={preferences.viscosity}
+                                                    availableUnits={VISCOSITY_UNITS}
+                                                    onChange={(val, unit) => {
+                                                        if (unit !== preferences.viscosity) setUnit('viscosity', unit);
+                                                        handleInputChange('gasViscosity', val !== null ? val : '', 'viscosity', unit);
+                                                    }}
+                                                    disabled={!canEdit}
+                                                />
+                                                <Box />
+                                            </Box>
+                                        </Box>
+                                    </>
+                                )}
+                                {(currentCase.method === 'liquid' || currentCase.method === 'two_phase') && (
+                                    <>
+                                        <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                        <Box>
+                                            <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                                Liquid Phase Properties
+                                            </Typography>
+                                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                                                <UnitSelector
+                                                    label="Liquid Density"
+                                                    value={toDisplay(currentCase.inputs.liquidDensity || currentCase.inputs.density, 'density')}
+                                                    unit={preferences.density}
+                                                    availableUnits={DENSITY_UNITS}
+                                                    onChange={(val, unit) => {
+                                                        if (unit !== preferences.density) setUnit('density', unit);
+                                                        handleInputChange('liquidDensity', val !== null ? val : '', 'density', unit);
+                                                    }}
+                                                    disabled={!canEdit}
+                                                />
+                                                <UnitSelector
+                                                    label="Liquid Viscosity"
+                                                    value={toDisplay(currentCase.inputs.liquidViscosity || currentCase.inputs.viscosity, 'viscosity')}
+                                                    unit={preferences.viscosity}
+                                                    availableUnits={VISCOSITY_UNITS}
+                                                    onChange={(val, unit) => {
+                                                        if (unit !== preferences.viscosity) setUnit('viscosity', unit);
+                                                        handleInputChange('liquidViscosity', val !== null ? val : '', 'viscosity', unit);
+                                                    }}
+                                                    disabled={!canEdit}
+                                                />
+                                            </Box>
+                                        </Box>
+                                    </>
+                                )}
+                                <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                <Box>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                                        <Typography variant="subtitle1" fontWeight={600}>
+                                            Backpressure & Hydraulic Validation
                                         </Typography>
-                                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
+                                        <Tooltip
+                                            title={
+                                                <Box>
+                                                    <Typography variant="body2" fontWeight={600} gutterBottom>
+                                                        Backpressure Types:
+                                                    </Typography>
+                                                    <Typography variant="body2" gutterBottom>
+                                                        • <strong>Superimposed:</strong> Constant backpressure that exists in the discharge system before the valve opens (e.g., from a header or atmospheric pressure).
+                                                    </Typography>
+                                                    <Typography variant="body2">
+                                                        • <strong>Built-up:</strong> Backpressure that develops in the discharge system only after the valve opens, caused by flow resistance.
+                                                    </Typography>
+                                                </Box>
+                                            }
+                                            arrow
+                                            placement="right"
+                                        >
+                                            <HelpOutline sx={{ fontSize: 18, color: 'text.secondary', cursor: 'help' }} />
+                                        </Tooltip>
+                                    </Box>
+
+                                    <FormControl component="fieldset" sx={{ mb: 2 }}>
+                                        <FormLabel component="legend">Backpressure Source</FormLabel>
+                                        <RadioGroup
+                                            row
+                                            value={currentCase.inputs.backpressureSource || 'manual'}
+                                            onChange={(e) => {
+                                                setCurrentCase({
+                                                    ...currentCase,
+                                                    inputs: {
+                                                        ...currentCase.inputs,
+                                                        backpressureSource: e.target.value as 'manual' | 'calculated',
+                                                    },
+                                                });
+                                                setIsCalculated(false);
+                                            }}
+                                            name="backpressure-source-group"
+                                        >
+                                            <FormControlLabel value="manual" control={<Radio disabled={!canEdit} />} label="Manual Entry" disabled={!canEdit} />
+                                            <FormControlLabel value="calculated" control={<Radio disabled={!canEdit} />} label="Calculate from Outlet Piping" disabled={!canEdit} />
+                                        </RadioGroup>
+                                    </FormControl>
+
+                                    {currentCase.inputs.backpressureSource !== 'calculated' && (
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 2 }}>
+
                                             <UnitSelector
-                                                label="Relieving Pressure"
-                                                value={toDisplay(currentCase.inputs.pressure, 'pressure')}
-                                                unit={preferences.pressure}
+                                                label="Backpressure"
+                                                value={toDisplay(currentCase.inputs.backpressure, 'backpressure')}
+                                                unit={preferences.backpressure}
                                                 availableUnits={PRESSURE_UNITS}
                                                 onChange={(val, unit) => {
-                                                    if (unit !== preferences.pressure) setUnit('pressure', unit);
-                                                    handleInputChange('pressure', val !== null ? val : '', 'pressure', unit);
+                                                    if (unit !== preferences.backpressure) setUnit('backpressure', unit);
+                                                    handleInputChange('backpressure', val !== null ? val : '', 'backpressure', unit);
                                                 }}
+                                                disabled={!canEdit}
                                             />
-                                            <UnitSelector
-                                                label="Relieving Temperature"
-                                                value={toDisplay(currentCase.inputs.temperature, 'temperature')}
-                                                unit={preferences.temperature}
-                                                availableUnits={TEMPERATURE_UNITS}
-                                                onChange={(val, unit) => {
-                                                    if (unit !== preferences.temperature) setUnit('temperature', unit);
-                                                    handleInputChange('temperature', val !== null ? val : '', 'temperature', unit);
+                                            <TextField
+                                                label="Backpressure Type"
+                                                select
+                                                value={currentCase.inputs.backpressureType || 'superimposed'}
+                                                onChange={(e) => handleInputChange('backpressureType', e.target.value)}
+                                                fullWidth
+                                                disabled={!canEdit}
+                                            >
+                                                <MenuItem value="superimposed">Superimposed</MenuItem>
+                                                <MenuItem value="built_up">Built-up</MenuItem>
+                                            </TextField>
+                                        </Box>
+                                    )}
+
+                                    {currentCase.inputs.backpressureSource === 'calculated' && (
+                                        <Box sx={{ mb: 2 }}>
+                                            <TextField
+                                                label="Destination Pressure"
+                                                type="number"
+                                                value={toDisplay(currentCase.inputs.destinationPressure || 0, 'pressure')}
+                                                onChange={(e) => handleInputChange('destinationPressure', e.target.value, 'pressure')}
+                                                slotProps={{
+                                                    input: {
+                                                        endAdornment: (
+                                                            <InputAdornment position="end">
+                                                                <TextField
+                                                                    select
+                                                                    variant="standard"
+                                                                    value={preferences.pressure}
+                                                                    onChange={(e) => setUnit('pressure', e.target.value)}
+                                                                    sx={{ minWidth: 60 }}
+                                                                >
+                                                                    {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
+                                                                </TextField>
+                                                            </InputAdornment>
+                                                        ),
+                                                    }
                                                 }}
+                                                helperText="Pressure at outlet discharge point (e.g., flare header, atmospheric)"
+                                                fullWidth
+                                                sx={{ mb: 2 }}
+                                                disabled={!canEdit}
                                             />
-                                        </Box>
-                                    </Box>
-                                    {(currentCase.method === 'gas' || currentCase.method === 'steam' || currentCase.method === 'two_phase') && (
-                                        <>
-                                            <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
-                                            <Box>
-                                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                                    Gas/Vapor Phase Properties
-                                                </Typography>
-                                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
-                                                    <NumericInput
-                                                        label="Molecular Weight"
-                                                        value={currentCase.inputs.molecularWeight}
-                                                        onChange={(val) => handleInputChange('molecularWeight', val !== undefined ? val : '')}
-                                                        endAdornment="g/mol"
-                                                    />
-                                                    <NumericInput
-                                                        label="Compressibility (Z)"
-                                                        value={currentCase.inputs.compressibilityZ}
-                                                        onChange={(val) => handleInputChange('compressibilityZ', val !== undefined ? val : '')}
-                                                        step={0.01}
-                                                        min={0}
-                                                        max={2}
-                                                    />
-                                                    <NumericInput
-                                                        label="Specific Heat Ratio (k)"
-                                                        value={currentCase.inputs.specificHeatRatio}
-                                                        onChange={(val) => handleInputChange('specificHeatRatio', val !== undefined ? val : '')}
-                                                        step={0.01}
-                                                        min={1}
-                                                        max={2}
-                                                    />
-                                                </Box>
-                                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mt: 2 }}>
-                                                    <UnitSelector
-                                                        label="Gas Viscosity"
-                                                        value={toDisplay(currentCase.inputs.gasViscosity || currentCase.inputs.viscosity, 'viscosity')}
-                                                        unit={preferences.viscosity}
-                                                        availableUnits={VISCOSITY_UNITS}
-                                                        onChange={(val, unit) => {
-                                                            if (unit !== preferences.viscosity) setUnit('viscosity', unit);
-                                                            handleInputChange('gasViscosity', val !== null ? val : '', 'viscosity', unit);
-                                                        }}
-                                                    />
-                                                    <Box />
-                                                </Box>
-                                            </Box>
-                                        </>
-                                    )}
-                                    {(currentCase.method === 'liquid' || currentCase.method === 'two_phase') && (
-                                        <>
-                                            <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
-                                            <Box>
-                                                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                                    Liquid Phase Properties
-                                                </Typography>
-                                                <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2 }}>
-                                                    <UnitSelector
-                                                        label="Liquid Density"
-                                                        value={toDisplay(currentCase.inputs.liquidDensity || currentCase.inputs.density, 'density')}
-                                                        unit={preferences.density}
-                                                        availableUnits={DENSITY_UNITS}
-                                                        onChange={(val, unit) => {
-                                                            if (unit !== preferences.density) setUnit('density', unit);
-                                                            handleInputChange('liquidDensity', val !== null ? val : '', 'density', unit);
-                                                        }}
-                                                    />
-                                                    <UnitSelector
-                                                        label="Liquid Viscosity"
-                                                        value={toDisplay(currentCase.inputs.liquidViscosity || currentCase.inputs.viscosity, 'viscosity')}
-                                                        unit={preferences.viscosity}
-                                                        availableUnits={VISCOSITY_UNITS}
-                                                        onChange={(val, unit) => {
-                                                            if (unit !== preferences.viscosity) setUnit('viscosity', unit);
-                                                            handleInputChange('liquidViscosity', val !== null ? val : '', 'viscosity', unit);
-                                                        }}
-                                                    />
-                                                </Box>
-                                            </Box>
-                                        </>
-                                    )}
-                                    <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
-                                    <Box>
-                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-                                            <Typography variant="subtitle1" fontWeight={600}>
-                                                Backpressure & Hydraulic Validation
-                                            </Typography>
-                                            <Tooltip
-                                                title={
-                                                    <Box>
-                                                        <Typography variant="body2" fontWeight={600} gutterBottom>
-                                                            Backpressure Types:
-                                                        </Typography>
-                                                        <Typography variant="body2" gutterBottom>
-                                                            • <strong>Superimposed:</strong> Constant backpressure that exists in the discharge system before the valve opens (e.g., from a header or atmospheric pressure).
-                                                        </Typography>
-                                                        <Typography variant="body2">
-                                                            • <strong>Built-up:</strong> Backpressure that develops in the discharge system only after the valve opens, caused by flow resistance.
-                                                        </Typography>
-                                                    </Box>
-                                                }
-                                                arrow
-                                                placement="right"
-                                            >
-                                                <HelpOutline sx={{ fontSize: 18, color: 'text.secondary', cursor: 'help' }} />
-                                            </Tooltip>
-                                        </Box>
 
-                                        <FormControl component="fieldset" sx={{ mb: 2 }}>
-                                            <FormLabel component="legend">Backpressure Source</FormLabel>
-                                            <RadioGroup
-                                                row
-                                                value={currentCase.inputs.backpressureSource || 'manual'}
-                                                onChange={(e) => {
-                                                    setCurrentCase({
-                                                        ...currentCase,
-                                                        inputs: {
-                                                            ...currentCase.inputs,
-                                                            backpressureSource: e.target.value as 'manual' | 'calculated',
-                                                        },
-                                                    });
-                                                    setIsDirty(true);
-                                                    setIsCalculated(false);
-                                                }}
-                                            >
-                                                <FormControlLabel value="manual" control={<Radio />} label="Manual Entry" />
-                                                <FormControlLabel value="calculated" control={<Radio />} label="Calculate from Outlet Piping" />
-                                            </RadioGroup>
-                                        </FormControl>
-
-                                        {currentCase.inputs.backpressureSource !== 'calculated' && (
-                                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 2, mb: 2 }}>
-                                                <UnitSelector
-                                                    label="Backpressure"
-                                                    value={toDisplay(currentCase.inputs.backpressure, 'backpressure')}
-                                                    unit={preferences.backpressure}
-                                                    availableUnits={PRESSURE_UNITS}
-                                                    onChange={(val, unit) => {
-                                                        if (unit !== preferences.backpressure) setUnit('backpressure', unit);
-                                                        handleInputChange('backpressure', val !== null ? val : '', 'backpressure', unit);
-                                                    }}
-                                                />
-                                                <TextField
-                                                    label="Backpressure Type"
-                                                    select
-                                                    value={currentCase.inputs.backpressureType || 'superimposed'}
-                                                    onChange={(e) => handleInputChange('backpressureType', e.target.value)}
-                                                    fullWidth
-                                                >
-                                                    <MenuItem value="superimposed">Superimposed</MenuItem>
-                                                    <MenuItem value="built_up">Built-up</MenuItem>
-                                                </TextField>
-                                            </Box>
-                                        )}
-
-                                        {currentCase.inputs.backpressureSource === 'calculated' && (
-                                            <Box sx={{ mb: 2 }}>
-                                                <TextField
-                                                    label="Destination Pressure"
-                                                    type="number"
-                                                    value={toDisplay(currentCase.inputs.destinationPressure || 0, 'pressure')}
-                                                    onChange={(e) => handleInputChange('destinationPressure', e.target.value, 'pressure')}
-                                                    slotProps={{
-                                                        input: {
-                                                            endAdornment: (
-                                                                <InputAdornment position="end">
-                                                                    <TextField
-                                                                        select
-                                                                        variant="standard"
-                                                                        value={preferences.pressure}
-                                                                        onChange={(e) => setUnit('pressure', e.target.value)}
-                                                                        sx={{ minWidth: 60 }}
-                                                                    >
-                                                                        {PRESSURE_UNITS.map(u => <MenuItem key={u} value={u}>{u}</MenuItem>)}
-                                                                    </TextField>
-                                                                </InputAdornment>
-                                                            ),
-                                                        }
-                                                    }}
-                                                    helperText="Pressure at outlet discharge point (e.g., flare header, atmospheric)"
-                                                    fullWidth
-                                                    sx={{ mb: 2 }}
-                                                />
-
-                                                {currentCase.inputs.calculatedBackpressure !== undefined && (
-                                                    <Alert severity="success">
-                                                        <Typography variant="body2" fontWeight={600}>
-                                                            Calculated Built-up Backpressure: {currentCase.inputs.calculatedBackpressure.toFixed(3)} barg
-                                                        </Typography>
-                                                        <Typography variant="caption">
-                                                            Based on {localOutletNetwork?.pipes?.length || 0} pipes in outlet network.
-                                                        </Typography>
-                                                    </Alert>
-                                                )}
-
-                                                {(!localOutletNetwork || !localOutletNetwork.pipes || localOutletNetwork.pipes.length === 0) && (
-                                                    <Alert severity="info">
-                                                        <Typography variant="body2">
-                                                            Add pipes to the Outlet Piping tab to calculate backpressure.
-                                                        </Typography>
-                                                    </Alert>
-                                                )}
-                                            </Box>
-                                        )}
-
-                                        <Box sx={{ mt: 2 }}>
-                                            <Typography variant="body2" fontWeight={600} color="text.secondary" gutterBottom>
-                                                Inlet Pressure Drop Validation
-                                            </Typography>
-                                            {currentCase.outputs?.inletValidation ? (
-                                                <Alert
-                                                    severity={currentCase.outputs?.inletValidation?.severity}
-                                                    icon={currentCase.outputs?.inletValidation?.isValid ? <CheckCircle /> : <WarningIcon />}
-                                                >
-                                                    <Typography variant="body2">
-                                                        {currentCase.outputs?.inletPressureDrop !== undefined
-                                                            ? toDisplayDelta(currentCase.outputs.inletPressureDrop, 'pressure', 3)
-                                                            : '—'} {getDeltaUnit('pressure') + " "}
-                                                        ({currentCase.outputs?.inletPressureDropPercent?.toFixed(2) || '—'}% of set pressure)
+                                            {currentCase.inputs.calculatedBackpressure !== undefined && (
+                                                <Alert severity="success">
+                                                    <Typography variant="body2" fontWeight={600}>
+                                                        Calculated Built-up Backpressure: {currentCase.inputs.calculatedBackpressure.toFixed(3)} barg
                                                     </Typography>
                                                     <Typography variant="caption">
-                                                        {currentCase.outputs.inletValidation.message}
+                                                        Based on {localOutletNetwork?.pipes?.length || 0} pipes in outlet network.
                                                     </Typography>
                                                 </Alert>
-                                            ) : (
+                                            )}
+
+                                            {(!localOutletNetwork || !localOutletNetwork.pipes || localOutletNetwork.pipes.length === 0) && (
                                                 <Alert severity="info">
                                                     <Typography variant="body2">
-                                                        Run calculation to validate inlet pressure drop.
-                                                    </Typography>
-                                                    <Typography variant="caption">
-                                                        API 520 guideline: Inlet ΔP should be &lt; 3% of set pressure to avoid valve chattering.
+                                                        Add pipes to the Outlet Piping tab to calculate backpressure.
                                                     </Typography>
                                                 </Alert>
                                             )}
                                         </Box>
+                                    )}
+
+                                    <Box sx={{ mt: 2 }}>
+                                        <Typography variant="body2" fontWeight={600} color="text.secondary" gutterBottom>
+                                            Inlet Pressure Drop Validation
+                                        </Typography>
+                                        {currentCase.outputs?.inletValidation ? (
+                                            <Alert
+                                                severity={currentCase.outputs?.inletValidation?.severity}
+                                                icon={currentCase.outputs?.inletValidation?.isValid ? <CheckCircle /> : <WarningIcon />}
+                                            >
+                                                <Typography variant="body2">
+                                                    {currentCase.outputs?.inletPressureDrop !== undefined
+                                                        ? toDisplayDelta(currentCase.outputs.inletPressureDrop, 'pressure', 3)
+                                                        : '—'} {getDeltaUnit('pressure') + " "}
+                                                    ({currentCase.outputs?.inletPressureDropPercent?.toFixed(2) || '—'}% of set pressure)
+                                                </Typography>
+                                                <Typography variant="caption">
+                                                    {currentCase.outputs.inletValidation.message}
+                                                </Typography>
+                                            </Alert>
+                                        ) : (
+                                            <Alert severity="info">
+                                                <Typography variant="body2">
+                                                    Run calculation to validate inlet pressure drop.
+                                                </Typography>
+                                                <Typography variant="caption">
+                                                    API 520 guideline: Inlet ΔP should be &lt; 3% of set pressure to avoid valve chattering.
+                                                </Typography>
+                                            </Alert>
+                                        )}
                                     </Box>
-                                </CardContent>
+                                </Box>
+                            </CardContent>
                         </Card>
                     </Box>
                 </TabPanel>
@@ -2036,338 +2058,338 @@ export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSe
                             <CardContent>
                                 <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
 
-                        <Box sx={{
-                            p: 2.5,
-                            borderRadius: 3,
-                            background: isDark
-                                ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)'
-                                : 'linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(59, 130, 246, 0.03) 100%)',
-                            border: `1px solid ${isDark ? 'rgba(56, 189, 248, 0.2)' : 'rgba(2, 132, 199, 0.15)'}`,
-                        }}>
-                            <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                Sizing Summary
-                            </Typography>
-                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(5, 1fr)' }, gap: 3 }}>
-                                <Box>
-                                    <Typography variant="caption" color="text.secondary">Selected Orifice</Typography>
-                                    <Typography variant="h3" fontWeight={700} color="primary.main">
-                                        {currentCase.outputs?.selectedOrifice ?? '-'}
-                                    </Typography>
-                                </Box>
-                                <Box>
-                                    <Typography variant="caption" color="text.secondary">Orifice Area</Typography>
-                                    <Typography variant="h5" fontWeight={600}>
-                                        {currentCase.outputs?.orificeArea?.toLocaleString() ?? '-'} mm²
-                                    </Typography>
-                                </Box>
-                                <Box>
-                                    <Typography variant="caption" color="text.secondary">% Used</Typography>
-                                    <Typography variant="h5" fontWeight={600} color={
-                                        ((currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100) > 90
-                                            ? 'warning.main'
-                                            : 'text.primary'
-                                    }>
-                                        {((currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100).toFixed(1)}%
-                                    </Typography>
-                                </Box>
-                                <Box>
-                                    <Typography variant="caption" color="text.secondary">Rated Capacity</Typography>
-                                    <Typography variant="h5" fontWeight={600}>
-                                        {(((currentCase.outputs?.ratedCapacity ?? 0) / (currentCase.outputs?.numberOfValves || 1)) * numberOfValves).toLocaleString()} kg/h
-                                    </Typography>
-                                </Box>
-                                <Box>
-                                    <Typography variant="caption" color="text.secondary">Number of Valves</Typography>
-                                    <Typography variant="h5" fontWeight={600}>
-                                        {numberOfValves}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        </Box>
-                        <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                    <Box sx={{
+                                        p: 2.5,
+                                        borderRadius: 3,
+                                        background: isDark
+                                            ? 'linear-gradient(135deg, rgba(56, 189, 248, 0.1) 0%, rgba(59, 130, 246, 0.05) 100%)'
+                                            : 'linear-gradient(135deg, rgba(2, 132, 199, 0.08) 0%, rgba(59, 130, 246, 0.03) 100%)',
+                                        border: `1px solid ${isDark ? 'rgba(56, 189, 248, 0.2)' : 'rgba(2, 132, 199, 0.15)'}`,
+                                    }}>
+                                        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                            Sizing Summary
+                                        </Typography>
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', md: 'repeat(5, 1fr)' }, gap: 3 }}>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Selected Orifice</Typography>
+                                                <Typography variant="h3" fontWeight={700} color="primary.main">
+                                                    {currentCase.outputs?.selectedOrifice ?? '-'}
+                                                </Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Orifice Area</Typography>
+                                                <Typography variant="h5" fontWeight={600}>
+                                                    {currentCase.outputs?.orificeArea?.toLocaleString() ?? '-'} mm²
+                                                </Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">% Used</Typography>
+                                                <Typography variant="h5" fontWeight={600} color={
+                                                    ((currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100) > 90
+                                                        ? 'warning.main'
+                                                        : 'text.primary'
+                                                }>
+                                                    {((currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100).toFixed(1)}%
+                                                </Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Rated Capacity</Typography>
+                                                <Typography variant="h5" fontWeight={600}>
+                                                    {(((currentCase.outputs?.ratedCapacity ?? 0) / (currentCase.outputs?.numberOfValves || 1)) * numberOfValves).toLocaleString()} kg/h
+                                                </Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Number of Valves</Typography>
+                                                <Typography variant="h5" fontWeight={600}>
+                                                    {numberOfValves}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
+                                    </Box>
+                                    <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
 
-                        {/* Hydraulic Calculations */}
-                        <Box>
-                            <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                Hydraulic Calculations
-                            </Typography>
-                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
-                                    {/* Inlet Pressure Drop */}
+                                    {/* Hydraulic Calculations */}
                                     <Box>
-                                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                            Inlet Pressure Drop
+                                        <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                            Hydraulic Calculations
                                         </Typography>
-                                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-                                            <Typography variant="h6" fontWeight={600}>
-                                                {currentCase.outputs?.inletPressureDrop !== undefined
-                                                    ? `${toDisplayDelta(currentCase.outputs?.inletPressureDrop, 'pressure', 3)}`
-                                                    : '—'}
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {getDeltaUnit('pressure')}
-                                            </Typography>
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
+                                            {/* Inlet Pressure Drop */}
+                                            <Box>
+                                                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                                    Inlet Pressure Drop
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                                                    <Typography variant="h6" fontWeight={600}>
+                                                        {currentCase.outputs?.inletPressureDrop !== undefined
+                                                            ? `${toDisplayDelta(currentCase.outputs?.inletPressureDrop, 'pressure', 3)}`
+                                                            : '—'}
+                                                    </Typography>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        {getDeltaUnit('pressure')}
+                                                    </Typography>
+                                                </Box>
+                                                <Typography
+                                                    variant="caption"
+                                                    color={
+                                                        currentCase.outputs?.inletPressureDropPercent !== undefined
+                                                            ? currentCase.outputs.inletPressureDropPercent > 3 ? 'error.main' : 'success.main'
+                                                            : 'text.secondary'
+                                                    }
+                                                    fontWeight={500}
+                                                >
+                                                    {currentCase.outputs?.inletPressureDropPercent !== undefined
+                                                        ? `${currentCase.outputs.inletPressureDropPercent.toFixed(2)}% of Set Pressure`
+                                                        : 'Requires Inlet Piping'}
+                                                </Typography>
+                                            </Box>
+
+                                            {/* Backpressure */}
+                                            <Box>
+                                                <Typography variant="subtitle2" color="text.secondary" gutterBottom>
+                                                    Total Backpressure
+                                                </Typography>
+                                                <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+                                                    <Typography variant="h6" fontWeight={600}>
+                                                        {toDisplay(currentCase.inputs?.backpressure, 'pressure', 3)}
+                                                    </Typography>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        {preferences.pressure}
+                                                    </Typography>
+                                                </Box>
+                                                <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Superimposed: {currentCase.inputs?.destinationPressure
+                                                            ? `${toDisplay(currentCase.inputs.destinationPressure, 'pressure', 2)} ${preferences.pressure}`
+                                                            : `0 ${preferences.pressure}`}
+                                                    </Typography>
+                                                    <Typography variant="caption" color="text.secondary">
+                                                        Built-up: {currentCase.outputs?.builtUpBackpressure
+                                                            ? `${toDisplayDelta(currentCase.outputs.builtUpBackpressure, 'pressure', 2)} ${getDeltaUnit('pressure')}`
+                                                            : `0 ${getDeltaUnit('pressure')}`}
+                                                    </Typography>
+                                                </Box>
+                                            </Box>
                                         </Box>
-                                        <Typography
-                                            variant="caption"
-                                            color={
-                                                currentCase.outputs?.inletPressureDropPercent !== undefined
-                                                    ? currentCase.outputs.inletPressureDropPercent > 3 ? 'error.main' : 'success.main'
-                                                    : 'text.secondary'
-                                            }
-                                            fontWeight={500}
-                                        >
-                                            {currentCase.outputs?.inletPressureDropPercent !== undefined
-                                                ? `${currentCase.outputs.inletPressureDropPercent.toFixed(2)}% of Set Pressure`
-                                                : 'Requires Inlet Piping'}
-                                        </Typography>
                                     </Box>
-
-                                    {/* Backpressure */}
-                                    <Box>
-                                        <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-                                            Total Backpressure
-                                        </Typography>
-                                        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
-                                            <Typography variant="h6" fontWeight={600}>
-                                                {toDisplay(currentCase.inputs?.backpressure, 'pressure', 3)}
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                {preferences.pressure}
-                                            </Typography>
-                                        </Box>
-                                        <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                                            <Typography variant="caption" color="text.secondary">
-                                                Superimposed: {currentCase.inputs?.destinationPressure
-                                                    ? `${toDisplay(currentCase.inputs.destinationPressure, 'pressure', 2)} ${preferences.pressure}`
-                                                    : `0 ${preferences.pressure}`}
-                                            </Typography>
-                                            <Typography variant="caption" color="text.secondary">
-                                                Built-up: {currentCase.outputs?.builtUpBackpressure
-                                                    ? `${toDisplayDelta(currentCase.outputs.builtUpBackpressure, 'pressure', 2)} ${getDeltaUnit('pressure')}`
-                                                    : `0 ${getDeltaUnit('pressure')}`}
-                                            </Typography>
-                                        </Box>
-                                    </Box>
-                                </Box>
-                            </Box>
-                            <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
-                        <Box>
-                            <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                Flow Analysis
-                            </Typography>
-                            <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
-                                <Box>
-                                    <Typography variant="caption" color="text.secondary">Flow Type</Typography>
-                                    <Box sx={{ mt: 0.5 }}>
-                                        {(() => {
-                                            if (currentCase.method === 'liquid') {
-                                                return <Chip label="Liquid Relief" color="info" />;
-                                            }
-                                            if (currentCase.method === 'steam') {
-                                                return <Chip label="Steam Relief" color="warning" />;
-                                            }
-                                            return (
-                                                <Chip
-                                                    label={currentCase.outputs.isCriticalFlow ? 'Critical Flow' : 'Subcritical Flow'}
-                                                    color={currentCase.outputs.isCriticalFlow ? 'success' : 'info'}
-                                                />
-                                            );
-                                        })()}
-                                    </Box>
-                                </Box>
-                                <Box>
-                                    <Typography variant="caption" color="text.secondary">Discharge Coefficient</Typography>
-                                    <Typography variant="h6" fontWeight={600}>
-                                        {currentCase.outputs?.dischargeCoefficient ?? '-'}
-                                    </Typography>
-                                </Box>
-                                <Box>
-                                    <Typography variant="caption" color="text.secondary">BP Correction Factor</Typography>
-                                    <Typography variant="h6" fontWeight={600}>
-                                        {currentCase.outputs?.backpressureCorrectionFactor ?? '-'}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        </Box>
-
-                        {(() => {
-                            const livePercentUsed = (currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100;
-                            const filteredMessages = (currentCase.outputs?.messages ?? []).filter(msg => {
-                                if (msg.includes('WARNING: Required area exceeds largest standard orifice') && livePercentUsed <= 100) {
-                                    return false;
-                                }
-                                return true;
-                            });
-
-                            if (filteredMessages.length === 0) return null;
-
-                            return (
-                                <>
                                     <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
                                     <Box>
                                         <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                                            Notes & Warnings
+                                            Flow Analysis
                                         </Typography>
-                                        <List dense disablePadding>
-                                            {filteredMessages.map((msg, idx) => (
-                                                <ListItem key={idx} disablePadding sx={{ py: 0.5 }}>
-                                                    <ListItemIcon sx={{ minWidth: 32 }}>
-                                                        <Info sx={{ fontSize: 18, color: 'info.main' }} />
-                                                    </ListItemIcon>
-                                                    <ListItemText primary={msg} primaryTypographyProps={{ variant: 'body2' }} />
-                                                </ListItem>
-                                            ))}
-                                        </List>
+                                        <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr 1fr' }, gap: 2 }}>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Flow Type</Typography>
+                                                <Box sx={{ mt: 0.5 }}>
+                                                    {(() => {
+                                                        if (currentCase.method === 'liquid') {
+                                                            return <Chip label="Liquid Relief" color="info" />;
+                                                        }
+                                                        if (currentCase.method === 'steam') {
+                                                            return <Chip label="Steam Relief" color="warning" />;
+                                                        }
+                                                        return (
+                                                            <Chip
+                                                                label={currentCase.outputs.isCriticalFlow ? 'Critical Flow' : 'Subcritical Flow'}
+                                                                color={currentCase.outputs.isCriticalFlow ? 'success' : 'info'}
+                                                            />
+                                                        );
+                                                    })()}
+                                                </Box>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">Discharge Coefficient</Typography>
+                                                <Typography variant="h6" fontWeight={600}>
+                                                    {currentCase.outputs?.dischargeCoefficient ?? '-'}
+                                                </Typography>
+                                            </Box>
+                                            <Box>
+                                                <Typography variant="caption" color="text.secondary">BP Correction Factor</Typography>
+                                                <Typography variant="h6" fontWeight={600}>
+                                                    {currentCase.outputs?.backpressureCorrectionFactor ?? '-'}
+                                                </Typography>
+                                            </Box>
+                                        </Box>
                                     </Box>
-                                </>
-                            );
-                        })()}
 
-                        {(() => {
-                            const livePercentUsed = (currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100;
-                            const isAdequatelySized = livePercentUsed <= 100;
+                                    {(() => {
+                                        const livePercentUsed = (currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100;
+                                        const filteredMessages = (currentCase.outputs?.messages ?? []).filter(msg => {
+                                            if (msg.includes('WARNING: Required area exceeds largest standard orifice') && livePercentUsed <= 100) {
+                                                return false;
+                                            }
+                                            return true;
+                                        });
 
-                            return (
-                                <>
+                                        if (filteredMessages.length === 0) return null;
+
+                                        return (
+                                            <>
+                                                <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                                <Box>
+                                                    <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
+                                                        Notes & Warnings
+                                                    </Typography>
+                                                    <List dense disablePadding>
+                                                        {filteredMessages.map((msg, idx) => (
+                                                            <ListItem key={idx} disablePadding sx={{ py: 0.5 }}>
+                                                                <ListItemIcon sx={{ minWidth: 32 }}>
+                                                                    <Info sx={{ fontSize: 18, color: 'info.main' }} />
+                                                                </ListItemIcon>
+                                                                <ListItemText primary={msg} primaryTypographyProps={{ variant: 'body2' }} />
+                                                            </ListItem>
+                                                        ))}
+                                                    </List>
+                                                </Box>
+                                            </>
+                                        );
+                                    })()}
+
+                                    {(() => {
+                                        const livePercentUsed = (currentCase.outputs?.requiredArea ?? 0) / (numberOfValves * (currentCase.outputs?.orificeArea ?? 1)) * 100;
+                                        const isAdequatelySized = livePercentUsed <= 100;
+
+                                        return (
+                                            <>
+                                                <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                                <Alert severity={isAdequatelySized ? 'success' : 'error'}>
+                                                    {isAdequatelySized
+                                                        ? `${numberOfValves > 1 ? `${numberOfValves} x ` : ''}Orifice ${currentCase.outputs?.selectedOrifice ?? '-'} is adequately sized with ${(100 - livePercentUsed).toFixed(1)}% margin.`
+                                                        : `${numberOfValves > 1 ? `${numberOfValves} x ` : ''}Orifice ${currentCase.outputs?.selectedOrifice ?? '-'} is undersized. Select a larger orifice.`
+                                                    }
+                                                </Alert>
+                                            </>
+                                        );
+                                    })()}
+
+                                    {(inletHydraulicResult?.segments?.length || outletHydraulicResult?.segments?.length) && (
+                                        <>
+                                            <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                            <Box>
+                                                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
+                                                    <Typography variant="subtitle1" fontWeight={600}>
+                                                        Hydraulic Calculations Report
+                                                    </Typography>
+                                                    <Button
+                                                        variant="outlined"
+                                                        size="small"
+                                                        onClick={() => setHydraulicReportDialogOpen(true)}
+                                                    >
+                                                        Open Full Report
+                                                    </Button>
+                                                </Box>
+
+                                                {inletHydraulicResult && inletHydraulicResult.segments.length > 0 && (
+                                                    <>
+                                                        {/* Inlet Warnings */}
+                                                        {inletHydraulicResult.segments.some(s => s.isErosional) && (
+                                                            <Alert severity="error" sx={{ mb: 1 }}>
+                                                                <strong>Inlet - Erosional Velocity:</strong> {inletHydraulicResult.segments.filter(s => s.isErosional).map(s => `${s.name} (${s.velocity?.toFixed(1)} m/s)`).join(', ')}
+                                                            </Alert>
+                                                        )}
+                                                        {inletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.7) && (
+                                                            <Alert severity="error" sx={{ mb: 1 }}>
+                                                                <strong>Inlet - High Mach (&gt;0.7):</strong> {inletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
+                                                            </Alert>
+                                                        )}
+                                                        {inletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7) && (
+                                                            <Alert severity="warning" sx={{ mb: 1 }}>
+                                                                <strong>Inlet - Elevated Mach (&gt;0.5):</strong> {inletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
+                                                            </Alert>
+                                                        )}
+                                                        <HydraulicReportTable
+                                                            title="Inlet Piping Network"
+                                                            segments={inletHydraulicResult.segments}
+                                                            totalPressureDropKPa={inletHydraulicResult.pressureDropKPa}
+                                                            hasChokedFlow={inletHydraulicResult.hasChokedFlow}
+                                                            warnings={inletHydraulicResult.warnings}
+                                                            defaultExpanded={inletHydraulicResult.hasChokedFlow}
+                                                        />
+                                                    </>
+                                                )}
+
+                                                {outletHydraulicResult && outletHydraulicResult.segments.length > 0 && (
+                                                    <>
+                                                        {/* Outlet Warnings */}
+                                                        {outletHydraulicResult.segments.some(s => s.isErosional) && (
+                                                            <Alert severity="error" sx={{ mb: 1 }}>
+                                                                <strong>Outlet - Erosional Velocity:</strong> {outletHydraulicResult.segments.filter(s => s.isErosional).map(s => `${s.name} (${s.velocity?.toFixed(1)} m/s)`).join(', ')}
+                                                            </Alert>
+                                                        )}
+                                                        {outletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.7) && (
+                                                            <Alert severity="error" sx={{ mb: 1 }}>
+                                                                <strong>Outlet - High Mach (&gt;0.7):</strong> {outletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
+                                                            </Alert>
+                                                        )}
+                                                        {outletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7) && (
+                                                            <Alert severity="warning" sx={{ mb: 1 }}>
+                                                                <strong>Outlet - Elevated Mach (&gt;0.5):</strong> {outletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
+                                                            </Alert>
+                                                        )}
+                                                        <HydraulicReportTable
+                                                            title="Outlet Piping Network"
+                                                            segments={outletHydraulicResult.segments}
+                                                            totalPressureDropKPa={outletHydraulicResult.pressureDropKPa}
+                                                            hasChokedFlow={outletHydraulicResult.hasChokedFlow}
+                                                            warnings={outletHydraulicResult.warnings}
+                                                            defaultExpanded={outletHydraulicResult.hasChokedFlow}
+                                                        />
+                                                    </>
+                                                )}
+                                            </Box>
+                                        </>
+                                    )}
+
+                                    {currentCase.outputs?.inletValidation && (
+                                        <>
+                                            <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                            <Alert
+                                                severity={currentCase.outputs.inletValidation.severity}
+                                                icon={
+                                                    currentCase.outputs.inletValidation.isValid ?
+                                                        <CheckCircle /> :
+                                                        currentCase.outputs.inletValidation.severity === 'warning' ?
+                                                            <WarningIcon /> :
+                                                            <ErrorIcon />
+                                                }
+                                            >
+                                                <strong>Inlet Pressure Drop Validation:</strong> {currentCase.outputs.inletValidation.message}
+                                                {currentCase.outputs.inletPressureDropPercent !== undefined && (
+                                                    <Typography variant="body2" sx={{ mt: 0.5 }}>
+                                                        Inlet ΔP: {currentCase.outputs.inletPressureDropPercent.toFixed(1)}% of set pressure
+                                                        {localInletNetwork && localInletNetwork.pipes && ` (${localInletNetwork.pipes.length} pipe${localInletNetwork.pipes.length !== 1 ? 's' : ''})`}
+                                                    </Typography>
+                                                )}
+                                            </Alert>
+                                        </>
+                                    )}
+
+                                    {hydraulicWarnings.length > 0 && (
+                                        <>
+                                            <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
+                                            <Alert severity="warning">
+                                                <strong>Hydraulic Calculation Warnings:</strong>
+                                                <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
+                                                    {hydraulicWarnings.map((warning, idx) => (
+                                                        <li key={idx}>{warning}</li>
+                                                    ))}
+                                                </Box>
+                                            </Alert>
+                                        </>
+                                    )}
+
                                     <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
-                                    <Alert severity={isAdequatelySized ? 'success' : 'error'}>
-                                        {isAdequatelySized
-                                            ? `${numberOfValves > 1 ? `${numberOfValves} x ` : ''}Orifice ${currentCase.outputs?.selectedOrifice ?? '-'} is adequately sized with ${(100 - livePercentUsed).toFixed(1)}% margin.`
-                                            : `${numberOfValves > 1 ? `${numberOfValves} x ` : ''}Orifice ${currentCase.outputs?.selectedOrifice ?? '-'} is undersized. Select a larger orifice.`
-                                        }
-                                    </Alert>
-                                </>
-                            );
-                        })()}
-
-                        {(inletHydraulicResult?.segments?.length || outletHydraulicResult?.segments?.length) && (
-                            <>
-                                <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
-                                <Box>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-                                        <Typography variant="subtitle1" fontWeight={600}>
-                                            Hydraulic Calculations Report
-                                        </Typography>
-                                        <Button
-                                            variant="outlined"
-                                            size="small"
-                                            onClick={() => setHydraulicReportDialogOpen(true)}
-                                        >
-                                            Open Full Report
+                                    <Box sx={{ display: 'flex', gap: 2 }}>
+                                        <Button variant="outlined" startIcon={<Download />}>
+                                            Export PDF Report
+                                        </Button>
+                                        <Button variant="outlined" startIcon={<Download />}>
+                                            Export to Excel
                                         </Button>
                                     </Box>
-
-                                    {inletHydraulicResult && inletHydraulicResult.segments.length > 0 && (
-                                        <>
-                                            {/* Inlet Warnings */}
-                                            {inletHydraulicResult.segments.some(s => s.isErosional) && (
-                                                <Alert severity="error" sx={{ mb: 1 }}>
-                                                    <strong>Inlet - Erosional Velocity:</strong> {inletHydraulicResult.segments.filter(s => s.isErosional).map(s => `${s.name} (${s.velocity?.toFixed(1)} m/s)`).join(', ')}
-                                                </Alert>
-                                            )}
-                                            {inletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.7) && (
-                                                <Alert severity="error" sx={{ mb: 1 }}>
-                                                    <strong>Inlet - High Mach (&gt;0.7):</strong> {inletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
-                                                </Alert>
-                                            )}
-                                            {inletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7) && (
-                                                <Alert severity="warning" sx={{ mb: 1 }}>
-                                                    <strong>Inlet - Elevated Mach (&gt;0.5):</strong> {inletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
-                                                </Alert>
-                                            )}
-                                            <HydraulicReportTable
-                                                title="Inlet Piping Network"
-                                                segments={inletHydraulicResult.segments}
-                                                totalPressureDropKPa={inletHydraulicResult.pressureDropKPa}
-                                                hasChokedFlow={inletHydraulicResult.hasChokedFlow}
-                                                warnings={inletHydraulicResult.warnings}
-                                                defaultExpanded={inletHydraulicResult.hasChokedFlow}
-                                            />
-                                        </>
-                                    )}
-
-                                    {outletHydraulicResult && outletHydraulicResult.segments.length > 0 && (
-                                        <>
-                                            {/* Outlet Warnings */}
-                                            {outletHydraulicResult.segments.some(s => s.isErosional) && (
-                                                <Alert severity="error" sx={{ mb: 1 }}>
-                                                    <strong>Outlet - Erosional Velocity:</strong> {outletHydraulicResult.segments.filter(s => s.isErosional).map(s => `${s.name} (${s.velocity?.toFixed(1)} m/s)`).join(', ')}
-                                                </Alert>
-                                            )}
-                                            {outletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.7) && (
-                                                <Alert severity="error" sx={{ mb: 1 }}>
-                                                    <strong>Outlet - High Mach (&gt;0.7):</strong> {outletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
-                                                </Alert>
-                                            )}
-                                            {outletHydraulicResult.segments.some(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7) && (
-                                                <Alert severity="warning" sx={{ mb: 1 }}>
-                                                    <strong>Outlet - Elevated Mach (&gt;0.5):</strong> {outletHydraulicResult.segments.filter(s => (s.machNumber ?? 0) > 0.5 && (s.machNumber ?? 0) <= 0.7).map(s => `${s.name} (${s.machNumber?.toFixed(3)})`).join(', ')}
-                                                </Alert>
-                                            )}
-                                            <HydraulicReportTable
-                                                title="Outlet Piping Network"
-                                                segments={outletHydraulicResult.segments}
-                                                totalPressureDropKPa={outletHydraulicResult.pressureDropKPa}
-                                                hasChokedFlow={outletHydraulicResult.hasChokedFlow}
-                                                warnings={outletHydraulicResult.warnings}
-                                                defaultExpanded={outletHydraulicResult.hasChokedFlow}
-                                            />
-                                        </>
-                                    )}
                                 </Box>
-                            </>
-                        )}
-
-                        {currentCase.outputs?.inletValidation && (
-                            <>
-                                <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
-                                <Alert
-                                    severity={currentCase.outputs.inletValidation.severity}
-                                    icon={
-                                        currentCase.outputs.inletValidation.isValid ?
-                                            <CheckCircle /> :
-                                            currentCase.outputs.inletValidation.severity === 'warning' ?
-                                                <WarningIcon /> :
-                                                <ErrorIcon />
-                                    }
-                                >
-                                    <strong>Inlet Pressure Drop Validation:</strong> {currentCase.outputs.inletValidation.message}
-                                    {currentCase.outputs.inletPressureDropPercent !== undefined && (
-                                        <Typography variant="body2" sx={{ mt: 0.5 }}>
-                                            Inlet ΔP: {currentCase.outputs.inletPressureDropPercent.toFixed(1)}% of set pressure
-                                            {localInletNetwork && localInletNetwork.pipes && ` (${localInletNetwork.pipes.length} pipe${localInletNetwork.pipes.length !== 1 ? 's' : ''})`}
-                                        </Typography>
-                                    )}
-                                </Alert>
-                            </>
-                        )}
-
-                        {hydraulicWarnings.length > 0 && (
-                            <>
-                                <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
-                                <Alert severity="warning">
-                                    <strong>Hydraulic Calculation Warnings:</strong>
-                                    <Box component="ul" sx={{ mt: 1, mb: 0, pl: 2 }}>
-                                        {hydraulicWarnings.map((warning, idx) => (
-                                            <li key={idx}>{warning}</li>
-                                        ))}
-                                    </Box>
-                                </Alert>
-                            </>
-                        )}
-
-                        <Box sx={{ height: 1, backgroundColor: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }} />
-                        <Box sx={{ display: 'flex', gap: 2 }}>
-                            <Button variant="outlined" startIcon={<Download />}>
-                                Export PDF Report
-                            </Button>
-                            <Button variant="outlined" startIcon={<Download />}>
-                                Export to Excel
-                            </Button>
-                        </Box>
-                        </Box>
-                    </CardContent>
-                </Card>
+                            </CardContent>
+                        </Card>
                     </Box >
                 </TabPanel >
             </Box >

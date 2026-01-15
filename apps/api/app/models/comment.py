@@ -1,7 +1,7 @@
 """Comment model."""
 from typing import Optional
 
-from sqlalchemy import Text, ForeignKey
+from sqlalchemy import Text, Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -29,6 +29,9 @@ class Comment(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         ForeignKey("users.id"),
         nullable=True,
     )
+    
+    # Soft delete flag
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", nullable=False)
     
     # Relationships
     protective_system = relationship("ProtectiveSystem", back_populates="comments")

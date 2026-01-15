@@ -1,7 +1,9 @@
 """Audit Log model for tracking all entity changes."""
 from typing import Optional, List
+from datetime import datetime
 
-from sqlalchemy import Text, String, Enum
+from sqlalchemy import Text, String, Enum, DateTime, Boolean, func
+import sqlalchemy as sa
 from sqlalchemy.orm import Mapped, mapped_column
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 import enum
@@ -42,17 +44,19 @@ class AuditLog(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         Enum(AuditAction, name="audit_action", create_constraint=False, native_enum=True,
              values_callable=lambda x: [e.value for e in x]),
         nullable=False,
+        index=True,
     )
     entity_type: Mapped[str] = mapped_column(
         Enum(AuditEntityType, name="audit_entity_type", create_constraint=False, native_enum=True,
              values_callable=lambda x: [e.value for e in x]),
         nullable=False,
+        index=True,
     )
-    entity_id: Mapped[str] = mapped_column(UUID(as_uuid=False), nullable=False)
+    entity_id: Mapped[str] = mapped_column(UUID(as_uuid=False), nullable=False, index=True)
     entity_name: Mapped[str] = mapped_column(String(255), nullable=False)
     
     # Who did it
-    user_id: Mapped[str] = mapped_column(UUID(as_uuid=False), nullable=False)
+    user_id: Mapped[str] = mapped_column(UUID(as_uuid=False), nullable=False, index=True)
     user_name: Mapped[str] = mapped_column(String(255), nullable=False)
     user_role: Mapped[Optional[str]] = mapped_column(String(50), nullable=True)
     
@@ -61,5 +65,14 @@ class AuditLog(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
     # Context
-    project_id: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False), nullable=True)
+    project_id: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False), nullable=True, index=True)
     project_name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
+
+    # Specific index for created_at in AuditLog to avoid dropping existing DB index
+    # while keeping TimestampMixin general for other models.
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=sa.func.now(),
+        nullable=False,
+        index=True,
+    )

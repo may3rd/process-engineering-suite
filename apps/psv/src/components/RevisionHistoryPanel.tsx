@@ -32,6 +32,8 @@ import {
     HowToReg,
     Undo,
     Delete,
+    DeleteForever,
+    PushPin,
 } from '@mui/icons-material';
 import { usePsvStore } from '@/store/usePsvStore';
 import { getUserById } from '@/data/mockData';
@@ -93,15 +95,17 @@ export function RevisionHistoryPanel({
     onViewSnapshot,
     overlayAboveDialogs = false,
 }: RevisionHistoryPanelProps) {
-    const { revisionHistory, loadRevisionHistory, getCurrentRevision, updateRevision, deleteRevision } = usePsvStore();
+    const { revisionHistory, loadRevisionHistory, getCurrentRevision, updateRevision, deleteRevision, setCurrentRevision, selectedPsv } = usePsvStore();
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const currentUser = useAuthStore((state) => state.currentUser);
-    const canEdit = useAuthStore((state) => state.canEdit());
+    const canEditAuth = useAuthStore((state) => state.canEdit());
+    const canEditContent = canEditAuth && selectedPsv?.isActive !== false;
     const canApproveSignature = useAuthStore(
         (state) => state.isAuthenticated && ['lead', 'approver', 'admin'].includes(state.currentUser?.role || '')
     );
     const canManualEdit = isAuthenticated && ['lead', 'approver', 'admin'].includes(currentUser?.role || '');
-    const canCreateRevisions = isAuthenticated && canEdit;
+    const canManualEditContent = canManualEdit && selectedPsv?.isActive !== false;
+    const canCreateRevisions = isAuthenticated && canEditContent;
     const canDeleteRevisions = canManualEdit;
 
     const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -109,6 +113,7 @@ export function RevisionHistoryPanel({
     const [newRevisionDialogOpen, setNewRevisionDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [revisionToDelete, setRevisionToDelete] = useState<RevisionHistory | null>(null);
+    const [isDeletingPermanently, setIsDeletingPermanently] = useState(false);
 
     useEffect(() => {
         if (open) {
@@ -121,9 +126,11 @@ export function RevisionHistoryPanel({
             : 'Sizing Case';
 
     const currentRevision = getCurrentRevision(entityType, entityId);
-    const revisionCountForEntity = revisionHistory.filter(
+    const allRevisionsForEntity = revisionHistory.filter(
         (r) => r.entityType === entityType && r.entityId === entityId
-    ).length;
+    );
+    const activeRevisionsForEntity = allRevisionsForEntity.filter(r => r.isActive !== false);
+    const revisionCountForEntity = activeRevisionsForEntity.length;
     const cannotDeleteLastRevision = revisionCountForEntity <= 1;
 
     const handleEditClick = (revision: RevisionHistory) => {
@@ -136,7 +143,7 @@ export function RevisionHistoryPanel({
     };
 
     const signOriginator = async (revision: RevisionHistory) => {
-        if (!currentUser || revision.originatedBy) return;
+        if (!currentUser || revision.originatedBy || selectedPsv?.isActive === false) return;
         await updateRevision(revision.id, {
             originatedBy: currentUser.id,
             originatedAt: new Date().toISOString(),
@@ -144,7 +151,7 @@ export function RevisionHistoryPanel({
     };
 
     const signChecker = async (revision: RevisionHistory) => {
-        if (!currentUser || !isAuthenticated || !revision.originatedBy || revision.checkedBy) return;
+        if (!currentUser || !isAuthenticated || !revision.originatedBy || revision.checkedBy || selectedPsv?.isActive === false) return;
         await updateRevision(revision.id, {
             checkedBy: currentUser.id,
             checkedAt: new Date().toISOString(),
@@ -152,7 +159,7 @@ export function RevisionHistoryPanel({
     };
 
     const signApprover = async (revision: RevisionHistory) => {
-        if (!currentUser || !canApproveSignature || !revision.originatedBy || !revision.checkedBy || revision.approvedBy) return;
+        if (!currentUser || !canApproveSignature || !revision.originatedBy || !revision.checkedBy || revision.approvedBy || selectedPsv?.isActive === false) return;
         await updateRevision(revision.id, {
             approvedBy: currentUser.id,
             approvedAt: new Date().toISOString(),
@@ -163,19 +170,22 @@ export function RevisionHistoryPanel({
         !!revision.originatedBy
         && !!currentUser
         && isAuthenticated
-        && (revision.originatedBy === currentUser.id || canManualEdit);
+        && (revision.originatedBy === currentUser.id || canManualEdit)
+        && selectedPsv?.isActive !== false;
 
     const canRevokeChecker = (revision: RevisionHistory) =>
         !!revision.checkedBy
         && !!currentUser
         && isAuthenticated
-        && (revision.checkedBy === currentUser.id || canManualEdit);
+        && (revision.checkedBy === currentUser.id || canManualEdit)
+        && selectedPsv?.isActive !== false;
 
     const canRevokeApprover = (revision: RevisionHistory) =>
         !!revision.approvedBy
         && !!currentUser
         && isAuthenticated
-        && (revision.approvedBy === currentUser.id || canManualEdit);
+        && (revision.approvedBy === currentUser.id || canManualEdit)
+        && selectedPsv?.isActive !== false;
 
     const revokeOriginator = async (revision: RevisionHistory) => {
         if (!canRevokeOriginator(revision)) return;
@@ -192,16 +202,21 @@ export function RevisionHistoryPanel({
         await updateRevision(revision.id, { approvedBy: null, approvedAt: null });
     };
 
-    const handleDeleteClick = (revision: RevisionHistory) => {
-        if (cannotDeleteLastRevision) return;
+    const handleDeleteClick = (revision: RevisionHistory, permanent: boolean = false) => {
+        if (!permanent && cannotDeleteLastRevision) return;
         setRevisionToDelete(revision);
+        setIsDeletingPermanently(permanent);
         setDeleteDialogOpen(true);
     };
 
     const handleConfirmDelete = async () => {
         if (!revisionToDelete || !canDeleteRevisions) return;
-        if (cannotDeleteLastRevision) return;
-        await deleteRevision(revisionToDelete.id);
+        if (isDeletingPermanently) {
+            await deleteRevision(revisionToDelete.id);
+        } else {
+            if (cannotDeleteLastRevision || !canManualEditContent) return;
+            await usePsvStore.getState().softDeleteRevision(revisionToDelete.id);
+        }
         setDeleteDialogOpen(false);
         setRevisionToDelete(null);
         await loadRevisionHistory(entityType, entityId);
@@ -264,7 +279,7 @@ export function RevisionHistoryPanel({
                         </Typography>
                     ) : (
                         <List disablePadding>
-                            {sortRevisionsByOriginatedAtDesc(revisionHistory).map((revision, index) => {
+                            {sortRevisionsByOriginatedAtDesc(allRevisionsForEntity).map((revision, index) => {
                                 const isCurrent = revision.id === currentRevisionId;
                                 const isFirst = index === 0;
 
@@ -279,6 +294,7 @@ export function RevisionHistoryPanel({
                                                 border: isCurrent ? 2 : 1,
                                                 borderColor: isCurrent ? 'primary.main' : 'divider',
                                                 bgcolor: isCurrent ? 'action.selected' : 'transparent',
+                                                opacity: revision.isActive === false ? 0.6 : 1,
                                             }}
                                         >
                                             {/* Title Row */}
@@ -292,6 +308,14 @@ export function RevisionHistoryPanel({
                                                     <Typography variant="subtitle1" fontWeight={600}>
                                                         Rev. {revision.revisionCode}
                                                     </Typography>
+                                                    {revision.isActive === false && (
+                                                        <Chip
+                                                            label="Inactive"
+                                                            size="small"
+                                                            color="default"
+                                                            sx={{ height: 20, fontSize: '0.7rem' }}
+                                                        />
+                                                    )}
                                                     {isCurrent && (
                                                         <Chip
                                                             label="Current"
@@ -302,37 +326,74 @@ export function RevisionHistoryPanel({
                                                     )}
                                                 </Box>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                                    <Tooltip title={isAuthenticated ? 'Edit Revision' : 'Sign in to edit'}>
-                                                        <span>
-                                                            <IconButton
-                                                                size="small"
-                                                                onClick={() => handleEditClick(revision)}
-                                                                disabled={!canManualEdit}
+                                                    {revision.isActive === false ? (
+                                                        <>
+                                                            <Tooltip title="Restore Revision">
+                                                                <IconButton
+                                                                    size="small"
+                                                                    color="success"
+                                                                    onClick={() => usePsvStore.getState().reactivateRevision(revision.id)}
+                                                                >
+                                                                    <CheckCircle fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                            <Tooltip title="Permanently Remove">
+                                                                <IconButton
+                                                                    size="small"
+                                                                    color="error"
+                                                                    onClick={() => handleDeleteClick(revision, true)}
+                                                                >
+                                                                    <DeleteForever fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Tooltip title={isAuthenticated ? 'Edit Revision' : 'Sign in to edit'}>
+                                                                <span>
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        onClick={() => handleEditClick(revision)}
+                                                                        disabled={!canManualEditContent}
+                                                                    >
+                                                                        <Edit fontSize="small" />
+                                                                    </IconButton>
+                                                                </span>
+                                                            </Tooltip>
+                                                            {!isCurrent && (
+                                                                <Tooltip title="Set as Current Revision">
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        color="primary"
+                                                                        onClick={() => setCurrentRevision(revision.id)}
+                                                                        disabled={!canEditContent}
+                                                                    >
+                                                                        <PushPin fontSize="small" />
+                                                                    </IconButton>
+                                                                </Tooltip>
+                                                            )}
+                                                            <Tooltip
+                                                                title={
+                                                                    !canDeleteRevisions
+                                                                        ? (isAuthenticated ? 'Insufficient permission' : 'Sign in to edit')
+                                                                        : cannotDeleteLastRevision
+                                                                            ? 'At least one revision must remain'
+                                                                            : 'Deactivate Revision'
+                                                                }
                                                             >
-                                                                <Edit fontSize="small" />
-                                                            </IconButton>
-                                                        </span>
-                                                    </Tooltip>
-                                                    <Tooltip
-                                                        title={
-                                                            !canDeleteRevisions
-                                                                ? (isAuthenticated ? 'Insufficient permission' : 'Sign in to edit')
-                                                                : cannotDeleteLastRevision
-                                                                    ? 'At least one revision must remain'
-                                                                    : 'Delete Revision'
-                                                        }
-                                                    >
-                                                        <span>
-                                                            <IconButton
-                                                                size="small"
-                                                                color="error"
-                                                                onClick={() => handleDeleteClick(revision)}
-                                                                disabled={!canDeleteRevisions || cannotDeleteLastRevision}
-                                                            >
-                                                                <Delete fontSize="small" />
-                                                            </IconButton>
-                                                        </span>
-                                                    </Tooltip>
+                                                                <span>
+                                                                    <IconButton
+                                                                        size="small"
+                                                                        color="error"
+                                                                        onClick={() => handleDeleteClick(revision, false)}
+                                                                        disabled={!canManualEditContent || cannotDeleteLastRevision}
+                                                                    >
+                                                                        <Delete fontSize="small" />
+                                                                    </IconButton>
+                                                                </span>
+                                                            </Tooltip>
+                                                        </>
+                                                    )}
                                                 </Box>
                                             </Box>
 
@@ -370,7 +431,7 @@ export function RevisionHistoryPanel({
                                                                 <IconButton
                                                                     size="small"
                                                                     onClick={() => signOriginator(revision)}
-                                                                    disabled={!isAuthenticated || !currentUser}
+                                                                    disabled={!isAuthenticated || !currentUser || !canEditContent}
                                                                 >
                                                                     <HowToReg fontSize="small" />
                                                                 </IconButton>
@@ -427,7 +488,7 @@ export function RevisionHistoryPanel({
                                                                 <IconButton
                                                                     size="small"
                                                                     onClick={() => signChecker(revision)}
-                                                                    disabled={!isAuthenticated || !currentUser || !revision.originatedBy}
+                                                                    disabled={!isAuthenticated || !currentUser || !revision.originatedBy || !canEditContent}
                                                                 >
                                                                     <HowToReg fontSize="small" />
                                                                 </IconButton>
@@ -488,7 +549,7 @@ export function RevisionHistoryPanel({
                                                                 <IconButton
                                                                     size="small"
                                                                     onClick={() => signApprover(revision)}
-                                                                    disabled={!canApproveSignature || !currentUser || !revision.originatedBy || !revision.checkedBy}
+                                                                    disabled={!canApproveSignature || !currentUser || !revision.originatedBy || !revision.checkedBy || !canEditContent}
                                                                 >
                                                                     <HowToReg fontSize="small" />
                                                                 </IconButton>
@@ -558,18 +619,13 @@ export function RevisionHistoryPanel({
                     zIndex: overlayAboveDialogs ? ((theme) => theme.zIndex.modal + 2) : undefined,
                 }}
             >
-                <DialogTitle>Delete revision?</DialogTitle>
+                <DialogTitle>{isDeletingPermanently ? 'Permanently remove revision?' : 'Deactivate revision?'}</DialogTitle>
                 <DialogContent>
                     <Typography variant="body2" color="text.secondary">
-                        {revisionToDelete
-                            ? `This permanently deletes Rev. ${revisionToDelete.revisionCode}.`
-                            : 'This permanently deletes the selected revision.'}
+                        {isDeletingPermanently
+                            ? (revisionToDelete ? `This will permanently delete Rev. ${revisionToDelete.revisionCode} and cannot be undone.` : 'This permanently deletes the selected revision.')
+                            : (revisionToDelete ? `This will deactivate Rev. ${revisionToDelete.revisionCode}. It can be reactivated later.` : 'This will deactivate the selected revision.')}
                     </Typography>
-                    {cannotDeleteLastRevision && (
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                            At least one revision must remain.
-                        </Typography>
-                    )}
                 </DialogContent>
                 <DialogActions>
                     <Button onClick={() => setDeleteDialogOpen(false)}>Cancel</Button>
@@ -577,9 +633,9 @@ export function RevisionHistoryPanel({
                         color="error"
                         variant="contained"
                         onClick={handleConfirmDelete}
-                        disabled={!revisionToDelete || !canDeleteRevisions || cannotDeleteLastRevision}
+                        disabled={!revisionToDelete || !canDeleteRevisions || (!isDeletingPermanently && (cannotDeleteLastRevision || !canManualEditContent))}
                     >
-                        Delete
+                        {isDeletingPermanently ? 'Delete' : 'Deactivate'}
                     </Button>
                 </DialogActions>
             </Dialog>

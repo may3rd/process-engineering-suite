@@ -19,12 +19,13 @@ import {
     DialogContent,
     DialogActions,
     Button,
+    Stack,
 } from '@mui/material';
-import { Delete, Edit, History } from '@mui/icons-material';
+import { Delete, Edit, History, CheckCircle, DeleteForever, PushPin } from '@mui/icons-material';
 import { usePsvStore } from '@/store/usePsvStore';
 import { getUserById } from '@/data/mockData';
 import { RevisionEntityType, RevisionHistory } from '@/data/types';
-import { DeleteConfirmDialog } from './shared/DeleteConfirmDialog';
+import { DeleteConfirmDialog, DeleteMode } from './shared/DeleteConfirmDialog';
 import { useAuthStore } from '@/store/useAuthStore';
 import { EditRevisionDialog } from './EditRevisionDialog';
 import { sortRevisionsByOriginatedAtDesc } from '@/lib/revisionSort';
@@ -108,14 +109,16 @@ export function RevisionHistoryCard({
     showActions = true,
     hideBorder = false,
 }: RevisionHistoryCardProps) {
-    const { revisionHistory, loadRevisionHistory, deleteRevision, softDeleteRevision } = usePsvStore();
-    const canManualEdit = useAuthStore(
+    const { revisionHistory, loadRevisionHistory, deleteRevision, softDeleteRevision, setCurrentRevision, selectedPsv } = usePsvStore();
+    const canEditAuth = useAuthStore(
         (state) => state.isAuthenticated && ['lead', 'approver', 'admin'].includes(state.currentUser?.role || '')
     );
+    const canEditContent = canEditAuth && selectedPsv?.isActive !== false;
     const [editDialogOpen, setEditDialogOpen] = useState(false);
     const [editingRevision, setEditingRevision] = useState<RevisionHistory | null>(null);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
     const [revisionToDelete, setRevisionToDelete] = useState<RevisionHistory | null>(null);
+    const [deleteMode, setDeleteMode] = useState<DeleteMode>('deactivate');
 
     useEffect(() => {
         loadRevisionHistory(entityType, entityId);
@@ -123,7 +126,7 @@ export function RevisionHistoryCard({
 
     const revisionsForEntity = useMemo(
         () => sortRevisionsByOriginatedAtDesc(
-            revisionHistory.filter((r) => r.entityType === entityType && r.entityId === entityId && r.isActive !== false)
+            revisionHistory.filter((r) => r.entityType === entityType && r.entityId === entityId)
         ),
         [entityId, entityType, revisionHistory]
     );
@@ -137,13 +140,14 @@ export function RevisionHistoryCard({
         loadRevisionHistory(entityType, entityId);
     };
 
-    const handleDeleteClick = (revision: RevisionHistory) => {
+    const handleDeleteClick = (revision: RevisionHistory, mode: DeleteMode = 'deactivate') => {
         setRevisionToDelete(revision);
+        setDeleteMode(mode);
         setDeleteDialogOpen(true);
     };
 
     const handleConfirmDelete = async () => {
-        if (!revisionToDelete || !canManualEdit) return;
+        if (!revisionToDelete || !canEditAuth) return;
         if (revisionsForEntity.length <= 1) return;
         await softDeleteRevision(revisionToDelete.id);
         setDeleteDialogOpen(false);
@@ -154,7 +158,7 @@ export function RevisionHistoryCard({
     };
 
     const handleForceDelete = async () => {
-        if (!revisionToDelete || !canManualEdit) return;
+        if (!revisionToDelete || !canEditAuth) return;
         await deleteRevision(revisionToDelete.id);
         setDeleteDialogOpen(false);
         const deletedId = revisionToDelete.id;
@@ -231,6 +235,7 @@ export function RevisionHistoryCard({
                                         sx={{
                                             bgcolor: isCurrent ? 'action.selected' : 'transparent',
                                             '&:hover': { bgcolor: 'action.hover' },
+                                            opacity: revision.isActive === false ? 0.6 : 1,
                                         }}
                                     >
                                         <TableCell>
@@ -238,6 +243,14 @@ export function RevisionHistoryCard({
                                                 <Typography variant="body2" fontWeight={600}>
                                                     {revision.revisionCode}
                                                 </Typography>
+                                                {revision.isActive === false && (
+                                                    <Chip
+                                                        label="Inactive"
+                                                        size="small"
+                                                        color="default"
+                                                        sx={{ height: 20, fontSize: '0.7rem' }}
+                                                    />
+                                                )}
                                                 {isCurrent && (
                                                     <Chip
                                                         label="Current"
@@ -271,37 +284,73 @@ export function RevisionHistoryCard({
                                         </TableCell>
                                         {showActions !== false && (
                                             <TableCell align="right">
-                                                <Tooltip title={canManualEdit ? 'Edit revision' : 'Admin / Lead / Approver only'}>
-                                                    <span>
-                                                        <IconButton
-                                                            size="small"
-                                                            onClick={() => handleEditClick(revision)}
-                                                            disabled={!canManualEdit}
+                                                {revision.isActive === false ? (
+                                                    <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                                                        <Tooltip title="Reactivate Revision">
+                                                            <IconButton
+                                                                size="small"
+                                                                color="success"
+                                                                onClick={() => usePsvStore.getState().reactivateRevision(revision.id)}
+                                                            >
+                                                                <CheckCircle fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                        <Tooltip title="Permanently Remove">
+                                                            <IconButton
+                                                                size="small"
+                                                                color="error"
+                                                                onClick={() => handleDeleteClick(revision, 'remove')}
+                                                            >
+                                                                <DeleteForever fontSize="small" />
+                                                            </IconButton>
+                                                        </Tooltip>
+                                                    </Stack>
+                                                ) : (
+                                                    <Stack direction="row" spacing={0.5} justifyContent="flex-end">
+                                                        <Tooltip title={canEditContent ? 'Edit revision' : (canEditAuth ? 'Actions disabled for inactive PSV' : 'Admin / Lead / Approver only')}>
+                                                            <span>
+                                                                <IconButton
+                                                                    size="small"
+                                                                    onClick={() => handleEditClick(revision)}
+                                                                    disabled={!canEditContent}
+                                                                >
+                                                                    <Edit fontSize="small" />
+                                                                </IconButton>
+                                                            </span>
+                                                        </Tooltip>
+                                                        {!isCurrent && canEditContent && (
+                                                            <Tooltip title="Set as Current Revision">
+                                                                <IconButton
+                                                                    size="small"
+                                                                    color="primary"
+                                                                    onClick={() => setCurrentRevision(revision.id)}
+                                                                >
+                                                                    <PushPin fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        )}
+                                                        <Tooltip
+                                                            title={
+                                                                !canEditContent
+                                                                    ? (canEditAuth ? 'Actions disabled for inactive PSV' : 'Admin / Lead / Approver only')
+                                                                    : revisionsForEntity.filter(r => r.isActive !== false).length <= 1
+                                                                        ? 'At least one revision must remain'
+                                                                        : 'Deactivate revision'
+                                                            }
                                                         >
-                                                            <Edit fontSize="small" />
-                                                        </IconButton>
-                                                    </span>
-                                                </Tooltip>
-                                                <Tooltip
-                                                    title={
-                                                        !canManualEdit
-                                                            ? 'Admin / Lead / Approver only'
-                                                            : revisionsForEntity.length <= 1
-                                                                ? 'At least one revision must remain'
-                                                                : 'Delete revision'
-                                                    }
-                                                >
-                                                    <span>
-                                                        <IconButton
-                                                            size="small"
-                                                            color="error"
-                                                            onClick={() => handleDeleteClick(revision)}
-                                                            disabled={!canManualEdit || revisionsForEntity.length <= 1}
-                                                        >
-                                                            <Delete fontSize="small" />
-                                                        </IconButton>
-                                                    </span>
-                                                </Tooltip>
+                                                            <span>
+                                                                <IconButton
+                                                                    size="small"
+                                                                    color="error"
+                                                                    onClick={() => handleDeleteClick(revision, 'deactivate')}
+                                                                    disabled={!canEditContent || revisionsForEntity.filter(r => r.isActive !== false).length <= 1}
+                                                                >
+                                                                    <Delete fontSize="small" />
+                                                                </IconButton>
+                                                            </span>
+                                                        </Tooltip>
+                                                    </Stack>
+                                                )}
                                             </TableCell>
                                         )}
                                     </TableRow>
@@ -327,9 +376,11 @@ export function RevisionHistoryCard({
                 onClose={() => setDeleteDialogOpen(false)}
                 onConfirm={handleConfirmDelete}
                 onForceDelete={handleForceDelete}
-                allowForceDelete={canManualEdit}
-                title="Deactivate Revision"
+                allowForceDelete={canEditAuth}
+                mode={deleteMode}
+                title={deleteMode === 'remove' ? "Permanently Remove Revision" : "Deactivate Revision"}
                 itemName={revisionToDelete ? `Rev. ${revisionToDelete.revisionCode}` : "revision"}
+                confirmPhrase="delete revision"
             />
         </>
     );

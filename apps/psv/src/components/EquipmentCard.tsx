@@ -42,7 +42,8 @@ interface EquipmentCardProps {
 export function EquipmentCard({ psv }: EquipmentCardProps) {
     const { equipmentLinkList, linkEquipment, unlinkEquipment, equipment: allEquipment, areas, fetchAllEquipment, areEquipmentLoaded, selectedProject } = usePsvStore();
     const isParentInactive = !psv.isActive || selectedProject?.isActive === false;
-    const canEdit = useAuthStore((state) => state.canEdit()) && !isParentInactive;
+    const canEditAuth = useAuthStore((state) => state.canEdit());
+    const canEdit = canEditAuth && !isParentInactive;
     const { unitSystem, units } = useProjectUnitSystem();
     const [open, setOpen] = useState(false);
     const [selectedEquipmentIds, setSelectedEquipmentIds] = useState<string[]>([]);

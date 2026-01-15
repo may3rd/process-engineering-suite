@@ -33,5 +33,8 @@ class Todo(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         nullable=False,
     )
     
+    # Soft delete flag
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", nullable=False)
+    
     # Relationships
     protective_system = relationship("ProtectiveSystem", back_populates="todos")

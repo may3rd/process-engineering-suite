@@ -2,7 +2,8 @@
 from datetime import datetime
 from typing import Optional, Any
 
-from sqlalchemy import ForeignKey, Integer, String, Text, DateTime, func
+from sqlalchemy import ForeignKey, Integer, String, Text, DateTime, func, Boolean
+import sqlalchemy as sa
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -13,6 +14,8 @@ class RevisionHistory(Base, UUIDPrimaryKeyMixin):
     """Tracks revision history for PSV, scenarios, and sizing cases."""
     
     __tablename__ = "revision_history"
+    
+    is_active: Mapped[bool] = mapped_column(Boolean, server_default='true', default=True, nullable=False)
     
     # Entity reference (polymorphic)
     entity_type: Mapped[str] = mapped_column(String(32), nullable=False)

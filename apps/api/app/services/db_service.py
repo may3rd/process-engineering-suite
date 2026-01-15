@@ -280,7 +280,9 @@ class DatabaseService(DataAccessLayer):
         return instance
 
     async def delete_protective_system(self, psv_id: str) -> bool:
-        return await self._delete(ProtectiveSystem, psv_id)
+        # Perform soft delete
+        await self._update(ProtectiveSystem, psv_id, {"is_active": False, "deleted_at": datetime.utcnow()})
+        return True
 
     # --- Scenarios ---
 
@@ -305,7 +307,9 @@ class DatabaseService(DataAccessLayer):
         return await self._update(OverpressureScenario, scenario_id, converted_data)
 
     async def delete_scenario(self, scenario_id: str) -> bool:
-        return await self._delete(OverpressureScenario, scenario_id)
+        # Perform soft delete
+        await self._update(OverpressureScenario, scenario_id, {"is_active": False})
+        return True
 
     # --- Sizing Cases ---
 
@@ -321,7 +325,9 @@ class DatabaseService(DataAccessLayer):
         return await self._update(SizingCase, case_id, converted_data)
 
     async def delete_sizing_case(self, case_id: str) -> bool:
-        return await self._delete(SizingCase, case_id)
+        # Perform soft delete
+        await self._update(SizingCase, case_id, {"is_active": False})
+        return True
 
     # --- Equipment ---
 
@@ -360,7 +366,9 @@ class DatabaseService(DataAccessLayer):
         return instance
 
     async def delete_equipment(self, equipment_id: str) -> bool:
-        return await self._delete(Equipment, equipment_id)
+        # Perform soft delete
+        await self._update(Equipment, equipment_id, {"is_active": False})
+        return True
 
     # --- Attachments ---
 
@@ -388,7 +396,9 @@ class DatabaseService(DataAccessLayer):
         return await self._update(ProjectNote, note_id, converted_data)
 
     async def delete_note(self, note_id: str) -> bool:
-        return await self._delete(ProjectNote, note_id)
+        # Perform soft delete
+        await self._update(ProjectNote, note_id, {"is_active": False})
+        return True
 
     # --- Comments ---
 
@@ -412,7 +422,9 @@ class DatabaseService(DataAccessLayer):
         return instance
 
     async def delete_comment(self, comment_id: str) -> bool:
-        return await self._delete(Comment, comment_id)
+        # Perform soft delete
+        await self._update(Comment, comment_id, {"is_active": False})
+        return True
 
     # --- Todos ---
 
@@ -428,7 +440,9 @@ class DatabaseService(DataAccessLayer):
         return await self._update(Todo, todo_id, converted_data)
 
     async def delete_todo(self, todo_id: str) -> bool:
-        return await self._delete(Todo, todo_id)
+        # Perform soft delete
+        await self._update(Todo, todo_id, {"is_active": False})
+        return True
 
     # --- Revision History ---
 

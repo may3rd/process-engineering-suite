@@ -357,10 +357,9 @@ export function AreasTab() {
           <Typography variant="h5" fontWeight={600}>
             {headingTitle}
           </Typography>
-          {selectedUnit?.status === 'inactive' && (
-            <Chip label="Inactive" size="small" variant="outlined" />
-          )}
-        </Box>
+                                  {selectedUnit?.status === 'inactive' && (
+                                      <Chip label="Inactive" size="small" color="default" />
+                                  )}        </Box>
         {canEdit && (
           <>
             <Button

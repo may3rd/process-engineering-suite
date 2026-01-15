@@ -31,6 +31,7 @@ class RevisionResponse(BaseModel):
     approved_at: Optional[datetime] = Field(default=None, validation_alias="approvedAt", serialization_alias="approvedAt")
     issued_at: Optional[datetime] = Field(default=None, validation_alias="issuedAt", serialization_alias="issuedAt")
 
+    is_active: bool = Field(default=True, validation_alias="isActive", serialization_alias="isActive")
     snapshot: dict = {}
     created_at: datetime = Field(validation_alias="createdAt", serialization_alias="createdAt")
 
@@ -46,6 +47,7 @@ class RevisionCreate(BaseModel):
     description: Optional[str] = None
     originatedBy: Optional[str] = None
     originatedAt: Optional[datetime] = None
+    isActive: bool = True
     snapshot: dict = {}
 
 
@@ -61,6 +63,7 @@ class RevisionUpdate(BaseModel):
     approvedAt: Optional[datetime] = None
     issuedAt: Optional[datetime] = None
     description: Optional[str] = None
+    isActive: Optional[bool] = None
 
 
 # --- Endpoints ---

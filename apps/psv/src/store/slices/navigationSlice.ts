@@ -156,7 +156,6 @@ export const createNavigationSlice: StateCreator<PsvStore, [], [], NavigationSli
             const allPlants = plantsResults.flat();
             set({
                 plants: allPlants,
-                plantList: allPlants,
                 arePlantsLoaded: true,
             });
         } catch (error) {
@@ -178,7 +177,6 @@ export const createNavigationSlice: StateCreator<PsvStore, [], [], NavigationSli
             const allUnits = unitsResults.flat();
             set({
                 units: allUnits,
-                unitList: allUnits,
                 areUnitsLoaded: true,
             });
         } catch (error) {
@@ -200,7 +198,6 @@ export const createNavigationSlice: StateCreator<PsvStore, [], [], NavigationSli
             const allAreas = areasResults.flat();
             set({
                 areas: allAreas,
-                areaList: allAreas,
                 areAreasLoaded: true,
             });
         } catch (error) {
@@ -222,7 +219,6 @@ export const createNavigationSlice: StateCreator<PsvStore, [], [], NavigationSli
             const allProjects = projectsResults.flat();
             set({
                 projects: allProjects,
-                projectList: allProjects,
                 areProjectsLoaded: true,
             });
         } catch (error) {
@@ -237,7 +233,6 @@ export const createNavigationSlice: StateCreator<PsvStore, [], [], NavigationSli
             const allPsvs = await dataService.getProtectiveSystems();
             set({
                 protectiveSystems: allPsvs,
-                psvList: allPsvs,
                 arePsvsLoaded: true,
             });
         } catch (error) {

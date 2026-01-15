@@ -1,7 +1,7 @@
 """ProjectNote model - formal notes for protective systems."""
 from typing import Optional
 
-from sqlalchemy import Text, ForeignKey
+from sqlalchemy import Text, Boolean, ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -29,6 +29,9 @@ class ProjectNote(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         ForeignKey("users.id"),
         nullable=True,
     )
+
+    # Soft delete flag
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", nullable=False)
 
     protective_system = relationship(
         "ProtectiveSystem", back_populates="notes", lazy="joined"

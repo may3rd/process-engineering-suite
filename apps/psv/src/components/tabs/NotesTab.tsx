@@ -58,7 +58,8 @@ export function NotesTab() {
     softDeleteNote,
   } = usePsvStore();
   const isParentInactive = !selectedPsv?.isActive || selectedProject?.isActive === false;
-  const canEdit = useAuthStore((state) => state.canEdit()) && !isParentInactive;
+  const canEditAuth = useAuthStore((state) => state.canEdit());
+  const canEdit = canEditAuth && !isParentInactive;
   const currentUser = useAuthStore((state) => state.currentUser);
 
   const [addTaskOpen, setAddTaskOpen] = useState(false);

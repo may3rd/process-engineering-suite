@@ -350,10 +350,9 @@ export function ProjectsTab() {
           <Typography variant="h5" fontWeight={600}>
             {headingTitle}
           </Typography>
-          {selectedArea?.status === "inactive" && (
-            <Chip label="Inactive" size="small" variant="outlined" />
-          )}
-        </Box>
+                                  {selectedArea?.status === "inactive" && (
+                                      <Chip label="Inactive" size="small" color="default" />
+                                  )}        </Box>
         {canEdit &&
           (isMobile ? (
             <Tooltip

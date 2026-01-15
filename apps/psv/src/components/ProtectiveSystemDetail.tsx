@@ -107,6 +107,7 @@ export function ProtectiveSystemDetail() {
     scenarioList,
     sizingCaseList,
     deleteSizingCase,
+    softDeleteSizingCase,
     softDeleteProtectiveSystem,
     getCurrentRevision,
     loadRevisionHistory,
@@ -114,35 +115,33 @@ export function ProtectiveSystemDetail() {
     activeTab,
     setActiveTab,
   } = usePsvStore();
-  const isParentInactive = selectedProject?.isActive === false;
   const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
-  const canEdit = useAuthStore((state) => state.canEdit()) && !isParentInactive;
-  const canApprove = useAuthStore((state) => state.canApprove()) && !isParentInactive;
-  const canCheck = useAuthStore((state) =>
-    ["lead", "approver", "admin"].includes(state.currentUser?.role || ""),
-  ) && !isParentInactive;
-  const canIssue = (canCheck || canApprove) && !isParentInactive;
-  // const [activeTab, setActiveTab] = useState(0); // Removed local state
-  const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [deleteConfirmationInput] = useState("");
+  const isPsvActive = selectedPsv?.isActive !== false;
+  const isParentInactive = selectedProject?.isActive === false;
+  const canEditAuth = useAuthStore((state) => state.canEdit());
+  const canEdit = canEditAuth && isPsvActive && !isParentInactive;
 
-  const [statusMenuAnchor, setStatusMenuAnchor] = useState<null | HTMLElement>(
-    null,
-  );
-  const [revisionMenuAnchor, setRevisionMenuAnchor] =
-    useState<null | HTMLElement>(null);
   const [psvRevisions, setPsvRevisions] = useState<RevisionHistory[]>([]);
+  const [revisionMenuAnchor, setRevisionMenuAnchor] = useState<null | HTMLElement>(null);
+  const [editingCaseId, setEditingCaseId] = useState<string | null>(null);
 
-  const [editPsvOpen, setEditPsvOpen] = useState(false);
   const [editTag, setEditTag] = useState("");
   const [editName, setEditName] = useState("");
-
-  // Revision dialog state
-  const [newRevisionDialogOpen, setNewRevisionDialogOpen] = useState(false);
+  const [editPsvOpen, setEditPsvOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmationInput, setDeleteConfirmationInput] = useState("");
+  const [statusMenuAnchor, setStatusMenuAnchor] = useState<null | HTMLElement>(null);
   const [revisionPanelOpen, setRevisionPanelOpen] = useState(false);
-  const [snapshotRevision, setSnapshotRevision] =
-    useState<RevisionHistory | null>(null);
+  const [newRevisionDialogOpen, setNewRevisionDialogOpen] = useState(false);
+  const [snapshotRevision, setSnapshotRevision] = useState<RevisionHistory | null>(null);
+
+  const canApprove = useAuthStore((state) => state.canApprove()) && isPsvActive && !isParentInactive;
+  const canCheck = useAuthStore((state) =>
+    ["lead", "approver", "admin"].includes(state.currentUser?.role || ""),
+  ) && isPsvActive && !isParentInactive;
+  // Issue permission also requires active PSV status implicitly via status sequence check, 
+  // but explicitly checking isPsvActive for high-level actions is safer.
+  const canIssue = (canCheck || canApprove) && isPsvActive && !isParentInactive;
 
   useEffect(() => {
     if (!selectedPsv) return;
@@ -197,12 +196,13 @@ export function ProtectiveSystemDetail() {
         default:
           roleAllowed = canEdit;
       }
-      return roleAllowed && statusEnabledSequentially(value);
+      return roleAllowed && statusEnabledSequentially(value) && isPsvActive;
     },
-    [canCheck, canApprove, canIssue, canEdit, statusEnabledSequentially],
+    [canCheck, canApprove, canIssue, canEdit, statusEnabledSequentially, isPsvActive],
   );
   const canOpenStatusMenu =
     Boolean(selectedPsv) &&
+    isPsvActive &&
     WORKFLOW_STATUS_SEQUENCE.filter(
       (value) => value !== selectedPsv!.status,
     ).some((value) => statusPermissionFor(value));
@@ -383,7 +383,7 @@ export function ProtectiveSystemDetail() {
         }}
         psvTag={selectedPsv.tag}
         onDelete={() => {
-          deleteSizingCase(caseToEdit.id);
+          softDeleteSizingCase(caseToEdit.id);
           setEditingCaseId(null);
         }}
       />

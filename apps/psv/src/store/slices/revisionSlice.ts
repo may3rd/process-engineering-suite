@@ -23,6 +23,8 @@ export interface RevisionSlice {
     updateRevision: (revisionId: string, updates: Partial<RevisionHistory>) => Promise<void>;
     deleteRevision: (revisionId: string) => Promise<void>;
     softDeleteRevision: (revisionId: string) => Promise<void>;
+    reactivateRevision: (revisionId: string) => Promise<void>;
+    setCurrentRevision: (revisionId: string) => Promise<void>;
     getCurrentRevision: (entityType: RevisionEntityType, entityId: string) => RevisionHistory | undefined;
 }
 
@@ -276,6 +278,63 @@ export const createRevisionSlice: StateCreator<PsvStore, [], [], RevisionSlice> 
             toast.success('Revision deactivated');
         } catch (error) {
             toast.error('Failed to deactivate revision');
+            throw error;
+        }
+    },
+
+    reactivateRevision: async (revisionId) => {
+        try {
+            const state = get();
+            const revision = state.revisionHistory.find(r => r.id === revisionId);
+            if (!revision) throw new Error('Revision not found');
+
+            await get().updateRevision(revisionId, { isActive: true });
+            toast.success('Revision reactivated');
+        } catch (error) {
+            toast.error('Failed to reactivate revision');
+            throw error;
+        }
+    },
+
+    setCurrentRevision: async (revisionId) => {
+        try {
+            const state = get();
+            const revision = state.revisionHistory.find(r => r.id === revisionId);
+            if (!revision) throw new Error('Revision not found');
+
+            const { entityType, entityId, revisionCode } = revision;
+
+            if (entityType === 'protective_system') {
+                const psv = state.protectiveSystems.find(p => p.id === entityId) || state.selectedPsv;
+                if (psv && psv.id === entityId) {
+                    await state.updatePsv({ ...psv, currentRevisionId: revisionId });
+                } else {
+                    await state.updateProtectiveSystem(entityId, { currentRevisionId: revisionId });
+                }
+            } else if (entityType === 'scenario') {
+                const scenario = state.scenarioList.find(s => s.id === entityId);
+                if (scenario) {
+                    await state.updateScenario({ ...scenario, currentRevisionId: revisionId });
+                } else {
+                    // Fallback to direct update if not in current list
+                    await dataService.updateScenario(entityId, { currentRevisionId: revisionId });
+                    await state.loadRevisionHistory(entityType, entityId);
+                }
+            } else if (entityType === 'sizing_case') {
+                const sizingCase = state.sizingCaseList.find(c => c.id === entityId);
+                if (sizingCase) {
+                    await state.updateSizingCase({ ...sizingCase, currentRevisionId: revisionId });
+                } else {
+                    // Fallback to direct update if not in current list
+                    await dataService.updateSizingCase(entityId, { currentRevisionId: revisionId });
+                    await state.loadRevisionHistory(entityType, entityId);
+                }
+            }
+
+            toast.success(`Current revision set to ${revisionCode}`);
+        } catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to set current revision';
+            toast.error('Failed to set current revision', { description: message });
             throw error;
         }
     },

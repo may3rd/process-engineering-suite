@@ -1,7 +1,7 @@
 """Equipment model."""
 from typing import Optional
 
-from sqlalchemy import String, Text, Numeric, ForeignKey, Enum as SQLEnum
+from sqlalchemy import String, Text, Numeric, Boolean, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 
@@ -40,6 +40,9 @@ class Equipment(Base, UUIDPrimaryKeyMixin, TimestampMixin):
         ForeignKey("users.id"),
         nullable=False,
     )
+    # Soft delete flag
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", nullable=False)
+    
     status: Mapped[str] = mapped_column(
         SQLEnum("active", "inactive", name="equipment_status"),
         nullable=False,

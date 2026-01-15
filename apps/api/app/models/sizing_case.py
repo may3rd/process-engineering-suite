@@ -1,7 +1,7 @@
 """SizingCase model."""
 from typing import Optional
 
-from sqlalchemy import String, ForeignKey, Enum as SQLEnum
+from sqlalchemy import String, Boolean, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 
@@ -37,6 +37,9 @@ class SizingCase(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     inputs: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     outputs: Mapped[dict] = mapped_column(JSONB, nullable=False, default=dict)
     unit_preferences: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
+    
+    # Soft delete flag
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", nullable=False)
     
     # Current revision reference
     current_revision_id: Mapped[Optional[str]] = mapped_column(

@@ -24,6 +24,8 @@ interface ChildRelationship {
     count: number;
 }
 
+export type DeleteMode = 'deactivate' | 'remove';
+
 interface DeleteConfirmDialogProps {
     open: boolean;
     onClose: () => void;
@@ -35,6 +37,8 @@ interface DeleteConfirmDialogProps {
     loading?: boolean;
     allowForceDelete?: boolean;  // Enable cascade delete option
     showSoftDelete?: boolean;  // Show deactivate option for items with children
+    mode?: 'deactivate' | 'remove'; // Mode: soft delete or hard delete
+    confirmPhrase?: string; // Optional custom phrase for hard delete confirmation
 }
 
 export function DeleteConfirmDialog({
@@ -48,14 +52,18 @@ export function DeleteConfirmDialog({
     loading = false,
     allowForceDelete = false,
     showSoftDelete = true,
+    mode = 'deactivate',
+    confirmPhrase,
 }: DeleteConfirmDialogProps) {
     const hasChildren = children.some(c => c.count > 0);
     const canDelete = !hasChildren;
-    const [showForceDelete, setShowForceDelete] = useState(false);
+    const [showForceDelete, setShowForceDelete] = useState(mode === 'remove');
     const [confirmText, setConfirmText] = useState('');
 
+    const phrase = confirmPhrase || itemName;
+
     const totalChildren = children.reduce((sum, c) => sum + c.count, 0);
-    const isForceDeleteConfirmed = confirmText === itemName;
+    const isForceDeleteConfirmed = confirmText === phrase;
 
     const handleClose = () => {
         setShowForceDelete(false);
@@ -78,7 +86,7 @@ export function DeleteConfirmDialog({
             fullWidth
         >
             <DialogTitle sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Warning color={canDelete ? "warning" : "error"} />
+                {mode === 'remove' ? <DeleteForever color="error" /> : <Warning color={canDelete ? "warning" : "error"} />}
                 {title}
             </DialogTitle>
             <DialogContent>
@@ -86,12 +94,20 @@ export function DeleteConfirmDialog({
                     {canDelete ? (
                         <>
                             <Typography>
-                                Are you sure you want to delete <strong>{itemName}</strong>?
+                                Are you sure you want to {mode === 'remove' ? 'permanently remove' : 'deactivate'} <strong>{itemName}</strong>?
                             </Typography>
-                            <Alert severity="warning">
-                                <AlertTitle>Warning</AlertTitle>
-                                This action cannot be undone.
-                            </Alert>
+                            {mode === 'deactivate' && (
+                                <Alert severity="info">
+                                    <AlertTitle>Note</AlertTitle>
+                                    Deactivating will preserve data and it can be reactivated later.
+                                </Alert>
+                            )}
+                            {mode === 'remove' && !showForceDelete && (
+                                <Alert severity="warning">
+                                    <AlertTitle>Warning</AlertTitle>
+                                    This action will permanently delete the item and cannot be undone.
+                                </Alert>
+                            )}
                         </>
                     ) : (
                         <>
@@ -157,12 +173,12 @@ export function DeleteConfirmDialog({
                             <Collapse in={showForceDelete}>
                                 <Box sx={{ mt: 2, p: 2, bgcolor: 'error.dark', borderRadius: 1 }}>
                                     <Alert severity="error" sx={{ mb: 2 }}>
-                                        <AlertTitle>⚠️ DANGER: Cascade Delete</AlertTitle>
-                                        This will permanently delete <strong>{itemName}</strong> and ALL {totalChildren} dependent items recursively.
+                                        <AlertTitle>⚠️ DANGER: Permanent {mode === 'remove' ? 'Removal' : 'Delete'}</AlertTitle>
+                                        This will permanently delete <strong>{itemName}</strong>{hasChildren ? ` and ALL ${totalChildren} dependent items recursively` : ''}.
                                     </Alert>
 
                                     <Typography variant="body2" sx={{ mb: 2, color: 'error.light' }}>
-                                        To confirm, type the exact name: <strong>{itemName}</strong>
+                                        To confirm, type the exact phrase: <strong>{phrase}</strong>
                                     </Typography>
 
                                     <TextField
@@ -170,7 +186,7 @@ export function DeleteConfirmDialog({
                                         size="small"
                                         value={confirmText}
                                         onChange={(e) => setConfirmText(e.target.value)}
-                                        placeholder={itemName}
+                                        placeholder={phrase}
                                         error={confirmText.length > 0 && !isForceDeleteConfirmed}
                                         helperText={
                                             confirmText.length > 0 && !isForceDeleteConfirmed
@@ -217,15 +233,19 @@ export function DeleteConfirmDialog({
                         {canDelete && (
                             <Button
                                 onClick={() => {
-                                    onConfirm();
-                                    handleClose();
+                                    if (mode === 'remove') {
+                                        setShowForceDelete(true);
+                                    } else {
+                                        onConfirm();
+                                        handleClose();
+                                    }
                                 }}
-                                color="error"
+                                color={mode === 'remove' ? "error" : "warning"}
                                 variant="contained"
-                                startIcon={<Delete />}
+                                startIcon={mode === 'remove' ? <DeleteForever /> : <Block />}
                                 disabled={loading}
                             >
-                                {loading ? 'Deleting...' : 'Delete'}
+                                {loading ? (mode === 'remove' ? 'Removing...' : 'Deactivating...') : (mode === 'remove' ? 'Remove' : 'Deactivate')}
                             </Button>
                         )}
                     </>

@@ -128,6 +128,7 @@ export function HierarchyBrowser() {
 
     const currentLevel = getCurrentLevel();
     const level = (currentLevel?.level ?? 'customer') as Level;
+    const isParentInactive = currentLevel?.parent && 'status' in currentLevel.parent && (currentLevel.parent as any).status === 'inactive';
 
     useEffect(() => {
         setSearchText('');
@@ -364,7 +365,15 @@ export function HierarchyBrowser() {
                             <ArrowBack />
                         </IconButton>)}
                         <Box sx={{ flex: 1, textAlign: 'center' }}>
-                            <Typography variant="h6" fontWeight={600}>
+                            <Typography
+                                variant="h6"
+                                fontWeight={600}
+                                sx={{
+                                    textDecoration: isParentInactive ? 'line-through' : 'none',
+                                    color: isParentInactive ? 'text.secondary' : 'inherit',
+                                    opacity: isParentInactive ? 0.7 : 1
+                                }}
+                            >
                                 {currentLevel.parent?.name || 'Process Engineering Suite - PSV Browser'}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
@@ -408,15 +417,19 @@ export function HierarchyBrowser() {
                         />
                     </Paper>
                     {canAddItem() && (
-                        <Button
-                            variant="contained"
-                            startIcon={<Add />}
-                            onClick={handleOpenDialog}
-                            sx={{ textTransform: 'none', height: 40, whiteSpace: 'nowrap' }}
-                        >
-                            New {currentLevel.level}
-                        </Button>
-                    )}
+                                <Tooltip title={isParentInactive ? `Activate ${currentLevel.level === 'plant' ? 'customer' : currentLevel.level === 'unit' ? 'plant' : currentLevel.level === 'area' ? 'unit' : 'area'} to add ${currentLevel.level}s` : ""}>
+                                    <span>
+                                        <Button
+                                            variant="contained"
+                                            startIcon={<Add />}
+                                            onClick={handleOpenDialog}
+                                            disabled={!!isParentInactive}
+                                            sx={{ textTransform: 'none', height: 40, whiteSpace: 'nowrap' }}
+                                        >
+                                            New {currentLevel.level}
+                                        </Button>
+                                    </span>
+                                </Tooltip>                    )}
                 </Stack>
 
                 {/* Table Container */}
@@ -602,9 +615,11 @@ export function HierarchyBrowser() {
                                                 <Box sx={{ flex: 1, minWidth: 0 }}>
                                                     <Typography
                                                         sx={{
-                                                            color: 'text.primary',
+                                                            color: 'status' in item && item.status === 'inactive' ? 'text.secondary' : 'text.primary',
                                                             fontWeight: 600,
                                                             fontSize: '0.95rem',
+                                                            textDecoration: 'status' in item && item.status === 'inactive' ? 'line-through' : 'none',
+                                                            opacity: 'status' in item && item.status === 'inactive' ? 0.7 : 1,
                                                         }}
                                                     >
                                                         {item.name}

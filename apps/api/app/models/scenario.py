@@ -53,6 +53,9 @@ class OverpressureScenario(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     # Free-form markdown notes used in the UI "Case Consideration" editor.
     case_consideration: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
     
+    # Soft delete flag
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, server_default="true", nullable=False)
+    
     # Current revision reference
     current_revision_id: Mapped[Optional[str]] = mapped_column(
         UUID(as_uuid=False),

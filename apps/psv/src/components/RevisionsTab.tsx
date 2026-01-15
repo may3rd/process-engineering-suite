@@ -68,7 +68,8 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
     const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
     const currentUser = useAuthStore((state) => state.currentUser);
     const isParentInactive = !selectedPsv?.isActive || selectedProject?.isActive === false;
-    const canEdit = useAuthStore((state) => state.canEdit()) && !isParentInactive;
+    const canEditAuth = useAuthStore((state) => state.canEdit());
+    const canEdit = canEditAuth && !isParentInactive;
     const canCreateRevision = isAuthenticated && canEdit;
 
     const canApproveSignature = useMemo(() => {
@@ -110,7 +111,7 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
         : undefined) ?? latestRevision;
 
     const signOriginator = async () => {
-        if (!currentRevision || !isAuthenticated || !currentUser) return;
+        if (!currentRevision || !isAuthenticated || !currentUser || selectedPsv?.isActive === false) return;
         if (currentRevision.originatedBy) return;
         setIsSigning('originator');
         try {
@@ -131,7 +132,7 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
     };
 
     const signChecker = async () => {
-        if (!currentRevision || !isAuthenticated || !currentUser) return;
+        if (!currentRevision || !isAuthenticated || !currentUser || selectedPsv?.isActive === false) return;
         if (!currentRevision.originatedBy) return;
         if (currentRevision.checkedBy) return;
         setIsSigning('checker');
@@ -153,7 +154,7 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
     };
 
     const signApprover = async () => {
-        if (!currentRevision || !isAuthenticated || !currentUser) return;
+        if (!currentRevision || !isAuthenticated || !currentUser || selectedPsv?.isActive === false) return;
         if (!canApproveSignature) return;
         if (!currentRevision.originatedBy || !currentRevision.checkedBy) return;
         if (currentRevision.approvedBy) return;
@@ -176,7 +177,7 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
     };
 
     const canRevoke = (signedBy?: string | null) =>
-        !!signedBy && !!currentUser && isAuthenticated && (signedBy === currentUser.id || canManualEdit);
+        !!signedBy && !!currentUser && isAuthenticated && (signedBy === currentUser.id || canManualEdit) && selectedPsv?.isActive !== false;
 
     const revokeOriginator = async () => {
         if (!currentRevision) return;
@@ -353,7 +354,7 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
                                     label="Originator"
                                     userId={currentRevision.originatedBy}
                                     date={currentRevision.originatedAt}
-                                    canSign={isAuthenticated && !!currentUser && !currentRevision.originatedBy}
+                                    canSign={isAuthenticated && !!currentUser && !currentRevision.originatedBy && selectedPsv?.isActive !== false}
                                     signLabel="Sign for"
                                     onSign={signOriginator}
                                     loading={isSigning === 'originator'}
@@ -371,14 +372,17 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
                                         && !!currentUser
                                         && !!currentRevision.originatedBy
                                         && !currentRevision.checkedBy
+                                        && selectedPsv?.isActive !== false
                                     }
                                     signLabel="Sign for"
                                     signDisabledReason={
-                                        !isAuthenticated
-                                            ? 'Sign in to sign'
-                                            : !currentRevision.originatedBy
-                                                ? 'Originator must sign first'
-                                                : undefined
+                                        selectedPsv?.isActive === false
+                                            ? 'Actions disabled for inactive PSV'
+                                            : !isAuthenticated
+                                                ? 'Sign in to sign'
+                                                : !currentRevision.originatedBy
+                                                    ? 'Originator must sign first'
+                                                    : undefined
                                     }
                                     onSign={signChecker}
                                     loading={isSigning === 'checker'}
@@ -398,18 +402,21 @@ export function RevisionsTab({ entityId, currentRevisionId }: RevisionsTabProps)
                                         && !!currentRevision.originatedBy
                                         && !!currentRevision.checkedBy
                                         && !currentRevision.approvedBy
+                                        && selectedPsv?.isActive !== false
                                     }
                                     signLabel="Sign for"
                                     signDisabledReason={
-                                        !isAuthenticated
-                                            ? 'Sign in to sign'
-                                            : !currentRevision.originatedBy
-                                                ? 'Originator must sign first'
-                                                : !currentRevision.checkedBy
-                                                    ? 'Checker must sign first'
-                                                    : !canApproveSignature
-                                                        ? 'Requires Lead/Approver/Admin role'
-                                                        : undefined
+                                        selectedPsv?.isActive === false
+                                            ? 'Actions disabled for inactive PSV'
+                                            : !isAuthenticated
+                                                ? 'Sign in to sign'
+                                                : !currentRevision.originatedBy
+                                                    ? 'Originator must sign first'
+                                                    : !currentRevision.checkedBy
+                                                        ? 'Checker must sign first'
+                                                        : !canApproveSignature
+                                                            ? 'Requires Lead/Approver/Admin role'
+                                                            : undefined
                                     }
                                     onSign={signApprover}
                                     loading={isSigning === 'approver'}

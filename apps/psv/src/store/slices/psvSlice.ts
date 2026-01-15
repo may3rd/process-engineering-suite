@@ -30,12 +30,14 @@ export interface PsvSlice {
     addSizingCase: (newCase: Partial<SizingCase>) => Promise<void>;
     deleteSizingCase: (id: string) => Promise<void>;
     softDeleteSizingCase: (id: string) => Promise<void>;
+    reactivateSizingCase: (id: string) => Promise<void>;
     updatePsv: (updatedPsv: ProtectiveSystem) => Promise<void>;
     deletePsv: (id: string) => Promise<void>;
     addScenario: (newScenario: Partial<OverpressureScenario>) => Promise<void>;
     updateScenario: (updatedScenario: OverpressureScenario) => Promise<void>;
     deleteScenario: (id: string) => Promise<void>;
     softDeleteScenario: (id: string) => Promise<void>;
+    reactivateScenario: (id: string) => Promise<void>;
     addPsvTag: (psvId: string, tag: string) => Promise<void>;
     removePsvTag: (psvId: string, tag: string) => Promise<void>;
     linkEquipment: (data: {
@@ -72,13 +74,15 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
     updateSizingCase: async (updatedCase) => {
         try {
             const state = get();
+            if (state.selectedPsv?.isActive === false) throw new Error('Cannot update sizing case of inactive PSV');
+
             const existing = state.sizingCaseList.find(c => c.id === updatedCase.id);
             const updated = await dataService.updateSizingCase(updatedCase.id, updatedCase);
 
             const currentUser = useAuthStore.getState().currentUser;
             if (currentUser) {
                 const changes = existing
-                    ? detectChanges(existing, updatedCase, ['standard', 'method', 'status'])
+                    ? detectChanges(existing, updatedCase, ['standard', 'method', 'status', 'currentRevisionId'])
                     : [];
 
                 let description: string;
@@ -123,6 +127,8 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
         try {
             const state = get();
             if (!state.selectedPsv) throw new Error('No PSV selected');
+            if (state.selectedPsv.isActive === false) throw new Error('Cannot add sizing case to inactive PSV');
+
             const created = await dataService.createSizingCase(state.selectedPsv!.id, newCase);
 
             const currentUser = useAuthStore.getState().currentUser;
@@ -189,9 +195,71 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
 
     softDeleteSizingCase: async (id) => {
         try {
-            await get().deleteSizingCase(id);
+            const state = get();
+            const existing = state.sizingCaseList.find(c => c.id === id);
+            if (!existing) return;
+
+            const updated = await dataService.updateSizingCase(id, { isActive: false });
+
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'delete',
+                    'protective_system',
+                    state.selectedPsv?.id || updated.id,
+                    `Case: ${updated.standard} (${state.selectedPsv?.tag || 'Unknown'})`,
+                    currentUser.id,
+                    currentUser.name,
+                    {
+                        userRole: currentUser.role,
+                        description: 'Deactivated sizing case (soft delete)',
+                        projectId: state.selectedProject?.id,
+                    }
+                );
+            }
+
+            set((state: PsvStore) => ({
+                sizingCaseList: state.sizingCaseList.map((c) =>
+                    c.id === updated.id ? updated : c
+                )
+            }));
+            toast.success('Sizing case deactivated');
         } catch (error) {
-            toast.error('Failed to delete sizing case');
+            toast.error('Failed to deactivate sizing case');
+            throw error;
+        }
+    },
+
+    reactivateSizingCase: async (id) => {
+        try {
+            const state = get();
+            const updated = await dataService.updateSizingCase(id, { isActive: true });
+
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'update',
+                    'protective_system',
+                    state.selectedPsv?.id || updated.id,
+                    `Case: ${updated.standard} (${state.selectedPsv?.tag || 'Unknown'})`,
+                    currentUser.id,
+                    currentUser.name,
+                    {
+                        userRole: currentUser.role,
+                        description: 'Reactivated sizing case',
+                        projectId: state.selectedProject?.id,
+                    }
+                );
+            }
+
+            set((state: PsvStore) => ({
+                sizingCaseList: state.sizingCaseList.map((c) =>
+                    c.id === updated.id ? updated : c
+                )
+            }));
+            toast.success('Sizing case reactivated');
+        } catch (error) {
+            toast.error('Failed to reactivate sizing case');
             throw error;
         }
     },
@@ -224,7 +292,7 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
                 const currentUser = useAuthStore.getState().currentUser;
                 const changes = detectChanges(existing, updatedPsv, [
                     'name', 'tag', 'type', 'designCode', 'serviceFluid', 'fluidPhase',
-                    'setPressure', 'mawp', 'status', 'valveType'
+                    'setPressure', 'mawp', 'status', 'valveType', 'currentRevisionId'
                 ]);
                 if (changes.length > 0 && currentUser) {
                     const isStatusChange = changes.some(c => c.field === 'status');
@@ -333,6 +401,8 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
         try {
             const psv = get().selectedPsv;
             if (!psv) throw new Error('No PSV selected');
+            if (psv.isActive === false) throw new Error('Cannot add scenario to inactive PSV');
+
             const created = await dataService.createScenario(psv.id, newScenario);
             set((state: PsvStore) => ({
                 scenarioList: [...state.scenarioList, created],
@@ -366,6 +436,8 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
     updateScenario: async (updatedScenario) => {
         try {
             const state = get();
+            if (state.selectedPsv?.isActive === false) throw new Error('Cannot update scenario of inactive PSV');
+
             const existing = state.scenarioList.find(s => s.id === updatedScenario.id);
             const currentVersion = updatedScenario.version ?? existing?.version ?? 1;
             const nextPayload = { ...updatedScenario };
@@ -386,7 +458,7 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
             if (currentUser && existing) {
                 const changes = detectChanges(existing, updatedScenario, [
                     'cause', 'description', 'relievingTemp', 'relievingPressure',
-                    'phase', 'relievingRate', 'isGoverning'
+                    'phase', 'relievingRate', 'isGoverning', 'currentRevisionId'
                 ]);
                 if (changes.length > 0) {
                     const isGoverningChange = changes.some(c => c.field === 'isGoverning');
@@ -490,9 +562,70 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
 
     softDeleteScenario: async (id) => {
         try {
-            await get().deleteScenario(id);
+            const state = get();
+            const existing = state.scenarioList.find(s => s.id === id);
+            if (!existing) return;
+
+            const updated = await dataService.updateScenario(id, { isActive: false });
+            set((state: PsvStore) => ({
+                scenarioList: state.scenarioList.map((s) =>
+                    s.id === updated.id ? updated : s
+                ),
+            }));
+
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'delete',
+                    'protective_system',
+                    state.selectedPsv?.id || updated.id,
+                    `${updated.cause} - ${state.selectedPsv?.tag || 'Unknown'}`,
+                    currentUser.id,
+                    currentUser.name,
+                    {
+                        userRole: currentUser.role,
+                        description: 'Deactivated scenario (soft delete)',
+                        projectId: state.selectedProject?.id,
+                    }
+                );
+            }
+            toast.success('Scenario deactivated');
         } catch (error) {
-            toast.error('Failed to delete scenario');
+            toast.error('Failed to deactivate scenario');
+            throw error;
+        }
+    },
+
+    reactivateScenario: async (id) => {
+        try {
+            const state = get();
+            const updated = await dataService.updateScenario(id, { isActive: true });
+
+            set((state: PsvStore) => ({
+                scenarioList: state.scenarioList.map((s) =>
+                    s.id === updated.id ? updated : s
+                ),
+            }));
+
+            const currentUser = useAuthStore.getState().currentUser;
+            if (currentUser) {
+                createAuditLog(
+                    'update',
+                    'protective_system',
+                    state.selectedPsv?.id || updated.id,
+                    `${updated.cause} - ${state.selectedPsv?.tag || 'Unknown'}`,
+                    currentUser.id,
+                    currentUser.name,
+                    {
+                        userRole: currentUser.role,
+                        description: 'Reactivated scenario',
+                        projectId: state.selectedProject?.id,
+                    }
+                );
+            }
+            toast.success('Scenario reactivated');
+        } catch (error) {
+            toast.error('Failed to reactivate scenario');
             throw error;
         }
     },
@@ -501,6 +634,7 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
         try {
             const psv = get().psvList.find(p => p.id === psvId);
             if (!psv) return;
+            if (psv.isActive === false) throw new Error('Cannot add tag to inactive PSV');
 
             const updated = await dataService.updateProtectiveSystem(psvId, { tags: [...psv.tags, tag] });
 
@@ -541,6 +675,7 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
         try {
             const psv = get().psvList.find(p => p.id === psvId);
             if (!psv) return;
+            if (psv.isActive === false) throw new Error('Cannot remove tag from inactive PSV');
 
             const updated = await dataService.updateProtectiveSystem(psvId, { tags: psv.tags.filter(t => t !== tag) });
 
@@ -579,6 +714,10 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
 
     linkEquipment: async ({ psvId, equipmentId, isPrimary = false, scenarioId, relationship, notes }) => {
         try {
+            const state = get();
+            if (state.selectedPsv?.id === psvId && state.selectedPsv.isActive === false) {
+                throw new Error('Cannot link equipment to inactive PSV');
+            }
             const created = await dataService.createEquipmentLink({
                 protectiveSystemId: psvId,
                 equipmentId,
@@ -600,6 +739,9 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
 
     unlinkEquipment: async (linkId) => {
         try {
+            const state = get();
+            if (state.selectedPsv?.isActive === false) throw new Error('Cannot unlink equipment from inactive PSV');
+
             await dataService.deleteEquipmentLink(linkId);
             set((state: PsvStore) => ({
                 equipmentLinkList: state.equipmentLinkList.filter(l => l.id !== linkId)
@@ -646,6 +788,8 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
 
     addAttachment: async (attachment) => {
         try {
+            const state = get();
+            if (state.selectedPsv?.isActive === false) throw new Error('Cannot add attachment to inactive PSV');
             const created = await dataService.createAttachment(attachment);
             set((state: PsvStore) => ({
                 attachmentList: [...state.attachmentList, created]
@@ -711,8 +855,33 @@ export const createPsvSlice: StateCreator<PsvStore, [], [], PsvSlice> = (set, ge
             const psv = state.protectiveSystems.find(p => p.id === id);
             if (!psv) throw new Error('PSV not found');
 
-            if (psv.isActive) {
-                await get().updateProtectiveSystem(id, { isActive: false });
+            if (psv.isActive !== false) {
+                const updated = await dataService.updateProtectiveSystem(id, { isActive: false });
+
+                const currentUser = useAuthStore.getState().currentUser;
+                if (currentUser) {
+                    createAuditLog(
+                        'delete',
+                        'protective_system',
+                        id,
+                        `${psv.tag} : ${psv.name}`,
+                        currentUser.id,
+                        currentUser.name,
+                        {
+                            userRole: currentUser.role,
+                            description: 'Deactivated PSV (soft delete)',
+                            projectId: state.selectedProject?.id,
+                        }
+                    );
+                }
+
+                set((state: PsvStore) => {
+                    return {
+                        psvList: state.psvList.map(p => p.id === updated.id ? updated : p),
+                        protectiveSystems: state.protectiveSystems.map(p => p.id === updated.id ? updated : p),
+                        selectedPsv: state.selectedPsv?.id === updated.id ? updated : state.selectedPsv,
+                    };
+                });
                 toast.success('PSV deactivated');
             } else {
                 toast.info('PSV already inactive');

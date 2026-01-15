@@ -38,6 +38,8 @@ import {
     Star,
     Warning as WarningIcon,
     Delete,
+    CheckCircle,
+    DeleteForever,
 } from "@mui/icons-material";
 import { v4 as uuidv4 } from "uuid";
 import { usePsvStore } from "@/store/usePsvStore";
@@ -72,9 +74,10 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
     const { unitSystem, units } = useProjectUnitSystem();
-    const { sizingCaseList, scenarioList, selectedPsv, selectedProject, addSizingCase, updateSizingCase, softDeleteSizingCase } = usePsvStore();
+    const { sizingCaseList, scenarioList, selectedPsv, selectedProject, addSizingCase, updateSizingCase, softDeleteSizingCase, reactivateSizingCase } = usePsvStore();
     const isParentInactive = !selectedPsv?.isActive || selectedProject?.isActive === false;
-    const canEdit = useAuthStore((state) => state.canEdit()) && !isParentInactive;
+    const canEditAuth = useAuthStore((state) => state.canEdit());
+    const canEditContent = canEditAuth && !isParentInactive;
     const canApprove = useAuthStore((state) => state.canApprove()) && !isParentInactive;
     const canCheck = useAuthStore((state) => ['lead', 'approver', 'admin'].includes(state.currentUser?.role || '')) && !isParentInactive;
     const currentUser = useAuthStore((state) => state.currentUser);
@@ -84,11 +87,17 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
     const [sortConfig, setSortConfig] = useState<SortConfig<SizingSortKey> | null>({ key: 'scenario', direction: 'asc' });
 
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [deleteDialogMode, setDeleteDialogMode] = useState<'deactivate' | 'remove'>('deactivate');
     const [sizingToDelete, setSizingToDelete] = useState<SizingCase | null>(null);
 
-    const handleDeleteClick = (sizing: SizingCase) => {
+    const handleDeleteClick = (sizing: SizingCase, mode: 'deactivate' | 'remove' = 'deactivate') => {
         setSizingToDelete(sizing);
+        setDeleteDialogMode(mode);
         setDeleteDialogOpen(true);
+    };
+
+    const handleRestoreClick = async (sizing: SizingCase) => {
+        await reactivateSizingCase(sizing.id);
     };
 
     const handleConfirmDelete = async () => {
@@ -105,6 +114,7 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
             await deleteSizingCase(sizingToDelete.id);
             setDeleteDialogOpen(false);
             setSizingToDelete(null);
+            setDeleteDialogMode('deactivate');
         }
     };
 
@@ -132,7 +142,7 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
     };
 
     const sortedSizingCases = useMemo(
-        () => sortByGetter(sizingCaseList.filter(s => s.isActive !== false), sortConfig, getSortValue),
+        () => sortByGetter(sizingCaseList, sortConfig, getSortValue),
         [sizingCaseList, sortConfig, scenarioList]
     );
 
@@ -150,7 +160,7 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
         switch (status) {
             case 'draft':
             case 'calculated':
-                return canEdit;
+                return canEditContent;
             case 'verified':
                 return canCheck;
             case 'approved':
@@ -290,7 +300,7 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
                         </Box>
                     </Box>
                 </Box>
-                {canEdit && (
+                {canEditContent && (
                     <Button
                         variant="contained"
                         startIcon={<Add />}
@@ -307,10 +317,10 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
             </Box>
 
             {(() => {
-                const governingScenario = scenarioList.find(s => s.isGoverning);
+                const governingScenario = scenarioList.find(s => s.isGoverning && s.isActive !== false);
                 const sizedStatuses: SizingCase['status'][] = ['calculated', 'verified', 'approved'];
                 const governingSizingCase = governingScenario
-                    ? sizingCaseList.find(c => c.scenarioId === governingScenario.id && sizedStatuses.includes(c.status))
+                    ? sizingCaseList.find(c => c.scenarioId === governingScenario.id && sizedStatuses.includes(c.status) && c.isActive !== false)
                     : null;
                 const governingNotSized = governingScenario && !governingSizingCase;
 
@@ -321,7 +331,7 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
                         severity="info"
                         sx={{ mb: 2 }}
                         action={
-                            canEdit && (
+                            canEditContent && (
                                 <Button
                                     color="inherit"
                                     size="small"
@@ -342,7 +352,7 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
                 <DialogContent dividers>
                     {scenarioList.length > 0 ? (
                         <List disablePadding>
-                            {scenarioList.map((scenario) => (
+                            {scenarioList.filter(s => s.isActive !== false).map((scenario) => (
                                 <ListItemButton
                                     key={scenario.id}
                                     onClick={() => handleCreateSizingCase(scenario)}
@@ -390,15 +400,34 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
                                 : undefined);
 
                         return (
-                            <Card key={sizing.id}>
+                            <Card
+                                key={sizing.id}
+                                sx={{
+                                    ...(sizing.isActive === false && {
+                                        opacity: 0.6,
+                                        bgcolor: isDark ? 'rgba(255, 255, 255, 0.02)' : 'rgba(0,0,0,0.02)',
+                                        borderColor: 'divider',
+                                        position: 'relative',
+                                    })
+                                }}
+                            >
                                 <CardContent>
                                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
                                         <Box>
                                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                                <Typography variant="h6" fontWeight={600}>
+                                                <Typography
+                                                    variant="h6"
+                                                    fontWeight={600}
+                                                    sx={{
+                                                        ...(sizing.isActive === false && {
+                                                            textDecoration: 'line-through',
+                                                            color: 'text.secondary',
+                                                        })
+                                                    }}
+                                                >
                                                     {getScenarioName(sizing.scenarioId)}
                                                 </Typography>
-                                                {scenario?.isGoverning && (
+                                                {scenario?.isGoverning && scenario?.isActive !== false && (
                                                     <Chip
                                                         icon={<Star sx={{ fontSize: 14 }} />}
                                                         label="Governing"
@@ -406,6 +435,14 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
                                                         color="warning"
                                                         variant="outlined"
                                                         sx={{ height: 22, '& .MuiChip-icon': { ml: 0.5 } }}
+                                                    />
+                                                )}
+                                                {sizing.isActive === false && (
+                                                    <Chip
+                                                        label="Inactive"
+                                                        size="small"
+                                                        color="default"
+                                                        sx={{ height: 22, fontWeight: 600, fontSize: '0.65rem' }}
                                                     />
                                                 )}
                                                 <Chip
@@ -421,18 +458,37 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
                                             </Typography>
                                         </Box>
                                         <Box sx={{ display: 'flex', gap: 1 }}>
-                                            {canEdit ? (
+                                            {canEditAuth ? (
                                                 <>
-                                                    <Tooltip title="Edit">
-                                                        <IconButton size="small" onClick={() => onEdit?.(sizing.id)}>
-                                                            <Edit fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
-                                                    <Tooltip title="Deactivate">
-                                                        <IconButton size="small" color="error" onClick={() => handleDeleteClick(sizing)}>
-                                                            <Delete fontSize="small" />
-                                                        </IconButton>
-                                                    </Tooltip>
+                                                    {sizing.isActive === false ? (
+                                                        <>
+                                                            <Tooltip title="Restore Sizing Case">
+                                                                <IconButton size="small" color="success" onClick={() => handleRestoreClick(sizing)}>
+                                                                    <CheckCircle fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                            <Tooltip title="Permanently Remove">
+                                                                <IconButton size="small" color="error" onClick={() => handleDeleteClick(sizing, 'remove')}>
+                                                                    <DeleteForever fontSize="small" />
+                                                                </IconButton>
+                                                            </Tooltip>
+                                                        </>
+                                                    ) : (
+                                                        canEditContent && (
+                                                            <>
+                                                                <Tooltip title="Edit">
+                                                                    <IconButton size="small" onClick={() => onEdit?.(sizing.id)}>
+                                                                        <Edit fontSize="small" />
+                                                                    </IconButton>
+                                                                </Tooltip>
+                                                                <Tooltip title="Deactivate">
+                                                                    <IconButton size="small" color="warning" onClick={() => handleDeleteClick(sizing, 'deactivate')}>
+                                                                        <Delete fontSize="small" />
+                                                                    </IconButton>
+                                                                </Tooltip>
+                                                            </>
+                                                        )
+                                                    )}
                                                 </>
                                             ) : (
                                                 <Tooltip title="View Details">
@@ -632,9 +688,11 @@ export function SizingTab({ onEdit, onCreate }: SizingTabProps) {
                 onClose={() => setDeleteDialogOpen(false)}
                 onConfirm={handleConfirmDelete}
                 onForceDelete={handleForceDelete}
-                allowForceDelete={canEdit}
-                title="Deactivate Sizing Case"
-                itemName={sizingToDelete ? getScenarioName(sizingToDelete.scenarioId) : "sizing case"}
+                allowForceDelete={canEditAuth}
+                title={deleteDialogMode === 'deactivate' ? "Deactivate Sizing Case" : "Remove Sizing Case"}
+                itemName={sizingToDelete ? `${getScenarioName(sizingToDelete.scenarioId)} (${sizingToDelete.standard})` : "sizing case"}
+                mode={deleteDialogMode}
+                confirmPhrase="delete scenario"
             />
         </Box>
     );

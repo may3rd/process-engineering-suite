@@ -181,7 +181,15 @@ export function ProtectiveSystemList() {
                         <ArrowBack />
                     </IconButton>
                     <Box sx={{ flex: 1, textAlign: 'center' }}>
-                        <Typography variant="h6" fontWeight={600}>
+                        <Typography
+                            variant="h6"
+                            fontWeight={600}
+                            sx={{
+                                textDecoration: selectedProject.isActive === false ? 'line-through' : 'none',
+                                color: selectedProject.isActive === false ? 'text.secondary' : 'inherit',
+                                opacity: selectedProject.isActive === false ? 0.7 : 1
+                            }}
+                        >
                             {selectedProject.name}
                         </Typography>
                         <Typography variant="body2" color="text.secondary">
@@ -225,15 +233,19 @@ export function ProtectiveSystemList() {
                     />
                 </Paper>
                 {canEdit && (
-                    <Button
-                        variant="contained"
-                        startIcon={<Add />}
-                        onClick={() => setWizardOpen(true)}
-                        disabled={!selectedProject.isActive}
-                        sx={{ textTransform: 'none', height: 40, whiteSpace: 'nowrap' }}
-                    >
-                        New PSV/RD
-                    </Button>
+                    <Tooltip title={selectedProject?.isActive === false ? "Activate project to add PSVs/RDs" : ""}>
+                        <span>
+                            <Button
+                                variant="contained"
+                                startIcon={<Add />}
+                                onClick={() => setWizardOpen(true)}
+                                disabled={selectedProject?.isActive === false}
+                                sx={{ textTransform: 'none', height: 40, whiteSpace: 'nowrap' }}
+                            >
+                                New PSV/RD
+                            </Button>
+                        </span>
+                    </Tooltip>
                 )}
             </Stack>
 
@@ -420,20 +432,31 @@ export function ProtectiveSystemList() {
                                             <Box sx={{ flex: 1, minWidth: 0 }}>
                                                 <Typography
                                                     sx={{
-                                                        color: 'text.primary',
+                                                        color: (psv.isActive === false) ? 'text.secondary' : 'text.primary',
                                                         fontWeight: 600,
                                                         fontSize: '0.95rem',
+                                                        textDecoration: (psv.isActive === false) ? 'line-through' : 'none',
+                                                        opacity: (psv.isActive === false) ? 0.7 : 1,
                                                     }}
                                                 >
                                                     {psv.tag} : {psv.name}
                                                 </Typography>
                                                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 0.5, flexWrap: 'wrap' }}>
-                                                    <Chip
-                                                        label={getWorkflowStatusLabel(psv.status)}
-                                                        size="small"
-                                                        color={getWorkflowStatusColor(psv.status)}
-                                                        sx={{ textTransform: 'capitalize', height: 22, fontSize: '0.75rem' }}
-                                                    />
+                                                    {(psv.isActive === false) ? (
+                                                        <Chip
+                                                            label="Inactive"
+                                                            size="small"
+                                                            color="default"
+                                                            sx={{ height: 22, fontSize: '0.75rem', fontWeight: 600 }}
+                                                        />
+                                                    ) : (
+                                                        <Chip
+                                                            label={getWorkflowStatusLabel(psv.status)}
+                                                            size="small"
+                                                            color={getWorkflowStatusColor(psv.status)}
+                                                            sx={{ textTransform: 'capitalize', height: 22, fontSize: '0.75rem' }}
+                                                        />
+                                                    )}
                                                     <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
                                                         {getTypeLabel(psv.type)}, {psv.fluidPhase?.toUpperCase() || 'N/A'}, Set Pressure: {formatPressureGauge(psv.setPressure, unitSystem, 1)}
                                                     </Typography>

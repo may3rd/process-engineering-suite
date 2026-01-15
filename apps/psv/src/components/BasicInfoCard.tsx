@@ -46,7 +46,8 @@ const DESIGN_CODE_OPTIONS: { value: DesignCode; label: string }[] = [
 export function BasicInfoCard({ psv }: BasicInfoCardProps) {
     const { updatePsv, selectedProject } = usePsvStore();
     const isParentInactive = !psv.isActive || selectedProject?.isActive === false;
-    const canEdit = useAuthStore((state) => state.canEdit()) && !isParentInactive;
+    const canEditAuth = useAuthStore((state) => state.canEdit());
+    const canEdit = canEditAuth && !isParentInactive;
     const [open, setOpen] = useState(false);
 
     // Get actual owner from ownerId
