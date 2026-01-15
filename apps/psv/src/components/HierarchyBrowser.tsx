@@ -21,6 +21,8 @@ import {
     TableContainer,
     TableHead,
     TableRow,
+    Switch,
+    FormControlLabel,
 } from "@mui/material";
 import {
     Business,
@@ -88,7 +90,7 @@ export function HierarchyBrowser() {
     const [projectDialogOpen, setProjectDialogOpen] = useState(false);
     const [isMounted, setIsMounted] = useState(false);
     const [searchText, setSearchText] = useState('');
-    const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+    const [hideInactive, setHideInactive] = useState(true);
     const [sortMenuAnchor, setSortMenuAnchor] = useState<null | HTMLElement>(null);
 
     type Level = 'customer' | 'plant' | 'unit' | 'area' | 'project';
@@ -132,7 +134,7 @@ export function HierarchyBrowser() {
 
     useEffect(() => {
         setSearchText('');
-        setStatusFilter('all');
+        setHideInactive(true);
     }, [level]);
 
     const getIcon = (lvl: string) => {
@@ -294,14 +296,20 @@ export function HierarchyBrowser() {
         const items = currentLevel.items as HierarchyItem[];
         let result = items.filter((item) => filterItemFn(item, level, searchText));
 
-        if (statusFilter !== 'all') {
-            result = result.filter((item) =>
-                'status' in item && String(item.status) === statusFilter
-            );
+        if (hideInactive) {
+            result = result.filter((item) => {
+                if ('isActive' in item) {
+                    return (item as any).isActive !== false;
+                }
+                if ('status' in item) {
+                    return String((item as any).status) !== 'inactive';
+                }
+                return true;
+            });
         }
 
         return result;
-    }, [currentLevel?.items, level, searchText, statusFilter]);
+    }, [currentLevel?.items, level, searchText, hideInactive]);
 
     const sortedItems = useMemo(() => {
         const sortConfig = sortConfigByLevel[level];
@@ -314,16 +322,20 @@ export function HierarchyBrowser() {
     // Status counts
     const activeCount = useMemo(() => {
         if (!currentLevel) return 0;
-        return (currentLevel.items as HierarchyItem[]).filter(
-            item => 'status' in item && String(item.status) === 'active'
-        ).length;
+        return (currentLevel.items as HierarchyItem[]).filter(item => {
+            if ('isActive' in item) return (item as any).isActive !== false;
+            if ('status' in item) return String((item as any).status) === 'active';
+            return true;
+        }).length;
     }, [currentLevel?.items]);
 
     const inactiveCount = useMemo(() => {
         if (!currentLevel) return 0;
-        return (currentLevel.items as HierarchyItem[]).filter(
-            item => 'status' in item && String(item.status) === 'inactive'
-        ).length;
+        return (currentLevel.items as HierarchyItem[]).filter(item => {
+            if ('isActive' in item) return (item as any).isActive === false;
+            if ('status' in item) return String((item as any).status) === 'inactive';
+            return false;
+        }).length;
     }, [currentLevel?.items]);
 
     if (!currentLevel) {
@@ -455,43 +467,20 @@ export function HierarchyBrowser() {
                         }}
                     >
                         {/* Filter Tabs */}
-                        <Stack direction="row" spacing={1} alignItems="center">
-                            <Button
-                                size="small"
-                                variant={statusFilter === 'all' ? 'contained' : 'text'}
-                                onClick={() => setStatusFilter('all')}
-                                sx={{
-                                    textTransform: 'none',
-                                    fontWeight: statusFilter === 'all' ? 600 : 400,
-                                }}
-                            >
-                                All {currentLevel.items.length}
-                            </Button>
-                            <Button
-                                size="small"
-                                variant={statusFilter === 'active' ? 'contained' : 'text'}
-                                color={statusFilter === 'active' ? 'success' : 'inherit'}
-                                onClick={() => setStatusFilter('active')}
-                                sx={{
-                                    textTransform: 'none',
-                                    fontWeight: statusFilter === 'active' ? 600 : 400,
-                                }}
-                            >
-                                Active {activeCount}
-                            </Button>
-                            <Button
-                                size="small"
-                                variant={statusFilter === 'inactive' ? 'contained' : 'text'}
-                                color={statusFilter === 'inactive' ? 'inherit' : 'inherit'}
-                                onClick={() => setStatusFilter('inactive')}
-                                sx={{
-                                    textTransform: 'none',
-                                    fontWeight: statusFilter === 'inactive' ? 600 : 400,
-                                }}
-                            >
-                                Inactive {inactiveCount}
-                            </Button>
-                        </Stack>
+                        <FormControlLabel
+                            control={
+                                <Switch
+                                    checked={hideInactive}
+                                    onChange={(e) => setHideInactive(e.target.checked)}
+                                    size="small"
+                                />
+                            }
+                            label={
+                                <Typography variant="body2" color="text.secondary">
+                                    Hide Inactive ({inactiveCount})
+                                </Typography>
+                            }
+                        />
 
                         {/* Sort & Add */}
                         <Stack direction="row" spacing={1} alignItems="center">
