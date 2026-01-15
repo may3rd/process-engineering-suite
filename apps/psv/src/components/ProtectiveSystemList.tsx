@@ -50,7 +50,10 @@ export function ProtectiveSystemList() {
     const isDark = theme.palette.mode === 'dark';
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
     const { unitSystem } = useProjectUnitSystem();
-    const { psvList, selectPsv, selectedProject, selectProject } = usePsvStore();
+    const psvList = usePsvStore((state) => state.psvList);
+    const selectPsv = usePsvStore((state) => state.selectPsv);
+    const selectedProject = usePsvStore((state) => state.selectedProject);
+    const selectProject = usePsvStore((state) => state.selectProject);
     const canEdit = useAuthStore((state) => state.canEdit());
     const [searchText, setSearchText] = useState('');
     const [statusFilter, setStatusFilter] = useState<'all' | 'draft' | 'in_review' | 'approved' | 'issued'>('all');
@@ -177,7 +180,7 @@ export function ProtectiveSystemList() {
                 }}
             >
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <IconButton onClick={() => selectProject(null)} size="small" sx={{ mr: 2 }}>
+                    <IconButton onClick={() => selectProject(null)} size="small" sx={{ mr: 2 }} aria-label="Back to projects">
                         <ArrowBack />
                     </IconButton>
                     <Box sx={{ flex: 1, textAlign: 'center' }}>

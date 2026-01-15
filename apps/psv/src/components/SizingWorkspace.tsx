@@ -131,7 +131,10 @@ const DENSITY_UNITS = ['kg/m³', 'lb/ft³'];
 export function SizingWorkspace({ sizingCase, inletNetwork, outletNetwork, psvSetPressure, onClose, onSave, onSaveNetworks, psvTag, onDelete }: SizingWorkspaceProps) {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
-    const { addWarning, clearWarnings, getWarnings, selectedPsv } = usePsvStore();
+    const addWarning = usePsvStore((state) => state.addWarning);
+    const clearWarnings = usePsvStore((state) => state.clearWarnings);
+    const getWarnings = usePsvStore((state) => state.getWarnings);
+    const selectedPsv = usePsvStore((state) => state.selectedPsv);
     const canEditAuth = useAuthStore((state) => state.canEdit());
     const canEdit = canEditAuth && selectedPsv?.isActive !== false;
     const [activeTab, setActiveTab] = useState(0);

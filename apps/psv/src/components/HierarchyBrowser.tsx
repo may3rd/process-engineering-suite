@@ -55,28 +55,30 @@ export function HierarchyBrowser() {
     const theme = useTheme();
     const isDark = theme.palette.mode === 'dark';
 
-    const {
-        selection,
-        customerList,
-        plantList,
-        unitList,
-        areaList,
-        projectList,
-        selectCustomer,
-        selectPlant,
-        selectUnit,
-        selectArea,
-        selectProject,
-        selectedCustomer,
-        selectedPlant,
-        selectedUnit,
-        selectedArea,
-        addCustomer,
-        addPlant,
-        addUnit,
-        addArea,
-        addProject,
-    } = usePsvStore();
+    const selection = usePsvStore((state) => state.selection);
+    const customerList = usePsvStore((state) => state.customerList);
+    const plantList = usePsvStore((state) => state.plantList);
+    const unitList = usePsvStore((state) => state.unitList);
+    const areaList = usePsvStore((state) => state.areaList);
+    const projectList = usePsvStore((state) => state.projectList);
+    
+    const selectedCustomer = usePsvStore((state) => state.selectedCustomer);
+    const selectedPlant = usePsvStore((state) => state.selectedPlant);
+    const selectedUnit = usePsvStore((state) => state.selectedUnit);
+    const selectedArea = usePsvStore((state) => state.selectedArea);
+
+    // Actions (stable references, so we can group them or pick individually)
+    const selectCustomer = usePsvStore((state) => state.selectCustomer);
+    const selectPlant = usePsvStore((state) => state.selectPlant);
+    const selectUnit = usePsvStore((state) => state.selectUnit);
+    const selectArea = usePsvStore((state) => state.selectArea);
+    const selectProject = usePsvStore((state) => state.selectProject);
+    
+    const addCustomer = usePsvStore((state) => state.addCustomer);
+    const addPlant = usePsvStore((state) => state.addPlant);
+    const addUnit = usePsvStore((state) => state.addUnit);
+    const addArea = usePsvStore((state) => state.addArea);
+    const addProject = usePsvStore((state) => state.addProject);
 
     // Auth and permissions
     const canManageCustomer = useAuthStore((state) => state.canManageCustomer());
@@ -373,7 +375,7 @@ export function HierarchyBrowser() {
                     }}
                 >
                     <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        {currentLevel.parent && (<IconButton onClick={handleBack} size="small" sx={{ mr: 2 }}>
+                        {currentLevel.parent && (<IconButton onClick={handleBack} size="small" sx={{ mr: 2 }} aria-label="Go back">
                             <ArrowBack />
                         </IconButton>)}
                         <Box sx={{ flex: 1, textAlign: 'center' }}>

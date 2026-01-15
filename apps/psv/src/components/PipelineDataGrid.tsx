@@ -73,9 +73,9 @@ export function PipelineDataGrid({
                                     <TableCell>
                                         {pipe.fittings && pipe.fittings.length > 0 ? (
                                             <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                                                {pipe.fittings.map((f: FittingType, idx: number) => (
+                                                {pipe.fittings.map((f: FittingType) => (
                                                     <Chip
-                                                        key={idx}
+                                                        key={f.type}
                                                         label={`${f.count}x ${f.type}`}
                                                         size="small"
                                                         variant="outlined"
