@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import { IconButton, Tooltip, Stack } from '@mui/material';
 import { 
   AutoFixHigh as AgentIcon, 
@@ -9,7 +10,7 @@ import {
 import { TopFloatingToolbar } from '@eng-suite/ui-kit';
 import { StatusIndicator } from './common/StatusIndicator';
 import { useDesignStore } from '../store/useDesignStore';
-import { useRef } from 'react';
+import { DesignState } from '../types';
 
 interface TopToolbarProps {
   onToggleTheme: () => void;
@@ -22,8 +23,14 @@ export const TopToolbar = ({ onToggleTheme, isDarkMode, onMenuClick }: TopToolba
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
-    const dataStr = JSON.stringify(designState, null, 2);
-    const blob = new Blob([dataStr], { type: "application/json" });
+    const exportState = {
+      ...designState,
+      llmSettings: designState.llmSettings
+        ? { ...designState.llmSettings, apiKey: undefined }
+        : undefined,
+    };
+    const dataStr = JSON.stringify(exportState, null, 2);
+    const blob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -44,21 +51,32 @@ export const TopToolbar = ({ onToggleTheme, isDarkMode, onMenuClick }: TopToolba
     reader.onload = (e) => {
       try {
         const content = e.target?.result as string;
-        const newState = JSON.parse(content);
-        // Basic validation could be added here
+        const parsed = JSON.parse(content);
+        if (!parsed || typeof parsed !== 'object') {
+          throw new Error('Invalid project file');
+        }
+        const currentLlmSettings = designState.llmSettings;
+        const currentApiKey = currentLlmSettings?.apiKey;
+        const parsedState = parsed as DesignState;
+        const loadedLlmSettings = parsedState.llmSettings;
+        const newState = {
+          ...parsedState,
+          llmSettings: loadedLlmSettings
+            ? { ...loadedLlmSettings, apiKey: currentApiKey }
+            : currentLlmSettings,
+        };
         setDesignState(newState);
-        // Clear input so same file can be loaded again if needed
         if (fileInputRef.current) fileInputRef.current.value = '';
       } catch (error) {
-        console.error("Failed to load project file:", error);
-        alert("Invalid project file.");
+        console.error('Failed to load project file:', error);
+        alert('Invalid project file.');
       }
     };
     reader.readAsText(file);
   };
 
   const handleClear = () => {
-    if (window.confirm("Clear all project data? (LLM settings will be preserved)")) {
+    if (window.confirm('Clear all project data? (LLM settings will be preserved)')) {
       clearProject();
     }
   };
@@ -69,7 +87,7 @@ export const TopToolbar = ({ onToggleTheme, isDarkMode, onMenuClick }: TopToolba
         type="file"
         ref={fileInputRef}
         style={{ display: 'none' }}
-        accept=".json"
+        accept='.json'
         onChange={handleFileChange}
       />
       <TopFloatingToolbar
