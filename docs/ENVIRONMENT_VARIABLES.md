@@ -1,137 +1,211 @@
 # Environment Variables Reference
 
-This document lists all environment variables used by the Process Engineering Suite applications.
+Complete reference for all environment variables used in the Process Engineering Suite.
 
-## Global Variables
+## Environment Detection
 
-These variables apply to the entire suite or multiple applications.
+### `DEPLOYMENT_ENV`
 
-### Database Configuration
+Determines which deployment environment is active. Controls behavior throughout the application.
 
-- `POSTGRES_PASSWORD`: PostgreSQL database password (required for production)
-- `POSTGRES_USER`: PostgreSQL database user (default: postgres)
-- `POSTGRES_DB`: PostgreSQL database name (default: engsuite)
-- `DATABASE_URL`: Full PostgreSQL connection string (optional, auto-built if not provided)
-  - Format: `postgresql+asyncpg://user:password@host:port/database`
+- **Required**: No (defaults to `local`)
+- **Values**: `local`, `aws`, `vercel`
+- **Used By**: Backend config, frontend config, CORS settings
 
-### API Configuration
-
-- `NEXT_PUBLIC_API_URL`: Backend API base URL (default: http://localhost:8000)
-  - Used by all frontend applications
-
-## Application-Specific Variables
-
-### PSV Application (apps/psv)
-
-- `NEXT_PUBLIC_USE_LOCAL_STORAGE`: Enable demo mode with localStorage authentication
-  - Values: `true` (demo mode) or `false` (API mode)
-  - Default: `false`
-  - In demo mode, no backend required
-
-### API Backend (apps/api)
-
-- `USE_MOCK_DATA`: Force mock data usage even when database is available
-  - Values: `true` or `false`
-  - Default: `false`
-- `SECRET_KEY`: Secret key for JWT tokens and security
-  - Required for production authentication
-
-### Network Editor (apps/network-editor)
-
-No application-specific environment variables required.
-
-### Web/Dashboard (apps/web)
-
-- `DEFAULT_THEME`: Default theme for the application
-  - Values: `light` or `dark`
-  - Default: `light`
-
-### Docs Application (apps/docs)
-
-Coming Soon - No environment variables defined yet.
-
-## Development vs Production
-
-### Development
-
+**Examples**:
 ```bash
-# Basic development setup
-npm run dev
-
-# With custom API URL
-NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev
+DEPLOYMENT_ENV=local  # Local development
+DEPLOYMENT_ENV=aws    # AWS production
 ```
 
-### Production - Docker
+## Database Configuration
 
+### `DATABASE_URL`
+
+PostgreSQL connection string for the API backend.
+
+- **Required**: Yes (unless `USE_MOCK_DATA=true`)
+- **Format**: `postgresql+asyncpg://user:password@host:port/database`
+- **Used By**: API backend
+
+**Examples**:
 ```bash
-# Environment file
-cat > .env << EOF
-POSTGRES_PASSWORD=secure-password
-POSTGRES_USER=postgres
-POSTGRES_DB=engsuite
-DATABASE_URL=postgresql+asyncpg://postgres:secure-password@postgres:5432/engsuite
-NEXT_PUBLIC_API_URL=http://your-host:8000
-EOF
+# Local
+DATABASE_URL=postgresql+asyncpg://postgres:mypassword@postgres:5432/engsuite
 
-# Run with environment
-docker run --env-file .env [other-options] process-engineering-suite
+# AWS
+DATABASE_URL=postgresql+asyncpg://postgres:mypassword@rds-endpoint:5432/engsuite
 ```
 
-### Production - Direct Deployment
+### `POSTGRES_PASSWORD`
 
+PostgreSQL password (Docker Compose only).
+
+- **Required**: Yes (for local development)
+- **Used By**: Docker Compose postgres service
+
+### `USE_MOCK_DATA`
+
+Use in-memory mock data instead of PostgreSQL.
+
+- **Required**: No
+- **Default**: `false`
+- **Values**: `true`, `false`
+
+## API Configuration
+
+### `SECRET_KEY`
+
+Secret key for JWT token signing and session management.
+
+- **Required**: Yes
+- **Generation**: `openssl rand -hex 32`
+- **Security**: Must be cryptographically secure in production
+
+**Examples**:
 ```bash
-# API environment
-DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/db
-SECRET_KEY=your-secret-key
-USE_MOCK_DATA=false
-
-# Frontend environment
-NEXT_PUBLIC_API_URL=https://your-api-domain
-NEXT_PUBLIC_USE_LOCAL_STORAGE=false
+SECRET_KEY=dev-secret-key-change-in-production  # Development only
+SECRET_KEY=<64-char-hex-string>                  # Production
 ```
 
-## Security Considerations
+### `ALLOWED_ORIGINS`
 
-- Never commit `.env` files to version control
-- Use strong passwords for database credentials
-- Rotate `SECRET_KEY` regularly in production
-- Use HTTPS for `NEXT_PUBLIC_API_URL` in production
-- Consider using Docker secrets or external secret management
+Comma-separated list of allowed CORS origins (AWS/production only).
 
-## Validation
+- **Required**: Yes (for `DEPLOYMENT_ENV=aws`)
+- **Not Used**: In local mode (auto-configured)
+- **Used By**: API backend CORS middleware
 
-Verify environment configuration:
-
+**Examples**:
 ```bash
-# Check API health
-curl http://localhost:8000/health
-
-# Check database connection (API logs)
-curl http://localhost:8000/admin/data-source
-
-# Test frontend connectivity
-curl http://localhost:3003/api/health  # PSV
-curl http://localhost:3002/api/health  # Network Editor
+ALLOWED_ORIGINS=https://alb-domain.com,https://yourdomain.com
 ```
+
+### `API_HOST` / `API_PORT` / `LOG_LEVEL`
+
+- **API_HOST**: Default `0.0.0.0`
+- **API_PORT**: Default `8000`
+- **LOG_LEVEL**: Default `INFO` (values: `DEBUG`, `INFO`, `WARNING`, `ERROR`)
+
+## Frontend Configuration
+
+### `NEXT_PUBLIC_API_URL`
+
+API base URL for browser requests (Next.js apps).
+
+- **Required**: No (auto-detected via `getApiUrl()`)
+- **Auto-Detection**:
+  - `local`: `http://localhost:8000`
+  - `aws`: `http://api:8000` (ECS service discovery)
+
+**Override Examples**:
+```bash
+NEXT_PUBLIC_API_URL=http://localhost:8000      # Local
+NEXT_PUBLIC_API_URL=http://api:8000            # AWS
+NEXT_PUBLIC_API_URL=https://api.custom.com     # Custom
+```
+
+### `VITE_API_URL`
+
+API base URL for Vite apps (design-agents). Same auto-detection as above.
+
+## AWS Configuration
+
+### `AWS_REGION`
+
+AWS region for services.
+
+- **Required**: No (unless using AWS services)
+- **Used By**: API backend
+
+**Example**: `AWS_REGION=us-east-1`
+
+### `AWS_SECRETS_ARN`
+
+ARN pattern for AWS Secrets Manager secrets.
+
+- **Required**: No
+- **Example**: `AWS_SECRETS_ARN=arn:aws:secretsmanager:region:account:secret:process-engineering/*`
+
+## Environment Matrix
+
+### Local Development
+
+| Variable | Required | Value | Source |
+|----------|----------|-------|--------|
+| `DEPLOYMENT_ENV` | No | `local` | `.env.local` |
+| `DATABASE_URL` | Yes | `postgresql+asyncpg://...` | `.env.local` |
+| `POSTGRES_PASSWORD` | Yes | User-defined | `.env.local` |
+| `SECRET_KEY` | No | `dev-secret-key-change-in-production` | `.env.local` |
+| `NEXT_PUBLIC_API_URL` | No | Auto: `http://localhost:8000` | - |
+| `ALLOWED_ORIGINS` | No | Auto-configured | - |
+
+### AWS Production
+
+| Variable | Required | Value | Source |
+|----------|----------|-------|--------|
+| `DEPLOYMENT_ENV` | Yes | `aws` | Task Definition |
+| `DATABASE_URL` | Yes | RDS endpoint | Secrets Manager |
+| `SECRET_KEY` | Yes | Generated | Secrets Manager |
+| `ALLOWED_ORIGINS` | Yes | ALB domains | Secrets Manager |
+| `NEXT_PUBLIC_API_URL` | No | Auto: `http://api:8000` | - |
+| `AWS_REGION` | Yes | `us-east-1` | Task Definition |
+
+## Configuration Files
+
+### Local: `infra/.env.local`
+
+Template: `infra/.env.local.example` (gitignored)
+
+Required:
+```bash
+DEPLOYMENT_ENV=local
+POSTGRES_PASSWORD=your_password
+DATABASE_URL=postgresql+asyncpg://postgres:your_password@postgres:5432/engsuite
+```
+
+### AWS: Secrets Manager + Task Definitions
+
+Secrets in Secrets Manager:
+- `process-engineering/database-url`
+- `process-engineering/secret-key`
+- `process-engineering/allowed-origins`
+
+Environment in Task Definitions:
+- `DEPLOYMENT_ENV=aws`
+- `AWS_REGION=us-east-1`
+
+## Security Best Practices
+
+1. Never commit secrets to git (use `.gitignore`)
+2. Use AWS Secrets Manager in production
+3. Generate strong secrets: `openssl rand -hex 32`
+4. Use IAM policies for least privilege access
+5. Isolate environments (separate AWS accounts)
 
 ## Troubleshooting
 
-### Common Issues
+### Variable not being read
 
-- **API connection errors**: Check `NEXT_PUBLIC_API_URL` format and accessibility
-- **Database connection failed**: Verify `DATABASE_URL` syntax and database availability
-- **Authentication issues**: Ensure `SECRET_KEY` is set for API
-- **Demo mode not working**: Confirm `NEXT_PUBLIC_USE_LOCAL_STORAGE=true`
+```bash
+# Check loaded config
+docker-compose -f infra/docker-compose.yml config
 
-### Environment Variable Precedence
+# Check in container
+docker-compose -f infra/docker-compose.yml exec api env | grep VAR_NAME
+```
 
-1. Explicit `DATABASE_URL` overrides individual Postgres variables
-2. Application-specific variables override defaults
-3. Docker environment overrides system environment
+### CORS errors
 
-## Related Documentation
+```bash
+# Verify DEPLOYMENT_ENV
+curl http://localhost:8000/health -v
 
-- `DEPLOYMENT_GUIDE.md` - Main deployment instructions
-- `DOCKER_DEPLOYMENT.md` - Docker-specific commands
-- `TROUBLESHOOTING.md` - Issue resolution guides
+# Check AWS secrets
+aws secretsmanager get-secret-value --secret-id process-engineering/allowed-origins
+```
+
+## Additional Resources
+
+- [Deployment Guide](./DEPLOYMENT.md)
+- [12-Factor App](https://12factor.net/config)

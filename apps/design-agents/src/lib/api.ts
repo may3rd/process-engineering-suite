@@ -1,30 +1,8 @@
 import { useLogStore } from '../store/useLogStore';
 import { useDesignStore } from '../store/useDesignStore';
+import { getApiUrl } from '@eng-suite/api-std/config';
 
-// When running in the monorepo via Next.js proxy (apps/web), calls to /design-agents/api/.. 
-// should be routed to the backend. 
-// However, the Vite app is served at /design-agents/ (base).
-// The backend is at localhost:8000.
-// If we are standalone, we might want localhost:8000.
-// But the issue reported is "offline". 
-// Let's assume we want to hit the backend directly for now to fix the offline issue, 
-// OR fix the proxy config.
-// Since the user said "api is running", and previously it was 8000.
-// If we are in the browser, localhost:8000 might be blocked if mixed content or network error.
-// BUT, if we are running via `apps/web` (port 3000), we should probably use the proxy if configured.
-// But `apps/web` proxy config was:
-// source: "/design-agents/:path*", destination: "http://localhost:3004/design-agents/:path*"
-// This proxies the FRONTEND assets. It does NOT proxy the API calls made BY the frontend.
-// The frontend (running in browser) makes the fetch.
-// If `API_URL` is `http://localhost:8000`, the browser hits port 8000.
-// If that fails, it might be because the browser is on 3000 and 8000 doesn't have CORS for 3000?
-// Wait, `apps/api/main.py` HAS CORS for 3000, 3001, 3002, 3003, 3004.
-// So direct call should work.
-
-// HOWEVER, maybe the browser interprets "localhost" as IPv6 (::1) and the server listens on IPv4 (127.0.0.1).
-// Let's try 127.0.0.1 to be safe.
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+const API_URL = getApiUrl();
 
 export async function checkHealth() {
   const res = await fetch(`${API_URL}/design-agents/health`);

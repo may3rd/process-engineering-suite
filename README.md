@@ -20,29 +20,31 @@ Backend (Python / FastAPI):
 
 This starts Postgres + API + all web apps via `infra/docker-compose.yml`.
 
-1) Set Postgres password (compose expects it):
+1) Configure environment:
 ```bash
-cd infra
-cat > .env <<'EOF'
-POSTGRES_PASSWORD=change-me
-EOF
+# Copy the example environment file
+cp infra/.env.local.example infra/.env.local
+
+# Edit and set your PostgreSQL password
+# Minimum required: POSTGRES_PASSWORD
 ```
 
 2) Start the stack:
 ```bash
-cd infra
-docker compose up -d --build
+docker-compose -f infra/docker-compose.yml up
 ```
 
 3) Open:
 - Dashboard: http://localhost:3000
 - Network Editor: http://localhost:3002
 - PSV: http://localhost:3003
+- Design Agents: http://localhost:3004
 - API docs: http://localhost:8000/docs
 
 Notes:
 - The API runs Alembic migrations (`alembic upgrade head`) automatically on startup.
 - The dev compose file seeds the database from `apps/api/mock_data.json` on first boot (only if the DB is empty).
+- For detailed deployment instructions, see [docs/DEPLOYMENT.md](./docs/DEPLOYMENT.md)
 
 ## Local Dev (Bun)
 
@@ -137,9 +139,44 @@ docker compose -f infra/docker-compose.yml exec api python /app/apps/api/scripts
   - `GET /admin/backup` returns a `.sql` dump in DB mode (or a JSON export in mock mode)
   - `POST /admin/restore` restores from an uploaded `.sql` (DB mode) or `.json` (mock mode)
 
-## Production / Single Image Deployment
+## Deployment
 
-The root `Dockerfile` builds a single image that runs apps, API, and PostgreSQL via supervisord.
+### Local Development
+
+See [Quick Start](#quick-start-docker-recommended) above for local Docker Compose deployment.
+
+### AWS Production
+
+The Process Engineering Suite supports deployment to AWS ECS/Fargate with RDS PostgreSQL.
+
+**Prerequisites:**
+- AWS Account
+- AWS CLI configured
+- Docker installed
+
+**Quick Deploy:**
+```bash
+# 1. Build and push images to ECR
+./infra/aws/scripts/build-and-push.sh
+
+# 2. Create AWS infrastructure (RDS, ECS, ALB, Secrets)
+# See docs/DEPLOYMENT.md for detailed steps
+
+# 3. Register task definitions
+aws ecs register-task-definition --cli-input-json file://infra/aws/task-definitions/api.json
+
+# 4. Create ECS services
+aws ecs create-service --cluster process-engineering-cluster --service-name api ...
+```
+
+**Documentation:**
+- [Complete Deployment Guide](./docs/DEPLOYMENT.md) - Local and AWS setup
+- [Environment Variables Reference](./docs/ENVIRONMENT_VARIABLES.md) - All configuration options
+- [AWS Infrastructure Details](./docs/DEPLOYMENT.md#aws-production-deployment) - Architecture and costs
+
+### Legacy: Single Image Deployment
+
+The root `Dockerfile` builds a single image that runs apps, API, and PostgreSQL via supervisord (legacy approach).
 
 Build:
 ```bash

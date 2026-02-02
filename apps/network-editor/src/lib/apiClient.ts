@@ -1,14 +1,15 @@
 /**
  * API client for the Process Engineering Suite Python backend.
- * 
+ *
  * This module provides functions to call the FastAPI hydraulics
  * calculation endpoints.
  */
 
 import type { PipeProps, PressureDropCalculationResults, resultSummary } from "@/lib/types";
+import { getApiUrl } from "@eng-suite/api-std/config";
 
 // API configuration
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = getApiUrl();
 
 export interface CalculationResult {
     edgeId: string;

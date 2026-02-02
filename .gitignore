@@ -16,6 +16,10 @@ package-lock.json
 .env.test.local
 .env.production.local
 
+# Infrastructure env files (keep examples)
+infra/.env.local
+infra/.env.aws
+
 # Testing
 coverage
 
