@@ -74,11 +74,45 @@ export const useDesignStore = create<DesignStore>()(
       }),
       {
         name: 'design-agent-storage', // name of the item in the storage (must be unique)
+        version: 2,
         partialize: (state) => ({
           activeStepId: state.activeStepId,
           steps: state.steps,
           designState: state.designState,
         }),
+        migrate: (persisted, version) => {
+          if (!persisted || typeof persisted !== 'object') {
+            return {
+              activeStepId: DESIGN_STEPS[0]?.id ?? '',
+              steps: DESIGN_STEPS,
+              designState: {},
+            };
+          }
+
+          const oldState = persisted as any;
+          const oldSteps = Array.isArray(oldState.steps) ? oldState.steps : [];
+          const statusById = new Map<string, StepStatus>(
+            oldSteps
+              .filter((s: any) => s && typeof s.id === 'string')
+              .map((s: any) => [s.id as string, s.status as StepStatus])
+          );
+
+          const migratedSteps = DESIGN_STEPS.map((s) => ({
+            ...s,
+            status: statusById.get(s.id) ?? 'pending',
+          }));
+
+          const rawActiveStepId = typeof oldState.activeStepId === 'string' ? oldState.activeStepId : '';
+          const mappedActiveStepId = rawActiveStepId === 'equipment' ? 'simulation' : rawActiveStepId;
+          const isValidActive = migratedSteps.some((s) => s.id === mappedActiveStepId);
+          const nextActive = isValidActive ? mappedActiveStepId : (DESIGN_STEPS[0]?.id ?? '');
+
+          return {
+            ...oldState,
+            activeStepId: nextActive,
+            steps: migratedSteps,
+          };
+        },
       }
     ),
     { name: 'DesignStore' }

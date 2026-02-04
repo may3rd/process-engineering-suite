@@ -61,8 +61,9 @@ const runPfd = async () => {
   throw new Error(result.message || 'PFD generation failed.');
 };
 
-const runSimulation = async () => {
+const runCatalog = async () => {
   const designState = getDesignState();
+
   if (!designState.flowsheet_description || !designState.selected_concept_details) {
     throw new Error('Missing flowsheet or design basis.');
   }
@@ -80,6 +81,11 @@ const runSimulation = async () => {
   } else {
     throw new Error(catalogResult.message || 'Catalog generation failed.');
   }
+};
+
+const runSimulation = async () => {
+  const designState = getDesignState();
+  if (!designState.catalog_template) throw new Error('No catalog template available.');
 
   const simulationResult = await runAgent('simulation_agent', { 
     prompt: 'Run Simulation',
@@ -96,11 +102,6 @@ const runSimulation = async () => {
     return;
   }
   throw new Error(simulationResult.message || 'Simulation failed.');
-};
-
-const runEquipment = async () => {
-  const designState = getDesignState();
-  if (!designState.full_simulation_results) throw new Error('No simulation results available.');
 };
 
 const runSizing = async () => {
@@ -204,11 +205,11 @@ const runStep = async (stepId: string) => {
     case 'pfd':
       await runPfd();
       return;
+    case 'catalog':
+      await runCatalog();
+      return;
     case 'simulation':
       await runSimulation();
-      return;
-    case 'equipment':
-      await runEquipment();
       return;
     case 'sizing':
       await runSizing();

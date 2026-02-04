@@ -7,8 +7,8 @@ import { SpreadsheetView } from './components/views/SpreadsheetView';
 import { ResearchView } from './components/views/ResearchView';
 import { SynthesisView } from './components/views/SynthesisView';
 import { PFDView } from './components/views/PFDView';
+import { CatalogView } from './components/views/CatalogView';
 import { SimulationView } from './components/views/SimulationView';
-import { EquipmentListView } from './components/views/EquipmentListView';
 import { SizingView } from './components/views/SizingView';
 import { SafetyView } from './components/views/SafetyView';
 import { ProjectReviewView } from './components/views/ProjectReviewView';
@@ -49,10 +49,10 @@ function App() {
         return <SynthesisView />;
       case 'pfd':
         return <PFDView />;
+      case 'catalog':
+        return <CatalogView />;
       case 'simulation':
         return <SimulationView />;
-      case 'equipment':
-        return <EquipmentListView />;
       case 'sizing':
         return <SizingView />;
       case 'safety':

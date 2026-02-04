@@ -92,7 +92,7 @@ export const SafetyView = () => {
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 3 }}>
       {/* Header */}
       <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2.5 }}>
           <Box>
             <Typography variant="subtitle1" fontWeight="bold">Safety & Risk Assessment (HAZOP)</Typography>
             <Typography variant="caption" color="text.secondary">
@@ -105,11 +105,11 @@ export const SafetyView = () => {
                 label={`Overall Risk: ${riskLevel}`} 
                 color={getRiskColor(riskLevel) as any}
                 variant="filled"
-                sx={{ fontWeight: 'bold' }}
+                sx={{ fontWeight: 'bold', mr: 2 }}
               />
           )}
         </Box>
-        <Stack direction="row" spacing={2}>
+        <Stack direction="row" spacing={2.5}>
              <Button 
                 startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <MagicIcon />} 
                 onClick={handleRunSafety} 

@@ -20,6 +20,10 @@ const PROVIDERS = ['OpenRouter', 'OpenAI', 'Google'];
 
 const MODELS_BY_PROVIDER: Record<string, string[]> = {
   OpenRouter: [
+    'anthropic/claude-3.5-sonnet',
+    'anthropic/claude-3-opus',
+    'deepseek/deepseek-r1',
+    'deepseek/deepseek-chat',
     'google/gemini-3-flash-preview',
     'google/gemini-3-pro-preview',
     'google/gemini-2.5-flash',
@@ -27,14 +31,12 @@ const MODELS_BY_PROVIDER: Record<string, string[]> = {
     'google/gemini-2.0-flash-001',
     'google/gemini-pro-1.5',
     'google/gemini-flash-1.5',
-    'openai/gpt-4o',
-    'openai/gpt-4o-mini',
-    'anthropic/claude-3.5-sonnet',
-    'anthropic/claude-3-opus',
-    'deepseek/deepseek-r1',
-    'deepseek/deepseek-chat',
+    'moonshotai/kimi-k2.5',
+    'moonshotai/kimi-k2-thinking',
     'meta-llama/llama-3.1-405b-instruct',
     'meta-llama/llama-3.1-70b-instruct',
+    'openai/gpt-4o',
+    'openai/gpt-4o-mini',
     'x-ai/grok-4.1-fast',
     'x-ai/grok-4-fast',
     'x-ai/grok-4'
@@ -62,8 +64,8 @@ export const SettingsView = () => {
   const { designState, updateDesignState } = useDesignStore();
   const [settings, setSettings] = useState<LLMSettings>(designState.llmSettings || {
     provider: 'OpenRouter',
-    quickModel: 'x-ai/grok-4.1-fast',
-    deepModel: 'x-ai/grok-4.1-fast',
+    quickModel: 'moonshotai/kimi-k2.5',
+    deepModel: 'moonshotai/kimi-k2.5',
     temperature: 0.7,
     apiKey: ''
   });

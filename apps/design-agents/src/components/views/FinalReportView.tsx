@@ -100,9 +100,13 @@ export const FinalReportView = () => {
         p: 2, 
         display: { xs: 'none', md: 'flex' }, // Hide TOC on mobile for now, or make collapsible
         flexDirection: 'column', 
-        bgcolor: 'action.hover' 
+        bgcolor: 'background.paper',
+        border: '1px solid',
+        borderColor: 'divider'
       }}>
-          <Typography variant="subtitle2" gutterBottom color="primary" sx={{ px: 1 }}>Table of Contents</Typography>
+          <Typography variant="subtitle2" gutterBottom sx={{ px: 1, color: 'text.secondary', fontWeight: 700 }}>
+            Table of Contents
+          </Typography>
           <List dense>
               {sections.map(s => (
                   <ListItem key={s.id} disablePadding>
@@ -117,7 +121,7 @@ export const FinalReportView = () => {
           <Stack spacing={1}>
               <Button startIcon={<CopyIcon />} size="small" variant="outlined" onClick={handleCopy}>Copy MD</Button>
               <Button startIcon={<DownloadIcon />} size="small" variant="outlined" onClick={handleDownload}>Download .md</Button>
-              <Button startIcon={<DocIcon />} size="small" variant="contained" onClick={handleExportWord}>Export to Word</Button>
+              <Button startIcon={<DocIcon />} size="small" variant="outlined" onClick={handleExportWord}>Export to Word</Button>
           </Stack>
       </Paper>
 
@@ -145,11 +149,11 @@ export const FinalReportView = () => {
               {sections.map(s => (
                   <Box key={s.id} id={s.id} sx={{ 
                       mb: 8,
-                      '& h1': { color: 'primary.main', borderBottom: '2px solid', borderColor: 'primary.main', pb: 1, mt: 6, mb: 3 },
-                      '& h2': { mt: 4, mb: 2, color: 'secondary.main' },
+                      '& h1': { color: 'text.primary', borderBottom: '1px solid', borderColor: 'divider', pb: 1, mt: 6, mb: 3, fontWeight: 800 },
+                      '& h2': { mt: 4, mb: 2, color: 'text.primary', fontWeight: 800 },
                       '& table': { width: '100%', borderCollapse: 'collapse', mb: 3, fontSize: '0.9rem' },
                       '& th, & td': { border: '1px solid', borderColor: 'divider', p: 1.5, textAlign: 'left' },
-                      '& th': { bgcolor: 'action.hover' },
+                      '& th': { bgcolor: 'transparent', color: 'text.secondary', fontWeight: 700 },
                       '& p': { lineHeight: 1.8, mb: 2 },
                       '& li': { mb: 1 }
                   }}>

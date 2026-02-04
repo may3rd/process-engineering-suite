@@ -133,7 +133,7 @@ export const ResearchView = () => {
       {/* Header / Action Bar */}
       <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <Box>
-          <Typography variant="subtitle1" fontWeight="bold">Technology Selection</Typography>
+          <Typography variant="subtitle2" fontWeight={700}>Technology Selection</Typography>
           <Typography variant="caption" color="text.secondary">
             {concepts.length > 0 
                 ? "Select the best technology pathway for your design." 
@@ -145,7 +145,7 @@ export const ResearchView = () => {
                 startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <ScienceIcon />} 
                 onClick={handleRunResearch} 
                 variant="contained" 
-                color={concepts.length > 0 ? "secondary" : "primary"}
+                color="primary"
                 disabled={loading || !designState.process_requirements}
             >
               {concepts.length > 0 ? "Regenerate Concepts" : "Generate Concepts"}
@@ -189,10 +189,10 @@ export const ResearchView = () => {
                                 display: 'flex', 
                                 flexDirection: 'column',
                                 transition: 'all 0.2s',
-                                border: selectedConceptIndex === index ? '2px solid' : '1px solid',
+                                borderWidth: selectedConceptIndex === index ? 2 : 1,
                                 borderColor: selectedConceptIndex === index ? 'primary.main' : 'divider',
-                                boxShadow: selectedConceptIndex === index ? 4 : 0,
-                                transform: selectedConceptIndex === index ? 'scale(1.02)' : 'none',
+                                boxShadow: selectedConceptIndex === index ? 3 : 0,
+                                transform: 'none',
                                 cursor: 'pointer'
                             }}
                             onClick={() => handleSelectConcept(index)}
@@ -228,9 +228,13 @@ export const ResearchView = () => {
                                     ))}
                                 </List>
                             </CardContent>
-                            <CardActions sx={{ p: 2, pt: 0 }}>
-                                <Button size="small" fullWidth variant={selectedConceptIndex === index ? "contained" : "outlined"}>
-                                    {selectedConceptIndex === index ? "Selected" : "Select Concept"}
+                            <CardActions sx={{ p: 2, pt: 0, justifyContent: 'flex-end' }}>
+                                <Button
+                                  size="small"
+                                  variant={selectedConceptIndex === index ? 'contained' : 'outlined'}
+                                  color={selectedConceptIndex === index ? 'primary' : 'inherit'}
+                                >
+                                  {selectedConceptIndex === index ? 'Selected' : 'Select'}
                                 </Button>
                             </CardActions>
                         </Card>

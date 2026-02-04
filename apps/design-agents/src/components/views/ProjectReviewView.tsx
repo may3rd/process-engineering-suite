@@ -68,7 +68,12 @@ export const ProjectReviewView = () => {
   const handleConfirmAndNext = () => {
       const currentIndex = steps.findIndex(s => s.id === activeStepId);
       if (currentIndex < steps.length - 1) {
-          setActiveStep(steps[currentIndex + 1].id);
+          updateStepStatus(activeStepId, 'completed');
+          const nextStepId = steps[currentIndex + 1]!.id;
+          setActiveStep(nextStepId);
+          if (nextStepId === 'report') {
+            updateStepStatus('report', 'completed');
+          }
       }
   };
 
@@ -107,7 +112,7 @@ export const ProjectReviewView = () => {
             label={status} 
             color={getStatusColor(status) as any} 
             variant="filled" 
-            sx={{ fontWeight: 'bold', textTransform: 'uppercase' }} 
+            sx={{ fontWeight: 'bold', textTransform: 'uppercase', mr:2 }} 
           />
         </Box>
         <Stack direction="row" spacing={2}>
@@ -146,25 +151,25 @@ export const ProjectReviewView = () => {
                       <Grid item xs={12}>
                           <Grid container spacing={2}>
                               <Grid item xs={12} md={4}>
-                                  <Card variant="outlined" sx={{ textAlign: 'center', py: 2, bgcolor: 'background.paper' }}>
-                                      <Typography variant="caption" color="text.secondary">CAPEX (Est.)</Typography>
-                                      <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'primary.main' }}>
+                                  <Card variant="outlined" sx={{ textAlign: 'center', px: { xs: 2, md: 3 }, py: { xs: 2.5, md: 3 }, bgcolor: 'background.paper', height: '100%', minHeight: 160, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                      <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: '0.08em' }}>CAPEX (Est.)</Typography>
+                                      <Typography component="div" sx={{ fontWeight: 900, color: 'primary.main', mt: 0.75, lineHeight: 1, letterSpacing: '-0.02em', fontSize: 'clamp(2rem, 2vw, 2rem)', whiteSpace: 'nowrap' }}>
                                           ${financials.capex}M
                                       </Typography>
                                   </Card>
                               </Grid>
                               <Grid item xs={12} md={4}>
-                                  <Card variant="outlined" sx={{ textAlign: 'center', py: 2, bgcolor: 'background.paper' }}>
-                                      <Typography variant="caption" color="text.secondary">OPEX (Annual)</Typography>
-                                      <Typography variant="h4" sx={{ fontWeight: 'bold', color: 'secondary.main' }}>
+                                  <Card variant="outlined" sx={{ textAlign: 'center', px: { xs: 2, md: 3 }, py: { xs: 2.5, md: 3 }, bgcolor: 'background.paper', height: '100%', minHeight: 160, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                      <Typography variant="overline" color="text.secondary" sx={{ letterSpacing: '0.08em' }}>OPEX (Annual)</Typography>
+                                      <Typography component="div" sx={{ fontWeight: 900, color: 'secondary.main', mt: 0.75, lineHeight: 1, letterSpacing: '-0.02em', fontSize: 'clamp(2rem, 2vw, 2rem)', whiteSpace: 'nowrap' }}>
                                           ${financials.opex}M
                                       </Typography>
                                   </Card>
                               </Grid>
                               <Grid item xs={12} md={4}>
-                                  <Card variant="outlined" sx={{ textAlign: 'center', py: 2, bgcolor: 'primary.main', color: 'primary.contrastText' }}>
-                                      <Typography variant="caption">Total Project Cost</Typography>
-                                      <Typography variant="h4" sx={{ fontWeight: 'bold' }}>
+                                  <Card variant="outlined" sx={{ textAlign: 'center', px: { xs: 2, md: 3 }, py: { xs: 2.5, md: 3 }, bgcolor: 'background.paper', height: '100%', minHeight: 160, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+                                      <Typography variant="overline" sx={{ letterSpacing: '0.08em', opacity: 0.9 }}>Total Project Cost</Typography>
+                                      <Typography component="div" sx={{ fontWeight: 900, mt: 0.75, lineHeight: 1, letterSpacing: '-0.02em', fontSize: 'clamp(2rem, 2vw, 2rem)', whiteSpace: 'nowrap' }}>
                                           ${financials.total}M
                                       </Typography>
                                   </Card>

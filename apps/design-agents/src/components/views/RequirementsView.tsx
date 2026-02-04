@@ -7,19 +7,17 @@ import {
   Typography, 
   Stack, 
   CircularProgress, 
-  Divider,
   IconButton,
   Tooltip,
   Alert,
   AlertTitle
 } from '@mui/material';
 import { 
-  PlayArrow, 
-  Save, 
   Edit as EditIcon, 
   CheckCircle as ConfirmIcon,
   AutoAwesome as MagicIcon,
-  Settings as SettingsIcon
+  OpenInFull as ExpandIcon,
+  CloseFullscreen as CollapseIcon,
 } from '@mui/icons-material';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -28,9 +26,10 @@ import rehypeKatex from 'rehype-katex';
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
 import { MarkdownEditorDialog } from '../common/MarkdownEditorDialog';
+import { glassInputSx, glassPanelSx } from '@eng-suite/ui-kit';
 
 export const RequirementsView = () => {
-  const { designState, updateDesignState, updateStepStatus, activeStepId, setActiveStep, steps, setActiveStep: setViewStep } = useDesignStore();
+  const { designState, updateDesignState, updateStepStatus, activeStepId, setActiveStep, steps } = useDesignStore();
   
   // Local states
   const [problemStatement, setProblemStatement] = useState(designState.problem_statement || '');
@@ -38,6 +37,7 @@ export const RequirementsView = () => {
   const [isEditingBasis, setIsEditingBasis] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expandedSection, setExpandedSection] = useState<'problem' | 'basis' | null>(null);
 
   // Sync from store on mount
   useEffect(() => {
@@ -92,155 +92,206 @@ export const RequirementsView = () => {
   };
 
   const isApiKeyError = error?.toLowerCase().includes('api key');
+  const hasBasis = Boolean(editableBasis);
+
+  const isProblemExpanded = expandedSection === 'problem';
+  const isBasisExpanded = expandedSection === 'basis';
 
   return (
     <Box sx={{ 
-      height: 'calc(100vh - 180px)', 
+      height: '100%',
       display: 'flex', 
-      flexDirection: { xs: 'column', lg: 'row' }, // Stack on mobile/tablet
-      gap: 3 
+      flexDirection: 'column',
+      gap: 2.5
     }}>
-      {/* Left Pane: Input */}
-      <Box sx={{ 
-        flex: 1, 
-        display: 'flex', 
-        flexDirection: 'column', 
-        gap: 2,
-        minHeight: { xs: '300px', lg: 'auto' } // Ensure height on mobile
-      }}>
-        <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box>
-            <Typography variant="subtitle1" fontWeight="bold">1. Problem Statement</Typography>
-            <Typography variant="caption" color="text.secondary">Input your process design goals</Typography>
-          </Box>
-          <Stack direction="row" spacing={1}>
-            <Button 
-                startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <MagicIcon />} 
-                onClick={handleRunAgent} 
-                variant="contained" 
-                color="primary"
-                disabled={loading || !problemStatement}
-            >
-              Analyze
+      <Paper
+        sx={{
+          ...glassPanelSx,
+          p: 2,
+          borderRadius: 2,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Typography variant="subtitle2" fontWeight={700}>Requirements</Typography>
+          <Typography variant="caption" color="text.secondary">
+            Analyze the problem statement, then confirm the design basis to continue.
+          </Typography>
+        </Box>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Button
+            startIcon={loading ? <CircularProgress size={18} color="inherit" /> : <MagicIcon />}
+            onClick={handleRunAgent}
+            variant={hasBasis ? 'outlined' : 'contained'}
+            color="primary"
+            disabled={loading || !problemStatement}
+            size="small"
+          >
+            Analyze
+          </Button>
+          <Button
+            startIcon={<EditIcon />}
+            onClick={() => setIsEditingBasis(true)}
+            variant="outlined"
+            size="small"
+            disabled={!hasBasis}
+          >
+            Edit
+          </Button>
+          <Button
+            startIcon={<ConfirmIcon />}
+            onClick={handleConfirmAndNext}
+            variant={hasBasis ? 'contained' : 'outlined'}
+            color="success"
+            disabled={!hasBasis}
+            size="small"
+          >
+            Confirm & Next
+          </Button>
+        </Stack>
+      </Paper>
+
+      {error && (
+        <Alert 
+          severity="error" 
+          onClose={() => setError(null)}
+          action={isApiKeyError && (
+            <Button color="inherit" size="small" onClick={() => setError(null)}>
+              Dismiss
             </Button>
-          </Stack>
-        </Paper>
+          )}
+        >
+          <AlertTitle>Analysis Failed</AlertTitle>
+          {error}
+          {isApiKeyError && (
+            <Typography variant="caption" display="block" sx={{ mt: 1 }}>
+              Please ensure your API Key is configured in the Settings tab or .env file.
+            </Typography>
+          )}
+        </Alert>
+      )}
 
-        {error && (
-            <Alert 
-                severity="error" 
-                onClose={() => setError(null)}
-                action={isApiKeyError && (
-                    <Button color="inherit" size="small" onClick={() => {
-                        // Navigate to settings (hacky if we don't have a direct route ID for settings in store)
-                        // Assuming user knows where settings is, or we can prompt a dialog.
-                        // For now just clear error.
-                        setError(null);
-                    }}>
-                        Dismiss
-                    </Button>
-                )}
-            >
-                <AlertTitle>Analysis Failed</AlertTitle>
-                {error}
-                {isApiKeyError && (
-                    <Typography variant="caption" display="block" sx={{ mt: 1 }}>
-                        Please ensure your API Key is configured in the Settings tab or .env file.
-                    </Typography>
-                )}
-            </Alert>
-        )}
-
-        <TextField
-          multiline
-          fullWidth
-          placeholder="e.g., 'Design a heat exchanger to cool ethanol...'"
-          value={problemStatement}
-          onChange={(e) => setProblemStatement(e.target.value)}
-          onBlur={handleSaveProblem}
-          variant="outlined"
-          InputProps={{
-            sx: {
-              height: '100%',
-              alignItems: 'flex-start',
-              p: 2,
-              fontFamily: 'monospace',
-              bgcolor: 'background.paper',
-              '& textarea': {
-                height: '100% !important',
-                overflowY: 'auto !important',
-                caretColor: 'text.primary' // Explicitly set caret color
-              }
-            }
-          }}
-          sx={{ 
-            flexGrow: 1,
-            display: 'flex',
+      <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
+        <Paper
+          sx={{
+            ...glassPanelSx,
+            p: 2,
+            borderRadius: 2,
+            display: isBasisExpanded ? 'none' : 'flex',
             flexDirection: 'column',
-            '& .MuiInputBase-root': { height: '100%' },
+            gap: 1.5,
+            flex: isProblemExpanded ? 1 : '0 0 auto',
+            minHeight: isProblemExpanded ? undefined : 260,
+            overflow: 'hidden',
           }}
-        />
-      </Box>
-
-      {/* Right Pane: Output/Basis */}
-      <Box sx={{ 
-        flex: 1.2, 
-        display: 'flex', 
-        flexDirection: 'column', 
-        gap: 2,
-        minHeight: { xs: '400px', lg: 'auto' } 
-      }}>
-        <Paper sx={{ p: 2, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box>
-            <Typography variant="subtitle1" fontWeight="bold">2. Design Basis</Typography>
-            <Typography variant="caption" color="text.secondary">Review and edit analyzed requirements</Typography>
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+            <Box>
+              <Typography variant="subtitle2" fontWeight={700}>Problem Statement</Typography>
+              <Typography variant="caption" color="text.secondary">
+                Describe the goal in one paragraph.
+              </Typography>
+            </Box>
+            <Tooltip title={isProblemExpanded ? 'Collapse' : 'Expand'}>
+              <IconButton
+                size="small"
+                onClick={() => setExpandedSection(isProblemExpanded ? null : 'problem')}
+              >
+                {isProblemExpanded ? <CollapseIcon /> : <ExpandIcon />}
+              </IconButton>
+            </Tooltip>
           </Box>
-          <Stack direction="row" spacing={1}>
-            <Button startIcon={<EditIcon />} onClick={() => setIsEditingBasis(true)} variant="outlined" size="small" disabled={!editableBasis}>
-                Edit
-            </Button>
-            <Button 
-                startIcon={<ConfirmIcon />} 
-                onClick={handleConfirmAndNext} 
-                variant="contained" 
-                color="success"
-                disabled={!editableBasis}
-            >
-                Confirm & Next
-            </Button>
-          </Stack>
+
+          <TextField
+            multiline
+            fullWidth
+            placeholder="e.g., 'Design a heat exchanger to cool ethanol...'"
+            value={problemStatement}
+            onChange={(e) => setProblemStatement(e.target.value)}
+            onBlur={handleSaveProblem}
+            variant="outlined"
+            InputProps={{
+              sx: {
+                height: '100%',
+                alignItems: 'flex-start',
+                p: 2,
+                fontFamily: 'monospace',
+                '& textarea': {
+                  height: '100% !important',
+                  overflowY: 'auto !important',
+                  caretColor: 'text.primary',
+                  lineHeight: 1.6
+                }
+              }
+            }}
+            sx={{ 
+              flexGrow: 1,
+              display: 'flex',
+              flexDirection: 'column',
+              '& .MuiInputBase-root': { height: '100%' },
+              ...glassInputSx
+            }}
+          />
         </Paper>
 
-        <Paper sx={{ 
-            flexGrow: 1, 
-            p: 3, 
-            overflow: 'auto', 
-            bgcolor: 'background.default',
-            border: '1px solid',
-            borderColor: 'divider'
-        }}>
-          <Box sx={{ 
+        <Paper
+          sx={{
+            ...glassPanelSx,
+            p: 2,
+            borderRadius: 2,
+            display: isProblemExpanded ? 'none' : 'flex',
+            flexDirection: 'column',
+            gap: 1.5,
+            flex: isBasisExpanded ? 1 : '0 0 auto',
+            minHeight: isBasisExpanded ? undefined : 320,
+            overflow: 'hidden',
+          }}
+        >
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
+            <Box>
+              <Typography variant="subtitle2" fontWeight={700}>Design Basis</Typography>
+              <Typography variant="caption" color="text.secondary">
+                Review the analyzed requirements.
+              </Typography>
+            </Box>
+            <Tooltip title={isBasisExpanded ? 'Collapse' : 'Expand'}>
+              <IconButton
+                size="small"
+                onClick={() => setExpandedSection(isBasisExpanded ? null : 'basis')}
+              >
+                {isBasisExpanded ? <CollapseIcon /> : <ExpandIcon />}
+              </IconButton>
+            </Tooltip>
+          </Box>
+
+          <Box sx={{ flex: 1, overflow: 'auto', pr: 1 }}>
+            <Box sx={{ 
               typography: 'body2', 
-              '& h1, & h2, & h3': { color: 'primary.main', mb: 1, mt: 2 },
+              '& h1': { color: 'text.primary', fontWeight: 800, mb: 1.5, mt: 3 },
+              '& h2': { color: 'text.primary', fontWeight: 800, mb: 1.5, mt: 3.5 },
+              '& h3': { color: 'text.secondary', fontWeight: 700, mb: 1, mt: 3 },
               '& ul': { pl: 3, mb: 2 },
               '& li': { mb: 0.5 },
               '& p': { mb: 2, lineHeight: 1.6 },
               '& code': { bgcolor: 'action.hover', px: 0.5, borderRadius: 1 },
-              // Math styling
               '& .katex': { fontSize: '1.1em' }
-          }}>
-            {editableBasis ? (
-              <ReactMarkdown 
+            }}>
+              {hasBasis ? (
+                <ReactMarkdown 
                   remarkPlugins={[remarkGfm, remarkMath]}
                   rehypePlugins={[rehypeKatex]}
-              >
+                >
                   {editableBasis}
-              </ReactMarkdown>
-            ) : (
-              <Typography color="text.secondary" fontStyle="italic" sx={{ mt: 2 }}>
-                Run analysis to generate the design basis or start typing...
-              </Typography>
-            )}
+                </ReactMarkdown>
+              ) : (
+                <Typography color="text.secondary" fontStyle="italic" sx={{ mt: 2 }}>
+                  Run analysis to generate the design basis or start typing...
+                </Typography>
+              )}
+            </Box>
           </Box>
         </Paper>
       </Box>

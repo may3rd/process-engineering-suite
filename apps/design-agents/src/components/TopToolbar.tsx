@@ -19,7 +19,7 @@ interface TopToolbarProps {
 }
 
 export const TopToolbar = ({ onToggleTheme, isDarkMode, onMenuClick }: TopToolbarProps) => {
-  const { designState, setDesignState, clearProject } = useDesignStore();
+  const { designState, setDesignState, updateDesignState, clearProject } = useDesignStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
@@ -82,7 +82,7 @@ export const TopToolbar = ({ onToggleTheme, isDarkMode, onMenuClick }: TopToolba
   };
 
   const handleTurboToggle = (enabled: boolean) => {
-    setDesignState({ ...designState, turbo_mode: enabled });
+    updateDesignState({ turbo_mode: enabled });
   };
 
   return (
