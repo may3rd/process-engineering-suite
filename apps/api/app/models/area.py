@@ -1,5 +1,5 @@
 """Area model."""
-from sqlalchemy import String, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Enum as SQLEnum, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -10,6 +10,9 @@ class Area(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     """Area table - logical area within a unit."""
     
     __tablename__ = "areas"
+    __table_args__ = (
+        UniqueConstraint("unit_id", "code", name="uq_areas_unit_id_code"),
+    )
     
     unit_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False),

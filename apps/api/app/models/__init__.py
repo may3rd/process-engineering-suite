@@ -11,7 +11,13 @@ from .protective_system import ProtectiveSystem
 from .scenario import OverpressureScenario
 from .sizing_case import SizingCase
 from .equipment import Equipment
+from .equipment_column import EquipmentColumn
+from .equipment_compressor import EquipmentCompressor
 from .equipment_link import EquipmentLink
+from .equipment_pump import EquipmentPump
+from .equipment_tank import EquipmentTank
+from .equipment_vendor_package import EquipmentVendorPackage
+from .equipment_vessel import EquipmentVessel
 from .attachment import Attachment
 from .comment import Comment
 from .todo import Todo
@@ -40,6 +46,12 @@ __all__ = [
     "RevisionHistory",
     # Supporting
     "Equipment",
+    "EquipmentVessel",
+    "EquipmentColumn",
+    "EquipmentTank",
+    "EquipmentPump",
+    "EquipmentCompressor",
+    "EquipmentVendorPackage",
     "EquipmentLink",
     "Attachment",
     "Comment",
@@ -48,4 +60,3 @@ __all__ = [
     # Audit
     "AuditLog",
 ]
-

@@ -27,6 +27,7 @@ import {
 } from '@mui/icons-material';
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
+import { runTurboPipeline } from '../../lib/turbo';
 import { ResearchConcept } from '../../types';
 
 const MaturityChip = ({ maturity }: { maturity: string }) => {
@@ -63,6 +64,7 @@ export const ResearchView = () => {
   const { designState, updateDesignState, updateStepStatus, activeStepId, setActiveStep, steps } = useDesignStore();
   const [loading, setLoading] = useState(false);
   const [selectedConceptIndex, setSelectedConceptIndex] = useState<number | null>(null);
+  const [turboRunning, setTurboRunning] = useState(false);
 
   // Sync selection if already exists
   // (Logic to match existing selection with generated list would go here)
@@ -110,11 +112,17 @@ export const ResearchView = () => {
     }
   };
 
-  const handleConfirmSelection = () => {
-      // Logic to move to next step
+  const handleConfirmSelection = async () => {
+      updateStepStatus(activeStepId, 'completed');
       const currentIndex = steps.findIndex(s => s.id === activeStepId);
       if (currentIndex < steps.length - 1) {
-          setActiveStep(steps[currentIndex + 1].id);
+          const nextStepId = steps[currentIndex + 1]!.id;
+          setActiveStep(nextStepId);
+          if (designState.turbo_mode) {
+            setTurboRunning(true);
+            await runTurboPipeline(nextStepId);
+            setTurboRunning(false);
+          }
       }
   };
 
@@ -148,9 +156,9 @@ export const ResearchView = () => {
                     onClick={handleConfirmSelection} 
                     variant="contained" 
                     color="success"
-                    disabled={selectedConceptIndex === null}
+                    disabled={selectedConceptIndex === null || turboRunning}
                 >
-                    Confirm Selection
+                    {designState.turbo_mode ? 'Confirm & Run Turbo' : 'Confirm Selection'}
                 </Button>
             )}
         </Stack>

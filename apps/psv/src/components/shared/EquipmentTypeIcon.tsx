@@ -9,6 +9,7 @@ import {
     Compress,
     Category,
     Tune,
+    Inventory2,
 } from "@mui/icons-material";
 import { SvgIconProps } from "@mui/material";
 import { EquipmentType } from "@/data/types";
@@ -28,6 +29,7 @@ export function EquipmentTypeIcon({ type, ...props }: EquipmentTypeIconProps) {
         compressor: Compress,
         piping: Category,
         control_valve: Tune,
+        vendor_package: Inventory2,
         other: Category,
     };
 

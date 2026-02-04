@@ -2,7 +2,7 @@
 from datetime import date
 from typing import Optional
 
-from sqlalchemy import String, Date, ForeignKey, Enum as SQLEnum, Boolean
+from sqlalchemy import Boolean, Date, Enum as SQLEnum, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -13,6 +13,9 @@ class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     """Project table - engineering project context."""
     
     __tablename__ = "projects"
+    __table_args__ = (
+        UniqueConstraint("area_id", "code", name="uq_projects_area_id_code"),
+    )
     
     area_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False),
@@ -52,4 +55,3 @@ class Project(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     # Relationships
     area = relationship("Area", back_populates="projects")
     protective_systems = relationship("ProtectiveSystem", secondary="protective_system_projects", back_populates="projects")
-

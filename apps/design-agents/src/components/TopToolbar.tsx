@@ -1,5 +1,5 @@
 import { useRef } from 'react';
-import { IconButton, Tooltip, Stack } from '@mui/material';
+import { IconButton, Tooltip, Stack, Switch, FormControlLabel } from '@mui/material';
 import { 
   AutoFixHigh as AgentIcon, 
   Menu as MenuIcon, 
@@ -81,6 +81,10 @@ export const TopToolbar = ({ onToggleTheme, isDarkMode, onMenuClick }: TopToolba
     }
   };
 
+  const handleTurboToggle = (enabled: boolean) => {
+    setDesignState({ ...designState, turbo_mode: enabled });
+  };
+
   return (
     <>
       <input
@@ -105,6 +109,17 @@ export const TopToolbar = ({ onToggleTheme, isDarkMode, onMenuClick }: TopToolba
         ) : undefined}
         actions={
           <Stack direction="row" spacing={1} alignItems="center">
+            <FormControlLabel
+              control={
+                <Switch
+                  size="small"
+                  checked={designState.turbo_mode ?? false}
+                  onChange={(e) => handleTurboToggle(e.target.checked)}
+                />
+              }
+              label="Turbo"
+              sx={{ mr: 0.5 }}
+            />
             <Tooltip title="Clear Project Data">
               <IconButton onClick={handleClear} size="small" color="error">
                 <ClearIcon />

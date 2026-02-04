@@ -1,7 +1,7 @@
 """ProtectiveSystem (PSV) model."""
 from typing import Optional, List
 
-from sqlalchemy import String, Numeric, ForeignKey, Enum as SQLEnum, Table, Column, Integer, Boolean
+from sqlalchemy import Boolean, CheckConstraint, Column, Enum as SQLEnum, ForeignKey, Integer, Numeric, String, Table, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB, ARRAY
 
@@ -20,6 +20,13 @@ class ProtectiveSystem(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMixi
     """Protective system (PSV, rupture disc, etc.) table."""
     
     __tablename__ = "protective_systems"
+    __table_args__ = (
+        UniqueConstraint("area_id", "tag", name="uq_protective_systems_area_id_tag"),
+        CheckConstraint(
+            "(deleted_at IS NULL) = is_active",
+            name="ck_protective_systems_deleted_at_matches_is_active",
+        ),
+    )
     
     area_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False),

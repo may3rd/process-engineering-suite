@@ -2,7 +2,7 @@
 from typing import List, Optional, Literal
 from datetime import datetime
 
-from fastapi import APIRouter, HTTPException, Response
+from fastapi import APIRouter, HTTPException, Query, Response
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -34,6 +34,7 @@ class ProtectiveSystemResponse(BaseModel):
     inlet_network: Optional[dict] = Field(default=None, serialization_alias="inletNetwork", alias="inletNetwork")
     outlet_network: Optional[dict] = Field(default=None, serialization_alias="outletNetwork", alias="outletNetwork")
     is_active: bool = Field(default=True, serialization_alias="isActive", alias="isActive")
+    deleted_at: Optional[datetime] = Field(default=None, serialization_alias="deletedAt", alias="deletedAt")
     version: int = 1  # For optimistic locking / conflict detection
     created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
     updated_at: Optional[datetime] = Field(default=None, serialization_alias="updatedAt", alias="updatedAt")
@@ -200,15 +201,23 @@ class SizingCaseUpdate(BaseModel):
 # --- PSV Endpoints ---
 
 @router.get("", response_model=List[ProtectiveSystemResponse])
-async def get_protective_systems(dal: DAL, area_id: Optional[str] = None):
+async def get_protective_systems(
+    dal: DAL,
+    area_id: Optional[str] = None,
+    include_deleted: bool = Query(False, alias="includeDeleted"),
+):
     """Get all protective systems, optionally filtered by area."""
-    return await dal.get_protective_systems(area_id)
+    return await dal.get_protective_systems(area_id, include_deleted)
 
 
 @router.get("/{psv_id}", response_model=ProtectiveSystemResponse)
-async def get_protective_system(psv_id: str, dal: DAL):
+async def get_protective_system(
+    psv_id: str,
+    dal: DAL,
+    include_deleted: bool = Query(False, alias="includeDeleted"),
+):
     """Get a single protective system by ID."""
-    psv = await dal.get_protective_system_by_id(psv_id)
+    psv = await dal.get_protective_system_by_id(psv_id, include_deleted)
     if not psv:
         raise HTTPException(status_code=404, detail="PSV not found")
     return psv
@@ -247,6 +256,27 @@ async def delete_protective_system(psv_id: str, dal: DAL):
     if not success:
         raise HTTPException(status_code=404, detail="PSV not found")
     return {"message": "PSV deleted"}
+
+
+@router.post("/{psv_id}/restore", response_model=ProtectiveSystemResponse)
+async def restore_protective_system(psv_id: str, dal: DAL):
+    """Restore a soft-deleted protective system."""
+    try:
+        return await dal.restore_protective_system(psv_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
+
+
+@router.delete("/{psv_id}/purge")
+async def purge_protective_system(psv_id: str, dal: DAL):
+    """Permanently delete a soft-deleted protective system."""
+    try:
+        success = await dal.purge_protective_system(psv_id)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    if not success:
+        raise HTTPException(status_code=404, detail="PSV not found")
+    return {"success": True}
 
 
 # --- Scenario Endpoints ---

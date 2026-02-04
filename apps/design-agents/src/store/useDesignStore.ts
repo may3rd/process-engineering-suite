@@ -33,7 +33,8 @@ export const useDesignStore = create<DesignStore>()(
             quickModel: 'x-ai/grok-4.1-fast',
             deepModel: 'x-ai/grok-4.1-fast',
             temperature: 0.7
-          }
+          },
+          turbo_mode: false
         },
         serverConfigured: false,
         setServerConfigured: (configured) => set({ serverConfigured: configured }),
@@ -66,7 +67,8 @@ export const useDesignStore = create<DesignStore>()(
             activeStepId: DESIGN_STEPS[0]?.id ?? '',
             steps: DESIGN_STEPS.map(s => ({ ...s, status: 'pending' })),
             designState: {
-              llmSettings: state.designState.llmSettings
+              llmSettings: state.designState.llmSettings,
+              turbo_mode: state.designState.turbo_mode
             }
           })),
       }),

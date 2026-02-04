@@ -1,5 +1,5 @@
 """Customer model - top of hierarchy."""
-from sqlalchemy import String, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Enum as SQLEnum, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -12,7 +12,7 @@ class Customer(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     __tablename__ = "customers"
     
     name: Mapped[str] = mapped_column(String(255), nullable=False)
-    code: Mapped[str] = mapped_column(String(50), nullable=False)
+    code: Mapped[str] = mapped_column(String(50), nullable=False, unique=True)
     status: Mapped[str] = mapped_column(
         SQLEnum("active", "inactive", name="customer_status"),
         nullable=False,

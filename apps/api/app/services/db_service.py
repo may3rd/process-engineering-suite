@@ -5,17 +5,28 @@ from datetime import datetime, date
 from dateutil import parser as dateutil_parser
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, update, delete, case
+from sqlalchemy import case, delete, select, update
 from sqlalchemy.sql import nullslast
 from sqlalchemy.orm import selectinload
 
 from ..models import (
     User, Credential, Customer, Plant, Unit, Area, Project,
     ProtectiveSystem, OverpressureScenario, SizingCase,
-    Equipment, EquipmentLink, Attachment, Comment, Todo,
+    Equipment,
+    EquipmentColumn,
+    EquipmentCompressor,
+    EquipmentLink,
+    EquipmentPump,
+    EquipmentTank,
+    EquipmentVendorPackage,
+    EquipmentVessel,
+    Attachment,
+    Comment,
+    Todo,
     ProjectNote, RevisionHistory,
 )
 from .dal import DataAccessLayer
+from .equipment_subtypes import build_details_from_subtype_row, build_subtype_row_values
 
 logger = logging.getLogger(__name__)
 
@@ -26,6 +37,14 @@ class DatabaseService(DataAccessLayer):
 
     def __init__(self, session: AsyncSession):
         self.session = session
+        self._equipment_subtype_models: dict[str, type[Any]] = {
+            "vessel": EquipmentVessel,
+            "column": EquipmentColumn,
+            "tank": EquipmentTank,
+            "pump": EquipmentPump,
+            "compressor": EquipmentCompressor,
+            "vendor_package": EquipmentVendorPackage,
+        }
 
     # --- Generic Helpers ---
 
@@ -60,6 +79,48 @@ class DatabaseService(DataAccessLayer):
         result = await self.session.execute(stmt)
         await self.session.commit()
         return result.rowcount > 0
+
+    async def _delete_equipment_subtype_rows(self, equipment_id: str) -> None:
+        for subtype_model in self._equipment_subtype_models.values():
+            await self.session.execute(
+                delete(subtype_model).where(subtype_model.equipment_id == equipment_id)
+            )
+
+    async def _write_equipment_subtype_from_details(
+        self, equipment_id: str, equipment_type: str, details: Optional[dict]
+    ) -> None:
+        await self._delete_equipment_subtype_rows(equipment_id)
+        model = self._equipment_subtype_models.get(equipment_type)
+        values = build_subtype_row_values(equipment_type, details)
+        if model is None or values is None:
+            return
+        row = model(equipment_id=equipment_id, **values)
+        self.session.add(row)
+
+    async def _hydrate_equipment_details_from_subtypes(
+        self, equipment_list: list[Equipment]
+    ) -> None:
+        ids_by_type: dict[str, list[str]] = {}
+        for item in equipment_list:
+            if item.type in self._equipment_subtype_models:
+                ids_by_type.setdefault(item.type, []).append(item.id)
+
+        subtype_rows_by_id: dict[str, dict[str, Any]] = {}
+        for equipment_type, ids in ids_by_type.items():
+            model = self._equipment_subtype_models[equipment_type]
+            stmt = select(model).where(model.equipment_id.in_(ids))
+            result = await self.session.execute(stmt)
+            subtype_rows_by_id[equipment_type] = {
+                row.equipment_id: row for row in result.scalars().all()
+            }
+
+        for item in equipment_list:
+            if item.type not in subtype_rows_by_id:
+                continue
+            row = subtype_rows_by_id[item.type].get(item.id)
+            details = build_details_from_subtype_row(item.type, row)
+            if details is not None:
+                item.details = details
 
     # --- Users & Auth ---
 
@@ -174,10 +235,14 @@ class DatabaseService(DataAccessLayer):
 
     # --- Protective Systems (PSV) ---
 
-    async def get_protective_systems(self, area_id: Optional[str] = None) -> List[dict]:
+    async def get_protective_systems(
+        self, area_id: Optional[str] = None, include_deleted: bool = False
+    ) -> List[dict]:
         filters = []
         if area_id:
             filters.append(ProtectiveSystem.area_id == area_id)
+        if not include_deleted:
+            filters.append(ProtectiveSystem.deleted_at.is_(None))
         
         # Eager load projects for 'projectIds' property
         stmt = select(ProtectiveSystem).where(*filters).options(
@@ -186,13 +251,17 @@ class DatabaseService(DataAccessLayer):
         result = await self.session.execute(stmt)
         return list(result.scalars().all())
 
-    async def get_protective_system_by_id(self, psv_id: str) -> Optional[dict]:
+    async def get_protective_system_by_id(
+        self, psv_id: str, include_deleted: bool = False
+    ) -> Optional[dict]:
         # Eager load projects
-        return await self._get_by_id(
-            ProtectiveSystem, 
-            psv_id, 
-            options=[selectinload(ProtectiveSystem.projects)]
+        stmt = select(ProtectiveSystem).where(ProtectiveSystem.id == psv_id).options(
+            selectinload(ProtectiveSystem.projects)
         )
+        if not include_deleted:
+            stmt = stmt.where(ProtectiveSystem.deleted_at.is_(None))
+        result = await self.session.execute(stmt)
+        return result.scalar_one_or_none()
 
     async def create_protective_system(self, data: dict) -> dict:
         # Convert camelCase keys to snake_case for ORM
@@ -280,9 +349,40 @@ class DatabaseService(DataAccessLayer):
         return instance
 
     async def delete_protective_system(self, psv_id: str) -> bool:
-        # Perform soft delete
-        await self._update(ProtectiveSystem, psv_id, {"is_active": False, "deleted_at": datetime.utcnow()})
+        instance = await self._get_by_id(ProtectiveSystem, psv_id)
+        if not instance:
+            return False
+        await self._update(
+            ProtectiveSystem,
+            psv_id,
+            {"is_active": False, "deleted_at": datetime.utcnow()},
+        )
         return True
+
+    async def restore_protective_system(self, psv_id: str) -> dict:
+        instance = await self._get_by_id(
+            ProtectiveSystem,
+            psv_id,
+            options=[selectinload(ProtectiveSystem.projects)],
+        )
+        if not instance:
+            raise ValueError("PSV not found")
+        if instance.deleted_at is None:
+            return instance
+        instance.deleted_at = None
+        instance.is_active = True
+        await self.session.commit()
+        await self.session.refresh(instance)
+        await self.session.refresh(instance, attribute_names=["projects"])
+        return instance
+
+    async def purge_protective_system(self, psv_id: str) -> bool:
+        instance = await self._get_by_id(ProtectiveSystem, psv_id)
+        if not instance:
+            return False
+        if instance.deleted_at is None:
+            raise ValueError("PSV must be deleted before purge")
+        return await self._delete(ProtectiveSystem, psv_id)
 
     # --- Scenarios ---
 
@@ -335,7 +435,9 @@ class DatabaseService(DataAccessLayer):
         filters = []
         if area_id:
             filters.append(Equipment.area_id == area_id)
-        return await self._get_all(Equipment, *filters)
+        equipment_list = await self._get_all(Equipment, *filters)
+        await self._hydrate_equipment_details_from_subtypes(equipment_list)
+        return equipment_list
 
     async def get_equipment_links_by_psv(self, psv_id: str) -> List[dict]:
         return await self._get_all(EquipmentLink, EquipmentLink.protective_system_id == psv_id)
@@ -349,7 +451,13 @@ class DatabaseService(DataAccessLayer):
 
     async def create_equipment(self, data: dict) -> dict:
         converted_data = self._convert_keys(data)
-        return await self._create(Equipment, converted_data)
+        details = converted_data.get("details")
+        instance = await self._create(Equipment, converted_data)
+        await self._write_equipment_subtype_from_details(instance.id, instance.type, details)
+        await self.session.commit()
+        await self.session.refresh(instance)
+        await self._hydrate_equipment_details_from_subtypes([instance])
+        return instance
 
     async def update_equipment(self, equipment_id: str, data: dict) -> dict:
         converted_data = self._convert_keys(data)
@@ -357,12 +465,26 @@ class DatabaseService(DataAccessLayer):
         if not instance:
             raise ValueError(f"Equipment {equipment_id} not found")
         
+        previous_type = instance.type
+        next_type = converted_data.get("type", previous_type)
+        details = converted_data.get("details")
+
         for key, value in converted_data.items():
             if hasattr(instance, key):
                 setattr(instance, key, value)
-        
+
+        if details is not None or next_type != previous_type:
+            await self._write_equipment_subtype_from_details(
+                equipment_id,
+                next_type,
+                details,
+            )
+            if details is None and next_type != previous_type:
+                instance.details = None
+
         await self.session.commit()
         await self.session.refresh(instance)
+        await self._hydrate_equipment_details_from_subtypes([instance])
         return instance
 
     async def delete_equipment(self, equipment_id: str) -> bool:

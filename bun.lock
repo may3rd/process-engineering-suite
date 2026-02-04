@@ -34,10 +34,12 @@
         "zustand": "^5.0.9",
       },
       "devDependencies": {
+        "@repo/eslint-config": "*",
         "@types/node": "^20.0.0",
         "@types/react": "^19.0.0",
         "@types/react-dom": "^19.0.0",
         "@vitejs/plugin-react": "^4.3.4",
+        "eslint": "^9.39.1",
         "typescript": "^5.7.3",
         "vite": "^6.0.7",
       },
@@ -344,7 +346,6 @@
     "@eng-suite/physics": ["@eng-suite/physics@workspace:packages/physics-engine"],
 
     "@eng-suite/ui-kit": ["@eng-suite/ui-kit@workspace:packages/ui-kit"],
-
 
     "@esbuild/aix-ppc64": ["@esbuild/aix-ppc64@0.25.12", "", { "os": "aix", "cpu": "ppc64" }, "sha512-Hhmwd6CInZ3dwpuGTF8fJG6yoWmsToE+vYgD4nytZVxcu1ulHpUQRAB1UJ8+N1Am3Mz4+xOByoQoSZf4D+CpkA=="],
 

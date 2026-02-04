@@ -242,7 +242,18 @@ export interface SizingCase {
 
 // Equipment and attachments
 // Equipment types
-export type EquipmentType = 'vessel' | 'tank' | 'heat_exchanger' | 'column' | 'reactor' | 'pump' | 'compressor' | 'piping' | 'control_valve' | 'other';
+export type EquipmentType =
+    | 'vessel'
+    | 'tank'
+    | 'heat_exchanger'
+    | 'column'
+    | 'reactor'
+    | 'pump'
+    | 'compressor'
+    | 'piping'
+    | 'control_valve'
+    | 'vendor_package'
+    | 'other';
 
 // Insulation types
 export type InsulationType = 'mineral_wool' | 'calcium_silicate' | 'ceramic_fiber' | 'polyurethane' | 'fiberglass' | 'other';

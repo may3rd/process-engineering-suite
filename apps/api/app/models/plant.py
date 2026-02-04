@@ -1,5 +1,5 @@
 """Plant model."""
-from sqlalchemy import String, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Enum as SQLEnum, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -10,6 +10,9 @@ class Plant(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     """Plant table - physical location within a customer."""
     
     __tablename__ = "plants"
+    __table_args__ = (
+        UniqueConstraint("customer_id", "code", name="uq_plants_customer_id_code"),
+    )
     
     customer_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False),

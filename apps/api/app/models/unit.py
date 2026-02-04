@@ -1,5 +1,5 @@
 """Unit model."""
-from sqlalchemy import String, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Enum as SQLEnum, ForeignKey, String, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -10,6 +10,9 @@ class Unit(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     """Unit table - process unit within a plant."""
     
     __tablename__ = "units"
+    __table_args__ = (
+        UniqueConstraint("plant_id", "code", name="uq_units_plant_id_code"),
+    )
     
     plant_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False),

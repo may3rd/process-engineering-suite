@@ -28,6 +28,7 @@ export interface LLMSettings {
 
 export interface DesignState {
   llmSettings?: LLMSettings;
+  turbo_mode?: boolean;
   problem_statement?: string; // User input
   process_requirements?: string; // AI Analysis
   research_concepts?: { concepts: ResearchConcept[] }; // AI Research Output
@@ -37,6 +38,7 @@ export interface DesignState {
   catalog_template?: string; // JSON String of Equipments/Streams (Empty)
   simulation_results?: string; // JSON String of Populated Streams
   full_simulation_results?: string; // JSON String of Equipments + Populated Streams
+  equipment_list_results?: string;
   sizing_results?: string; // JSON String of Metadata + Sized Equipments + Streams
   safety_report?: string; // Markdown report from Safety Analyst
   project_manager_report?: string; // Executive Approval Memo

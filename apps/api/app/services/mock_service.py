@@ -128,15 +128,23 @@ class MockService(DataAccessLayer):
     
     # --- Protective Systems (PSV) ---
     
-    async def get_protective_systems(self, area_id: Optional[str] = None) -> List[dict]:
+    async def get_protective_systems(
+        self, area_id: Optional[str] = None, include_deleted: bool = False
+    ) -> List[dict]:
         psvs = self._data.get("protectiveSystems", [])
         if area_id:
             psvs = [p for p in psvs if p.get("areaId") == area_id]
+        if not include_deleted:
+            psvs = [p for p in psvs if p.get("deletedAt") is None]
         return psvs
     
-    async def get_protective_system_by_id(self, psv_id: str) -> Optional[dict]:
+    async def get_protective_system_by_id(
+        self, psv_id: str, include_deleted: bool = False
+    ) -> Optional[dict]:
         for psv in self._data.get("protectiveSystems", []):
             if psv["id"] == psv_id:
+                if not include_deleted and psv.get("deletedAt") is not None:
+                    return None
                 return psv
         return None
     
@@ -177,6 +185,26 @@ class MockService(DataAccessLayer):
         for i, psv in enumerate(psvs):
             if psv["id"] == psv_id:
                 psv["deletedAt"] = datetime.utcnow().isoformat()
+                psv["isActive"] = False
+                return True
+        return False
+
+    async def restore_protective_system(self, psv_id: str) -> dict:
+        psv = await self.get_protective_system_by_id(psv_id, include_deleted=True)
+        if not psv:
+            raise ValueError("PSV not found")
+        psv["deletedAt"] = None
+        psv["isActive"] = True
+        psv["updatedAt"] = datetime.utcnow().isoformat()
+        return psv
+
+    async def purge_protective_system(self, psv_id: str) -> bool:
+        psvs = self._data.get("protectiveSystems", [])
+        for i, psv in enumerate(psvs):
+            if psv["id"] == psv_id:
+                if psv.get("deletedAt") is None:
+                    raise ValueError("PSV must be deleted before purge")
+                del psvs[i]
                 return True
         return False
     

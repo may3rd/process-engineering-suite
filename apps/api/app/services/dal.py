@@ -88,12 +88,16 @@ class DataAccessLayer(ABC):
     # --- Protective Systems (PSV) ---
     
     @abstractmethod
-    async def get_protective_systems(self, area_id: Optional[str] = None) -> List[dict]:
+    async def get_protective_systems(
+        self, area_id: Optional[str] = None, include_deleted: bool = False
+    ) -> List[dict]:
         """Get all protective systems, optionally filtered by area."""
         pass
     
     @abstractmethod
-    async def get_protective_system_by_id(self, psv_id: str) -> Optional[dict]:
+    async def get_protective_system_by_id(
+        self, psv_id: str, include_deleted: bool = False
+    ) -> Optional[dict]:
         """Get protective system by ID with all relations."""
         pass
     
@@ -110,6 +114,16 @@ class DataAccessLayer(ABC):
     @abstractmethod
     async def delete_protective_system(self, psv_id: str) -> bool:
         """Soft delete a protective system."""
+        pass
+
+    @abstractmethod
+    async def restore_protective_system(self, psv_id: str) -> dict:
+        """Restore a soft-deleted protective system."""
+        pass
+
+    @abstractmethod
+    async def purge_protective_system(self, psv_id: str) -> bool:
+        """Permanently delete a soft-deleted protective system."""
         pass
     
     # --- Scenarios ---

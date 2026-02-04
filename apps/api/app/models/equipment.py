@@ -1,7 +1,7 @@
 """Equipment model."""
 from typing import Optional
 
-from sqlalchemy import String, Text, Numeric, Boolean, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Boolean, Enum as SQLEnum, ForeignKey, Numeric, String, Text, UniqueConstraint
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 
@@ -12,6 +12,9 @@ class Equipment(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     """Equipment table - protected equipment."""
     
     __tablename__ = "equipment"
+    __table_args__ = (
+        UniqueConstraint("area_id", "tag", name="uq_equipment_area_id_tag"),
+    )
     
     area_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False),
@@ -20,8 +23,16 @@ class Equipment(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
     type: Mapped[str] = mapped_column(
         SQLEnum(
-            "vessel", "tank", "heat_exchanger", "column", "reactor",
-            "pump", "compressor", "piping", "other",
+            "vessel",
+            "tank",
+            "heat_exchanger",
+            "column",
+            "reactor",
+            "pump",
+            "compressor",
+            "piping",
+            "vendor_package",
+            "other",
             name="equipment_type"
         ),
         nullable=False,
