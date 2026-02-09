@@ -22,6 +22,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
+import { runTurboPipeline } from '../../lib/turbo';
 import { MarkdownEditorDialog } from '../common/MarkdownEditorDialog';
 
 export const PFDView = () => {
@@ -40,8 +41,16 @@ export const PFDView = () => {
     if (!designState.selected_concept_details) return;
     
     setLoading(true);
-    updateStepStatus(activeStepId, 'running');
     try {
+      if (designState.turbo_mode) {
+        const turboResult = await runTurboPipeline('pfd');
+        if (turboResult.status === 'failed') {
+          throw new Error(turboResult.error || 'Turbo pipeline failed.');
+        }
+        return;
+      }
+
+      updateStepStatus(activeStepId, 'running');
       const result = await runAgent('pfd_agent', { 
         prompt: designState.process_requirements || "Generate PFD", // Prompt is required by API schema
         requirements: designState.process_requirements,
@@ -148,7 +157,7 @@ export const PFDView = () => {
                 onClick={handleConfirmAndNext} 
                 variant="contained" 
                 color="success"
-                disabled={!localFlowsheet}
+                disabled={!localFlowsheet || Boolean(designState.turbo_mode)}
              >
                 Confirm & Next
              </Button>

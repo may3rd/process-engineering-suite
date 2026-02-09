@@ -27,6 +27,78 @@ const addLog = (message: string) => {
   useLogStore.getState().addLog(message, 'process');
 };
 
+const setTurboActive = (active: boolean) => {
+  useLogStore.getState().setActive(active);
+};
+
+const clearTurboLogs = () => {
+  useLogStore.getState().clearLogs();
+};
+
+const parseAgentJson = (value: unknown) => {
+  if (typeof value === 'string') {
+    try {
+      return JSON.parse(value);
+    } catch {
+      return value;
+    }
+  }
+  return value;
+};
+
+const chooseBestConcept = (rawConcepts: unknown) => {
+  const parsed = parseAgentJson(rawConcepts) as { concepts?: Array<Record<string, unknown>> } | null;
+  const concepts = Array.isArray(parsed?.concepts) ? parsed.concepts : [];
+  if (concepts.length === 0) {
+    return { concepts: [], selected: null };
+  }
+
+  const ranked = [...concepts].sort((a, b) => {
+    const scoreA = typeof a.feasibility_score === 'number' ? a.feasibility_score : -1;
+    const scoreB = typeof b.feasibility_score === 'number' ? b.feasibility_score : -1;
+    return scoreB - scoreA;
+  });
+
+  return { concepts, selected: ranked[0] ?? concepts[0] ?? null };
+};
+
+const runRequirements = async () => {
+  const designState = getDesignState();
+  const prompt = designState.problem_statement?.trim();
+  if (!prompt) {
+    throw new Error('Problem statement is required.');
+  }
+
+  const result = await runAgent('requirements_agent', { prompt });
+  if (result.status === 'completed' && result.data?.output) {
+    updateDesignState({ process_requirements: result.data.output });
+    return;
+  }
+  throw new Error(result.message || 'Requirements analysis failed.');
+};
+
+const runResearch = async () => {
+  const designState = getDesignState();
+  const prompt = designState.process_requirements || designState.problem_statement || '';
+  if (!prompt.trim()) {
+    throw new Error('Requirements input is required.');
+  }
+
+  const result = await runAgent('research_agent', { prompt });
+  if (result.status === 'completed' && result.data?.output) {
+    const { concepts, selected } = chooseBestConcept(result.data.output);
+    if (concepts.length === 0 || !selected) {
+      throw new Error('No concepts were returned by research agent.');
+    }
+    updateDesignState({
+      research_concepts: { concepts: concepts as any[] },
+      selected_concept: selected as any,
+    });
+    return;
+  }
+  throw new Error(result.message || 'Research failed.');
+};
+
 const runSynthesis = async () => {
   const designState = getDesignState();
   if (!designState.selected_concept) throw new Error('No concept selected.');
@@ -199,6 +271,12 @@ const runReport = async () => {
 
 const runStep = async (stepId: string) => {
   switch (stepId) {
+    case 'requirements':
+      await runRequirements();
+      return;
+    case 'research':
+      await runResearch();
+      return;
     case 'synthesis':
       await runSynthesis();
       return;
@@ -237,20 +315,30 @@ export const runTurboPipeline = async (startStepId: string): Promise<TurboResult
     return { status: 'failed', error: 'Invalid step.' };
   }
 
-  for (let i = startIndex; i < DESIGN_STEPS.length; i += 1) {
-    const step = DESIGN_STEPS[i]!;
-    setActiveStep(step.id);
-    updateStepStatus(step.id, 'running');
-    addLog(`Turbo: ${step.label}`);
-    try {
-      await runStep(step.id);
-      updateStepStatus(step.id, 'completed');
-    } catch (e) {
-      const message = e instanceof Error ? e.message : 'Unknown error';
-      updateStepStatus(step.id, 'failed');
-      return { status: 'failed', failedStepId: step.id, error: message };
-    }
-  }
+  clearTurboLogs();
+  setTurboActive(true);
+  addLog('Turbo pipeline started.');
 
-  return { status: 'completed' };
+  try {
+    for (let i = startIndex; i < DESIGN_STEPS.length; i += 1) {
+      const step = DESIGN_STEPS[i]!;
+      setActiveStep(step.id);
+      updateStepStatus(step.id, 'running');
+      addLog(`Turbo: ${step.label}`);
+      try {
+        await runStep(step.id);
+        updateStepStatus(step.id, 'completed');
+      } catch (e) {
+        const message = e instanceof Error ? e.message : 'Unknown error';
+        updateStepStatus(step.id, 'failed');
+        addLog(`Turbo failed at ${step.label}: ${message}`);
+        return { status: 'failed', failedStepId: step.id, error: message };
+      }
+    }
+
+    addLog('Turbo pipeline completed.');
+    return { status: 'completed' };
+  } finally {
+    setTurboActive(false);
+  }
 };

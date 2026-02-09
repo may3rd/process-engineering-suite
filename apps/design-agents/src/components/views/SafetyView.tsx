@@ -24,6 +24,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
+import { runTurboPipeline } from '../../lib/turbo';
 
 export const SafetyView = () => {
   const { designState, updateDesignState, updateStepStatus, activeStepId, setActiveStep, steps } = useDesignStore();
@@ -33,8 +34,16 @@ export const SafetyView = () => {
 
   const handleRunSafety = async () => {
     setLoading(true);
-    updateStepStatus(activeStepId, 'running');
     try {
+      if (designState.turbo_mode) {
+        const turboResult = await runTurboPipeline('safety');
+        if (turboResult.status === 'failed') {
+          throw new Error(turboResult.error || 'Turbo pipeline failed.');
+        }
+        return;
+      }
+
+      updateStepStatus(activeStepId, 'running');
       const result = await runAgent('safety_agent', { 
         prompt: "Run Preliminary HAZOP",
         requirements: designState.process_requirements,
@@ -124,7 +133,7 @@ export const SafetyView = () => {
                 onClick={handleConfirmAndNext} 
                 variant="contained" 
                 color="success"
-                disabled={!localReport || isEditing}
+                disabled={!localReport || isEditing || Boolean(designState.turbo_mode)}
              >
                 Confirm & Next
              </Button>

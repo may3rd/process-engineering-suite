@@ -30,6 +30,7 @@ import {
 } from '@mui/icons-material';
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
+import { runTurboPipeline } from '../../lib/turbo';
 
 const safeParse = (str?: string) => {
   if (!str) return null;
@@ -56,8 +57,16 @@ export const CatalogView = () => {
 
   const handleRunCatalog = async () => {
     setLoading(true);
-    updateStepStatus(activeStepId, 'running');
     try {
+      if (designState.turbo_mode) {
+        const turboResult = await runTurboPipeline('catalog');
+        if (turboResult.status === 'failed') {
+          throw new Error(turboResult.error || 'Turbo pipeline failed.');
+        }
+        return;
+      }
+
+      updateStepStatus(activeStepId, 'running');
       const result = await runAgent('catalog_agent', { 
         prompt: 'Generate Catalog',
         flowsheet: designState.flowsheet_description,
@@ -147,7 +156,7 @@ export const CatalogView = () => {
             onClick={handleConfirmAndNext} 
             variant={hasTemplate ? 'contained' : 'outlined'}
             color="success"
-            disabled={!hasTemplate}
+            disabled={!hasTemplate || Boolean(designState.turbo_mode)}
           >
             Confirm & Next
           </Button>
@@ -260,4 +269,3 @@ export const CatalogView = () => {
     </Box>
   );
 };
-

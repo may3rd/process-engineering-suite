@@ -1,11 +1,10 @@
 import { useState } from 'react';
-import { Box, CssBaseline, IconButton } from '@mui/material';
-import { Menu as MenuIcon } from '@mui/icons-material';
+import { Box, CssBaseline } from '@mui/material';
 import { Sidebar } from './Sidebar';
 import { TopToolbar } from '../TopToolbar';
 import { useThemeContext } from '../../ThemeContext';
 
-const DRAWER_WIDTH = 280;
+const DRAWER_WIDTH = 300;
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -52,8 +51,8 @@ export const AppShell = ({ children }: AppShellProps) => {
           p: { xs: 2, md: 3 },
           width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
           ml: { md: `${DRAWER_WIDTH}px` },
-          mt: '64px', // Height of TopToolbar
-          height: 'calc(100vh - 64px)',
+          mt: '60px',
+          height: 'calc(100vh - 60px)',
           overflow: 'auto'
         }}
       >

@@ -29,6 +29,7 @@ import {
 } from '@tanstack/react-table';
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
+import { runTurboPipeline } from '../../lib/turbo';
 
 const safeParse = (str?: string) => {
   if (!str) return null;
@@ -69,8 +70,16 @@ export const SimulationView = () => {
     if (!designState.catalog_template) return;
     
     setLoading(true);
-    updateStepStatus(activeStepId, 'running');
     try {
+      if (designState.turbo_mode) {
+        const turboResult = await runTurboPipeline('simulation');
+        if (turboResult.status === 'failed') {
+          throw new Error(turboResult.error || 'Turbo pipeline failed.');
+        }
+        return;
+      }
+
+      updateStepStatus(activeStepId, 'running');
       const result = await runAgent('simulation_agent', { 
         prompt: 'Run Simulation',
         flowsheet: designState.flowsheet_description,
@@ -188,7 +197,7 @@ export const SimulationView = () => {
             onClick={handleConfirmAndNext} 
             variant={simulationData ? 'contained' : 'outlined'}
             color="success"
-            disabled={!simulationData}
+            disabled={!simulationData || Boolean(designState.turbo_mode)}
           >
             Confirm & Next
           </Button>
@@ -256,4 +265,3 @@ export const SimulationView = () => {
     </Box>
   );
 };
-

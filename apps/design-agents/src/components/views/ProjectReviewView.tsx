@@ -30,6 +30,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
+import { runTurboPipeline } from '../../lib/turbo';
 
 export const ProjectReviewView = () => {
   const { designState, updateDesignState, updateStepStatus, activeStepId, setActiveStep, steps } = useDesignStore();
@@ -37,8 +38,16 @@ export const ProjectReviewView = () => {
 
   const handleRunReview = async () => {
     setLoading(true);
-    updateStepStatus(activeStepId, 'running');
     try {
+      if (designState.turbo_mode) {
+        const turboResult = await runTurboPipeline('review');
+        if (turboResult.status === 'failed') {
+          throw new Error(turboResult.error || 'Turbo pipeline failed.');
+        }
+        return;
+      }
+
+      updateStepStatus(activeStepId, 'running');
       const result = await runAgent('manager_agent', { 
         prompt: "Perform Final Design Review",
         requirements: designState.process_requirements,
@@ -130,7 +139,7 @@ export const ProjectReviewView = () => {
                 onClick={handleConfirmAndNext} 
                 variant="contained" 
                 color="success"
-                disabled={!designState.project_manager_report}
+                disabled={!designState.project_manager_report || Boolean(designState.turbo_mode)}
              >
                 Finalize
              </Button>

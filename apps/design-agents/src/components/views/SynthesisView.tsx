@@ -21,6 +21,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
+import { runTurboPipeline } from '../../lib/turbo';
 import { MarkdownEditorDialog } from '../common/MarkdownEditorDialog';
 
 export const SynthesisView = () => {
@@ -39,8 +40,16 @@ export const SynthesisView = () => {
     if (!designState.selected_concept) return;
     
     setLoading(true);
-    updateStepStatus(activeStepId, 'running');
     try {
+      if (designState.turbo_mode) {
+        const turboResult = await runTurboPipeline('synthesis');
+        if (turboResult.status === 'failed') {
+          throw new Error(turboResult.error || 'Turbo pipeline failed.');
+        }
+        return;
+      }
+
+      updateStepStatus(activeStepId, 'running');
       // Prompt is the Requirements, Context contains the Selected Concept
       const result = await runAgent('synthesis_agent', { 
         prompt: designState.process_requirements || '',
@@ -146,7 +155,7 @@ export const SynthesisView = () => {
                 onClick={handleConfirmAndNext} 
                 variant="contained" 
                 color="success"
-                disabled={!localDetails}
+                disabled={!localDetails || Boolean(designState.turbo_mode)}
              >
                 Confirm & Next
              </Button>

@@ -21,6 +21,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
+import { runTurboPipeline } from '../../lib/turbo';
 
 export const CostView = () => {
   const { designState, updateDesignState, updateStepStatus, activeStepId, setActiveStep, steps } = useDesignStore();
@@ -40,8 +41,16 @@ export const CostView = () => {
 
   const handleRunAgent = async () => {
     setLoading(true);
-    updateStepStatus(activeStepId, 'running');
     try {
+      if (designState.turbo_mode) {
+        const turboResult = await runTurboPipeline('cost');
+        if (turboResult.status === 'failed') {
+          throw new Error(turboResult.error || 'Turbo pipeline failed.');
+        }
+        return;
+      }
+
+      updateStepStatus(activeStepId, 'running');
       const result = await runAgent('cost_agent', { 
           design_basis: designState.selected_concept_details,
           flowsheet: designState.flowsheet_description,
@@ -166,7 +175,7 @@ export const CostView = () => {
                         onClick={handleConfirmAndNext} 
                         variant="contained" 
                         color="success"
-                        disabled={isEditing}
+                        disabled={isEditing || Boolean(designState.turbo_mode)}
                     >
                         Confirm & Next
                     </Button>

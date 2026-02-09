@@ -25,6 +25,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
+import { runTurboPipeline } from '../../lib/turbo';
 import { MarkdownEditorDialog } from '../common/MarkdownEditorDialog';
 import { glassInputSx, glassPanelSx } from '@eng-suite/ui-kit';
 
@@ -59,8 +60,16 @@ export const RequirementsView = () => {
     handleSaveProblem();
     setLoading(true);
     setError(null);
-    updateStepStatus(activeStepId, 'running');
     try {
+      if (designState.turbo_mode) {
+        const turboResult = await runTurboPipeline('requirements');
+        if (turboResult.status === 'failed') {
+          throw new Error(turboResult.error || 'Turbo pipeline failed.');
+        }
+        return;
+      }
+
+      updateStepStatus(activeStepId, 'running');
       const result = await runAgent('requirements_agent', { prompt: problemStatement });
       if (result.status === 'completed' && result.data?.output) {
          updateDesignState({ process_requirements: result.data.output });
@@ -146,7 +155,7 @@ export const RequirementsView = () => {
             onClick={handleConfirmAndNext}
             variant={hasBasis ? 'contained' : 'outlined'}
             color="success"
-            disabled={!hasBasis}
+            disabled={!hasBasis || Boolean(designState.turbo_mode)}
             size="small"
           >
             Confirm & Next

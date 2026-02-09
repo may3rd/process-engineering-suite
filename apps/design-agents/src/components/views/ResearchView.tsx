@@ -28,7 +28,6 @@ import {
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
 import { runTurboPipeline } from '../../lib/turbo';
-import { ResearchConcept } from '../../types';
 
 const MaturityChip = ({ maturity }: { maturity: string }) => {
   let color: 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' = 'default';
@@ -71,8 +70,17 @@ export const ResearchView = () => {
 
   const handleRunResearch = async () => {
     setLoading(true);
-    updateStepStatus(activeStepId, 'running');
     try {
+      if (designState.turbo_mode) {
+        setTurboRunning(true);
+        const turboResult = await runTurboPipeline('research');
+        if (turboResult.status === 'failed') {
+          throw new Error(turboResult.error || 'Turbo pipeline failed.');
+        }
+        return;
+      }
+
+      updateStepStatus(activeStepId, 'running');
       // Pass the previous step's output (Requirements) as context
       const result = await runAgent('research_agent', { 
         prompt: designState.process_requirements || designState.problem_statement || '' 
@@ -102,6 +110,7 @@ export const ResearchView = () => {
       updateStepStatus(activeStepId, 'failed');
     } finally {
       setLoading(false);
+      setTurboRunning(false);
     }
   };
 
@@ -150,7 +159,7 @@ export const ResearchView = () => {
             >
               {concepts.length > 0 ? "Regenerate Concepts" : "Generate Concepts"}
             </Button>
-            {concepts.length > 0 && (
+            {concepts.length > 0 && !designState.turbo_mode && (
                 <Button 
                     startIcon={<CheckIcon />} 
                     onClick={handleConfirmSelection} 
@@ -158,7 +167,7 @@ export const ResearchView = () => {
                     color="success"
                     disabled={selectedConceptIndex === null || turboRunning}
                 >
-                    {designState.turbo_mode ? 'Confirm & Run Turbo' : 'Confirm Selection'}
+                    Confirm Selection
                 </Button>
             )}
         </Stack>

@@ -28,6 +28,7 @@ import {
 } from '@mui/icons-material';
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
+import { runTurboPipeline } from '../../lib/turbo';
 
 const safeParse = (str?: string) => {
   if (!str) return null;
@@ -45,8 +46,16 @@ export const SizingView = () => {
 
   const handleRunSizing = async () => {
     setLoading(true);
-    updateStepStatus(activeStepId, 'running');
     try {
+      if (designState.turbo_mode) {
+        const turboResult = await runTurboPipeline('sizing');
+        if (turboResult.status === 'failed') {
+          throw new Error(turboResult.error || 'Turbo pipeline failed.');
+        }
+        return;
+      }
+
+      updateStepStatus(activeStepId, 'running');
       const result = await runAgent('sizing_agent', { 
         prompt: "Run Equipment Sizing",
         flowsheet: designState.flowsheet_description,
@@ -100,7 +109,7 @@ export const SizingView = () => {
                 onClick={handleConfirmAndNext} 
                 variant="contained" 
                 color="success"
-                disabled={!sizingData}
+                disabled={!sizingData || Boolean(designState.turbo_mode)}
              >
                 Confirm & Next
              </Button>
