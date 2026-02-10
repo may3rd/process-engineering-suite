@@ -23,7 +23,18 @@ bun run format
 
 # Run development servers for all apps
 bun turbo run dev --parallel
+
+# Validate deployment lane compatibility (Vercel + AWS)
+bun run check:deploy:matrix
 ```
+
+## Deployment Lanes (Vercel + AWS)
+
+- Treat deployment config as lane-based. Use `DEPLOY_TARGET=vercel` on Vercel and `DEPLOY_TARGET=aws` on AWS.
+- Keep platform differences in environment variables and infra files (`infra/**`, root `Dockerfile`), not in shared hardcoded app behavior.
+- Do not hardcode production `localhost` in rewrites or API targets.
+- Use `API_PROXY_TARGET` (PSV rewrite target), `NEXT_PUBLIC_API_URL` (browser API URL), and `DOCS_URL` / `NETWORK_EDITOR_URL` / `PSV_URL` / `DESIGN_AGENTS_URL` (web cross-app rewrites).
+- For any deployment-related change, run `bun run check:deploy:matrix` before merging.
 
 ### TypeScript/Next.js Apps (apps/psv, apps/network-editor, apps/docs)
 
@@ -356,7 +367,20 @@ bun turbo run lint
 bun turbo run check-types
 bun run format
 bun turbo run dev --parallel
+bun run check:deploy:matrix
 ```
+
+## Deployment Lanes (Vercel + AWS)
+
+- Always preserve both deployment lanes. Configure lane intent via `DEPLOY_TARGET`:
+  - `vercel` for Vercel projects
+  - `aws` for AWS deployments
+  - `local` for local development
+- Avoid lane regressions by keeping platform targets env-driven:
+  - `NEXT_PUBLIC_API_URL`
+  - `API_PROXY_TARGET`
+  - `DOCS_URL`, `NETWORK_EDITOR_URL`, `PSV_URL`, `DESIGN_AGENTS_URL`
+- Before shipping deployment changes, run `bun run check:deploy:vercel` and `bun run check:deploy:aws` (or `bun run check:deploy:matrix`).
 
 ---
 

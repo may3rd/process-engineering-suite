@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 
 const stripTrailingSlash = (url: string) => url.replace(/\/+$/, "");
 const isVercel = process.env.VERCEL === "1";
+const deployTarget = (process.env.DEPLOY_TARGET || (isVercel ? "vercel" : "local")).toLowerCase();
 
 const createProxyTarget = (
   envKey: string,
@@ -13,7 +14,7 @@ const createProxyTarget = (
     return stripTrailingSlash(configured.trim());
   }
 
-  if (isVercel) {
+  if (deployTarget === "vercel") {
     const fallback = stripTrailingSlash(productionFallback);
     console.warn(
       `[web] "${envKey}" not provided. Falling back to "${fallback}".`,

@@ -6,7 +6,10 @@
     "dev": "bun turbo run dev --parallel",
     "lint": "bun turbo run lint",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "check-types": "bun turbo run check-types"
+    "check-types": "bun turbo run check-types",
+    "check:deploy:vercel": "DEPLOY_TARGET=vercel VERCEL=1 bun turbo run build --filter=web --filter=network-editor --filter=psv --filter=docs",
+    "check:deploy:aws": "DEPLOY_TARGET=aws bun turbo run build --filter=web --filter=network-editor --filter=psv --filter=docs",
+    "check:deploy:matrix": "bun run check:deploy:vercel && bun run check:deploy:aws"
   },
   "devDependencies": {
     "prettier": "^3.6.2",

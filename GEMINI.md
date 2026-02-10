@@ -57,3 +57,17 @@ This is a monorepo containing a suite of tools for process engineering, built wi
 - **Hydraulics**:
   - **Bi-Directional Flow**: Supported via native checks.
   - **Backward Propagation**: Uses `InletState` of the pipe directly. No node swapping or manual drop adjustments are needed as the engine handles the physics of the segment direction.
+
+## Deployment Options (Vercel + AWS)
+- Use lane-based configuration to prevent cross-platform regressions:
+  - `DEPLOY_TARGET=vercel` on Vercel
+  - `DEPLOY_TARGET=aws` on AWS
+  - `DEPLOY_TARGET=local` for local dev
+- Keep deployment differences env-driven:
+  - `NEXT_PUBLIC_API_URL`: browser API base URL
+  - `API_PROXY_TARGET`: PSV server-side `/api/*` rewrite target
+  - `DOCS_URL`, `NETWORK_EDITOR_URL`, `PSV_URL`, `DESIGN_AGENTS_URL`: dashboard rewrite targets
+- Before merging deployment changes, run:
+  - `bun run check:deploy:vercel`
+  - `bun run check:deploy:aws`
+  - or `bun run check:deploy:matrix`

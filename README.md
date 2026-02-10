@@ -64,6 +64,33 @@ bun run check-types
 bun run format
 ```
 
+## Deployment Lanes (Vercel + AWS)
+
+To avoid AWS changes breaking Vercel deployments, this repo uses lane-based deployment configuration:
+
+- `DEPLOY_TARGET=vercel` for Vercel projects
+- `DEPLOY_TARGET=aws` for AWS deployments
+- `DEPLOY_TARGET=local` (default) for local development
+
+Key variables:
+
+- `NEXT_PUBLIC_API_URL`: browser-facing API base URL used by frontends
+- `API_PROXY_TARGET`: server-side rewrite target for PSV `/api/*` routes
+- `DOCS_URL`, `NETWORK_EDITOR_URL`, `PSV_URL`, `DESIGN_AGENTS_URL`: web dashboard cross-app rewrite targets
+
+Before merging deployment-related changes, run both lanes:
+
+```bash
+bun run check:deploy:matrix
+```
+
+Or run each lane independently:
+
+```bash
+bun run check:deploy:vercel
+bun run check:deploy:aws
+```
+
 ## Hybrid Dev (Backend In Docker)
 
 Run API + Postgres in Docker, run the frontends locally.
@@ -155,9 +182,16 @@ docker run \
   -p 3003:3003 \
   -p 3004:3004 \
   -p 8000:8000 \
+  -e DEPLOY_TARGET="aws" \
   -e POSTGRES_PASSWORD="change-me" \
   -e POSTGRES_USER="postgres" \
   -e POSTGRES_DB="engsuite" \
+  -e NEXT_PUBLIC_API_URL="https://api.your-domain.com" \
+  -e API_PROXY_TARGET="https://api.your-domain.com" \
+  -e DOCS_URL="https://docs.your-domain.com" \
+  -e NETWORK_EDITOR_URL="https://network-editor.your-domain.com" \
+  -e PSV_URL="https://psv.your-domain.com" \
+  -e DESIGN_AGENTS_URL="https://design-agents.your-domain.com" \
   -v postgres_data:/var/lib/postgresql/data \
   process-engineering-suite
 ```

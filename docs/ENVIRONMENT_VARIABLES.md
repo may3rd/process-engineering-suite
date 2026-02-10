@@ -6,6 +6,14 @@ This document lists all environment variables used by the Process Engineering Su
 
 These variables apply to the entire suite or multiple applications.
 
+### Deployment Target Contract
+
+- `DEPLOY_TARGET`: deployment lane selector used to keep platform behavior isolated
+  - Values: `local`, `vercel`, `aws`
+  - Default: `local`
+  - Set `DEPLOY_TARGET=vercel` on Vercel projects
+  - Set `DEPLOY_TARGET=aws` on AWS deployments
+
 ### Database Configuration
 
 - `POSTGRES_PASSWORD`: PostgreSQL database password (required for production)
@@ -18,6 +26,15 @@ These variables apply to the entire suite or multiple applications.
 
 - `NEXT_PUBLIC_API_URL`: Backend API base URL (default: http://localhost:8000)
   - Used by all frontend applications
+- `API_PROXY_TARGET`: server-side rewrite target for PSV `/api/*` routes
+  - Default: `NEXT_PUBLIC_API_URL` if set, otherwise `http://localhost:8000`
+
+### Cross-App Routing (Web Dashboard)
+
+- `DOCS_URL`: docs app origin used by web rewrites
+- `NETWORK_EDITOR_URL`: network-editor app origin used by web rewrites
+- `PSV_URL`: PSV app origin used by web rewrites
+- `DESIGN_AGENTS_URL`: design-agents app origin used by web rewrites
 
 ## Application-Specific Variables
 
@@ -56,10 +73,10 @@ Coming Soon - No environment variables defined yet.
 
 ```bash
 # Basic development setup
-npm run dev
+bun run dev
 
 # With custom API URL
-NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev
+NEXT_PUBLIC_API_URL=http://localhost:8000 bun run dev
 ```
 
 ### Production - Docker
@@ -67,11 +84,17 @@ NEXT_PUBLIC_API_URL=http://localhost:8000 npm run dev
 ```bash
 # Environment file
 cat > .env << EOF
+DEPLOY_TARGET=aws
 POSTGRES_PASSWORD=secure-password
 POSTGRES_USER=postgres
 POSTGRES_DB=engsuite
 DATABASE_URL=postgresql+asyncpg://postgres:secure-password@postgres:5432/engsuite
-NEXT_PUBLIC_API_URL=http://your-host:8000
+NEXT_PUBLIC_API_URL=https://api.your-domain.com
+API_PROXY_TARGET=https://api.your-domain.com
+DOCS_URL=https://docs.your-domain.com
+NETWORK_EDITOR_URL=https://network-editor.your-domain.com
+PSV_URL=https://psv.your-domain.com
+DESIGN_AGENTS_URL=https://design-agents.your-domain.com
 EOF
 
 # Run with environment
@@ -88,7 +111,26 @@ USE_MOCK_DATA=false
 
 # Frontend environment
 NEXT_PUBLIC_API_URL=https://your-api-domain
+API_PROXY_TARGET=https://your-api-domain
 NEXT_PUBLIC_USE_LOCAL_STORAGE=false
+```
+
+### Production - Vercel
+
+Set these in each Vercel project:
+
+```bash
+DEPLOY_TARGET=vercel
+NEXT_PUBLIC_API_URL=https://api.your-domain.com
+```
+
+For `apps/web`, also set:
+
+```bash
+DOCS_URL=https://your-docs-app.vercel.app
+NETWORK_EDITOR_URL=https://your-network-editor-app.vercel.app
+PSV_URL=https://your-psv-app.vercel.app
+DESIGN_AGENTS_URL=https://your-design-agents-app.vercel.app
 ```
 
 ## Security Considerations
@@ -115,6 +157,12 @@ curl http://localhost:3003/api/health  # PSV
 curl http://localhost:3002/api/health  # Network Editor
 ```
 
+Validate both deployment lanes before merge:
+
+```bash
+bun run check:deploy:matrix
+```
+
 ## Troubleshooting
 
 ### Common Issues
@@ -128,7 +176,8 @@ curl http://localhost:3002/api/health  # Network Editor
 
 1. Explicit `DATABASE_URL` overrides individual Postgres variables
 2. Application-specific variables override defaults
-3. Docker environment overrides system environment
+3. `API_PROXY_TARGET` overrides `NEXT_PUBLIC_API_URL` for PSV server-side rewrites
+4. Docker environment overrides system environment
 
 ## Related Documentation
 

@@ -1,6 +1,13 @@
 import type { NextConfig } from "next";
 import bundleAnalyzer from "@next/bundle-analyzer";
 
+const stripTrailingSlash = (url: string) => url.replace(/\/+$/, "");
+const apiProxyTarget = stripTrailingSlash(
+  process.env.API_PROXY_TARGET?.trim() ||
+    process.env.NEXT_PUBLIC_API_URL?.trim() ||
+    "http://localhost:8000",
+);
+
 const nextConfig: NextConfig = {
   transpilePackages: [
     "@eng-suite/physics",
@@ -21,7 +28,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: "/api/:path*",
-        destination: "http://localhost:8000/:path*",
+        destination: `${apiProxyTarget}/:path*`,
       },
     ];
   },
