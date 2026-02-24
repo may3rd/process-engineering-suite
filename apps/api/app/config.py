@@ -23,8 +23,10 @@ class Settings:
     # CORS
     ALLOWED_ORIGINS: list[str] = [
         "http://localhost:3000",
+        "http://localhost:3001",
         "http://localhost:3002",
         "http://localhost:3003",
+        "http://localhost:3004",
     ]
     
     @property

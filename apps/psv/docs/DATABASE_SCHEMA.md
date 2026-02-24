@@ -1,8 +1,11 @@
-# PSV Application Database Schema
+# PSV Database Schema (Current)
 
-This document describes the proposed database schema for the PSV sizing application.
+This document reflects the current SQLAlchemy model definitions under `apps/api/app/models`.
 
-## Entity Relationship Diagram
+- Generated on: 2026-02-24
+- Source of truth: application models + Alembic migrations in `apps/api/alembic/versions`
+
+## Entity Relationship Overview
 
 ```mermaid
 erDiagram
@@ -12,377 +15,553 @@ erDiagram
     Area ||--o{ Project : contains
     Area ||--o{ ProtectiveSystem : contains
     Area ||--o{ Equipment : contains
-    
     ProtectiveSystem ||--o{ OverpressureScenario : has
     ProtectiveSystem ||--o{ SizingCase : has
     ProtectiveSystem ||--o{ Attachment : has
-    ProtectiveSystem ||--o{ Note : has
+    ProtectiveSystem ||--o{ Comment : has
+    ProtectiveSystem ||--o{ ProjectNote : has
+    ProtectiveSystem ||--o{ Todo : has
     ProtectiveSystem ||--o{ EquipmentLink : links
-    ProtectiveSystem }o--o{ Project : "tagged with"
-    
     OverpressureScenario ||--o{ SizingCase : governs
     Equipment ||--o{ EquipmentLink : linked
-    User ||--o{ ProtectiveSystem : owns
+    User ||--o{ Credential : has
+    User ||--o{ Customer : owns
+    User ||--o{ Plant : owns
+    User ||--o{ Unit : owns
     User ||--o{ Equipment : owns
+    User ||--o{ ProtectiveSystem : owns
+    Project }o--o{ ProtectiveSystem : tagged_with
+    Equipment ||--|| EquipmentVessel : subtype
+    Equipment ||--|| EquipmentColumn : subtype
+    Equipment ||--|| EquipmentTank : subtype
+    Equipment ||--|| EquipmentPump : subtype
+    Equipment ||--|| EquipmentCompressor : subtype
+    Equipment ||--|| EquipmentVendorPackage : subtype
 ```
-
----
 
 ## Tables
 
-### Hierarchy Tables
+### `areas`
 
-#### `customers`
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| name | VARCHAR(255) | Customer name |
-| code | VARCHAR(50) | Short code |
-| status | ENUM('active', 'inactive') | Status |
-| owner_id | UUID | FK → users.id |
-| created_at | TIMESTAMP | Creation time |
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| unit_id | UUID | NO | NO | units.id |  |
+| name | VARCHAR(255) | NO | NO |  |  |
+| code | VARCHAR(50) | NO | NO |  |  |
+| status | VARCHAR(8) | NO | NO |  | active |
+| id | UUID | NO | YES |  | uuid4() |
+| created_at | DATETIME | NO | NO |  | now() |
+| updated_at | DATETIME | NO | NO |  | now() |
 
-#### `plants`
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| customer_id | UUID | FK → customers.id |
-| name | VARCHAR(255) | Plant name |
-| code | VARCHAR(50) | Short code |
-| location | VARCHAR(255) | Geographic location |
-| status | ENUM('active', 'inactive') | Status |
-| owner_id | UUID | FK → users.id |
-| created_at | TIMESTAMP | Creation time |
+- Primary key: `id`
+- Unique: `uq_areas_unit_id_code` on `unit_id, code`
 
-#### `units`
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| plant_id | UUID | FK → plants.id |
-| name | VARCHAR(255) | Unit name |
-| code | VARCHAR(50) | Short code (e.g., "CDU") |
-| service | VARCHAR(255) | Service description |
-| status | ENUM('active', 'inactive') | Status |
-| owner_id | UUID | FK → users.id |
-| created_at | TIMESTAMP | Creation time |
+### `attachments`
 
-#### `areas`
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| unit_id | UUID | FK → units.id |
-| name | VARCHAR(255) | Area name |
-| code | VARCHAR(50) | Short code |
-| status | ENUM('active', 'inactive') | Status |
-| created_at | TIMESTAMP | Creation time |
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| protective_system_id | UUID | NO | NO | protective_systems.id |  |
+| file_uri | VARCHAR(1000) | NO | NO |  |  |
+| file_name | VARCHAR(255) | NO | NO |  |  |
+| mime_type | VARCHAR(100) | NO | NO |  |  |
+| size | INTEGER | NO | NO |  |  |
+| uploaded_by | UUID | NO | NO | users.id |  |
+| id | UUID | NO | YES |  | uuid4() |
+| created_at | DATETIME | NO | NO |  | now() |
+| updated_at | DATETIME | NO | NO |  | now() |
 
-#### `projects`
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| area_id | UUID | FK → areas.id |
-| name | VARCHAR(255) | Project name |
-| code | VARCHAR(50) | Project code |
-| phase | ENUM('design', 'construction', 'commissioning', 'operation') | Phase |
-| status | ENUM('draft', 'in_review', 'approved', 'issued') | Status |
-| start_date | DATE | Start date |
-| end_date | DATE | End date (nullable) |
-| lead_id | UUID | FK → users.id |
-| created_at | TIMESTAMP | Creation time |
+- Primary key: `id`
 
----
+### `audit_logs`
 
-### Core Tables
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| action | VARCHAR(13) | NO | NO |  |  |
+| entity_type | VARCHAR(17) | NO | NO |  |  |
+| entity_id | UUID | NO | NO |  |  |
+| entity_name | VARCHAR(255) | NO | NO |  |  |
+| user_id | UUID | NO | NO |  |  |
+| user_name | VARCHAR(255) | NO | NO |  |  |
+| user_role | VARCHAR(50) | YES | NO |  |  |
+| changes | JSONB | YES | NO |  |  |
+| description | TEXT | YES | NO |  |  |
+| project_id | UUID | YES | NO |  |  |
+| project_name | VARCHAR(255) | YES | NO |  |  |
+| created_at | DATETIME | NO | NO |  | now() |
+| id | UUID | NO | YES |  | uuid4() |
+| updated_at | DATETIME | NO | NO |  | now() |
 
-#### `protective_systems`
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| area_id | UUID | FK → areas.id |
-| name | VARCHAR(255) | PSV name |
-| tag | VARCHAR(100) | Tag number (e.g., "PSV-101") |
-| type | ENUM('psv', 'rupture_disc', 'vent_system', 'prv') | Type |
-| design_code | ENUM('API-520', 'API-521', 'API-2000', 'ASME-VIII') | Design code |
-| service_fluid | VARCHAR(255) | Fluid name |
-| fluid_phase | ENUM('gas', 'liquid', 'steam', 'two_phase') | Phase |
-| set_pressure | DECIMAL(10,2) | Set pressure (barg) |
-| mawp | DECIMAL(10,2) | Maximum allowable working pressure (barg) |
-| owner_id | UUID | FK → users.id |
-| status | ENUM('draft', 'in_review', 'checked', 'approved', 'issued') | Status |
-| valve_type | ENUM('conventional', 'balanced_bellows', 'pilot_operated') | Valve operating type (nullable) |
-| project_tags | UUID[] | Optional FK array → projects.id |
-| tags | TEXT[] | Tags array |
-| inlet_network | JSONB | Shared inlet piping configuration |
-| outlet_network | JSONB | Shared outlet piping configuration |
-| created_at | TIMESTAMP | Creation time |
-| updated_at | TIMESTAMP | Last update |
+- Primary key: `id`
+- Index: `ix_audit_logs_action` on `action`
+- Index: `ix_audit_logs_created_at` on `created_at`
+- Index: `ix_audit_logs_entity_id` on `entity_id`
+- Index: `ix_audit_logs_entity_type` on `entity_type`
+- Index: `ix_audit_logs_project_id` on `project_id`
+- Index: `ix_audit_logs_user_id` on `user_id`
 
-#### `overpressure_scenarios`
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| protective_system_id | UUID | FK → protective_systems.id |
-| cause | ENUM('blocked_outlet', 'fire_case', 'tube_rupture', ...) | Cause type |
-| description | TEXT | Description |
-| relieving_temp | DECIMAL(10,2) | Relieving temperature (°C) |
-| relieving_pressure | DECIMAL(10,2) | Relieving pressure (barg) |
-| phase | ENUM('gas', 'liquid', 'steam', 'two_phase') | Fluid phase |
-| relieving_rate | DECIMAL(12,2) | Relieving rate (kg/h) |
-| accumulation_pct | DECIMAL(5,2) | Accumulation (%) |
-| required_capacity | DECIMAL(12,2) | Required capacity (kg/h) |
-| assumptions | TEXT[] | Assumptions array |
-| code_refs | TEXT[] | Code references array |
-| is_governing | BOOLEAN | Is governing scenario |
-| case_consideration | TEXT | Markdown-formatted case consideration details (nullable). Supports LaTeX-style math via KaTeX in the frontend. |
-| created_at | TIMESTAMP | Creation time |
-| updated_at | TIMESTAMP | Last update |
+### `comments`
 
-#### `sizing_cases`
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| protective_system_id | UUID | FK → protective_systems.id |
-| scenario_id | UUID | FK → overpressure_scenarios.id |
-| standard | ENUM('API-520', 'API-521', 'API-2000', 'ASME-VIII', 'ISO-4126') | Standard |
-| method | ENUM('gas', 'liquid', 'steam', 'two_phase') | Sizing method |
-| inputs | JSONB | SizingInputs object |
-| outputs | JSONB | SizingOutputs object |
-| revision_no | INTEGER | Revision number |
-| status | ENUM('draft', 'calculated', 'verified', 'approved') | Status |
-| created_by | UUID | FK → users.id |
-| approved_by | UUID | FK → users.id (nullable) |
-| created_at | TIMESTAMP | Creation time |
-| updated_at | TIMESTAMP | Last update |
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| protective_system_id | UUID | NO | NO | protective_systems.id |  |
+| body | TEXT | NO | NO |  |  |
+| created_by | UUID | NO | NO | users.id |  |
+| updated_by | UUID | YES | NO | users.id |  |
+| is_active | BOOLEAN | NO | NO |  | True |
+| id | UUID | NO | YES |  | uuid4() |
+| created_at | DATETIME | NO | NO |  | now() |
+| updated_at | DATETIME | NO | NO |  | now() |
 
----
+- Primary key: `id`
 
-### Supporting Tables
+### `credentials`
 
-#### `equipment`
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| area_id | UUID | FK → areas.id |
-| type | ENUM('vessel', 'tank', 'heat_exchanger', 'column', 'reactor', 'pump', 'compressor', 'piping', 'other') | Type |
-| tag | VARCHAR(100) | Equipment tag |
-| name | VARCHAR(255) | Equipment name |
-| description | TEXT | Description |
-| design_pressure | DECIMAL(10,2) | Design pressure (barg) |
-| mawp | DECIMAL(10,2) | MAWP (barg) |
-| design_temp | DECIMAL(10,2) | Design temperature (°C) |
-| owner_id | UUID | FK → users.id |
-| status | ENUM('active', 'inactive') | Status |
-| location_ref | VARCHAR(255) | Location reference |
-| created_at | TIMESTAMP | Creation time |
-| updated_at | TIMESTAMP | Last update |
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| user_id | UUID | NO | NO | users.id |  |
+| username | VARCHAR(100) | NO | NO |  |  |
+| password_hash | VARCHAR(255) | NO | NO |  |  |
+| last_login | DATETIME | YES | NO |  |  |
+| failed_attempts | INTEGER | NO | NO |  | 0 |
+| locked_until | DATETIME | YES | NO |  |  |
+| id | UUID | NO | YES |  | uuid4() |
+| created_at | DATETIME | NO | NO |  | now() |
+| updated_at | DATETIME | NO | NO |  | now() |
 
-#### `equipment_links`
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| protective_system_id | UUID | FK → protective_systems.id |
-| equipment_id | UUID | FK → equipment.id |
-| is_primary | BOOLEAN | Is primary protection device |
-| scenario_id | UUID | FK → overpressure_scenarios.id (nullable) |
-| relationship | ENUM('protects', 'inlet_from', 'discharge_to') | Relationship type |
-| notes | TEXT | Notes |
-| created_at | TIMESTAMP | Creation time |
+- Primary key: `id`
+- Unique: `(unnamed)` on `username`
 
-#### `attachments`
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| protective_system_id | UUID | FK → protective_systems.id |
-| file_uri | VARCHAR(1000) | File storage URI |
-| file_name | VARCHAR(255) | Original file name |
-| mime_type | VARCHAR(100) | MIME type |
-| size | INTEGER | File size in bytes |
-| uploaded_by | UUID | FK → users.id |
-| created_at | TIMESTAMP | Upload time |
+### `customers`
 
-#### `comments`
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| protective_system_id | UUID | FK → protective_systems.id |
-| body | TEXT | Comment content |
-| created_by | UUID | FK → users.id |
-| created_at | TIMESTAMP | Creation time |
-| updated_at | TIMESTAMP | Last update |
-| updated_by | UUID | FK → users.id (nullable) |
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| name | VARCHAR(255) | NO | NO |  |  |
+| code | VARCHAR(50) | NO | NO |  |  |
+| status | VARCHAR(8) | NO | NO |  | active |
+| owner_id | UUID | NO | NO | users.id |  |
+| id | UUID | NO | YES |  | uuid4() |
+| created_at | DATETIME | NO | NO |  | now() |
+| updated_at | DATETIME | NO | NO |  | now() |
 
-#### `project_notes`
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| protective_system_id | UUID | FK → protective_systems.id |
-| body | TEXT | Printable note |
-| created_by | UUID | FK → users.id |
-| created_at | TIMESTAMP | Creation time |
-| updated_by | UUID | FK → users.id (nullable) |
-| updated_at | TIMESTAMP | Last update |
+- Primary key: `id`
+- Unique: `(unnamed)` on `code`
 
-#### `todos`
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| protective_system_id | UUID | FK → protective_systems.id |
-| text | VARCHAR(500) | Task description |
-| completed | BOOLEAN | Completion status |
-| assigned_to | UUID | FK → users.id (nullable) |
-| due_date | DATE | Due date (nullable) |
-| created_by | UUID | FK → users.id |
-| created_at | TIMESTAMP | Creation time |
+### `equipment`
 
-#### `users`
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| name | VARCHAR(255) | Display name |
-| email | VARCHAR(255) | Email (unique) |
-| role | ENUM('engineer', 'lead', 'approver', 'admin', 'viewer') | Role |
-| status | ENUM('active', 'inactive') | Status |
-| created_at | TIMESTAMP | Creation time |
-| updated_at | TIMESTAMP | Last update |
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| area_id | UUID | NO | NO | areas.id |  |
+| type | VARCHAR(14) | NO | NO |  |  |
+| tag | VARCHAR(100) | NO | NO |  |  |
+| name | VARCHAR(255) | NO | NO |  |  |
+| description | TEXT | YES | NO |  |  |
+| design_pressure | NUMERIC(10, 2) | YES | NO |  |  |
+| design_pressure_unit | VARCHAR(20) | YES | NO |  | barg |
+| mawp | NUMERIC(10, 2) | YES | NO |  |  |
+| mawp_unit | VARCHAR(20) | YES | NO |  | barg |
+| design_temp | NUMERIC(10, 2) | YES | NO |  |  |
+| design_temp_unit | VARCHAR(20) | YES | NO |  | C |
+| owner_id | UUID | NO | NO | users.id |  |
+| is_active | BOOLEAN | NO | NO |  | True |
+| status | VARCHAR(8) | NO | NO |  | active |
+| location_ref | VARCHAR(255) | YES | NO |  |  |
+| details | JSONB | YES | NO |  |  |
+| id | UUID | NO | YES |  | uuid4() |
+| created_at | DATETIME | NO | NO |  | now() |
+| updated_at | DATETIME | NO | NO |  | now() |
 
-#### `credentials`
-| Column | Type | Description |
-|--------|------|-------------|
-| id | UUID | Primary key |
-| user_id | UUID | FK → users.id (CASCADE) |
-| username | VARCHAR(100) | Login username (unique) |
-| password_hash | VARCHAR(255) | Bcrypt hashed password |
-| last_login | TIMESTAMP | Last successful login (nullable) |
-| failed_attempts | INTEGER | Failed login count (default 0) |
-| locked_until | TIMESTAMP | Account lockout time (nullable) |
-| created_at | TIMESTAMP | Creation time |
-| updated_at | TIMESTAMP | Last update |
+- Primary key: `id`
+- Unique: `uq_equipment_area_id_tag` on `area_id, tag`
+- Index: `ix_equipment_tag` on `tag`
 
----
+### `equipment_columns`
 
-## Reference Tables
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| equipment_id | UUID | NO | YES | equipment.id |  |
+| inner_diameter_mm | NUMERIC | YES | NO |  |  |
+| tangent_to_tangent_height_mm | NUMERIC | YES | NO |  |  |
+| head_type | TEXT | YES | NO |  |  |
+| wall_thickness_mm | NUMERIC | YES | NO |  |  |
+| insulated | BOOLEAN | YES | NO |  |  |
+| insulation_type | TEXT | YES | NO |  |  |
+| insulation_thickness_mm | NUMERIC | YES | NO |  |  |
+| normal_liquid_level_pct | NUMERIC | YES | NO |  |  |
+| low_liquid_level_pct | NUMERIC | YES | NO |  |  |
+| high_liquid_level_pct | NUMERIC | YES | NO |  |  |
+| number_of_trays | INTEGER | YES | NO |  |  |
+| tray_spacing_mm | NUMERIC | YES | NO |  |  |
+| column_type | TEXT | YES | NO |  |  |
+| packing_height_mm | NUMERIC | YES | NO |  |  |
+| wetted_area_m2 | NUMERIC | YES | NO |  |  |
+| total_surface_area_m2 | NUMERIC | YES | NO |  |  |
+| volume_m3 | NUMERIC | YES | NO |  |  |
+| extra | JSONB | YES | NO |  |  |
 
-#### `orifice_sizes`
-| Column | Type | Description |
-|--------|------|-------------|
-| designation | CHAR(1) | Orifice letter (D, E, F, ...) |
-| area_mm2 | DECIMAL(10,2) | Area in mm² |
-| area_in2 | DECIMAL(10,4) | Area in in² |
+- Primary key: `equipment_id`
 
-Pre-populated with API standard orifice sizes (D through T).
+### `equipment_compressors`
 
----
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| equipment_id | UUID | NO | YES | equipment.id |  |
+| compressor_type | TEXT | YES | NO |  |  |
+| rated_capacity_m3h | NUMERIC | YES | NO |  |  |
+| standard_capacity_nm3h | NUMERIC | YES | NO |  |  |
+| suction_pressure_barg | NUMERIC | YES | NO |  |  |
+| discharge_pressure_barg | NUMERIC | YES | NO |  |  |
+| compression_ratio | NUMERIC | YES | NO |  |  |
+| suction_temperature_c | NUMERIC | YES | NO |  |  |
+| discharge_temperature_c | NUMERIC | YES | NO |  |  |
+| efficiency_pct | NUMERIC | YES | NO |  |  |
+| motor_power_kw | NUMERIC | YES | NO |  |  |
+| surge_flow_m3h | NUMERIC | YES | NO |  |  |
+| anti_surge_valve_setpoint_pct | NUMERIC | YES | NO |  |  |
+| extra | JSONB | YES | NO |  |  |
 
-## Indexes
+- Primary key: `equipment_id`
 
-```sql
--- Hierarchy lookups
-CREATE INDEX idx_plants_customer ON plants(customer_id);
-CREATE INDEX idx_units_plant ON units(plant_id);
-CREATE INDEX idx_areas_unit ON areas(unit_id);
-CREATE INDEX idx_projects_area ON projects(area_id);
+### `equipment_links`
 
--- PSV lookups
-CREATE INDEX idx_psv_area ON protective_systems(area_id);
-CREATE INDEX idx_psv_tag ON protective_systems(tag);
-CREATE INDEX idx_psv_project_tags ON protective_systems USING GIN(project_tags);
-CREATE INDEX idx_scenarios_psv ON overpressure_scenarios(protective_system_id);
-CREATE INDEX idx_sizing_psv ON sizing_cases(protective_system_id);
-CREATE INDEX idx_sizing_scenario ON sizing_cases(scenario_id);
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| protective_system_id | UUID | NO | NO | protective_systems.id |  |
+| equipment_id | UUID | NO | NO | equipment.id |  |
+| is_primary | BOOLEAN | NO | NO |  | False |
+| scenario_id | UUID | YES | NO | overpressure_scenarios.id |  |
+| relationship_type | VARCHAR(12) | NO | NO |  | protects |
+| notes | TEXT | YES | NO |  |  |
+| id | UUID | NO | YES |  | uuid4() |
+| created_at | DATETIME | NO | NO |  | now() |
+| updated_at | DATETIME | NO | NO |  | now() |
 
--- Equipment lookups
-CREATE INDEX idx_equipment_area ON equipment(area_id);
-CREATE INDEX idx_equipment_tag ON equipment(tag);
-CREATE INDEX idx_equipment_links_psv ON equipment_links(protective_system_id);
-CREATE INDEX idx_equipment_links_equip ON equipment_links(equipment_id);
-```
+- Primary key: `id`
 
----
+### `equipment_pumps`
 
-## Notes
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| equipment_id | UUID | NO | YES | equipment.id |  |
+| pump_type | TEXT | YES | NO |  |  |
+| rated_flow_m3h | NUMERIC | YES | NO |  |  |
+| rated_head_m | NUMERIC | YES | NO |  |  |
+| max_discharge_pressure_barg | NUMERIC | YES | NO |  |  |
+| shutoff_head_m | NUMERIC | YES | NO |  |  |
+| npsh_required_m | NUMERIC | YES | NO |  |  |
+| efficiency_pct | NUMERIC | YES | NO |  |  |
+| motor_power_kw | NUMERIC | YES | NO |  |  |
+| relief_valve_set_pressure_barg | NUMERIC | YES | NO |  |  |
+| max_viscosity_cp | NUMERIC | YES | NO |  |  |
+| suction_pressure_barg | NUMERIC | YES | NO |  |  |
+| discharge_pressure_barg | NUMERIC | YES | NO |  |  |
+| fluid_temperature_c | NUMERIC | YES | NO |  |  |
+| fluid_density_kgm3 | NUMERIC | YES | NO |  |  |
+| extra | JSONB | YES | NO |  |  |
 
-- **Database**: Recommended PostgreSQL 14+ for JSONB and array support
-- **UUIDs**: Use `gen_random_uuid()` for ID generation
-- **Soft Delete**: Consider adding `deleted_at` column for soft deletes
-- **Audit Trail**: Consider `created_by`/`updated_by` for audit logging
+- Primary key: `equipment_id`
 
----
+### `equipment_tanks`
 
-## JSONB Structure: SizingInputs
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| equipment_id | UUID | NO | YES | equipment.id |  |
+| tank_type | TEXT | YES | NO |  |  |
+| orientation | TEXT | YES | NO |  |  |
+| inner_diameter_mm | NUMERIC | YES | NO |  |  |
+| height_mm | NUMERIC | YES | NO |  |  |
+| roof_type | TEXT | YES | NO |  |  |
+| wall_thickness_mm | NUMERIC | YES | NO |  |  |
+| insulated | BOOLEAN | YES | NO |  |  |
+| insulation_type | TEXT | YES | NO |  |  |
+| insulation_thickness_mm | NUMERIC | YES | NO |  |  |
+| normal_liquid_level_pct | NUMERIC | YES | NO |  |  |
+| low_liquid_level_pct | NUMERIC | YES | NO |  |  |
+| high_liquid_level_pct | NUMERIC | YES | NO |  |  |
+| wetted_area_m2 | NUMERIC | YES | NO |  |  |
+| volume_m3 | NUMERIC | YES | NO |  |  |
+| heel_volume_m3 | NUMERIC | YES | NO |  |  |
+| extra | JSONB | YES | NO |  |  |
 
-The `sizing_cases.inputs` JSONB column contains the following structure (as of Dec 2025):
+- Primary key: `equipment_id`
 
-### Common Fields (All Methods)
-```json
-{
-  "massFlowRate": number,        // kg/h (base unit)
-  "temperature": number,          // °C (base unit)
-  "pressure": number,             // barg (base unit)
-  "backpressure": number,         // barg
-  "backpressureType": "superimposed" | "built_up"
-}
-```
+### `equipment_vendor_packages`
 
-### Gas/Vapor Phase Properties
-**Used by:** `gas`, `steam`, `two_phase`
-```json
-{
-  "molecularWeight": number,      // g/mol (default 18.02 for steam)
-  "compressibilityZ": number,     // dimensionless (0-2)
-  "specificHeatRatio": number,    // k = Cp/Cv (1-2)
-  "gasViscosity": number          // cP (optional)
-}
-```
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| equipment_id | UUID | NO | YES | equipment.id |  |
+| vendor_name | TEXT | YES | NO |  |  |
+| package_name | TEXT | YES | NO |  |  |
+| package_description | TEXT | YES | NO |  |  |
+| extra | JSONB | YES | NO |  |  |
 
-### Liquid Phase Properties
-**Used by:** `liquid`, `two_phase`
-```json
-{
-  "liquidDensity": number,        // kg/m³
-  "liquidViscosity": number       // cP
-}
-```
+- Primary key: `equipment_id`
 
-### Two-Phase Specific
-**Used by:** `two_phase` only
-```json
-{
-  "vaporFraction": number         // Mass vapor fraction 0-1 (aka quality x)
-}
-```
+### `equipment_vessels`
 
-### Backward Compatibility Fields
-**Deprecated but supported:**
-```json
-{
-  "viscosity": number,            // Mapped to gasViscosity or liquidViscosity
-  "density": number               // Mapped to liquidDensity
-}
-```
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| equipment_id | UUID | NO | YES | equipment.id |  |
+| orientation | TEXT | YES | NO |  |  |
+| inner_diameter_mm | NUMERIC | YES | NO |  |  |
+| tangent_to_tangent_length_mm | NUMERIC | YES | NO |  |  |
+| head_type | TEXT | YES | NO |  |  |
+| wall_thickness_mm | NUMERIC | YES | NO |  |  |
+| insulated | BOOLEAN | YES | NO |  |  |
+| insulation_type | TEXT | YES | NO |  |  |
+| insulation_thickness_mm | NUMERIC | YES | NO |  |  |
+| normal_liquid_level_pct | NUMERIC | YES | NO |  |  |
+| low_liquid_level_pct | NUMERIC | YES | NO |  |  |
+| high_liquid_level_pct | NUMERIC | YES | NO |  |  |
+| wetted_area_m2 | NUMERIC | YES | NO |  |  |
+| total_surface_area_m2 | NUMERIC | YES | NO |  |  |
+| volume_m3 | NUMERIC | YES | NO |  |  |
+| extra | JSONB | YES | NO |  |  |
 
-### Hydraulic Validation (Optional)
-```json
-{
-  "backpressureSource": "manual" | "calculated",
-  "calculatedBackpressure": number,  // barg (if calculated from outlet network)
-  "inletPressureDrop": number        // kPa
-}
-```
+- Primary key: `equipment_id`
 
-### Complete Example: Two-Phase Case
-```json
-{
-  "massFlowRate": 85000,
-  "temperature": 180,
-  "pressure": 2.8,
-  "molecularWeight": 44,
-  "compressibilityZ": 0.92,
-  "specificHeatRatio": 1.15,
-  "gasViscosity": 0.012,
-  "liquidDensity": 850,
-  "liquidViscosity": 1.2,
-  "vaporFraction": 0.25,
-  "backpressure": 0.5,
-  "backpressureType": "superimposed"
-}
-```
+### `overpressure_scenarios`
+
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| protective_system_id | UUID | NO | NO | protective_systems.id |  |
+| cause | VARCHAR(21) | NO | NO |  |  |
+| description | TEXT | YES | NO |  |  |
+| relieving_temp | NUMERIC(10, 2) | NO | NO |  |  |
+| relieving_pressure | NUMERIC(10, 2) | NO | NO |  |  |
+| phase | VARCHAR(9) | NO | NO |  |  |
+| relieving_rate | NUMERIC(12, 2) | NO | NO |  |  |
+| accumulation_pct | NUMERIC(5, 2) | NO | NO |  |  |
+| required_capacity | NUMERIC(12, 2) | NO | NO |  |  |
+| assumptions | ARRAY | NO | NO |  | <function list at 0x10966bec0> |
+| code_refs | ARRAY | NO | NO |  | <function list at 0x1096a2c00> |
+| is_governing | BOOLEAN | NO | NO |  | False |
+| case_consideration | TEXT | YES | NO |  |  |
+| is_active | BOOLEAN | NO | NO |  | True |
+| current_revision_id | UUID | YES | NO | revision_history.id |  |
+| id | UUID | NO | YES |  | uuid4() |
+| created_at | DATETIME | NO | NO |  | now() |
+| updated_at | DATETIME | NO | NO |  | now() |
+
+- Primary key: `id`
+
+### `plants`
+
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| customer_id | UUID | NO | NO | customers.id |  |
+| name | VARCHAR(255) | NO | NO |  |  |
+| code | VARCHAR(50) | NO | NO |  |  |
+| location | VARCHAR(255) | YES | NO |  |  |
+| status | VARCHAR(8) | NO | NO |  | active |
+| owner_id | UUID | NO | NO | users.id |  |
+| id | UUID | NO | YES |  | uuid4() |
+| created_at | DATETIME | NO | NO |  | now() |
+| updated_at | DATETIME | NO | NO |  | now() |
+
+- Primary key: `id`
+- Unique: `uq_plants_customer_id_code` on `customer_id, code`
+
+### `project_notes`
+
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| protective_system_id | UUID | NO | NO | protective_systems.id |  |
+| body | TEXT | NO | NO |  |  |
+| created_by | UUID | NO | NO | users.id |  |
+| updated_by | UUID | YES | NO | users.id |  |
+| is_active | BOOLEAN | NO | NO |  | True |
+| id | UUID | NO | YES |  | uuid4() |
+| created_at | DATETIME | NO | NO |  | now() |
+| updated_at | DATETIME | NO | NO |  | now() |
+
+- Primary key: `id`
+
+### `projects`
+
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| area_id | UUID | NO | NO | areas.id |  |
+| name | VARCHAR(255) | NO | NO |  |  |
+| code | VARCHAR(50) | NO | NO |  |  |
+| phase | VARCHAR(13) | NO | NO |  | design |
+| status | VARCHAR(9) | NO | NO |  | draft |
+| start_date | DATE | NO | NO |  |  |
+| end_date | DATE | YES | NO |  |  |
+| lead_id | UUID | NO | NO | users.id |  |
+| unit_system | VARCHAR(32) | NO | NO |  | metric |
+| is_active | BOOLEAN | NO | NO |  | True |
+| id | UUID | NO | YES |  | uuid4() |
+| created_at | DATETIME | NO | NO |  | now() |
+| updated_at | DATETIME | NO | NO |  | now() |
+
+- Primary key: `id`
+- Unique: `uq_projects_area_id_code` on `area_id, code`
+
+### `protective_system_projects`
+
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| protective_system_id | UUID | NO | YES | protective_systems.id |  |
+| project_id | UUID | NO | YES | projects.id |  |
+
+- Primary key: `protective_system_id, project_id`
+
+### `protective_systems`
+
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| area_id | UUID | NO | NO | areas.id |  |
+| name | VARCHAR(255) | NO | NO |  |  |
+| tag | VARCHAR(100) | NO | NO |  |  |
+| type | VARCHAR(14) | NO | NO |  | psv |
+| design_code | VARCHAR(9) | NO | NO |  | API-520 |
+| service_fluid | VARCHAR(255) | YES | NO |  |  |
+| fluid_phase | VARCHAR(9) | NO | NO |  | gas |
+| set_pressure | NUMERIC(10, 2) | NO | NO |  |  |
+| mawp | NUMERIC(10, 2) | NO | NO |  |  |
+| owner_id | UUID | NO | NO | users.id |  |
+| status | VARCHAR(9) | NO | NO |  | draft |
+| valve_type | VARCHAR(16) | YES | NO |  |  |
+| tags | ARRAY | NO | NO |  | <function list at 0x10966aca0> |
+| project_tags | ARRAY | YES | NO |  |  |
+| version | INTEGER | NO | NO |  | 1 |
+| current_revision_id | UUID | YES | NO | revision_history.id |  |
+| inlet_network | JSONB | YES | NO |  |  |
+| outlet_network | JSONB | YES | NO |  |  |
+| is_active | BOOLEAN | NO | NO |  | True |
+| id | UUID | NO | YES |  | uuid4() |
+| created_at | DATETIME | NO | NO |  | now() |
+| updated_at | DATETIME | NO | NO |  | now() |
+| deleted_at | DATETIME | YES | NO |  |  |
+
+- Primary key: `id`
+- Unique: `uq_protective_systems_area_id_tag` on `area_id, tag`
+- Check: `ck_protective_systems_deleted_at_matches_is_active` = `(deleted_at IS NULL) = is_active`
+- Index: `ix_protective_systems_tag` on `tag`
+
+### `revision_history`
+
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| is_active | BOOLEAN | NO | NO |  | True |
+| entity_type | VARCHAR(32) | NO | NO |  |  |
+| entity_id | UUID | NO | NO |  |  |
+| revision_code | VARCHAR(16) | NO | NO |  |  |
+| sequence | INTEGER | NO | NO |  |  |
+| description | TEXT | YES | NO |  |  |
+| originated_by | UUID | YES | NO | users.id |  |
+| originated_at | DATETIME | YES | NO |  |  |
+| checked_by | UUID | YES | NO | users.id |  |
+| checked_at | DATETIME | YES | NO |  |  |
+| approved_by | UUID | YES | NO | users.id |  |
+| approved_at | DATETIME | YES | NO |  |  |
+| issued_at | DATETIME | YES | NO |  |  |
+| snapshot | JSONB | NO | NO |  |  |
+| created_at | DATETIME | NO | NO |  | now() |
+| id | UUID | NO | YES |  | uuid4() |
+
+- Primary key: `id`
+
+### `sizing_cases`
+
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| protective_system_id | UUID | NO | NO | protective_systems.id |  |
+| scenario_id | UUID | YES | NO | overpressure_scenarios.id |  |
+| standard | VARCHAR(9) | NO | NO |  | API-520 |
+| method | VARCHAR(9) | NO | NO |  |  |
+| inputs | JSONB | NO | NO |  | <function dict at 0x1096c9300> |
+| outputs | JSONB | NO | NO |  | <function dict at 0x1096c94e0> |
+| unit_preferences | JSONB | YES | NO |  |  |
+| is_active | BOOLEAN | NO | NO |  | True |
+| current_revision_id | UUID | YES | NO | revision_history.id |  |
+| status | VARCHAR(10) | NO | NO |  | draft |
+| created_by | UUID | NO | NO | users.id |  |
+| approved_by | UUID | YES | NO | users.id |  |
+| id | UUID | NO | YES |  | uuid4() |
+| created_at | DATETIME | NO | NO |  | now() |
+| updated_at | DATETIME | NO | NO |  | now() |
+
+- Primary key: `id`
+
+### `todos`
+
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| protective_system_id | UUID | NO | NO | protective_systems.id |  |
+| text | VARCHAR(500) | NO | NO |  |  |
+| completed | BOOLEAN | NO | NO |  | False |
+| assigned_to | UUID | YES | NO | users.id |  |
+| due_date | DATE | YES | NO |  |  |
+| created_by | UUID | NO | NO | users.id |  |
+| is_active | BOOLEAN | NO | NO |  | True |
+| id | UUID | NO | YES |  | uuid4() |
+| created_at | DATETIME | NO | NO |  | now() |
+| updated_at | DATETIME | NO | NO |  | now() |
+
+- Primary key: `id`
+
+### `units`
+
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| plant_id | UUID | NO | NO | plants.id |  |
+| name | VARCHAR(255) | NO | NO |  |  |
+| code | VARCHAR(50) | NO | NO |  |  |
+| service | VARCHAR(255) | YES | NO |  |  |
+| status | VARCHAR(8) | NO | NO |  | active |
+| owner_id | UUID | NO | NO | users.id |  |
+| id | UUID | NO | YES |  | uuid4() |
+| created_at | DATETIME | NO | NO |  | now() |
+| updated_at | DATETIME | NO | NO |  | now() |
+
+- Primary key: `id`
+- Unique: `uq_units_plant_id_code` on `plant_id, code`
+
+### `users`
+
+| Column | Type | Null | PK | FK | Default |
+|---|---|---|---|---|---|
+| name | VARCHAR(255) | NO | NO |  |  |
+| initials | VARCHAR(16) | YES | NO |  |  |
+| email | VARCHAR(255) | NO | NO |  |  |
+| role | VARCHAR(16) | NO | NO |  | engineer |
+| status | VARCHAR(8) | NO | NO |  | active |
+| display_settings | JSONB | YES | NO |  |  |
+| id | UUID | NO | YES |  | uuid4() |
+| created_at | DATETIME | NO | NO |  | now() |
+| updated_at | DATETIME | NO | NO |  | now() |
+
+- Primary key: `id`
+- Unique: `(unnamed)` on `email`
+
+## Migration-Defined Constraints and Indexes
+
+- `revision_history`: unique constraint `uq_revision_entity_code` on `(entity_type, entity_id, revision_code)` from Alembic revision `add_revision_history`.
+- `revision_history`: index `ix_revision_history_entity` on `(entity_type, entity_id)` from Alembic revision `add_revision_history`.
+
+## Enum Values (application-level)
+
+- `user_role`: engineer, lead, approver, division_manager, admin, viewer
+- `user_status`: active, inactive
+- `customer_status`: active, inactive
+- `plant_status`: active, inactive
+- `unit_status`: active, inactive
+- `area_status`: active, inactive
+- `project_phase`: design, construction, commissioning, operation
+- `project_status`: draft, in_review, checked, approved, issued
+- `equipment_type`: vessel, tank, heat_exchanger, column, reactor, pump, compressor, piping, vendor_package, other
+- `equipment_status`: active, inactive
+- `protective_system_type`: psv, rupture_disc, breather_valve, flame_arrestor, tank_vent, control_valve, vent_system, prv
+- `design_code`: API-520, API-521, API-2000, ASME-VIII
+- `fluid_phase`: gas, liquid, steam, two_phase
+- `psv_status`: draft, in_review, checked, approved, issued
+- `valve_operating_type`: conventional, balanced_bellows, pilot_operated
+- `scenario_cause`: blocked_outlet, fire_case, external_fire, tube_rupture, thermal_expansion, utility_failure, control_valve_failure, power_failure, cooling_water_failure, reflux_failure, abnormal_heat_input, check_valve_failure, other
+- `scenario_phase`: gas, liquid, steam, two_phase
+- `sizing_standard`: API-520, API-521, API-2000, ASME-VIII, ISO-4126
+- `sizing_method`: gas, liquid, steam, two_phase
+- `sizing_status`: draft, calculated, verified, approved
+- `equipment_relationship`: protects, inlet_from, discharge_to
+- `audit_action`: create, update, delete, status_change, calculate
+- `audit_entity_type`: protective_system, scenario, sizing_case, project, revision, comment, attachment, note, todo
