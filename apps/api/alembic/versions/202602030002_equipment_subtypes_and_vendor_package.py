@@ -40,9 +40,10 @@ def _as_dict(value: Any) -> dict[str, Any] | None:
     return None
 
 
-def _pick_extra(details: dict[str, Any], known_keys: set[str]) -> dict[str, Any] | None:
+def _pick_extra(details: dict[str, Any], known_keys: set[str]) -> str | None:
+    """Return leftover keys as a JSON string (asyncpg requires strings for JSONB text params)."""
     extra = {k: v for k, v in details.items() if k not in known_keys}
-    return extra or None
+    return json.dumps(extra) if extra else None
 
 
 def upgrade() -> None:

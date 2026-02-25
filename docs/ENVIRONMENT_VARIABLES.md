@@ -53,15 +53,28 @@ These variables apply to the entire suite or multiple applications.
 - `SECRET_KEY`: Secret key for JWT tokens and security
   - Required for production authentication
 
+### Venting Calculation (apps/venting-calculation)
+
+- `NEXT_PUBLIC_API_URL`: Backend API base URL (default: `http://localhost:8000`)
+  - Required to connect the Save/Load feature to the central PostgreSQL database
+  - App runs on port 3005; CORS for this port is registered in the FastAPI backend
+
 ### Network Editor (apps/network-editor)
 
-No application-specific environment variables required.
+- `NEXT_PUBLIC_API_URL`: Backend API base URL (default: `http://localhost:8000`)
+  - Used for both hydraulic calculations and the new cloud Save/Load feature
 
 ### Web/Dashboard (apps/web)
 
 - `DEFAULT_THEME`: Default theme for the application
   - Values: `light` or `dark`
   - Default: `light`
+
+### Design Agents (apps/design-agents)
+
+- `VITE_API_URL`: Backend API base URL for this **Vite** application (default: `http://localhost:8000`)
+  - Note: Uses Vite's `import.meta.env.VITE_API_URL` convention, **not** `NEXT_PUBLIC_API_URL`
+  - Used for both the LLM agent pipeline and the new cloud session Save/Load feature
 
 ### Docs Application (apps/docs)
 

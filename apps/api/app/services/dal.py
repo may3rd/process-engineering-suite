@@ -173,8 +173,8 @@ class DataAccessLayer(ABC):
     # --- Equipment ---
     
     @abstractmethod
-    async def get_equipment(self, area_id: Optional[str] = None) -> List[dict]:
-        """Get all equipment, optionally filtered by area."""
+    async def get_equipment(self, area_id: Optional[str] = None, type: Optional[str] = None) -> List[dict]:
+        """Get all equipment, optionally filtered by area and/or type."""
         pass
     
     @abstractmethod
@@ -337,4 +337,93 @@ class DataAccessLayer(ABC):
     @abstractmethod
     async def clear_audit_logs(self) -> int:
         """Clear all audit logs. Returns count of deleted logs."""
+        pass
+
+    # --- Venting Calculations ---
+
+    @abstractmethod
+    async def get_venting_calculations(
+        self, area_id: Optional[str] = None, equipment_id: Optional[str] = None,
+        include_deleted: bool = False
+    ) -> List[dict]:
+        """Get venting calculations, optionally filtered by area or equipment."""
+        pass
+
+    @abstractmethod
+    async def get_venting_calculation_by_id(self, calc_id: str) -> Optional[dict]:
+        """Get a venting calculation by ID."""
+        pass
+
+    @abstractmethod
+    async def create_venting_calculation(self, data: dict) -> dict:
+        """Create a new venting calculation."""
+        pass
+
+    @abstractmethod
+    async def update_venting_calculation(self, calc_id: str, data: dict) -> dict:
+        """Update a venting calculation."""
+        pass
+
+    @abstractmethod
+    async def delete_venting_calculation(self, calc_id: str) -> bool:
+        """Soft-delete a venting calculation."""
+        pass
+
+    @abstractmethod
+    async def restore_venting_calculation(self, calc_id: str) -> dict:
+        """Restore a soft-deleted venting calculation."""
+        pass
+
+    # --- Network Designs ---
+
+    @abstractmethod
+    async def get_network_designs(self, area_id: Optional[str] = None) -> List[dict]:
+        """Get network designs, optionally filtered by area."""
+        pass
+
+    @abstractmethod
+    async def get_network_design_by_id(self, design_id: str) -> Optional[dict]:
+        """Get a network design by ID."""
+        pass
+
+    @abstractmethod
+    async def create_network_design(self, data: dict) -> dict:
+        """Create a new network design."""
+        pass
+
+    @abstractmethod
+    async def update_network_design(self, design_id: str, data: dict) -> dict:
+        """Update a network design."""
+        pass
+
+    @abstractmethod
+    async def delete_network_design(self, design_id: str) -> bool:
+        """Hard-delete a network design."""
+        pass
+
+    # --- Design Agent Sessions ---
+
+    @abstractmethod
+    async def get_design_agent_sessions(self, owner_id: Optional[str] = None) -> List[dict]:
+        """Get design agent sessions, optionally filtered by owner."""
+        pass
+
+    @abstractmethod
+    async def get_design_agent_session_by_id(self, session_id: str) -> Optional[dict]:
+        """Get a design agent session by ID."""
+        pass
+
+    @abstractmethod
+    async def create_design_agent_session(self, data: dict) -> dict:
+        """Create a new design agent session."""
+        pass
+
+    @abstractmethod
+    async def update_design_agent_session(self, session_id: str, data: dict) -> dict:
+        """Update a design agent session."""
+        pass
+
+    @abstractmethod
+    async def delete_design_agent_session(self, session_id: str) -> bool:
+        """Hard-delete a design agent session."""
         pass

@@ -1,0 +1,22 @@
+{
+  "name": "@eng-suite/api-client",
+  "version": "0.1.0",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w"
+  },
+  "dependencies": {
+    "@eng-suite/types": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+}

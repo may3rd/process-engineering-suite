@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { useForm, FormProvider } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { calculationInputSchema } from "@/lib/validation/inputSchema"
@@ -10,6 +11,9 @@ import type { Resolver } from "react-hook-form"
 import { InputPanel } from "./components/InputPanel"
 import { ResultsPanel } from "./components/ResultsPanel"
 import { ExportButton } from "./components/ExportButton"
+import { LinkTankButton } from "./components/LinkTankButton"
+import { SaveCalculationButton } from "./components/SaveCalculationButton"
+import { LoadCalculationButton } from "./components/LoadCalculationButton"
 
 // ─── Default form values ───────────────────────────────────────────────────────
 // Required enum fields must have valid defaults; numeric fields start empty.
@@ -39,6 +43,10 @@ export default function CalculatorPage() {
   // Wire form → store (derived geometry + debounced API call)
   useCalculation(form.control)
 
+  // Track which equipment tank (if any) the user has linked to this calculation.
+  // Populated by LinkTankButton and restored when loading a saved calculation.
+  const [linkedEquipmentId, setLinkedEquipmentId] = useState<string | null>(null)
+
   return (
     // FormProvider wraps the entire page so ExportButton (in the header)
     // can access form values via useFormContext.
@@ -51,7 +59,12 @@ export default function CalculatorPage() {
               <p className="text-sm text-muted-foreground">
                 API 2000 (5th / 6th / 7th Edition)
               </p>
-              <ExportButton />
+              <div className="flex items-center gap-2">
+                <LinkTankButton onTankLinked={setLinkedEquipmentId} />
+                <LoadCalculationButton onTankLinked={setLinkedEquipmentId} />
+                <SaveCalculationButton equipmentId={linkedEquipmentId} />
+                <ExportButton />
+              </div>
             </div>
           </div>
         </div>

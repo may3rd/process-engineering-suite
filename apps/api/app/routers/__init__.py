@@ -8,6 +8,8 @@ from .revisions import router as revisions_router
 from .audit import router as audit_router
 from .design_agents import router as design_agents_router
 from .vessels import router as vessels_router
+from .venting import router as venting_router
+from .network import router as network_router
 
 
 __all__ = [
@@ -20,5 +22,6 @@ __all__ = [
     "audit_router",
     "design_agents_router",
     "vessels_router",
-
+    "venting_router",
+    "network_router",
 ]

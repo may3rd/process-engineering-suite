@@ -1,0 +1,12 @@
+{
+  "name": "@eng-suite/types",
+  "version": "1.0.0",
+  "main": "./dist/index.ts",
+  "types": "./dist/index.ts",
+  "scripts": {
+    "generate": "openapi-typescript http://localhost:8000/openapi.json -o ./dist/index.ts"
+  },
+  "devDependencies": {
+    "openapi-typescript": "^7.0.0"
+  }
+}

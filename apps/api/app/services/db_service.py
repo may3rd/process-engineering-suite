@@ -24,6 +24,9 @@ from ..models import (
     Comment,
     Todo,
     ProjectNote, RevisionHistory,
+    VentingCalculation,
+    NetworkDesign,
+    DesignAgentSession,
 )
 from .dal import DataAccessLayer
 from .equipment_subtypes import build_details_from_subtype_row, build_subtype_row_values
@@ -431,10 +434,12 @@ class DatabaseService(DataAccessLayer):
 
     # --- Equipment ---
 
-    async def get_equipment(self, area_id: Optional[str] = None) -> List[dict]:
+    async def get_equipment(self, area_id: Optional[str] = None, type: Optional[str] = None) -> List[dict]:
         filters = []
         if area_id:
             filters.append(Equipment.area_id == area_id)
+        if type:
+            filters.append(Equipment.type == type)
         equipment_list = await self._get_all(Equipment, *filters)
         await self._hydrate_equipment_details_from_subtypes(equipment_list)
         return equipment_list
@@ -989,5 +994,163 @@ class DatabaseService(DataAccessLayer):
         stmt = delete(AuditLog)
         await self.session.execute(stmt)
         await self.session.commit()
-        
+
         return total
+
+    # --- Venting Calculations ---
+
+    async def get_venting_calculations(
+        self,
+        area_id: Optional[str] = None,
+        equipment_id: Optional[str] = None,
+        include_deleted: bool = False,
+    ) -> List[dict]:
+        filters = []
+        if area_id:
+            filters.append(VentingCalculation.area_id == area_id)
+        if equipment_id:
+            filters.append(VentingCalculation.equipment_id == equipment_id)
+        if not include_deleted:
+            filters.append(VentingCalculation.deleted_at.is_(None))
+        return await self._get_all(VentingCalculation, *filters)
+
+    async def get_venting_calculation_by_id(self, calc_id: str) -> Optional[dict]:
+        return await self._get_by_id(VentingCalculation, calc_id)
+
+    async def create_venting_calculation(self, data: dict) -> dict:
+        # Map camelCase keys from Pydantic schema to snake_case ORM fields
+        mapped = {
+            "area_id": data.get("areaId"),
+            "equipment_id": data.get("equipmentId"),
+            "owner_id": data.get("ownerId"),
+            "name": data.get("name"),
+            "description": data.get("description"),
+            "status": data.get("status", "draft"),
+            "inputs": data.get("inputs", {}),
+            "results": data.get("results"),
+            "api_edition": data.get("apiEdition", "7TH"),
+        }
+        return await self._create(VentingCalculation, {k: v for k, v in mapped.items() if v is not None or k in ("inputs", "results", "area_id", "equipment_id", "description")})
+
+    async def update_venting_calculation(self, calc_id: str, data: dict) -> dict:
+        mapped = {}
+        if "name" in data:
+            mapped["name"] = data["name"]
+        if "description" in data:
+            mapped["description"] = data["description"]
+        if "status" in data:
+            mapped["status"] = data["status"]
+        if "inputs" in data:
+            mapped["inputs"] = data["inputs"]
+        if "results" in data:
+            mapped["results"] = data["results"]
+        if "apiEdition" in data:
+            mapped["api_edition"] = data["apiEdition"]
+        if "isActive" in data:
+            mapped["is_active"] = data["isActive"]
+        return await self._update(VentingCalculation, calc_id, mapped)
+
+    async def delete_venting_calculation(self, calc_id: str) -> bool:
+        instance = await self._get_by_id(VentingCalculation, calc_id)
+        if not instance:
+            return False
+        await self._update(
+            VentingCalculation,
+            calc_id,
+            {"is_active": False, "deleted_at": datetime.utcnow()},
+        )
+        return True
+
+    async def restore_venting_calculation(self, calc_id: str) -> dict:
+        instance = await self._get_by_id(VentingCalculation, calc_id)
+        if not instance:
+            raise ValueError("Venting calculation not found")
+        if instance.deleted_at is None:
+            return instance
+        instance.deleted_at = None
+        instance.is_active = True
+        await self.session.commit()
+        await self.session.refresh(instance)
+        return instance
+
+    # --- Network Designs ---
+
+    async def get_network_designs(self, area_id: Optional[str] = None) -> List[dict]:
+        filters = []
+        if area_id:
+            filters.append(NetworkDesign.area_id == area_id)
+        return await self._get_all(NetworkDesign, *filters)
+
+    async def get_network_design_by_id(self, design_id: str) -> Optional[dict]:
+        return await self._get_by_id(NetworkDesign, design_id)
+
+    async def create_network_design(self, data: dict) -> dict:
+        mapped = {
+            "area_id": data.get("areaId"),
+            "owner_id": data.get("ownerId"),
+            "name": data.get("name"),
+            "description": data.get("description"),
+            "network_data": data.get("networkData", {}),
+            "node_count": data.get("nodeCount", 0),
+            "pipe_count": data.get("pipeCount", 0),
+        }
+        return await self._create(NetworkDesign, {k: v for k, v in mapped.items() if v is not None or k in ("network_data", "area_id", "description")})
+
+    async def update_network_design(self, design_id: str, data: dict) -> dict:
+        mapped = {}
+        if "name" in data:
+            mapped["name"] = data["name"]
+        if "description" in data:
+            mapped["description"] = data["description"]
+        if "networkData" in data:
+            mapped["network_data"] = data["networkData"]
+        if "nodeCount" in data:
+            mapped["node_count"] = data["nodeCount"]
+        if "pipeCount" in data:
+            mapped["pipe_count"] = data["pipeCount"]
+        return await self._update(NetworkDesign, design_id, mapped)
+
+    async def delete_network_design(self, design_id: str) -> bool:
+        return await self._delete(NetworkDesign, design_id)
+
+    # --- Design Agent Sessions ---
+
+    async def get_design_agent_sessions(self, owner_id: Optional[str] = None) -> List[dict]:
+        filters = []
+        if owner_id:
+            filters.append(DesignAgentSession.owner_id == owner_id)
+        return await self._get_all(DesignAgentSession, *filters)
+
+    async def get_design_agent_session_by_id(self, session_id: str) -> Optional[dict]:
+        return await self._get_by_id(DesignAgentSession, session_id)
+
+    async def create_design_agent_session(self, data: dict) -> dict:
+        mapped = {
+            "owner_id": data.get("ownerId", "default"),
+            "name": data.get("name"),
+            "description": data.get("description"),
+            "state_data": data.get("stateData", {}),
+            "active_step_id": data.get("activeStepId"),
+            "completed_steps": data.get("completedSteps", []),
+            "status": data.get("status", "active"),
+        }
+        return await self._create(DesignAgentSession, {k: v for k, v in mapped.items() if v is not None or k in ("state_data", "completed_steps", "description", "active_step_id")})
+
+    async def update_design_agent_session(self, session_id: str, data: dict) -> dict:
+        mapped = {}
+        if "name" in data:
+            mapped["name"] = data["name"]
+        if "description" in data:
+            mapped["description"] = data["description"]
+        if "stateData" in data:
+            mapped["state_data"] = data["stateData"]
+        if "activeStepId" in data:
+            mapped["active_step_id"] = data["activeStepId"]
+        if "completedSteps" in data:
+            mapped["completed_steps"] = data["completedSteps"]
+        if "status" in data:
+            mapped["status"] = data["status"]
+        return await self._update(DesignAgentSession, session_id, mapped)
+
+    async def delete_design_agent_session(self, session_id: str) -> bool:
+        return await self._delete(DesignAgentSession, session_id)

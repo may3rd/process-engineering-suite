@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Query
 from fastapi.responses import Response
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from typing import List, Optional, Dict, Any
+from datetime import datetime
 import logging
 import os
 import json
@@ -46,6 +47,45 @@ router = APIRouter(
     tags=["design-agents"],
     responses={404: {"description": "Not found"}},
 )
+
+# Import DAL dependency for session persistence
+from ..dependencies import DAL
+
+
+# --- Session Pydantic Schemas ---
+
+class DesignAgentSessionResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True, populate_by_name=True)
+    id: str
+    owner_id: Optional[str] = Field(default=None, serialization_alias="ownerId", alias="ownerId")
+    name: str
+    description: Optional[str] = None
+    state_data: dict = Field(default={}, serialization_alias="stateData", alias="stateData")
+    active_step_id: Optional[str] = Field(default=None, serialization_alias="activeStepId", alias="activeStepId")
+    completed_steps: List[str] = Field(default=[], serialization_alias="completedSteps", alias="completedSteps")
+    status: str = "active"
+    created_at: Optional[datetime] = Field(default=None, serialization_alias="createdAt", alias="createdAt")
+    updated_at: Optional[datetime] = Field(default=None, serialization_alias="updatedAt", alias="updatedAt")
+
+
+class DesignAgentSessionCreate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    name: str
+    description: Optional[str] = None
+    ownerId: Optional[str] = None
+    stateData: dict = {}
+    activeStepId: Optional[str] = None
+    completedSteps: List[str] = []
+
+
+class DesignAgentSessionUpdate(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    name: Optional[str] = None
+    description: Optional[str] = None
+    stateData: Optional[dict] = None
+    activeStepId: Optional[str] = None
+    completedSteps: Optional[List[str]] = None
+    status: Optional[str] = None
 
 class DesignRequest(BaseModel):
     prompt: str
@@ -305,3 +345,48 @@ async def export_to_word(request: ExportRequest):
     except Exception as e:
         logger.error(f"Word export failed: {e}")
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# --- Design Agent Session CRUD ---
+
+@router.get("/sessions", response_model=List[DesignAgentSessionResponse])
+async def list_sessions(
+    dal: DAL,
+    ownerId: Optional[str] = Query(default=None),
+):
+    """List design agent sessions, optionally filtered by owner."""
+    return await dal.get_design_agent_sessions(ownerId)
+
+
+@router.get("/sessions/{session_id}", response_model=DesignAgentSessionResponse)
+async def get_session(session_id: str, dal: DAL):
+    """Get a single design agent session by ID."""
+    session = await dal.get_design_agent_session_by_id(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return session
+
+
+@router.post("/sessions", response_model=DesignAgentSessionResponse, status_code=201)
+async def create_session(data: DesignAgentSessionCreate, dal: DAL):
+    """Create a new design agent session."""
+    return await dal.create_design_agent_session(data.model_dump())
+
+
+@router.put("/sessions/{session_id}", response_model=DesignAgentSessionResponse)
+async def update_session(session_id: str, data: DesignAgentSessionUpdate, dal: DAL):
+    """Update a design agent session's state or progress."""
+    try:
+        update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+        return await dal.update_design_agent_session(session_id, update_data)
+    except Exception as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.delete("/sessions/{session_id}")
+async def delete_session(session_id: str, dal: DAL):
+    """Delete a design agent session."""
+    success = await dal.delete_design_agent_session(session_id)
+    if not success:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"message": "Session deleted"}

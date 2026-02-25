@@ -18,7 +18,10 @@
             "@eng-suite/api": ["packages/api-std/src"],
             "@eng-suite/api/*": ["packages/api-std/src/*"],
             "@eng-suite/physics": ["packages/physics-engine/src"],
-            "@eng-suite/physics/*": ["packages/physics-engine/src/*"]
+            "@eng-suite/physics/*": ["packages/physics-engine/src/*"],
+            "@eng-suite/types": ["packages/types/dist/index.ts"],
+            "@eng-suite/api-client": ["packages/api-client/src/index.ts"],
+            "@eng-suite/api-client/*": ["packages/api-client/src/*"]
         }
     }
 }

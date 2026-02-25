@@ -173,9 +173,9 @@ class TodoUpdate(BaseModel):
 # --- Equipment Endpoints ---
 
 @router.get("/equipment", response_model=List[EquipmentResponse])
-async def get_equipment(dal: DAL, area_id: Optional[str] = None):
-    """Get all equipment, optionally filtered by area."""
-    return await dal.get_equipment(area_id)
+async def get_equipment(dal: DAL, area_id: Optional[str] = None, type: Optional[str] = None):
+    """Get all equipment, optionally filtered by area and/or equipment type (e.g. type=tank)."""
+    return await dal.get_equipment(area_id=area_id, type=type)
 
 
 class EquipmentCreate(BaseModel):

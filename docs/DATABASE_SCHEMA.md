@@ -60,3 +60,73 @@
 ## Reference Data
 - **`fittings_catalog`**: Standard Le/D or K values for fittings.
 - **`pipe_schedule`**: ID, OD, Wall Thickness.
+
+---
+
+## App-Specific Resources
+These three tables were added (migration `202602250001`) to give the stateless frontend apps persistent storage via the same centralised API.
+
+### `venting_calculations`
+Stores saved API 2000 tank venting calculations from `apps/venting-calculation` (port 3005).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid | PK |
+| area_id | uuid | FK → areas.id (SET NULL), nullable |
+| equipment_id | uuid | FK → equipment.id (SET NULL), nullable |
+| owner_id | uuid | FK → users.id, nullable (no auth in this app yet) |
+| name | varchar(255) | Human-readable label, e.g. "T-101 Rev 0" |
+| description | text | Optional free-text |
+| status | enum | `draft` \| `in_review` \| `approved` (default `draft`) |
+| inputs | jsonb | Full `CalculationInput` shape from the frontend |
+| results | jsonb | Full `CalculationResult` shape (null until calculated) |
+| api_edition | varchar(10) | `5TH` \| `6TH` \| `7TH` (default `7TH`) |
+| is_active | boolean | Soft-delete flag (default `true`) |
+| deleted_at | timestamptz | Set on soft-delete, null otherwise |
+| created_at | timestamptz | Auto |
+| updated_at | timestamptz | Auto |
+
+**Indexes:** `ix_venting_calculations_area_id`, `ix_venting_calculations_owner_id`
+**Soft-delete:** `DELETE /venting/{id}` sets `is_active=false` + `deleted_at`. Use `GET /venting?includeDeleted=true` to see soft-deleted records. `POST /venting/{id}/restore` reverses.
+
+---
+
+### `network_designs`
+Stores saved hydraulic network editor designs from `apps/network-editor` (port 3002).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid | PK |
+| area_id | uuid | FK → areas.id (SET NULL), nullable |
+| owner_id | uuid | FK → users.id, nullable |
+| name | varchar(255) | Human-readable label |
+| description | text | Optional free-text |
+| network_data | jsonb | Full `NetworkState` (nodes + pipes + fluid + project details) |
+| node_count | int | Cached count for list display (default 0) |
+| pipe_count | int | Cached count for list display (default 0) |
+| created_at | timestamptz | Auto |
+| updated_at | timestamptz | Auto |
+
+**Indexes:** `ix_network_designs_area_id`, `ix_network_designs_owner_id`
+**Delete:** Hard delete only (no soft-delete).
+
+---
+
+### `design_agent_sessions`
+Stores saved design agent workflow sessions from `apps/design-agents` (port 3004).
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid | PK |
+| owner_id | uuid | FK → users.id, nullable |
+| name | varchar(255) | Human-readable session name |
+| description | text | Optional free-text |
+| state_data | jsonb | Full `DesignState` from the Zustand store |
+| active_step_id | varchar(100) | Current active workflow step ID, nullable |
+| completed_steps | text[] | Array of completed step IDs |
+| status | enum | `active` \| `completed` \| `archived` (default `active`) |
+| created_at | timestamptz | Auto |
+| updated_at | timestamptz | Auto |
+
+**Indexes:** `ix_design_agent_sessions_owner_id`
+**Delete:** Hard delete only.

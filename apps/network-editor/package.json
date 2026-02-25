@@ -27,7 +27,9 @@
         "uuid": "^13.0.0",
         "xlsx": "^0.18.5",
         "zustand": "^5.0.9",
+        "@eng-suite/api-client": "*",
         "@eng-suite/physics": "*",
+        "@eng-suite/types": "*",
         "@eng-suite/ui-kit": "*",
         "@repo/ui": "*"
     },

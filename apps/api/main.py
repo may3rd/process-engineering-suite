@@ -64,6 +64,8 @@ from apps.api.app.routers import (
     audit_router,
     design_agents_router,
     vessels_router,
+    venting_router,
+    network_router,
 )
 
 app.include_router(hierarchy_router)
@@ -75,6 +77,8 @@ app.include_router(revisions_router)
 app.include_router(audit_router)
 app.include_router(design_agents_router)
 app.include_router(vessels_router)
+app.include_router(venting_router)
+app.include_router(network_router)
 
 
 # Configure CORS for local development
@@ -86,11 +90,13 @@ app.add_middleware(
         "http://localhost:3002",
         "http://localhost:3003",
         "http://localhost:3004",
+        "http://localhost:3005",
         "http://127.0.0.1:3000",
         "http://127.0.0.1:3001",
         "http://127.0.0.1:3002",
         "http://127.0.0.1:3003",
         "http://127.0.0.1:3004",
+        "http://127.0.0.1:3005",
         "http://localhost:8000",
         "http://127.0.0.1:8000",
     ],

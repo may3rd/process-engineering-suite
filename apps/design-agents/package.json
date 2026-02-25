@@ -12,7 +12,9 @@
   "dependencies": {
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.1",
+    "@eng-suite/api-client": "*",
     "@eng-suite/physics": "*",
+    "@eng-suite/types": "*",
     "@eng-suite/ui-kit": "*",
     "@mui/icons-material": "^7.3.6",
     "@mui/material": "^7.3.6",

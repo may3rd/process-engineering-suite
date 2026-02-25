@@ -1,12 +1,21 @@
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import {
   Box,
   Chip,
+  CircularProgress,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   FormControlLabel,
   IconButton,
   LinearProgress,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemText,
   Stack,
   Switch,
+  TextField,
   Tooltip,
   Typography,
   alpha,
@@ -16,6 +25,8 @@ import {
   AutoFixHigh as AgentIcon,
   Brightness4 as DarkIcon,
   Brightness7 as LightIcon,
+  CloudDownload as CloudLoadIcon,
+  CloudUpload as CloudSaveIcon,
   DeleteSweep as ClearIcon,
   Menu as MenuIcon,
   Save as SaveIcon,
@@ -25,6 +36,7 @@ import {
 import { useDesignStore } from '../store/useDesignStore';
 import { DesignState } from '../types';
 import { StatusIndicator } from './common/StatusIndicator';
+import { useSavedSessions } from '../hooks/useSavedSessions';
 
 interface TopToolbarProps {
   onToggleTheme: () => void;
@@ -36,6 +48,10 @@ export const TopToolbar = ({ onToggleTheme, isDarkMode, onMenuClick }: TopToolba
   const theme = useTheme();
   const { activeStepId, steps, designState, setActiveStep, setDesignState, updateDesignState, clearProject } = useDesignStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const { save: cloudSave, fetchList, savedItems, isSaving, isLoading } = useSavedSessions();
+  const [cloudSaveOpen, setCloudSaveOpen] = useState(false);
+  const [cloudLoadOpen, setCloudLoadOpen] = useState(false);
+  const [sessionName, setSessionName] = useState('');
 
   const completedSteps = steps.filter((step) => step.status === 'completed').length;
   const progress = steps.length === 0 ? 0 : (completedSteps / steps.length) * 100;
@@ -102,6 +118,33 @@ export const TopToolbar = ({ onToggleTheme, isDarkMode, onMenuClick }: TopToolba
 
   const handleTurboToggle = (enabled: boolean) => {
     updateDesignState({ turbo_mode: enabled });
+  };
+
+  const handleCloudSave = async () => {
+    if (!sessionName.trim()) return;
+    const completedIds = steps.filter((s) => s.status === 'completed').map((s) => s.id);
+    try {
+      await cloudSave(
+        sessionName.trim(),
+        designState as unknown as Record<string, unknown>,
+        activeStepId,
+        completedIds,
+      );
+      setCloudSaveOpen(false);
+      setSessionName('');
+    } catch {
+      // error handled inside hook
+    }
+  };
+
+  const handleOpenCloudLoad = async () => {
+    setCloudLoadOpen(true);
+    await fetchList();
+  };
+
+  const handleLoadSession = (session: (typeof savedItems)[number]) => {
+    setDesignState(session.stateData as unknown as DesignState);
+    setCloudLoadOpen(false);
   };
 
   return (
@@ -204,9 +247,25 @@ export const TopToolbar = ({ onToggleTheme, isDarkMode, onMenuClick }: TopToolba
                 <SaveIcon fontSize="small" />
               </IconButton>
             </Tooltip>
-            <Tooltip title="Load Project">
+            <Tooltip title="Load Project (file)">
               <IconButton onClick={handleLoadClick} size="small">
                 <LoadIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            {/* Cloud save/load */}
+            <Tooltip title="Save session to cloud">
+              <IconButton
+                onClick={() => { setSessionName(''); setCloudSaveOpen(true); }}
+                size="small"
+                color="primary"
+                disabled={isSaving}
+              >
+                {isSaving ? <CircularProgress size={16} /> : <CloudSaveIcon fontSize="small" />}
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Load session from cloud">
+              <IconButton onClick={handleOpenCloudLoad} size="small" color="primary">
+                <CloudLoadIcon fontSize="small" />
               </IconButton>
             </Tooltip>
             <Tooltip title="Settings">
@@ -223,6 +282,69 @@ export const TopToolbar = ({ onToggleTheme, isDarkMode, onMenuClick }: TopToolba
           </Stack>
         </Stack>
       </Box>
+
+      {/* Cloud Save dialog */}
+      <Dialog open={cloudSaveOpen} onClose={() => setCloudSaveOpen(false)} maxWidth="xs" fullWidth>
+        <DialogTitle>Save Session to Cloud</DialogTitle>
+        <DialogContent>
+          <TextField
+            autoFocus
+            fullWidth
+            label="Session name"
+            placeholder="e.g. Ethylene Plant Concept Rev 0"
+            value={sessionName}
+            onChange={(e) => setSessionName(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleCloudSave(); }}
+            sx={{ mt: 1 }}
+            size="small"
+          />
+        </DialogContent>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1, px: 3, pb: 2 }}>
+          <IconButton onClick={() => setCloudSaveOpen(false)} size="small" sx={{ mr: 'auto' }}>
+            Cancel
+          </IconButton>
+          <IconButton
+            onClick={handleCloudSave}
+            disabled={!sessionName.trim() || isSaving}
+            size="small"
+            color="primary"
+          >
+            {isSaving ? <CircularProgress size={14} /> : <CloudSaveIcon fontSize="small" />}
+          </IconButton>
+        </Box>
+      </Dialog>
+
+      {/* Cloud Load dialog */}
+      <Dialog open={cloudLoadOpen} onClose={() => setCloudLoadOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Load Session from Cloud</DialogTitle>
+        <DialogContent sx={{ p: 0 }}>
+          {isLoading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : savedItems.length === 0 ? (
+            <Typography sx={{ p: 3, textAlign: 'center' }} color="text.secondary">
+              No saved sessions yet.
+            </Typography>
+          ) : (
+            <List dense>
+              {savedItems.map((session) => (
+                <ListItem key={session.id} disablePadding>
+                  <ListItemButton onClick={() => handleLoadSession(session)}>
+                    <ListItemText
+                      primary={session.name}
+                      secondary={`Status: ${session.status ?? 'active'} · ${session.createdAt ? new Date(session.createdAt).toLocaleDateString() : ''}`}
+                    />
+                  </ListItemButton>
+                </ListItem>
+              ))}
+            </List>
+          )}
+        </DialogContent>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', px: 3, pb: 2 }}>
+          <IconButton onClick={() => setCloudLoadOpen(false)} size="small">Close</IconButton>
+        </Box>
+      </Dialog>
     </>
   );
 };
