@@ -10,7 +10,6 @@ import { useCalculatorStore } from "@/lib/store/calculatorStore"
 import type { CalculationInput, CalculationMetadata, RevisionRecord } from "@/types"
 import { TankConfiguration } from "@/types"
 import type { Resolver } from "react-hook-form"
-import type { DefaultValues } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { InputPanel } from "./components/InputPanel"
 import { ResultsPanel } from "./components/ResultsPanel"
@@ -21,31 +20,35 @@ import { LoadCalculationButton } from "./components/LoadCalculationButton"
 import { UpdateEquipmentButton } from "./components/UpdateEquipmentButton"
 
 // ─── Default form values ───────────────────────────────────────────────────────
-// Required enum fields must have valid defaults; numeric fields start empty.
+// Numeric fields default to "" (empty string) so <input type="number"> clears
+// visually on reset. With valueAsNumber: true, "" → NaN, which Zod's
+// nanOptionalPositive helper already converts to undefined.
+// Using undefined instead would leave the browser input showing its old value.
+const NUMERIC = "" as unknown as number
 
-const createDefaultValues = (): DefaultValues<CalculationInput> => ({
+const createDefaultValues = () => ({
   tankNumber: "",
   description: "",
-  diameter: undefined,
-  height: undefined,
-  latitude: undefined,
-  designPressure: undefined,
+  diameter: NUMERIC,
+  height: NUMERIC,
+  latitude: NUMERIC,
+  designPressure: NUMERIC,
   tankConfiguration: TankConfiguration.BARE_METAL,
-  insulationThickness: undefined,
-  insulationConductivity: undefined,
-  insideHeatTransferCoeff: undefined,
-  insulatedSurfaceArea: undefined,
-  avgStorageTemp: undefined,
-  vapourPressure: undefined,
+  insulationThickness: NUMERIC,
+  insulationConductivity: NUMERIC,
+  insideHeatTransferCoeff: NUMERIC,
+  insulatedSurfaceArea: NUMERIC,
+  avgStorageTemp: NUMERIC,
+  vapourPressure: NUMERIC,
   flashBoilingPointType: "FP" as const,
-  flashBoilingPoint: undefined,
-  latentHeat: undefined,
-  relievingTemperature: undefined,
-  molecularMass: undefined,
-  incomingStreams: [],
-  outgoingStreams: [],
-  drainLineSize: undefined,
-  maxHeightAboveDrain: undefined,
+  flashBoilingPoint: NUMERIC,
+  latentHeat: NUMERIC,
+  relievingTemperature: NUMERIC,
+  molecularMass: NUMERIC,
+  incomingStreams: [] as CalculationInput["incomingStreams"],
+  outgoingStreams: [] as CalculationInput["outgoingStreams"],
+  drainLineSize: NUMERIC,
+  maxHeightAboveDrain: NUMERIC,
   apiEdition: "7TH" as const,
 })
 
