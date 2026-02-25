@@ -7,6 +7,7 @@ import CalculateIcon from "@mui/icons-material/Calculate";
 import TuneIcon from "@mui/icons-material/Tune";
 import ScienceIcon from "@mui/icons-material/Science";
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
+import AirIcon from '@mui/icons-material/Air';
 import { Timeline } from "@mui/icons-material";
 import { motion, Variants } from "framer-motion";
 
@@ -33,6 +34,14 @@ const tools = [
       "Multi-Agent system for process design. Includes agents for equipment sizing, piping, and more.",
     icon: <AutoFixHighIcon fontSize="large" />,
     href: "/design-agents",
+    status: "active" as const,
+  },
+  {
+    title: "Tank Venting Calculator",
+    description:
+      "Atmospheric & low-pressure storage tank venting per API 2000. Normal and emergency venting calculations.",
+    icon: <AirIcon fontSize="large" />,
+    href: "/venting-calculation/calculator",
     status: "active" as const,
   },
   {

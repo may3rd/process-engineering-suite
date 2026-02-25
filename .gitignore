@@ -69,3 +69,5 @@ yarn-error.log*
 # user set
 apps/multi-agents/
 assets/
+.agent/
+conductor/

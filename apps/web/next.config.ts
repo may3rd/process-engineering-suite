@@ -45,6 +45,11 @@ const designAgentsOrigin = createProxyTarget(
   "https://process-engineering-suite-design-agents.vercel.app",
   "http://localhost:3004",
 );
+const ventingOrigin = createProxyTarget(
+  "VENTING_URL",
+  "https://process-engineering-suite-venting.vercel.app",
+  "http://localhost:3005",
+);
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -74,6 +79,10 @@ const nextConfig: NextConfig = {
       {
         source: "/design-agents/:path*",
         destination: `${designAgentsOrigin}/design-agents/:path*`,
+      },
+      {
+        source: "/venting-calculation/:path*",
+        destination: `${ventingOrigin}/venting-calculation/:path*`,
       },
     ];
   },

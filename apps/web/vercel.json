@@ -1,14 +1,19 @@
 {
-  "redirects": [
-    {
-      "source": "/network-editor",
-      "destination": "https://network-editor.vercel.app/network-editor",
-      "permanent": false
-    },
-    {
-      "source": "/psv",
-      "destination": "https://psv.vercel.app/psv",
-      "permanent": false
-    }
-  ]
+    "redirects": [
+        {
+            "source": "/network-editor",
+            "destination": "https://network-editor.vercel.app/network-editor",
+            "permanent": false
+        },
+        {
+            "source": "/psv",
+            "destination": "https://psv.vercel.app/psv",
+            "permanent": false
+        },
+        {
+            "source": "/venting-calculation/calculator",
+            "destination": "https://psv.vercel.app/psv/:path*",
+            "permanent": false
+        }
+    ]
 }
