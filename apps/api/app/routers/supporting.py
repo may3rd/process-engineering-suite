@@ -178,6 +178,15 @@ async def get_equipment(dal: DAL, area_id: Optional[str] = None, type: Optional[
     return await dal.get_equipment(area_id=area_id, type=type)
 
 
+@router.get("/equipment/{equipment_id}", response_model=EquipmentResponse)
+async def get_equipment_by_id(equipment_id: str, dal: DAL):
+    """Get one equipment by ID."""
+    equipment = await dal.get_equipment_by_id(equipment_id)
+    if not equipment:
+        raise HTTPException(status_code=404, detail="Equipment not found")
+    return equipment
+
+
 class EquipmentCreate(BaseModel):
     model_config = ConfigDict(extra='ignore')
     areaId: str
@@ -232,6 +241,16 @@ async def create_equipment(data: EquipmentCreate, dal: DAL):
 @router.put("/equipment/{equipment_id}", response_model=EquipmentResponse)
 async def update_equipment(equipment_id: str, data: EquipmentUpdate, dal: DAL):
     """Update an equipment."""
+    try:
+        update_data = {k: v for k, v in data.model_dump().items() if v is not None}
+        return await dal.update_equipment(equipment_id, update_data)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))
+
+
+@router.post("/equipment/{equipment_id}/update", response_model=EquipmentResponse)
+async def update_equipment_post(equipment_id: str, data: EquipmentUpdate, dal: DAL):
+    """Update an equipment (POST alias for environments that block PUT)."""
     try:
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         return await dal.update_equipment(equipment_id, update_data)

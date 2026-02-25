@@ -3,6 +3,7 @@
 import { useState, useCallback } from "react"
 import { apiClient } from "@/lib/apiClient"
 import type { components } from "@eng-suite/types"
+import type { CalculationMetadata, RevisionRecord } from "@/types"
 
 type VentingCalculation = components["schemas"]["VentingCalculationResponse"]
 
@@ -25,17 +26,24 @@ export function useSavedCalculations() {
       inputs: Record<string, unknown>,
       results?: Record<string, unknown> | null,
       equipmentId?: string | null,
+      calculationMetadata?: CalculationMetadata,
+      revisionHistory?: RevisionRecord[],
     ) => {
       setIsSaving(true)
       setError(null)
       try {
-        const created = await apiClient.venting.create({
+        const payload: Record<string, unknown> = {
           name,
           inputs,
           results: results ?? undefined,
           apiEdition: (inputs.apiEdition as string | undefined) ?? "7TH",
           ...(equipmentId ? { equipmentId } : {}),
-        })
+          calculationMetadata: calculationMetadata ?? undefined,
+          revisionHistory: revisionHistory ?? [],
+        }
+        const created = await apiClient.venting.create(
+          payload as unknown as components["schemas"]["VentingCalculationCreate"]
+        )
         return created
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Save failed"

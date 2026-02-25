@@ -401,6 +401,31 @@
       "updatedAt": "2024-06-05T10:00:00Z"
     },
     {
+      "id": "bb40cb96-1f9d-4f41-9b20-1290f8d48011",
+      "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
+      "type": "tank",
+      "tag": "T-SEED-100",
+      "name": "Seed Tank",
+      "description": "Seeded tank for venting linkage test",
+      "designPressure": 0.1,
+      "designPressureUnit": "barg",
+      "ownerId": "f6c289ac-fabe-4d2e-a635-127e5b9045ad",
+      "status": "active",
+      "details": {
+        "tankType": "vertical_cylindrical",
+        "orientation": "vertical",
+        "innerDiameter": 3200,
+        "height": 12500,
+        "latitude": 12.7,
+        "workingTemperature": 35,
+        "workingTemperatureUnit": "C",
+        "vapourPressure": 18.5,
+        "vapourPressureUnit": "kPa"
+      },
+      "createdAt": "2024-06-05T10:00:00Z",
+      "updatedAt": "2024-06-05T10:00:00Z"
+    },
+    {
       "id": "e0000002-0002-0002-0002-000000000002",
       "areaId": "503b8fcf-43f7-4ca4-a512-b561fcb78617",
       "type": "vessel",

@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useSavedCalculations } from "@/lib/hooks/useSavedCalculations"
-import type { CalculationInput } from "@/types"
+import type { CalculationInput, CalculationMetadata, RevisionRecord } from "@/types"
 
 interface Props {
   /**
@@ -22,13 +22,39 @@ interface Props {
    * Passes the equipmentId of the linked tank (or null if not linked).
    * Use this in page.tsx to restore the `linkedEquipmentId` state so re-saves preserve the link.
    */
-  onTankLinked?: (equipmentId: string | null) => void
+  onTankLinked?: (equipmentId: string | null, tankTag?: string | null) => void
+  onCalculationLoaded?: (metadata: CalculationMetadata, revisionHistory: RevisionRecord[]) => void
+}
+
+const EMPTY_METADATA: CalculationMetadata = {
+  projectNumber: "",
+  documentNumber: "",
+  title: "",
+  projectName: "",
+  client: "",
+}
+
+const normalizeRevisionHistory = (value: unknown): RevisionRecord[] => {
+  if (!Array.isArray(value)) {
+    return []
+  }
+  return value
+    .filter((row): row is Record<string, unknown> => typeof row === "object" && row !== null)
+    .map((row) => ({
+      rev: (row.rev as string | undefined) ?? "",
+      by: (row.by as string | undefined) ?? "",
+      byDate: (row.byDate as string | undefined) ?? "",
+      checkedBy: (row.checkedBy as string | undefined) ?? "",
+      checkedDate: (row.checkedDate as string | undefined) ?? "",
+      approvedBy: (row.approvedBy as string | undefined) ?? "",
+      approvedDate: (row.approvedDate as string | undefined) ?? "",
+    }))
 }
 
 /**
  * Button that lists saved calculations and lets the user load one into the form.
  */
-export function LoadCalculationButton({ onTankLinked }: Props) {
+export function LoadCalculationButton({ onTankLinked, onCalculationLoaded }: Props) {
   const { reset } = useFormContext<CalculationInput>()
   const { fetchList, savedItems, isLoading, error } = useSavedCalculations()
   const [open, setOpen] = useState(false)
@@ -45,7 +71,18 @@ export function LoadCalculationButton({ onTankLinked }: Props) {
     reset(item.inputs as unknown as CalculationInput)
     // Restore the equipment link in the parent page so re-saves preserve the link
     if (onTankLinked) {
-      onTankLinked((item.equipmentId as string | null | undefined) ?? null)
+      onTankLinked((item.equipmentId as string | null | undefined) ?? null, null)
+    }
+    if (onCalculationLoaded) {
+      const metadataRaw = (item as unknown as Record<string, unknown>).calculationMetadata
+      const metadata = {
+        ...EMPTY_METADATA,
+        ...(typeof metadataRaw === "object" && metadataRaw !== null
+          ? (metadataRaw as Partial<CalculationMetadata>)
+          : {}),
+      }
+      const revisionHistoryRaw = (item as unknown as Record<string, unknown>).revisionHistory
+      onCalculationLoaded(metadata, normalizeRevisionHistory(revisionHistoryRaw))
     }
     setOpen(false)
   }

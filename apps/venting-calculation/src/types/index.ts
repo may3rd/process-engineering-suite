@@ -16,6 +16,24 @@ export enum TankConfiguration {
 export type ApiEdition = "5TH" | "6TH" | "7TH"
 export type FlashBoilingPointType = "FP" | "BP"
 
+export interface CalculationMetadata {
+  projectNumber: string
+  documentNumber: string
+  title: string
+  projectName: string
+  client: string
+}
+
+export interface RevisionRecord {
+  rev: string
+  by: string
+  byDate?: string
+  checkedBy: string
+  checkedDate?: string
+  approvedBy: string
+  approvedDate?: string
+}
+
 // ─── Input Types ──────────────────────────────────────────────────────────────
 
 export interface Stream {

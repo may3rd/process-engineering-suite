@@ -82,6 +82,7 @@ pytest -k "pattern"       # Run tests matching pattern
 - **Imports**: Named exports only (`export {MyClass}`), no default exports. Use ES6 modules
 - **Variables**: `const` by default, `let` only when reassignment is needed. Never `var`
 - **Types**: Strict mode enabled. Avoid `any`; prefer `unknown` or specific types. Be explicit for complex types
+- **Units/UOM**: Never hardcode unit conversions. Always use `convertUnit` from `packages/physics-engine/src/unitConversion.ts`
 - **Formatting**: Explicit semicolons, single quotes for strings, template literals for interpolation
 - **Naming**:
   - Classes/Interfaces/Types: `UpperCamelCase`
@@ -416,6 +417,7 @@ pytest -v tests/test_specific.py
 - Named exports only (no default exports)
 - `const` by default, no `var`
 - Strict typing; avoid `any`
+- Never hardcode unit conversions; use `convertUnit` from `packages/physics-engine/src/unitConversion.ts`
 - Explicit semicolons, single quotes
 - `===` / `!==` only
 - **No comments unless explicitly requested**

@@ -1,7 +1,7 @@
 """Database implementation of DataAccessLayer using SQLAlchemy."""
 import logging
 from typing import List, Optional, Any, Type, TypeVar
-from datetime import datetime, date
+from datetime import datetime
 from dateutil import parser as dateutil_parser
 
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -444,6 +444,13 @@ class DatabaseService(DataAccessLayer):
         await self._hydrate_equipment_details_from_subtypes(equipment_list)
         return equipment_list
 
+    async def get_equipment_by_id(self, equipment_id: str) -> Optional[dict]:
+        equipment = await self._get_by_id(Equipment, equipment_id)
+        if not equipment:
+            return None
+        await self._hydrate_equipment_details_from_subtypes([equipment])
+        return equipment
+
     async def get_equipment_links_by_psv(self, psv_id: str) -> List[dict]:
         return await self._get_all(EquipmentLink, EquipmentLink.protective_system_id == psv_id)
 
@@ -706,7 +713,6 @@ class DatabaseService(DataAccessLayer):
             "isPrimary": "is_primary",
             "createdBy": "created_by",
             "updatedBy": "updated_by",
-            "approvedBy": "approved_by",
             "relationship": "relationship_type",
             "inletNetwork": "inlet_network",
             "outletNetwork": "outlet_network",
@@ -999,6 +1005,32 @@ class DatabaseService(DataAccessLayer):
 
     # --- Venting Calculations ---
 
+    def _normalize_venting_revision_history(self, rows: Optional[list[dict]]) -> list[dict]:
+        if not isinstance(rows, list):
+            return []
+
+        normalized: list[dict] = []
+        for row in rows:
+            if not isinstance(row, dict):
+                continue
+            normalized.append(
+                {
+                    "rev": row.get("rev") or row.get("REV") or "",
+                    "by": row.get("by") or row.get("BY") or "",
+                    "byDate": row.get("byDate") or row.get("by_date"),
+                    "checkedBy": row.get("checkedBy") or row.get("checked_by") or "",
+                    "checkedDate": row.get("checkedDate") or row.get("checked_date"),
+                    "approvedBy": row.get("approvedBy") or row.get("approved_by") or "",
+                    "approvedDate": row.get("approvedDate") or row.get("approved_date"),
+                }
+            )
+
+        normalized.sort(
+            key=lambda item: item.get("byDate") or item.get("checkedDate") or item.get("approvedDate") or "",
+            reverse=True,
+        )
+        return normalized[:3]
+
     async def get_venting_calculations(
         self,
         area_id: Optional[str] = None,
@@ -1012,10 +1044,21 @@ class DatabaseService(DataAccessLayer):
             filters.append(VentingCalculation.equipment_id == equipment_id)
         if not include_deleted:
             filters.append(VentingCalculation.deleted_at.is_(None))
-        return await self._get_all(VentingCalculation, *filters)
+        calculations = await self._get_all(VentingCalculation, *filters)
+        for calculation in calculations:
+            calculation.revision_history = self._normalize_venting_revision_history(
+                calculation.revision_history
+            )
+        return calculations
 
     async def get_venting_calculation_by_id(self, calc_id: str) -> Optional[dict]:
-        return await self._get_by_id(VentingCalculation, calc_id)
+        calculation = await self._get_by_id(VentingCalculation, calc_id)
+        if not calculation:
+            return None
+        calculation.revision_history = self._normalize_venting_revision_history(
+            calculation.revision_history
+        )
+        return calculation
 
     async def create_venting_calculation(self, data: dict) -> dict:
         # Map camelCase keys from Pydantic schema to snake_case ORM fields
@@ -1028,9 +1071,28 @@ class DatabaseService(DataAccessLayer):
             "status": data.get("status", "draft"),
             "inputs": data.get("inputs", {}),
             "results": data.get("results"),
+            "calculation_metadata": data.get("calculationMetadata", {}),
+            "revision_history": self._normalize_venting_revision_history(data.get("revisionHistory")),
             "api_edition": data.get("apiEdition", "7TH"),
         }
-        return await self._create(VentingCalculation, {k: v for k, v in mapped.items() if v is not None or k in ("inputs", "results", "area_id", "equipment_id", "description")})
+        calculation = await self._create(
+            VentingCalculation,
+            {
+                k: v
+                for k, v in mapped.items()
+                if v is not None
+                or k in (
+                    "inputs",
+                    "results",
+                    "area_id",
+                    "equipment_id",
+                    "description",
+                    "calculation_metadata",
+                    "revision_history",
+                )
+            },
+        )
+        return calculation
 
     async def update_venting_calculation(self, calc_id: str, data: dict) -> dict:
         mapped = {}
@@ -1044,6 +1106,12 @@ class DatabaseService(DataAccessLayer):
             mapped["inputs"] = data["inputs"]
         if "results" in data:
             mapped["results"] = data["results"]
+        if "calculationMetadata" in data:
+            mapped["calculation_metadata"] = data["calculationMetadata"] or {}
+        if "revisionHistory" in data:
+            mapped["revision_history"] = self._normalize_venting_revision_history(
+                data["revisionHistory"]
+            )
         if "apiEdition" in data:
             mapped["api_edition"] = data["apiEdition"]
         if "isActive" in data:
@@ -1066,11 +1134,17 @@ class DatabaseService(DataAccessLayer):
         if not instance:
             raise ValueError("Venting calculation not found")
         if instance.deleted_at is None:
+            instance.revision_history = self._normalize_venting_revision_history(
+                instance.revision_history
+            )
             return instance
         instance.deleted_at = None
         instance.is_active = True
         await self.session.commit()
         await self.session.refresh(instance)
+        instance.revision_history = self._normalize_venting_revision_history(
+            instance.revision_history
+        )
         return instance
 
     # --- Network Designs ---

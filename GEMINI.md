@@ -10,7 +10,7 @@
 
 ## 2. Engineering Logic & Units
 - **Physical Units:** store all values in SI units (e.g., `kg`, `m`, `K`) with metadata for display units.
-- **Unit Conversion:** Centralize all conversions in a `packages/physics-engine/src/unitConversion.ts` directory.
+- **Unit Conversion:** Never hardcode conversions. Always use `convertUnit` from `packages/physics-engine/src/unitConversion.ts`.
 - **Immutability:** Use `Immer` for complex state updates to ensure stream properties aren't accidentally mutated across components.
 
 ## 3. Python & Excel Integration

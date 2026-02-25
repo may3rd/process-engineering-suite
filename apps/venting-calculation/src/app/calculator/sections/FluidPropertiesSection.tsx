@@ -25,12 +25,22 @@ export function FluidPropertiesSection() {
 
   const fpType = watch("flashBoilingPointType")
   const flashBPValue = watch("flashBoilingPoint")
+  const latentHeat = watch("latentHeat")
+  const relievingTemperature = watch("relievingTemperature")
+  const molecularMass = watch("molecularMass")
   const hasFlashBP = flashBPValue !== undefined && !Number.isNaN(flashBPValue)
   const isLowVol =
     hasFlashBP &&
     (fpType === "FP"
       ? flashBPValue! >= FLASH_POINT_THRESHOLD
       : flashBPValue! >= BOILING_POINT_THRESHOLD)
+  const hasCustomReferenceFluid =
+    latentHeat !== undefined &&
+    !Number.isNaN(latentHeat) &&
+    relievingTemperature !== undefined &&
+    !Number.isNaN(relievingTemperature) &&
+    molecularMass !== undefined &&
+    !Number.isNaN(molecularMass)
 
   return (
     <SectionCard title="Fluid Properties">
@@ -121,11 +131,13 @@ export function FluidPropertiesSection() {
       <div className="rounded-md border border-dashed p-3 space-y-3 bg-muted/20">
         <div className="flex items-center gap-2">
           <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
-            Emergency Venting — Reference Fluid
+            {hasCustomReferenceFluid ? "Emergency Venting" : "Emergency Venting — Reference Fluid"}
           </p>
-          <Badge variant="secondary" className="text-xs">
-            Hexane defaults if blank
-          </Badge>
+          {!hasCustomReferenceFluid && (
+            <Badge variant="secondary" className="text-xs">
+              Hexane defaults if blank
+            </Badge>
+          )}
         </div>
 
         <div className="grid grid-cols-3 gap-3">

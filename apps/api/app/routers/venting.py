@@ -23,6 +23,16 @@ class VentingCalculationResponse(BaseModel):
     status: str = "draft"
     inputs: dict = {}
     results: Optional[dict] = None
+    calculation_metadata: dict = Field(
+        default_factory=dict,
+        serialization_alias="calculationMetadata",
+        alias="calculationMetadata",
+    )
+    revision_history: List[dict] = Field(
+        default_factory=list,
+        serialization_alias="revisionHistory",
+        alias="revisionHistory",
+    )
     api_edition: str = Field(default="7TH", serialization_alias="apiEdition", alias="apiEdition")
     is_active: bool = Field(default=True, serialization_alias="isActive", alias="isActive")
     deleted_at: Optional[datetime] = Field(default=None, serialization_alias="deletedAt", alias="deletedAt")
@@ -39,6 +49,8 @@ class VentingCalculationCreate(BaseModel):
     ownerId: Optional[str] = None
     inputs: dict = {}
     results: Optional[dict] = None
+    calculationMetadata: Optional[dict] = None
+    revisionHistory: List[dict] = []
     apiEdition: str = "7TH"
 
 
@@ -49,6 +61,8 @@ class VentingCalculationUpdate(BaseModel):
     status: Optional[str] = None
     inputs: Optional[dict] = None
     results: Optional[dict] = None
+    calculationMetadata: Optional[dict] = None
+    revisionHistory: Optional[List[dict]] = None
     apiEdition: Optional[str] = None
     isActive: Optional[bool] = None
 

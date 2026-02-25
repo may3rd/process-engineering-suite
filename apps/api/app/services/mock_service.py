@@ -11,6 +11,33 @@ from .dal import DataAccessLayer
 logger = logging.getLogger(__name__)
 
 
+def _normalize_venting_revision_history(rows: object) -> list[dict]:
+    if not isinstance(rows, list):
+        return []
+
+    normalized: list[dict] = []
+    for row in rows:
+        if not isinstance(row, dict):
+            continue
+        normalized.append(
+            {
+                "rev": row.get("rev") or row.get("REV") or "",
+                "by": row.get("by") or row.get("BY") or "",
+                "byDate": row.get("byDate") or row.get("by_date"),
+                "checkedBy": row.get("checkedBy") or row.get("checked_by") or "",
+                "checkedDate": row.get("checkedDate") or row.get("checked_date"),
+                "approvedBy": row.get("approvedBy") or row.get("approved_by") or "",
+                "approvedDate": row.get("approvedDate") or row.get("approved_date"),
+            }
+        )
+
+    normalized.sort(
+        key=lambda item: item.get("byDate") or item.get("checkedDate") or item.get("approvedDate") or "",
+        reverse=True,
+    )
+    return normalized[:3]
+
+
 class MockService(DataAccessLayer):
     """Mock data implementation using JSON file.
     
@@ -268,14 +295,28 @@ class MockService(DataAccessLayer):
     
     # --- Equipment ---
     
-    async def get_equipment(self, area_id: Optional[str] = None) -> List[dict]:
+    async def get_equipment(
+        self, area_id: Optional[str] = None, type: Optional[str] = None
+    ) -> List[dict]:
         equipment = self._data.get("equipment", [])
         if area_id:
             equipment = [e for e in equipment if e.get("areaId") == area_id]
+        if type:
+            equipment = [e for e in equipment if e.get("type") == type]
         return equipment
+
+    async def get_equipment_by_id(self, equipment_id: str) -> Optional[dict]:
+        for equipment in self._data.get("equipment", []):
+            if equipment.get("id") == equipment_id:
+                return equipment
+        return None
     
     async def get_equipment_links_by_psv(self, psv_id: str) -> List[dict]:
-        return [l for l in self._data.get("equipmentLinks", []) if l["protectiveSystemId"] == psv_id]
+        return [
+            link
+            for link in self._data.get("equipmentLinks", [])
+            if link["protectiveSystemId"] == psv_id
+        ]
 
     async def create_equipment_link(self, data: dict) -> dict:
         data["id"] = str(uuid4())
@@ -335,6 +376,14 @@ class MockService(DataAccessLayer):
                 return updated
         raise ValueError(f"Comment not found: {comment_id}")
 
+    async def delete_comment(self, comment_id: str) -> bool:
+        comments = self._data.get("comments", [])
+        for i, comment in enumerate(comments):
+            if comment["id"] == comment_id:
+                del comments[i]
+                return True
+        return False
+
     async def get_notes_by_psv(self, psv_id: str) -> List[dict]:
         return [n for n in self._data.get("notes", []) if n["protectiveSystemId"] == psv_id]
 
@@ -384,6 +433,14 @@ class MockService(DataAccessLayer):
                 self._data["todos"][i] = {**todo, **data}
                 return self._data["todos"][i]
         raise ValueError(f"Todo not found: {todo_id}")
+
+    async def delete_todo(self, todo_id: str) -> bool:
+        todos = self._data.get("todos", [])
+        for i, todo in enumerate(todos):
+            if todo["id"] == todo_id:
+                del todos[i]
+                return True
+        return False
 
     # --- Revision History ---
 
@@ -483,15 +540,19 @@ class MockService(DataAccessLayer):
         
         # Apply filters
         if filters.get("entity_type"):
-            logs = [l for l in logs if l.get("entityType") == filters["entity_type"]]
+            logs = [
+                log
+                for log in logs
+                if log.get("entityType") == filters["entity_type"]
+            ]
         if filters.get("entity_id"):
-            logs = [l for l in logs if l.get("entityId") == filters["entity_id"]]
+            logs = [log for log in logs if log.get("entityId") == filters["entity_id"]]
         if filters.get("user_id"):
-            logs = [l for l in logs if l.get("userId") == filters["user_id"]]
+            logs = [log for log in logs if log.get("userId") == filters["user_id"]]
         if filters.get("project_id"):
-            logs = [l for l in logs if l.get("projectId") == filters["project_id"]]
+            logs = [log for log in logs if log.get("projectId") == filters["project_id"]]
         if filters.get("action"):
-            logs = [l for l in logs if l.get("action") == filters["action"]]
+            logs = [log for log in logs if log.get("action") == filters["action"]]
         
         total = len(logs)
         # Sort by createdAt descending
@@ -530,3 +591,183 @@ class MockService(DataAccessLayer):
         count = len(self._data.get("auditLogs", []))
         self._data["auditLogs"] = []
         return count
+
+    async def get_venting_calculations(
+        self,
+        area_id: Optional[str] = None,
+        equipment_id: Optional[str] = None,
+        include_deleted: bool = False,
+    ) -> List[dict]:
+        calculations = self._data.get("ventingCalculations", [])
+        if area_id:
+            calculations = [c for c in calculations if c.get("areaId") == area_id]
+        if equipment_id:
+            calculations = [c for c in calculations if c.get("equipmentId") == equipment_id]
+        if not include_deleted:
+            calculations = [c for c in calculations if c.get("deletedAt") is None]
+        for calculation in calculations:
+            calculation["revisionHistory"] = _normalize_venting_revision_history(
+                calculation.get("revisionHistory", [])
+            )
+        return calculations
+
+    async def get_venting_calculation_by_id(
+        self, calc_id: str, include_deleted: bool = False
+    ) -> Optional[dict]:
+        for calculation in self._data.get("ventingCalculations", []):
+            if calculation.get("id") == calc_id:
+                if not include_deleted and calculation.get("deletedAt") is not None:
+                    return None
+                calculation["revisionHistory"] = _normalize_venting_revision_history(
+                    calculation.get("revisionHistory", [])
+                )
+                return calculation
+        return None
+
+    async def create_venting_calculation(self, data: dict) -> dict:
+        calculation = {
+            **data,
+            "id": str(uuid4()),
+            "createdAt": datetime.utcnow().isoformat(),
+            "updatedAt": datetime.utcnow().isoformat(),
+            "deletedAt": None,
+            "calculationMetadata": data.get("calculationMetadata", {}),
+            "revisionHistory": _normalize_venting_revision_history(data.get("revisionHistory", [])),
+        }
+        self._data.setdefault("ventingCalculations", []).append(calculation)
+        return calculation
+
+    async def update_venting_calculation(self, calc_id: str, data: dict) -> dict:
+        calculations = self._data.get("ventingCalculations", [])
+        for i, calculation in enumerate(calculations):
+            if calculation.get("id") == calc_id:
+                updated = {
+                    **calculation,
+                    **data,
+                    "id": calc_id,
+                    "updatedAt": datetime.utcnow().isoformat(),
+                }
+                updated["revisionHistory"] = _normalize_venting_revision_history(
+                    updated.get("revisionHistory", [])
+                )
+                calculations[i] = updated
+                return updated
+        raise ValueError(f"Venting calculation not found: {calc_id}")
+
+    async def delete_venting_calculation(self, calc_id: str) -> bool:
+        calculations = self._data.get("ventingCalculations", [])
+        for i, calculation in enumerate(calculations):
+            if calculation.get("id") == calc_id:
+                calculations[i] = {
+                    **calculation,
+                    "deletedAt": datetime.utcnow().isoformat(),
+                    "updatedAt": datetime.utcnow().isoformat(),
+                }
+                return True
+        return False
+
+    async def restore_venting_calculation(self, calc_id: str) -> dict:
+        calculations = self._data.get("ventingCalculations", [])
+        for i, calculation in enumerate(calculations):
+            if calculation.get("id") == calc_id:
+                updated = {
+                    **calculation,
+                    "deletedAt": None,
+                    "updatedAt": datetime.utcnow().isoformat(),
+                }
+                calculations[i] = updated
+                calculations[i]["revisionHistory"] = _normalize_venting_revision_history(
+                    calculations[i].get("revisionHistory", [])
+                )
+                return updated
+        raise ValueError(f"Venting calculation not found: {calc_id}")
+
+    async def get_network_designs(self, area_id: Optional[str] = None) -> List[dict]:
+        designs = self._data.get("networkDesigns", [])
+        if area_id:
+            designs = [design for design in designs if design.get("areaId") == area_id]
+        return designs
+
+    async def get_network_design_by_id(self, design_id: str) -> Optional[dict]:
+        for design in self._data.get("networkDesigns", []):
+            if design.get("id") == design_id:
+                return design
+        return None
+
+    async def create_network_design(self, data: dict) -> dict:
+        design = {
+            **data,
+            "id": str(uuid4()),
+            "createdAt": datetime.utcnow().isoformat(),
+            "updatedAt": datetime.utcnow().isoformat(),
+        }
+        self._data.setdefault("networkDesigns", []).append(design)
+        return design
+
+    async def update_network_design(self, design_id: str, data: dict) -> dict:
+        designs = self._data.get("networkDesigns", [])
+        for i, design in enumerate(designs):
+            if design.get("id") == design_id:
+                updated = {
+                    **design,
+                    **data,
+                    "id": design_id,
+                    "updatedAt": datetime.utcnow().isoformat(),
+                }
+                designs[i] = updated
+                return updated
+        raise ValueError(f"Network design not found: {design_id}")
+
+    async def delete_network_design(self, design_id: str) -> bool:
+        designs = self._data.get("networkDesigns", [])
+        for i, design in enumerate(designs):
+            if design.get("id") == design_id:
+                del designs[i]
+                return True
+        return False
+
+    async def get_design_agent_sessions(
+        self, owner_id: Optional[str] = None
+    ) -> List[dict]:
+        sessions = self._data.get("designAgentSessions", [])
+        if owner_id:
+            sessions = [session for session in sessions if session.get("ownerId") == owner_id]
+        return sessions
+
+    async def get_design_agent_session_by_id(self, session_id: str) -> Optional[dict]:
+        for session in self._data.get("designAgentSessions", []):
+            if session.get("id") == session_id:
+                return session
+        return None
+
+    async def create_design_agent_session(self, data: dict) -> dict:
+        session = {
+            **data,
+            "id": str(uuid4()),
+            "createdAt": datetime.utcnow().isoformat(),
+            "updatedAt": datetime.utcnow().isoformat(),
+        }
+        self._data.setdefault("designAgentSessions", []).append(session)
+        return session
+
+    async def update_design_agent_session(self, session_id: str, data: dict) -> dict:
+        sessions = self._data.get("designAgentSessions", [])
+        for i, session in enumerate(sessions):
+            if session.get("id") == session_id:
+                updated = {
+                    **session,
+                    **data,
+                    "id": session_id,
+                    "updatedAt": datetime.utcnow().isoformat(),
+                }
+                sessions[i] = updated
+                return updated
+        raise ValueError(f"Design agent session not found: {session_id}")
+
+    async def delete_design_agent_session(self, session_id: str) -> bool:
+        sessions = self._data.get("designAgentSessions", [])
+        for i, session in enumerate(sessions):
+            if session.get("id") == session_id:
+                del sessions[i]
+                return True
+        return False

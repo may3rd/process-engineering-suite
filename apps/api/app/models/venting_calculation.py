@@ -51,6 +51,14 @@ class VentingCalculation(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMi
     # Full CalculationResult shape (set after successful calculation)
     results: Mapped[Optional[dict]] = mapped_column(JSONB, nullable=True)
 
+    # Document metadata used by report/export flows.
+    calculation_metadata: Mapped[dict] = mapped_column(
+        JSONB, nullable=False, default=dict, server_default="{}"
+    )
+    revision_history: Mapped[list] = mapped_column(
+        JSONB, nullable=False, default=list, server_default="[]"
+    )
+
     # API 2000 edition used
     api_edition: Mapped[str] = mapped_column(
         String(10), nullable=False, default="7TH", server_default="7TH"

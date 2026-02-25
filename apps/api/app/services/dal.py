@@ -176,6 +176,11 @@ class DataAccessLayer(ABC):
     async def get_equipment(self, area_id: Optional[str] = None, type: Optional[str] = None) -> List[dict]:
         """Get all equipment, optionally filtered by area and/or type."""
         pass
+
+    @abstractmethod
+    async def get_equipment_by_id(self, equipment_id: str) -> Optional[dict]:
+        """Get equipment by ID."""
+        pass
     
     @abstractmethod
     async def get_equipment_links_by_psv(self, psv_id: str) -> List[dict]:

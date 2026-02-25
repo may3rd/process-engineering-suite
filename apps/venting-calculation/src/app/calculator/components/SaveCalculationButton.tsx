@@ -17,17 +17,23 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useCalculatorStore } from "@/lib/store/calculatorStore"
 import { useSavedCalculations } from "@/lib/hooks/useSavedCalculations"
-import type { CalculationInput } from "@/types"
+import type { CalculationInput, CalculationMetadata, RevisionRecord } from "@/types"
 
 interface Props {
   /** ID of the linked equipment tank, if the user selected one via LinkTankButton. */
   equipmentId?: string | null
+  calculationMetadata: CalculationMetadata
+  revisionHistory: RevisionRecord[]
 }
 
 /**
  * Button that opens a dialog to name and save the current calculation to the DB.
  */
-export function SaveCalculationButton({ equipmentId }: Props) {
+export function SaveCalculationButton({
+  equipmentId,
+  calculationMetadata,
+  revisionHistory,
+}: Props) {
   const { getValues } = useFormContext<CalculationInput>()
   const { calculationResult } = useCalculatorStore()
   const { save, isSaving } = useSavedCalculations()
@@ -45,7 +51,14 @@ export function SaveCalculationButton({ equipmentId }: Props) {
       const results = calculationResult
         ? (calculationResult as unknown as Record<string, unknown>)
         : undefined
-      await save(name.trim(), inputs, results, equipmentId)
+      await save(
+        name.trim(),
+        inputs,
+        results,
+        equipmentId,
+        calculationMetadata,
+        revisionHistory
+      )
       setSaved(true)
       setTimeout(() => {
         setSaved(false)
