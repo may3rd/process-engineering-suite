@@ -43,6 +43,26 @@ const geometrySchema = z
 /** Milliseconds of inactivity before the API call fires. */
 const DEBOUNCE_MS = 300
 
+/**
+ * Convert empty-string sentinels back to `undefined` before schema parsing.
+ *
+ * React Hook Form's `valueAsNumber: true` turns an empty `<input type="number">`
+ * into `NaN` at runtime, which `nanOptionalPositive` handles. However, on
+ * `form.reset()` the `NUMERIC = "" as unknown as number` sentinel stores a real
+ * `""` string in the form state (not `NaN`). Both `z.number()` and `z.nan()`
+ * reject `""`, so `safeParse` fails silently until the user types a value.
+ *
+ * This helper converts any `""` leaf values to `undefined` so the Zod schemas
+ * work correctly with the sentinel immediately after a reset.
+ */
+function normalizeNumericSentinels(values: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {}
+  for (const [key, val] of Object.entries(values)) {
+    out[key] = val === "" ? undefined : val
+  }
+  return out
+}
+
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
 /**
@@ -76,7 +96,7 @@ export function useCalculation(control: Control<CalculationInput>) {
 
   // ── Immediate: client-side derived geometry ────────────────────────────────
   useEffect(() => {
-    const parsed = geometrySchema.safeParse(formValues)
+    const parsed = geometrySchema.safeParse(normalizeNumericSentinels(formValues as Record<string, unknown>))
     if (!parsed.success) {
       setDerivedGeometry(null)
       return
@@ -94,7 +114,7 @@ export function useCalculation(control: Control<CalculationInput>) {
   // ── Debounced: API call ────────────────────────────────────────────────────
   useEffect(() => {
     const timer = setTimeout(async () => {
-      const parsed = calculationInputSchema.safeParse(formValues)
+      const parsed = calculationInputSchema.safeParse(normalizeNumericSentinels(formValues as Record<string, unknown>))
       if (!parsed.success) {
         // Form is still incomplete — clear stale results and any previous error,
         // and let the checklist handle the "what to fill" guidance.
