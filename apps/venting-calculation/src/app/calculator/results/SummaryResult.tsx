@@ -26,19 +26,24 @@ function SummaryMetric({ label, value, sub }: SummaryMetricProps) {
 
 export function SummaryResult({ summary }: Props) {
   return (
-    <div className="grid grid-cols-3 gap-4 py-1">
-      <SummaryMetric
-        label="Design Outbreathing"
-        value={summary.designOutbreathing}
-      />
-      <SummaryMetric
-        label="Design Inbreathing"
-        value={summary.designInbreathing}
-      />
-      <SummaryMetric
-        label="Emergency Venting"
-        value={summary.emergencyVenting}
-      />
+    <div>
+      <div className="grid grid-cols-3 gap-4 py-1">
+        <SummaryMetric
+          label="Design Outbreathing"
+          value={summary.designOutbreathing}
+        />
+        <SummaryMetric
+          label="Design Inbreathing"
+          value={summary.designInbreathing}
+        />
+        <SummaryMetric
+          label="Emergency Venting"
+          value={summary.emergencyVenting}
+        />
+      </div>
+      <p className="text-center text-[10px] text-muted-foreground pt-1.5">
+        All flowrates at 0 °C / 101.325 kPa (standard reference conditions, metric API 2000)
+      </p>
     </div>
   )
 }

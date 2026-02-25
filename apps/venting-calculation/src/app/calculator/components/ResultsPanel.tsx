@@ -44,7 +44,8 @@ export function ResultsPanel() {
           {/* ── Warnings ────────────────────────────────────────────────────── */}
           {(calculationResult.warnings.capacityExceedsTable ||
             calculationResult.warnings.undergroundTank ||
-            calculationResult.warnings.hexaneDefaults) && (
+            calculationResult.warnings.hexaneDefaults ||
+            calculationResult.warnings.volatileLiquid) && (
               <div className="space-y-1.5">
                 {calculationResult.warnings.capacityExceedsTable && (
                   <WarningBanner color="yellow">
@@ -59,6 +60,11 @@ export function ResultsPanel() {
                 {calculationResult.warnings.hexaneDefaults && (
                   <WarningBanner color="orange">
                     Using Hexane defaults for latent heat / relieving temperature / molecular mass
+                  </WarningBanner>
+                )}
+                {calculationResult.warnings.volatileLiquid && (
+                  <WarningBanner color="yellow">
+                    Volatile liquid (TVP ≥ 5 kPa or FP &lt; 38 °C) — review API 2000 §3.3.2.1 and Annex A for potential additional vaporization allowances
                   </WarningBanner>
                 )}
               </div>

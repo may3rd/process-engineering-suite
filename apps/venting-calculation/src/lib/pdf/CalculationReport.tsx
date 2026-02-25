@@ -188,6 +188,11 @@ export function CalculationReport({ input, result }: ReportProps) {
             <Text>ℹ  Hexane defaults used for latent heat / relieving temperature / molecular mass.</Text>
           </View>
         )}
+        {warnings.volatileLiquid && (
+          <View style={s.warning}>
+            <Text>⚠  Volatile liquid (TVP ≥ 5 kPa or FP {"<"} 38 °C) — see API 2000 §3.3.2.1 and Annex A for additional vaporization allowances.</Text>
+          </View>
+        )}
 
         {/* ── Section I: Inputs ──────────────────────────────────────────── */}
         <SectionTitle>Section I — Input Parameters</SectionTitle>
@@ -281,6 +286,9 @@ export function CalculationReport({ input, result }: ReportProps) {
             <Text style={s.summaryUnit}>Nm³/h</Text>
           </View>
         </View>
+        <Text style={{ fontSize: 7, color: "#6b7280", textAlign: "center", marginTop: 4 }}>
+          All flowrates expressed at standard reference conditions: 0 °C / 101.325 kPa (metric API 2000 practice).
+        </Text>
 
         {/* ── Footer ─────────────────────────────────────────────────────── */}
         <View style={s.footer} fixed>

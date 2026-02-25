@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  transpilePackages: ["@eng-suite/physics", "@eng-suite/ui-kit"],
+  transpilePackages: ["@eng-suite/physics", "@eng-suite/ui-kit", "@eng-suite/api-client"],
   basePath: "/venting-calculation",
   env: {
     NEXT_PUBLIC_BASE_PATH: "/venting-calculation",

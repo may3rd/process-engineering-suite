@@ -145,6 +145,7 @@ export interface CalculationWarnings {
   capacityExceedsTable?: boolean // capacity > 30,000 m³
   undergroundTank?: boolean // F = 0, emergency vent = 0
   hexaneDefaults?: boolean // latent heat / MW / temp defaulted to Hexane
+  volatileLiquid?: boolean // TVP ≥ 5 kPa or FP < 37.8 °C — API 2000 §3.3.2.1 & Annex A
 }
 
 export interface CalculationResult {

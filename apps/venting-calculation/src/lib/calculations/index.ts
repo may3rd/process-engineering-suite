@@ -1,5 +1,5 @@
 import { CalculationInput, CalculationResult } from "@/types"
-import { CAPACITY_WARNING_M3 } from "@/lib/constants"
+import { CAPACITY_WARNING_M3, TVP_VOLATILE_THRESHOLD_KPA, FLASH_POINT_THRESHOLD } from "@/lib/constants"
 import { computeDerivedGeometry } from "./geometry"
 import { computeNormalVenting } from "./normalVenting"
 import { computeEmergencyVenting } from "./emergencyVenting"
@@ -52,6 +52,11 @@ export function calculate(input: CalculationInput): CalculationResult {
       input.latentHeat           === undefined ||
       input.relievingTemperature === undefined ||
       input.molecularMass        === undefined,
+    volatileLiquid:
+      input.vapourPressure >= TVP_VOLATILE_THRESHOLD_KPA ||
+      (input.flashBoilingPointType === "FP" &&
+       input.flashBoilingPoint !== undefined &&
+       input.flashBoilingPoint < FLASH_POINT_THRESHOLD),
   }
 
   return {

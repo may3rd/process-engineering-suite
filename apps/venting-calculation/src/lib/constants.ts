@@ -91,3 +91,13 @@ export const INSULATION_MATERIALS: InsulationMaterial[] = [
 export const LATITUDE_BAND_LOW = 42 // 0 < lat ≤ 42 → "below 42°"
 export const LATITUDE_BAND_MID = 58 // 42 < lat ≤ 58 → "between 42° and 58°"
 // lat > 58 → "above 58°"
+
+// ─── Nm³/h Standard Reference Conditions (metric API 2000 practice) ───────────
+/** Reference temperature for normal volumetric flowrates (Nm³/h) */
+export const STANDARD_TEMPERATURE_C = 0       // °C  (273.15 K)
+/** Reference pressure for normal volumetric flowrates (Nm³/h) */
+export const STANDARD_PRESSURE_KPA  = 101.325 // kPa (1 atm)
+
+// ─── Volatile Liquid Threshold (API 2000 §3.3.2.1) ────────────────────────────
+/** TVP at or above this value → fluid is classified volatile */
+export const TVP_VOLATILE_THRESHOLD_KPA = 5 // kPa(a)
