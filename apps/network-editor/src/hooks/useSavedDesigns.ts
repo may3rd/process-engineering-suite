@@ -26,6 +26,7 @@ export function useSavedDesigns() {
     try {
       const created = await engSuiteClient.network.create({
         name,
+        ownerId: "default",
         networkData,
         nodeCount,
         pipeCount,
