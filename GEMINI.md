@@ -21,7 +21,7 @@
 - **Style:** Use Materail UI for consistent theming and components. Based UI is in `packages/ui-kit/src/theme.ts`
 - **Layout:** Use `Grid` for responsive layouts.
 - **Inputs:** All numeric inputs must include:
-    - Use `apps/psv/UNIT_INPUT_STANDARD.md` for standardizing input fields.
+    - Use `apps/psv/docs/UNIT_INPUT_STANDARD.md` for standardizing input fields.
     - Unit suffixes (e.g., "kg/h", "bar").
     - Range validation (Min/Max) based on physical limits (e.g., T > 0 Kelvin, P > 0 Pa).
 - **Charts:** Use `Recharts` or `Plotly.js` for P&ID-style graphs and Phase Envelopes.

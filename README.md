@@ -1,221 +1,95 @@
-# Process Engineering Suite (PES)
+# Process Engineering Suite
 
-PES is a monorepo for process engineering workflows: hydraulic network editing, PSV workflows, and a shared backend API.
+A monorepo for process engineering calculations and workflows.
 
-Core rule: engineering calculations live in Python (see `AGENTS.md`).
+## Apps
 
-## What’s In This Repo
+| App | Port | Description |
+|-----|------|-------------|
+| `apps/web` | 3000 | Dashboard |
+| `apps/docs` | 3001 | Documentation site |
+| `apps/network-editor` | 3002 | Hydraulic network editor |
+| `apps/psv` | 3003 | PSV sizing workflow |
+| `apps/venting-calculation` | 3004 | Tank venting calculator |
 
-Apps (TypeScript / Next.js):
-- `apps/web` dashboard (port 3000)
-- `apps/docs` docs site (port 3001, when enabled)
-- `apps/network-editor` (port 3002)
-- `apps/psv` PSV workflow (port 3003)
-- `apps/design-agents` (port 3004, when enabled)
+## Backend
 
-Backend (Python / FastAPI):
-- `apps/api` API (port 8000, OpenAPI at `/docs`)
+| Service | Port | Description |
+|---------|------|-------------|
+| `services/api` | 8000 | FastAPI REST API |
+| `services/calc-engine` | - | Python calculation engine |
+| `services/design-agents` | - | AI design agents |
 
-## Quick Start (Docker, Recommended)
+## Quick Start
 
-This starts Postgres + API + all web apps via `infra/docker-compose.yml`.
+### Docker (Recommended)
 
-1) Set Postgres password (compose expects it):
 ```bash
+# 1. Set PostgreSQL password
 cd infra
-cat > .env <<'EOF'
-POSTGRES_PASSWORD=change-me
-EOF
-```
+echo "POSTGRES_PASSWORD=change-me" > .env
 
-2) Start the stack:
-```bash
-cd infra
+# 2. Start all services
 docker compose up -d --build
+
+# 3. Open in browser
+open http://localhost:3000      # Dashboard
+open http://localhost:8000/docs # API docs
 ```
 
-3) Open:
-- Dashboard: http://localhost:3000
-- Network Editor: http://localhost:3002
-- PSV: http://localhost:3003
-- API docs: http://localhost:8000/docs
+### Local Development (Bun)
 
-Notes:
-- The API runs Alembic migrations (`alembic upgrade head`) automatically on startup.
-- The dev compose file seeds the database from `apps/api/mock_data.json` on first boot (only if the DB is empty).
-
-## Local Dev (Bun)
-
-Prereqs:
-- Node.js 18+ (for Bun)
-- Bun
-
-Install + run all apps:
 ```bash
+# Install dependencies
 bun install
+
+# Run all apps
 bun run dev
 ```
 
-Common commands:
-```bash
-bun run build
-bun run lint
-bun run check-types
-bun run format
-```
-
-## Deployment Lanes (Vercel + AWS)
-
-To avoid AWS changes breaking Vercel deployments, this repo uses lane-based deployment configuration:
-
-- `DEPLOY_TARGET=vercel` for Vercel projects
-- `DEPLOY_TARGET=aws` for AWS deployments
-- `DEPLOY_TARGET=local` (default) for local development
-
-Key variables:
-
-- `NEXT_PUBLIC_API_URL`: browser-facing API base URL used by frontends
-- `API_PROXY_TARGET`: server-side rewrite target for PSV `/api/*` routes
-- `DOCS_URL`, `NETWORK_EDITOR_URL`, `PSV_URL`, `DESIGN_AGENTS_URL`: web dashboard cross-app rewrite targets
-
-Before merging deployment-related changes, run both lanes:
+## Common Commands
 
 ```bash
-bun run check:deploy:matrix
+bun run build        # Build all apps
+bun run lint         # Lint code
+bun run check-types  # Type check
+bun run format       # Format code
 ```
 
-Or run each lane independently:
+## Project Structure
 
-```bash
-bun run check:deploy:vercel
-bun run check:deploy:aws
+```
+apps/           # Frontend applications (Next.js)
+├── web/
+├── network-editor/
+├── psv/
+└── venting-calculation/
+
+services/       # Backend services (Python)
+├── api/        # FastAPI REST API
+├── calc-engine/
+└── design-agents/
+
+packages/       # Shared libraries
+├── api-client/
+├── types/
+├── ui/
+└── unit-converter/
+
+infra/          # Docker & deployment config
+docs/           # Architecture documentation
 ```
 
-## Hybrid Dev (Backend In Docker)
+## Documentation
 
-Run API + Postgres in Docker, run the frontends locally.
+- [DEVELOPING.md](DEVELOPING.md) - Setup guides
+- [docs/ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md) - Environment variables
+- [docs/DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md) - Database schema
+- [AGENTS.md](AGENTS.md) - Code conventions
 
-1) Backend:
-```bash
-cd infra
-docker compose up -d --build postgres api
-docker compose logs -f api
-```
+## Tech Stack
 
-2) Frontend:
-```bash
-bun install
-bun run dev
-```
-
-## API + Database
-
-### Data Source (DB vs Mock)
-
-The API can run in two modes:
-- Database (Postgres): normal mode
-- Mock (JSON file): fallback when DB is unavailable, or forced via env
-
-Environment variables:
-- `DATABASE_URL`: async SQLAlchemy URL (example: `postgresql+asyncpg://postgres:password@localhost:5432/engsuite`)
-- `USE_MOCK_DATA=true`: force mock mode even if DB is available
-- `SEED_FROM_MOCK=true`: seed the DB from `apps/api/mock_data.json` on startup (only if DB is empty)
-
-Check what the API is using:
-```bash
-curl http://localhost:8000/admin/data-source
-```
-
-### Migrations (Alembic)
-
-In Docker, migrations run on API startup. To run them manually:
-```bash
-cd infra
-docker compose exec -w /app/apps/api api alembic upgrade head
-```
-
-Create a new migration:
-```bash
-cd infra
-docker compose exec -w /app/apps/api api alembic revision --autogenerate -m "your_message"
-```
-
-### Seed / Export Mock Data
-
-Seed the database from `apps/api/mock_data.json`:
-```bash
-curl -X POST http://localhost:8000/admin/seed-from-mock
-```
-
-Export the current database contents back to `apps/api/mock_data.json`:
-```bash
-curl "http://localhost:8000/admin/export-mock-data?write_to_file=true"
-```
-
-Or from inside Docker:
-```bash
-docker compose -f infra/docker-compose.yml exec api python /app/apps/api/scripts/export_db_to_mock.py
-```
-
-### Backup / Restore (Admin)
-
-- UI: PSV Dashboard -> `System` tab (admin-only)
-- API:
-  - `GET /admin/backup` returns a `.sql` dump in DB mode (or a JSON export in mock mode)
-  - `POST /admin/restore` restores from an uploaded `.sql` (DB mode) or `.json` (mock mode)
-
-## Production / Single Image Deployment
-
-The root `Dockerfile` builds a single image that runs apps, API, and PostgreSQL via supervisord.
-
-Build:
-```bash
-docker build -t process-engineering-suite .
-```
-
-Run (Postgres included in the container):
-```bash
-docker run \
-  -p 3000:3000 \
-  -p 3001:3001 \
-  -p 3002:3002 \
-  -p 3003:3003 \
-  -p 3004:3004 \
-  -p 8000:8000 \
-  -e DEPLOY_TARGET="aws" \
-  -e POSTGRES_PASSWORD="change-me" \
-  -e POSTGRES_USER="postgres" \
-  -e POSTGRES_DB="engsuite" \
-  -e NEXT_PUBLIC_API_URL="https://api.your-domain.com" \
-  -e API_PROXY_TARGET="https://api.your-domain.com" \
-  -e DOCS_URL="https://docs.your-domain.com" \
-  -e NETWORK_EDITOR_URL="https://network-editor.your-domain.com" \
-  -e PSV_URL="https://psv.your-domain.com" \
-  -e DESIGN_AGENTS_URL="https://design-agents.your-domain.com" \
-  -v postgres_data:/var/lib/postgresql/data \
-  process-engineering-suite
-```
-
-If `DATABASE_URL` is not provided, the API derives it from `POSTGRES_PASSWORD`, `POSTGRES_USER`, and `POSTGRES_DB`.
-
-## Troubleshooting
-
-### `export-mock-data` Returns Empty Arrays
-
-- Check mode: `curl http://localhost:8000/admin/data-source`
-- If DB mode and empty, seed: `curl -X POST http://localhost:8000/admin/seed-from-mock`
-- If mock mode, verify `apps/api/mock_data.json` contains data (the API reads it on startup)
-
-### Alembic Error: `Path doesn't exist: alembic`
-
-This happens when Alembic runs from the wrong working directory. In Docker, the API should run with `working_dir=/app/apps/api`.
-
-## Repo Structure
-
-```text
-apps/        # Next.js apps + FastAPI API
-packages/    # Shared TypeScript packages
-services/    # Python calculation engine(s)
-infra/       # Docker compose + deployment helpers
-docs/        # Architecture / standards documentation
-```
+- **Frontend**: Next.js, TypeScript, Tailwind, Bun
+- **Backend**: Python, FastAPI, SQLAlchemy, Alembic
+- **Database**: PostgreSQL
+- **Deployment**: Docker, Vercel

@@ -1,9 +1,9 @@
 # PSV Database Schema (Current)
 
-This document reflects the current SQLAlchemy model definitions under `apps/api/app/models`.
+This document reflects the current SQLAlchemy model definitions under `services/api/app/models`.
 
 - Generated on: 2026-02-24
-- Source of truth: application models + Alembic migrations in `apps/api/alembic/versions`
+- Source of truth: application models + Alembic migrations in `services/api/alembic/versions`
 
 ## Entity Relationship Overview
 

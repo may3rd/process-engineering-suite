@@ -30,18 +30,11 @@
       "port": 3003
     },
     {
-      "name": "design-agents",
-      "runtimeExecutable": "bun",
-      "runtimeArgs": ["run", "dev"],
-      "cwd": "apps/design-agents",
-      "port": 3004
-    },
-    {
       "name": "venting-calculation",
       "runtimeExecutable": "bun",
       "runtimeArgs": ["run", "dev"],
       "cwd": "apps/venting-calculation",
-      "port": 3005
+      "port": 3004
     }
   ]
 }

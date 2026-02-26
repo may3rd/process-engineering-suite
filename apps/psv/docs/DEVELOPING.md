@@ -133,7 +133,7 @@ The PSV app includes an admin-style dashboard (role-gated) for managing:
 - API:
   - `GET /admin/backup` (DB mode -> `.sql`, mock mode -> JSON export)
   - `POST /admin/restore` (DB mode expects `.sql`, mock mode expects `.json`)
-  - `GET /admin/export-mock-data?write_to_file=true` writes `apps/api/mock_data.json` from the running database
+  - `GET /admin/export-mock-data?write_to_file=true` writes `services/api/mock_data.json` from the running database
 
 ## Next Steps for Development
 

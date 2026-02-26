@@ -13,6 +13,8 @@
     ```
     - Dashboard: [http://localhost:3000](http://localhost:3000)
     - Network Editor: [http://localhost:3002](http://localhost:3002)
+    - PSV: [http://localhost:3003](http://localhost:3003)
+    - Venting Calculation: [http://localhost:3004](http://localhost:3004)
 
 3.  **Build**:
     ```bash
@@ -21,10 +23,10 @@
 
 ## Project Structure
 
-- **`apps/`**: Contains the Next.js applications.
-- **`packages/`**: Contains shared packages.
-    - `ui-kit`: Shared React components and styles.
-    - `physics-engine`: Core calculation logic.
+- **`apps/`**: Next.js applications (web, network-editor, psv, venting-calculation, docs)
+- **`services/`**: Backend services (api, calc-engine, design-agents)
+- **`packages/`**: Shared packages (ui, ui-kit, physics-engine, api-client, types, unit-converter)
+- **`infra/`**: Docker and deployment config
 
 ## Coding Standards
 
@@ -81,10 +83,11 @@ onBack={() => navigator.pop()}  // or nav.pop() in render functions
 
 1.  Create a new branch for your feature or fix.
 2.  Implement your changes, following the coding standards.
-3.  Run `npm run build` to ensure no TypeScript or build errors.
+3.  Run `bun run build` to ensure no TypeScript or build errors.
 4.  Submit a Pull Request.
 
 ## Troubleshooting
 
 - **Hydration Errors**: If you see hydration mismatch errors, check for browser extensions injecting code. We use `suppressHydrationWarning` in `layout.tsx` to mitigate this.
 - **Type Errors**: If you encounter type mismatches between packages, ensure you have rebuilt the packages or that the types are correctly exported and imported.
+- **Docker Issues**: Use `infra/docker-compose.yml` for running services locally

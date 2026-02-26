@@ -151,27 +151,17 @@ export function CalculationMetadataSection({
 
               <div className="space-y-2">
                 <div className="overflow-x-auto rounded-md border">
-                  <table className="w-full min-w-[980px] table-fixed text-xs">
-                    <colgroup>
-                      <col className="w-[80px]" />
-                      <col className="w-[110px]" />
-                      <col className="w-[170px]" />
-                      <col className="w-[130px]" />
-                      <col className="w-[170px]" />
-                      <col className="w-[130px]" />
-                      <col className="w-[170px]" />
-                      <col className="w-[120px]" />
-                    </colgroup>
+                  <table className="w-full text-xs">
                     <thead>
                       <tr className="border-b text-left text-muted-foreground">
-                        <th className="p-2">Rev</th>
-                        <th className="p-2">By</th>
-                        <th className="p-2">Date</th>
-                        <th className="p-2">Checked</th>
-                        <th className="p-2">Date</th>
-                        <th className="p-2">Approved</th>
-                        <th className="p-2">Date</th>
-                        <th className="p-2" />
+                        <th className="p-2 w-16">Rev</th>
+                        <th className="p-2 w-24">By</th>
+                        <th className="p-2 w-28">Date</th>
+                        <th className="p-2 w-24">Checked</th>
+                        <th className="p-2 w-28">Date</th>
+                        <th className="p-2 w-24">Approved</th>
+                        <th className="p-2 w-28">Date</th>
+                        <th className="p-2 w-20" />
                       </tr>
                     </thead>
                     <tbody>
@@ -342,9 +332,9 @@ export function CalculationMetadataSection({
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() => setRevisionsDraft([])}
+                  onClick={() => setRevisionDialogOpen(false)}
                 >
-                  Clear
+                  Cancel
                 </Button>
                 <Button type="button" onClick={saveRevisions}>
                   Save Revisions

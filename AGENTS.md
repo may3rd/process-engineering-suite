@@ -176,18 +176,11 @@ pytest -k "pattern"       # Run tests matching pattern
 
 ## Repository Structure
 
-- `apps/`: Next.js applications (api, design-agents, docs, network-editor, psv, web)
-- `packages/`: Shared packages (api-client, api-std, eslint-config, physics-engine, schemas, tsconfig, typescript-config, ui, ui-kit, utils, vessels)
+- `apps/`: Next.js applications (docs, network-editor, psv, venting-calculation, web)
+- `packages/`: Shared packages (api-client, api-std, eslint-config, physics-engine, tsconfig, types, typescript-config, ui, ui-kit, unit-converter)
 - `conductor/`: Development guidelines and track metadata
 - `infra/`: Docker and infrastructure configs
-- `services/`: Backend services (calc-engine)
-
-## Single Image Deployment (Postgres Included)
-
-- The root `Dockerfile` builds a single image that runs apps, API, and PostgreSQL via `supervisord`.
-- Runtime environment variables: `POSTGRES_PASSWORD`, `POSTGRES_USER`, `POSTGRES_DB`. `DATABASE_URL` is optional and will be derived if not set.
-- Persist data with a named volume mounted to `/var/lib/postgresql/data`.
-- See `README.md` for the full `docker run` examples and notes on backups.
+- `services/`: Backend services (api, calc-engine, design-agents)
 
 When making changes, always match the existing code style and patterns in the file you're editing. Run `bun run lint` (TypeScript) or `ruff check` (Python) before committing.
 
@@ -304,36 +297,33 @@ This is expected behavior.
 
 ```
 process-engineering-suite/
-├─ apps/
-│  ├─ api/               # Orchestration API (TypeScript)
-│  ├─ design-agents/     # Design agent tooling (TypeScript)
-│  ├─ docs/              # Documentation site (TypeScript)
-│  ├─ network-editor/    # Network topology editor (TypeScript)
-│  ├─ psv/               # PSV workflow app (TypeScript)
-│  └─ web/               # Dashboard UI (TypeScript)
+├─ apps/                 # Frontend applications (Next.js)
+│  ├─ docs/              # Documentation site
+│  ├─ network-editor/    # Network topology editor
+│  ├─ psv/               # PSV workflow app
+│  ├─ venting-calculation/ # Tank venting calculator
+│  └─ web/               # Dashboard UI
 │
-├─ services/
-│  └─ calc-engine/       # Engineering calculations (Python ONLY)
-│     ├─ hydraulics/      # Network hydraulics (Python)
-│     └─ pes_calc/        # PES calculation engine (Python)
+├─ services/             # Backend services (Python)
+│  ├─ api/               # FastAPI REST API
+│  ├─ calc-engine/       # Engineering calculations (Python ONLY)
+│  │  ├─ hydraulics/      # Network hydraulics
+│  │  └─ pes_calc/        # PES calculation engine
+│  └─ design-agents/     # AI design agents
 │
-├─ packages/
-│  ├─ api-client/        # API client SDKs (TypeScript)
-│  ├─ api-std/           # API standards and shared contracts (TypeScript)
+├─ packages/             # Shared libraries
+│  ├─ api-client/        # API client SDKs
+│  ├─ api-std/           # API standards and shared contracts
 │  ├─ eslint-config/     # ESLint shared configuration
-│  ├─ physics-engine/    # Shared physics helpers (TypeScript)
-│  ├─ schemas/           # Schemas and contracts (TypeScript)
+│  ├─ physics-engine/    # Shared physics helpers
 │  ├─ tsconfig/          # Shared tsconfig presets
+│  ├─ types/             # Shared TypeScript types
 │  ├─ typescript-config/ # TypeScript tooling defaults
-│  ├─ ui/                # Shared UI primitives (TypeScript)
-│  ├─ ui-kit/            # Shared UI components (TypeScript)
-│  ├─ utils/             # Shared utilities (TypeScript)
-│  └─ vessels/           # Vessel sizing (Python)
+│  ├─ ui/                # Shared UI primitives
+│  ├─ ui-kit/            # Shared UI components
+│  └─ unit-converter/    # Unit conversion (Python)
 │
-├─ docs/
-│  ├─ architecture/      # ADRs and diagrams
-│  └─ standards/         # Engineering standards references
-│
+├─ docs/                 # Architecture documentation
 ├─ infra/                # Docker and deployment
 └─ AGENTS.md
 ```

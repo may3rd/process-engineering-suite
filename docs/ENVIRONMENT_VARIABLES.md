@@ -45,7 +45,7 @@ These variables apply to the entire suite or multiple applications.
   - Default: `false`
   - In demo mode, no backend required
 
-### API Backend (apps/api)
+### API Backend (services/api)
 
 - `USE_MOCK_DATA`: Force mock data usage even when database is available
   - Values: `true` or `false`
@@ -57,7 +57,7 @@ These variables apply to the entire suite or multiple applications.
 
 - `NEXT_PUBLIC_API_URL`: Backend API base URL (default: `http://localhost:8000`)
   - Required to connect the Save/Load feature to the central PostgreSQL database
-  - App runs on port 3005; CORS for this port is registered in the FastAPI backend
+  - App runs on port 3004; CORS for this port is registered in the FastAPI backend
 
 ### Network Editor (apps/network-editor)
 
@@ -70,7 +70,7 @@ These variables apply to the entire suite or multiple applications.
   - Values: `light` or `dark`
   - Default: `light`
 
-### Design Agents (apps/design-agents)
+### Design Agents (services/design-agents)
 
 - `VITE_API_URL`: Backend API base URL for this **Vite** application (default: `http://localhost:8000`)
   - Note: Uses Vite's `import.meta.env.VITE_API_URL` convention, **not** `NEXT_PUBLIC_API_URL`
@@ -110,8 +110,8 @@ PSV_URL=https://psv.your-domain.com
 DESIGN_AGENTS_URL=https://design-agents.your-domain.com
 EOF
 
-# Run with environment
-docker run --env-file .env [other-options] process-engineering-suite
+# Run with docker-compose
+docker-compose -f infra/docker-compose.yml --env-file .env up -d
 ```
 
 ### Production - Direct Deployment
@@ -194,6 +194,5 @@ bun run check:deploy:matrix
 
 ## Related Documentation
 
-- `DEPLOYMENT_GUIDE.md` - Main deployment instructions
-- `DOCKER_DEPLOYMENT.md` - Docker-specific commands
+- `DEPLOYMENT_GUIDE.md` - Main deployment instructions (see infra/docker-compose.yml)
 - `TROUBLESHOOTING.md` - Issue resolution guides

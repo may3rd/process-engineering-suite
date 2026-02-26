@@ -67,7 +67,7 @@
 These three tables were added (migration `202602250001`) to give the stateless frontend apps persistent storage via the same centralised API.
 
 ### `venting_calculations`
-Stores saved API 2000 tank venting calculations from `apps/venting-calculation` (port 3005).
+Stores saved API 2000 tank venting calculations from `apps/venting-calculation` (port 3004).
 
 | Column | Type | Notes |
 |---|---|---|
@@ -113,7 +113,7 @@ Stores saved hydraulic network editor designs from `apps/network-editor` (port 3
 ---
 
 ### `design_agent_sessions`
-Stores saved design agent workflow sessions from `apps/design-agents` (port 3004).
+Stores saved design agent workflow sessions from `services/design-agents` (Python backend).
 
 | Column | Type | Notes |
 |---|---|---|
