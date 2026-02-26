@@ -66,9 +66,9 @@ export interface CalculationInput {
 
   // Fluid properties
   avgStorageTemp: number // °C
-  vapourPressure: number // kPa
+  vapourPressure?: number // kPa (required for 6th/7th edition; optional for 5th)
   flashBoilingPointType: FlashBoilingPointType
-  flashBoilingPoint?: number // °C
+  flashBoilingPoint?: number // °C (required for 5th edition; optional for 6th/7th)
   latentHeat?: number // kJ/kg (default: Hexane 334.9)
   relievingTemperature?: number // °C (default: 15.6)
   molecularMass?: number // g/mol (default: Hexane 86.17)
@@ -145,7 +145,7 @@ export interface CalculationWarnings {
   capacityExceedsTable?: boolean // capacity > 30,000 m³
   undergroundTank?: boolean // F = 0, emergency vent = 0
   hexaneDefaults?: boolean // latent heat / MW / temp defaulted to Hexane
-  volatileLiquid?: boolean // TVP ≥ 5 kPa or FP < 37.8 °C — API 2000 §3.3.2.1 & Annex A
+  volatileLiquid?: boolean // 5th: FP/BP-based (FP < 37.8 °C or BP < 149 °C); 6th/7th: VP ≥ 5 kPa
 }
 
 export interface CalculationResult {

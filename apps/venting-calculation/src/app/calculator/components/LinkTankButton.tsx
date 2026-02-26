@@ -25,6 +25,9 @@ interface Props {
   onTankLinked: (equipmentId: string, tankTag: string) => void
   linkedTag?: string | null
   clearToken?: number
+  /** When provided, the dialog is controlled externally (no DialogTrigger rendered). */
+  controlledOpen?: boolean
+  onControlledOpenChange?: (open: boolean) => void
 }
 
 interface LoadedFromTankPreview {
@@ -89,9 +92,12 @@ function asTankConfiguration(value: unknown): TankConfiguration | null {
  *   details.insulationThickness → insulationThickness (mm, when insulated)
  *   designPressure + unit    → designPressure (kPag, barg×100 conversion)
  */
-export function LinkTankButton({ onTankLinked, linkedTag, clearToken }: Props) {
+export function LinkTankButton({ onTankLinked, linkedTag, clearToken, controlledOpen, onControlledOpenChange }: Props) {
   const { setValue } = useFormContext<CalculationInput>()
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
+  const setOpen = isControlled ? (v: boolean) => onControlledOpenChange?.(v) : setInternalOpen
   const [tanks, setTanks] = useState<Equipment[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -286,18 +292,20 @@ export function LinkTankButton({ onTankLinked, linkedTag, clearToken }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={handleOpen}>
-      <DialogTrigger asChild>
-        <Button
-          type="button"
-          variant={linkedTag ? "secondary" : "outline"}
-          size="sm"
-          className="gap-2"
-          title={linkedTag ? `Linked to ${linkedTag}` : "Link geometry from equipment register"}
-        >
-          <Link2 className="h-4 w-4" />
-          {linkedTag ? linkedTag : "Link Tank"}
-        </Button>
-      </DialogTrigger>
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button
+            type="button"
+            variant={linkedTag ? "secondary" : "outline"}
+            size="sm"
+            className="gap-2"
+            title={linkedTag ? `Linked to ${linkedTag}` : "Link geometry from equipment register"}
+          >
+            <Link2 className="h-4 w-4" />
+            {linkedTag ? linkedTag : "Link Tank"}
+          </Button>
+        </DialogTrigger>
+      )}
 
       <DialogContent className="sm:max-w-lg">
         <DialogHeader>

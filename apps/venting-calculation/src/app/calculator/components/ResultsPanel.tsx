@@ -14,7 +14,7 @@ import { EmergencyVentingResult } from "../results/EmergencyVentingResult"
 import type { CalculationInput } from "@/types"
 
 export function ResultsPanel() {
-  const { calculationResult, isLoading, error } = useCalculatorStore()
+  const { calculationResult, isLoading, error, validationIssues } = useCalculatorStore()
 
   return (
     <div className="space-y-4">
@@ -35,8 +35,13 @@ export function ResultsPanel() {
       )}
 
       {/* Empty state — show what's still needed */}
-      {!calculationResult && !isLoading && !error && (
+      {!calculationResult && !isLoading && !error && !validationIssues && (
         <RequirementsChecklist />
+      )}
+
+      {/* Validation issues — form looks complete but schema rejects the data */}
+      {!calculationResult && !isLoading && !error && validationIssues && validationIssues.length > 0 && (
+        <ValidationIssuesCard issues={validationIssues} />
       )}
 
       {calculationResult && (
@@ -64,7 +69,9 @@ export function ResultsPanel() {
                 )}
                 {calculationResult.warnings.volatileLiquid && (
                   <WarningBanner color="yellow">
-                    Volatile liquid (TVP ≥ 5 kPa or FP &lt; 38 °C) — review API 2000 §3.3.2.1 and Annex A for potential additional vaporization allowances
+                    {calculationResult.apiEdition === "5TH"
+                      ? "Volatile liquid (FP < 37.8 °C or BP < 149 °C) — review API 2000 Annex A for potential additional vaporization allowances"
+                      : "Volatile liquid (TVP ≥ 5 kPa) — review API 2000 §3.3.2.1 and Annex A for potential additional vaporization allowances"}
                   </WarningBanner>
                 )}
               </div>
@@ -130,6 +137,8 @@ function RequirementsChecklist() {
     values.tankConfiguration === "Insulated tank - Partial Insulation"
   const isPartialInsulation = values.tankConfiguration === "Insulated tank - Partial Insulation"
 
+  const is5th = values.apiEdition === "5TH"
+
   const requiredChecks = [
     {
       label: "Tank number",
@@ -150,11 +159,18 @@ function RequirementsChecklist() {
       hint: "e.g. 25 °C",
       done: isValidNumber(values.avgStorageTemp),
     },
-    {
-      label: "Vapour pressure",
-      hint: "e.g. 17.5 kPa",
-      done: isValidNumber(values.vapourPressure) && (values.vapourPressure as number) >= 0,
-    },
+    // VP required for 6th/7th; FP/BP required for 5th
+    ...(is5th
+      ? [{
+          label: "Flash / Boiling point",
+          hint: "Required for volatility classification (5th edition)",
+          done: isValidNumber(values.flashBoilingPoint),
+        }]
+      : [{
+          label: "Vapour pressure",
+          hint: "Required for volatility classification (6th/7th edition)",
+          done: isValidNumber(values.vapourPressure) && (values.vapourPressure as number) >= 0,
+        }]),
     ...(isInsulated
       ? [
         {
@@ -179,11 +195,18 @@ function RequirementsChecklist() {
   ]
 
   const optionalChecks = [
-    {
-      label: "Flash / Boiling point",
-      hint: "Leave blank to treat fluid as high-volatility",
-      done: isValidNumber(values.flashBoilingPoint),
-    },
+    // The counterpart of the edition-required field above goes to optional
+    ...(is5th
+      ? [{
+          label: "Vapour pressure",
+          hint: "Optional for 5th edition — not used for volatility classification",
+          done: isValidNumber(values.vapourPressure) && (values.vapourPressure as number) >= 0,
+        }]
+      : [{
+          label: "Flash / Boiling point",
+          hint: "Optional — not used for volatility (VP-based in 6th/7th edition)",
+          done: isValidNumber(values.flashBoilingPoint),
+        }]),
     {
       label: "Reference fluid (emergency venting)",
       hint: "Latent heat, relieving temp, molecular mass — defaults to Hexane",
@@ -215,7 +238,7 @@ function RequirementsChecklist() {
         <div className="flex items-center justify-between">
           <CardTitle className="text-base font-semibold">Results</CardTitle>
           {allRequiredDone ? (
-            <Badge variant="secondary" className="text-xs">Calculating…</Badge>
+            <Badge variant="secondary" className="text-xs">All fields complete</Badge>
           ) : (
             <Badge variant="outline" className="text-xs text-muted-foreground">
               {missingRequired} required {missingRequired !== 1 ? "fields" : "field"} missing
@@ -230,6 +253,42 @@ function RequirementsChecklist() {
         </p>
         {allChecks.map((check) => (
           <ChecklistItem key={check.label} check={check} optional={check.optional} />
+        ))}
+      </CardContent>
+    </Card>
+  )
+}
+
+// ─── Validation issues card (schema rejected but form looks complete) ────────
+
+function ValidationIssuesCard({ issues }: { issues: Array<{ path: string; message: string }> }) {
+  return (
+    <Card className="shadow-sm border-orange-300/50">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-base font-semibold">Results</CardTitle>
+          <Badge variant="outline" className="text-xs text-orange-600">
+            {issues.length} validation {issues.length !== 1 ? "issues" : "issue"}
+          </Badge>
+        </div>
+        <Separator />
+      </CardHeader>
+      <CardContent className="space-y-1.5 pt-1">
+        <p className="text-xs text-muted-foreground mb-3">
+          Fix the following to generate results:
+        </p>
+        {issues.map((issue, i) => (
+          <div key={i} className="flex items-start gap-2.5">
+            <AlertCircle className="h-4 w-4 text-orange-400 shrink-0 mt-0.5" />
+            <div>
+              <p className="text-xs font-medium leading-tight">{issue.message}</p>
+              {issue.path && (
+                <p className="text-xs text-muted-foreground/70 leading-tight mt-0.5">
+                  Field: {issue.path}
+                </p>
+              )}
+            </div>
+          </div>
         ))}
       </CardContent>
     </Card>

@@ -2,8 +2,8 @@
 
 import { useTheme } from "@mui/material";
 import { TopFloatingToolbar } from "@eng-suite/ui-kit";
+import AirIcon from "@mui/icons-material/Air";
 import { useColorMode } from "@/contexts/ColorModeContext";
-import { Droplets } from "lucide-react";
 
 export function TopToolbar() {
   const theme = useTheme();
@@ -14,7 +14,7 @@ export function TopToolbar() {
     <TopFloatingToolbar
       title="Tank Venting"
       subtitle="API 2000 Venting Calculator"
-      icon={<Droplets size={22} />}
+      icon={<AirIcon fontSize="medium" />}
       onToggleTheme={toggleColorMode}
       isDarkMode={isDark}
     />

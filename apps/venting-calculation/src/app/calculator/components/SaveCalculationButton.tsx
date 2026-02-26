@@ -24,6 +24,9 @@ interface Props {
   equipmentId?: string | null
   calculationMetadata: CalculationMetadata
   revisionHistory: RevisionRecord[]
+  /** When provided, the dialog is controlled externally (no DialogTrigger rendered). */
+  controlledOpen?: boolean
+  onControlledOpenChange?: (open: boolean) => void
 }
 
 /**
@@ -33,37 +36,70 @@ export function SaveCalculationButton({
   equipmentId,
   calculationMetadata,
   revisionHistory,
+  controlledOpen,
+  onControlledOpenChange,
 }: Props) {
   const { getValues } = useFormContext<CalculationInput>()
   const { calculationResult } = useCalculatorStore()
-  const { save, isSaving } = useSavedCalculations()
+  const { save, overwrite, fetchList, isSaving } = useSavedCalculations()
 
-  const [open, setOpen] = useState(false)
+  const [internalOpen, setInternalOpen] = useState(false)
+  const isControlled = controlledOpen !== undefined
+  const open = isControlled ? controlledOpen : internalOpen
+  const setOpen = isControlled ? (v: boolean) => onControlledOpenChange?.(v) : setInternalOpen
   const [name, setName] = useState("")
   const [saved, setSaved] = useState(false)
   const [saveError, setSaveError] = useState<string | null>(null)
+  const [duplicateId, setDuplicateId] = useState<string | null>(null)
 
-  const handleSave = async () => {
+  const resetDialogState = () => {
+    setName("")
+    setSaved(false)
+    setSaveError(null)
+    setDuplicateId(null)
+  }
+
+  const handleSave = async (forceOverwrite = false) => {
     if (!name.trim()) return
     setSaveError(null)
     try {
+      const currentItems = await fetchList()
+      const normalizedName = name.trim().toLowerCase()
+      const existing = currentItems.find(
+        (item) => item.isActive !== false && item.name.trim().toLowerCase() === normalizedName
+      )
+      if (existing && !forceOverwrite) {
+        setDuplicateId(existing.id)
+        return
+      }
       const inputs = getValues() as unknown as Record<string, unknown>
       const results = calculationResult
         ? (calculationResult as unknown as Record<string, unknown>)
         : undefined
-      await save(
-        name.trim(),
-        inputs,
-        results,
-        equipmentId,
-        calculationMetadata,
-        revisionHistory
-      )
+      if (existing) {
+        await overwrite(
+          existing.id,
+          name.trim(),
+          inputs,
+          results,
+          calculationMetadata,
+          revisionHistory
+        )
+      } else {
+        await save(
+          name.trim(),
+          inputs,
+          results,
+          equipmentId,
+          calculationMetadata,
+          revisionHistory
+        )
+      }
       setSaved(true)
       setTimeout(() => {
         setSaved(false)
         setOpen(false)
-        setName("")
+        resetDialogState()
       }, 1200)
     } catch {
       setSaveError("Could not save — is the API running?")
@@ -71,13 +107,25 @@ export function SaveCalculationButton({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { setOpen(v); if (!v) { setName(""); setSaved(false); setSaveError(null) } }}>
-      <DialogTrigger asChild>
-        <Button type="button" variant="outline" size="sm" className="gap-2">
-          <Save className="h-4 w-4" />
-          Save
-        </Button>
-      </DialogTrigger>
+    <Dialog
+      open={open}
+      onOpenChange={async (v) => {
+        setOpen(v)
+        if (v) {
+          await fetchList()
+        } else {
+          resetDialogState()
+        }
+      }}
+    >
+      {!isControlled && (
+        <DialogTrigger asChild>
+          <Button type="button" variant="outline" size="sm" className="gap-2">
+            <Save className="h-4 w-4" />
+            Save
+          </Button>
+        </DialogTrigger>
+      )}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Save Calculation</DialogTitle>
@@ -97,15 +145,40 @@ export function SaveCalculationButton({
             placeholder={getValues("tankNumber") || "e.g. T-101 Normal Venting Rev 0"}
             value={name}
             onChange={(e) => setName(e.target.value)}
-            onKeyDown={(e) => { if (e.key === "Enter") handleSave() }}
+            onKeyDown={(e) => { if (e.key === "Enter") void handleSave() }}
             autoFocus
           />
+          {duplicateId && (
+            <p className="text-xs text-amber-600">
+              A calculation with this name already exists. Rename it or overwrite the existing case.
+            </p>
+          )}
           {saveError && <p className="text-xs text-destructive">{saveError}</p>}
         </div>
         <DialogFooter>
+          {duplicateId && (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDuplicateId(null)}
+                disabled={isSaving || saved}
+              >
+                Rename
+              </Button>
+              <Button
+                type="button"
+                variant="destructive"
+                onClick={() => { void handleSave(true) }}
+                disabled={isSaving || saved}
+              >
+                Overwrite Existing
+              </Button>
+            </>
+          )}
           <Button
             type="button"
-            onClick={handleSave}
+            onClick={() => { void handleSave() }}
             disabled={!name.trim() || isSaving || saved}
             className="gap-2"
           >

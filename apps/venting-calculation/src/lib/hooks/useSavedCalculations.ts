@@ -16,6 +16,7 @@ type VentingCalculation = components["schemas"]["VentingCalculationResponse"]
 export function useSavedCalculations() {
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
   const [savedItems, setSavedItems] = useState<VentingCalculation[]>([])
   const [error, setError] = useState<string | null>(null)
 
@@ -56,6 +57,43 @@ export function useSavedCalculations() {
     []
   )
 
+  const overwrite = useCallback(
+    async (
+      id: string,
+      name: string,
+      inputs: Record<string, unknown>,
+      results?: Record<string, unknown> | null,
+      calculationMetadata?: CalculationMetadata,
+      revisionHistory?: RevisionRecord[],
+    ) => {
+      setIsSaving(true)
+      setError(null)
+      try {
+        const payload: Record<string, unknown> = {
+          name,
+          inputs,
+          results: results ?? undefined,
+          apiEdition: (inputs.apiEdition as string | undefined) ?? "7TH",
+          calculationMetadata: calculationMetadata ?? undefined,
+          revisionHistory: revisionHistory ?? [],
+          isActive: true,
+        }
+        const updated = await apiClient.venting.update(
+          id,
+          payload as unknown as components["schemas"]["VentingCalculationUpdate"]
+        )
+        return updated
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "Overwrite failed"
+        setError(msg)
+        throw err
+      } finally {
+        setIsSaving(false)
+      }
+    },
+    []
+  )
+
   /** Fetch all saved calculations from the API. */
   const fetchList = useCallback(async () => {
     setIsLoading(true)
@@ -73,5 +111,20 @@ export function useSavedCalculations() {
     }
   }, [])
 
-  return { save, fetchList, isSaving, isLoading, savedItems, error }
+  const remove = useCallback(async (id: string) => {
+    setIsDeleting(true)
+    setError(null)
+    try {
+      await apiClient.venting.delete(id)
+      setSavedItems((prev) => prev.filter((item) => item.id !== id))
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Delete failed"
+      setError(msg)
+      throw err
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [])
+
+  return { save, overwrite, remove, fetchList, isSaving, isLoading, isDeleting, savedItems, error }
 }

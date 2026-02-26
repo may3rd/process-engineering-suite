@@ -56,9 +56,63 @@ const DEBOUNCE_MS = 300
  * work correctly with the sentinel immediately after a reset.
  */
 function normalizeNumericSentinels(values: Record<string, unknown>): Record<string, unknown> {
+  const numericKeys = new Set([
+    "diameter",
+    "height",
+    "latitude",
+    "designPressure",
+    "insulationThickness",
+    "insulationConductivity",
+    "insideHeatTransferCoeff",
+    "insulatedSurfaceArea",
+    "avgStorageTemp",
+    "vapourPressure",
+    "flashBoilingPoint",
+    "latentHeat",
+    "relievingTemperature",
+    "molecularMass",
+    "drainLineSize",
+    "maxHeightAboveDrain",
+    "flowrate",
+  ])
+
+  const normalizeValue = (key: string, value: unknown): unknown => {
+    if (value === "" || value === null) return undefined
+    if (typeof value === "string" && numericKeys.has(key)) {
+      const trimmed = value.trim()
+      if (trimmed.length === 0) return undefined
+      const parsed = Number(trimmed)
+      return Number.isFinite(parsed) ? parsed : value
+    }
+    if (Array.isArray(value)) {
+      const mapped = value
+        .map((item) => normalizeValue(key, item))
+        .filter((item) => item !== undefined)
+      if (key === "incomingStreams" || key === "outgoingStreams") {
+        return mapped.filter((row) => {
+          if (typeof row !== "object" || row === null) return false
+          const record = row as Record<string, unknown>
+          const streamNo = typeof record.streamNo === "string" ? record.streamNo.trim() : ""
+          const description = typeof record.description === "string" ? record.description.trim() : ""
+          const hasFlowrate = typeof record.flowrate === "number" && Number.isFinite(record.flowrate)
+          return streamNo.length > 0 || description.length > 0 || hasFlowrate
+        })
+      }
+      return mapped
+    }
+    if (typeof value === "object") {
+      const mapped: Record<string, unknown> = {}
+      for (const [subKey, subVal] of Object.entries(value as Record<string, unknown>)) {
+        mapped[subKey] = normalizeValue(subKey, subVal)
+      }
+      return mapped
+    }
+    return value
+  }
+
   const out: Record<string, unknown> = {}
   for (const [key, val] of Object.entries(values)) {
-    out[key] = val === "" ? undefined : val
+    out[key] = normalizeValue(key, val)
   }
   return out
 }
@@ -84,7 +138,7 @@ function normalizeNumericSentinels(values: Record<string, unknown>): Record<stri
  * ```
  */
 export function useCalculation(control: Control<CalculationInput>) {
-  const { setDerivedGeometry, setCalculationResult, setLoading, setError } =
+  const { setDerivedGeometry, setCalculationResult, setLoading, setError, setValidationIssues } =
     useCalculatorStore()
 
   // useWatch re-renders this hook only when the watched values change.
@@ -114,14 +168,42 @@ export function useCalculation(control: Control<CalculationInput>) {
   // ── Debounced: API call ────────────────────────────────────────────────────
   useEffect(() => {
     const timer = setTimeout(async () => {
-      const parsed = calculationInputSchema.safeParse(normalizeNumericSentinels(formValues as Record<string, unknown>))
+      const normalized = normalizeNumericSentinels(formValues as Record<string, unknown>)
+      const parsed = calculationInputSchema.safeParse(normalized)
       if (!parsed.success) {
-        // Form is still incomplete — clear stale results and any previous error,
-        // and let the checklist handle the "what to fill" guidance.
+        // Form is incomplete or has validation issues — clear stale results.
+        abortRef.current?.abort()
+        abortRef.current = null
+        setLoading(false)
         setError(null)
         setCalculationResult(null)
+
+        // Only surface Zod validation issues when the form has substantial data
+        // (basic required fields present). When the form is mostly empty, let the
+        // RequirementsChecklist guide the user instead.
+        const hasBasicFields =
+          typeof normalized.tankNumber === "string" &&
+          (normalized.tankNumber as string).trim().length > 0 &&
+          typeof normalized.diameter === "number" &&
+          Number.isFinite(normalized.diameter as number) &&
+          typeof normalized.height === "number" &&
+          Number.isFinite(normalized.height as number) &&
+          typeof normalized.avgStorageTemp === "number" &&
+          Number.isFinite(normalized.avgStorageTemp as number)
+
+        setValidationIssues(
+          hasBasicFields
+            ? parsed.error.issues.map((issue) => ({
+                path: issue.path.join("."),
+                message: issue.message,
+              }))
+            : null
+        )
         return
       }
+
+      // Parse succeeded — clear any previous validation issues
+      setValidationIssues(null)
 
       // Cancel any previous in-flight request
       abortRef.current?.abort()

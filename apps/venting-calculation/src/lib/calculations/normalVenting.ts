@@ -88,7 +88,7 @@ export function computeNormalVenting(
     const processOutbreathing = 1.0 * incomingTotal
 
     const yFactor = getYFactor(latitude)
-    const cFactor = getCFactor(latitude, flashBoilingPointType, flashBoilingPoint, maxTankVolume)
+    const cFactor = getCFactor(latitude, flashBoilingPointType, flashBoilingPoint, maxTankVolume, apiEdition, input.vapourPressure)
 
     const thermalOut = yFactor * Math.pow(maxTankVolume, 0.9) * reductionFactor
     const thermalIn = cFactor * Math.pow(maxTankVolume, 0.7) * reductionFactor
@@ -119,10 +119,10 @@ export function computeNormalVenting(
   // 7th edition process outbreathing from incoming liquid stream:
   //   non-volatile (vapour pressure <= 5.0 kPa(a)) -> 1.0 x incoming total
   //   volatile (vapour pressure > 5.0 kPa(a))      -> 2.0 x incoming total
-  const processOutbreathing = (input.vapourPressure > 5.0 ? 2.0 : 1.0) * incomingTotal
+  const processOutbreathing = ((input.vapourPressure ?? 0) > 5.0 ? 2.0 : 1.0) * incomingTotal
 
   const yFactor = getYFactor(latitude)
-  const cFactor = getCFactor(latitude, flashBoilingPointType, flashBoilingPoint, maxTankVolume)
+  const cFactor = getCFactor(latitude, flashBoilingPointType, flashBoilingPoint, maxTankVolume, apiEdition, input.vapourPressure)
 
   const thermalOut = yFactor * Math.pow(maxTankVolume, 0.9) * reductionFactor
   const thermalIn = cFactor * Math.pow(maxTankVolume, 0.7) * reductionFactor

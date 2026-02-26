@@ -118,16 +118,36 @@ describe("computeNormalVenting — 7th edition", () => {
     expect(r.outbreathing.processFlowrate).toBeCloseTo(300, 8)
   })
 
-  it("low-volatility fluid: uses lower Y-factor column (same formula)", () => {
-    // FP=50 ≥ 37.8 → low volatility → same Y but C changes for inbreathing
-    const inputHighFP = makeInput({ flashBoilingPointType: "FP", flashBoilingPoint: 50 })
-    const inputLowFP = makeInput({ flashBoilingPointType: "FP", flashBoilingPoint: 10 })
-    // Outbreathing uses V_tk^0.9 (same for both), Y-factor is same (only lat-dependent)
-    // So outbreathing is the same for both. Inbreathing uses different C-factor.
+  it("7th ed: C-factor uses VP, not FP — same C regardless of FP value", () => {
+    // Both have VP=5.6 > 5 → "other" (high volatility) under VP rules
+    // FP difference shouldn't matter for 7th edition C-factor
+    const inputHighFP = makeInput({ flashBoilingPointType: "FP", flashBoilingPoint: 50, vapourPressure: 5.6 })
+    const inputLowFP = makeInput({ flashBoilingPointType: "FP", flashBoilingPoint: 10, vapourPressure: 5.6 })
     const rHigh = computeNormalVenting(inputHighFP, REF_DERIVED)
     const rLow = computeNormalVenting(inputLowFP, REF_DERIVED)
-    // Both should have same thermal outbreathing (Y only depends on latitude)
+    // Same VP → same C-factor → same thermal inbreathing
+    expect(rHigh.inbreathing.cFactor).toBe(rLow.inbreathing.cFactor)
+    expect(rHigh.inbreathing.thermalInbreathing).toBeCloseTo(rLow.inbreathing.thermalInbreathing, 5)
+    // Both should have same thermal outbreathing too (Y only depends on latitude)
     expect(rHigh.outbreathing.thermalOutbreathing).toBeCloseTo(rLow.outbreathing.thermalOutbreathing, 5)
+  })
+
+  it("7th ed: VP ≤ 5 on small tank gets low-vol C-factor (4 for lat < 42°)", () => {
+    // Small tank: use a small diameter/height to get volume < 25 m³
+    const smallInput: CalculationInput = {
+      ...REF_INPUT,
+      diameter: 3000, // 3m diameter
+      height: 3000,   // 3m height → ~21.2 m³
+      vapourPressure: 4.0, // ≤ 5 → low vol under VP rules
+      flashBoilingPointType: "FP",
+      flashBoilingPoint: 10, // FP < 37.8 → would be "other" under FP rules
+    }
+    const smallDerived = computeDerivedGeometry(smallInput)
+    // Confirm volume < 25 m³
+    expect(smallDerived.maxTankVolume).toBeLessThan(25)
+    const r = computeNormalVenting(smallInput, smallDerived)
+    // lat=12.7 < 42°, low-vol, small → C=4
+    expect(r.inbreathing.cFactor).toBe(4)
   })
 
   it("insulated tank: reductionFactor < 1 reduces thermal venting", () => {

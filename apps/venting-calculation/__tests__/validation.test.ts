@@ -202,7 +202,12 @@ describe("calculationInputSchema", () => {
 
   it("accepts all valid API editions", () => {
     for (const edition of ["5TH", "6TH", "7TH"] as const) {
-      const data = { ...VALID_BASE, apiEdition: edition }
+      const data = {
+        ...VALID_BASE,
+        apiEdition: edition,
+        // 5th edition requires flashBoilingPoint for volatility classification
+        ...(edition === "5TH" ? { flashBoilingPoint: 37.8 } : {}),
+      }
       expect(calculationInputSchema.safeParse(data).success).toBe(true)
     }
   })

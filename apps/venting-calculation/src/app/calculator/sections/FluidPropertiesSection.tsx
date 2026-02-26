@@ -28,12 +28,19 @@ export function FluidPropertiesSection() {
   const latentHeat = watch("latentHeat")
   const relievingTemperature = watch("relievingTemperature")
   const molecularMass = watch("molecularMass")
+  const apiEdition = watch("apiEdition")
+  const vapourPressure = watch("vapourPressure")
   const hasFlashBP = flashBPValue !== undefined && !Number.isNaN(flashBPValue)
+  const is5th = apiEdition === "5TH"
   const isLowVol =
     hasFlashBP &&
     (fpType === "FP"
       ? flashBPValue! >= FLASH_POINT_THRESHOLD
       : flashBPValue! >= BOILING_POINT_THRESHOLD)
+  const hasVP = vapourPressure !== undefined && !Number.isNaN(vapourPressure)
+  const isLowVolByVP = hasVP && vapourPressure <= 5
+  const vapourPressurePlaceholder = is5th ? "Optional" : "Required"
+  const flashBoilingPointPlaceholder = is5th ? "Required" : "Optional"
   const hasCustomReferenceFluid =
     latentHeat !== undefined &&
     !Number.isNaN(latentHeat) &&
@@ -64,14 +71,19 @@ export function FluidPropertiesSection() {
           label="Vapour Pressure"
           htmlFor="vapourPressure"
           unit="kPa"
-          required
+          required={!is5th}
           error={errors.vapourPressure?.message}
+          hint={
+            !is5th && hasVP
+              ? (isLowVolByVP ? "Non-volatile (VP ≤ 5 kPa)" : "Volatile (VP > 5 kPa)")
+              : undefined
+          }
         >
           <Input
             id="vapourPressure"
             type="number"
             step="any"
-            placeholder="e.g. 17.5"
+            placeholder={vapourPressurePlaceholder}
             {...register("vapourPressure", { valueAsNumber: true })}
           />
         </FieldRow>
@@ -84,7 +96,7 @@ export function FluidPropertiesSection() {
           htmlFor="flashBoilingPointType"
           required
           error={errors.flashBoilingPointType?.message}
-          hint="Used to classify fluid volatility"
+          hint={is5th ? "Used to classify fluid volatility (5th edition)" : "Not used for volatility in 6th/7th edition (VP-based)"}
         >
           <Controller
             name="flashBoilingPointType"
@@ -106,22 +118,25 @@ export function FluidPropertiesSection() {
           label={fpType === "FP" ? "Flash Point" : "Boiling Point"}
           htmlFor="flashBoilingPoint"
           unit="°C"
+          required={is5th}
           error={errors.flashBoilingPoint?.message}
           hint={
-            !hasFlashBP
-              ? (fpType === "FP"
-                  ? "Blank → high-volatility assumed; low volatility if FP ≥ 37.8°C"
-                  : "Blank → high-volatility assumed; low volatility if BP ≥ 149°C")
-              : isLowVol
-                  ? (fpType === "FP" ? "Low volatility (FP ≥ 37.8°C)" : "Low volatility (BP ≥ 149°C)")
-                  : (fpType === "FP" ? "High volatility (FP < 37.8°C)" : "High volatility (BP < 149°C)")
+            is5th
+              ? (!hasFlashBP
+                  ? (fpType === "FP"
+                      ? "Required — low volatility if FP ≥ 37.8°C"
+                      : "Required — low volatility if BP ≥ 149°C")
+                  : isLowVol
+                      ? (fpType === "FP" ? "Low volatility (FP ≥ 37.8°C)" : "Low volatility (BP ≥ 149°C)")
+                      : (fpType === "FP" ? "High volatility (FP < 37.8°C)" : "High volatility (BP < 149°C)"))
+              : "Not used for volatility classification in 6th/7th edition"
           }
         >
           <Input
             id="flashBoilingPoint"
             type="number"
             step="any"
-            placeholder="Optional"
+            placeholder={flashBoilingPointPlaceholder}
             {...register("flashBoilingPoint", { valueAsNumber: true })}
           />
         </FieldRow>

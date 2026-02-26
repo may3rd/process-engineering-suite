@@ -216,7 +216,7 @@ export function CalculationReport({ input, result }: ReportProps) {
         )}
 
         <KV label="Average Storage Temperature" value={input.avgStorageTemp}    unit="°C" />
-        <KV label="Vapour Pressure"             value={input.vapourPressure}    unit="kPa" />
+        <KV label="Vapour Pressure"             value={input.vapourPressure ?? "—"}    unit="kPa" />
         <KV label={`${input.flashBoilingPointType === "FP" ? "Flash Point" : "Boiling Point"}`}
             value={input.flashBoilingPoint ?? "—"} unit="°C" />
         <KV label="Latent Heat (L)"             value={input.latentHeat         ?? `${334.9} (Hexane default)`} unit="kJ/kg" />

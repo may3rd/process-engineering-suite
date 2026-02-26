@@ -75,9 +75,7 @@ export const calculationInputSchema = z
 
     // Fluid properties
     avgStorageTemp: z.number({ error: "Average storage temperature must be a number" }),
-    vapourPressure: z
-      .number({ error: "Vapour pressure must be a number" })
-      .nonnegative("Vapour pressure must be ≥ 0"),
+    vapourPressure: nanOptionalNonneg,
     flashBoilingPointType: z.enum(["FP", "BP"] as const, {
       error: "Must be 'FP' or 'BP'",
     }),
@@ -147,6 +145,24 @@ export const calculationInputSchema = z
           message: "Required for partially insulated tank (A_inp)",
         })
       }
+    }
+
+    // ── Edition-aware required fields ─────────────────────────────────────────
+    // 6th/7th edition: vapour pressure is required for volatility classification
+    if (data.apiEdition !== "5TH" && data.vapourPressure == null) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["vapourPressure"],
+        message: "Vapour pressure is required for 6th/7th edition",
+      })
+    }
+    // 5th edition: flash/boiling point is required for volatility classification
+    if (data.apiEdition === "5TH" && data.flashBoilingPoint == null) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["flashBoilingPoint"],
+        message: "Flash/Boiling point is required for 5th edition volatility classification",
+      })
     }
 
     // ── Drain fields: both or neither ─────────────────────────────────────────

@@ -1,7 +1,6 @@
 "use client"
 
 import { useState } from "react"
-import { Eraser } from "lucide-react"
 import { useForm, FormProvider } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { calculationInputSchema } from "@/lib/validation/inputSchema"
@@ -10,14 +9,9 @@ import { useCalculatorStore } from "@/lib/store/calculatorStore"
 import type { CalculationInput, CalculationMetadata, RevisionRecord } from "@/types"
 import { TankConfiguration } from "@/types"
 import type { Resolver } from "react-hook-form"
-import { Button } from "@/components/ui/button"
 import { InputPanel } from "./components/InputPanel"
 import { ResultsPanel } from "./components/ResultsPanel"
-import { ExportButton } from "./components/ExportButton"
-import { LinkTankButton } from "./components/LinkTankButton"
-import { SaveCalculationButton } from "./components/SaveCalculationButton"
-import { LoadCalculationButton } from "./components/LoadCalculationButton"
-import { UpdateEquipmentButton } from "./components/UpdateEquipmentButton"
+import { ActionMenu } from "./components/ActionMenu"
 
 // ─── Default form values ───────────────────────────────────────────────────────
 // Numeric fields default to "" (empty string) so <input type="number"> clears
@@ -111,31 +105,19 @@ export default function CalculatorPage() {
               <p className="text-sm text-muted-foreground">
                 API 2000 (5th / 6th / 7th Edition)
               </p>
-              <div className="flex items-center gap-2">
-                <LinkTankButton
-                  onTankLinked={handleTankLinked}
-                  linkedTag={linkedTankTag}
-                  clearToken={clearToken}
-                />
-                <LoadCalculationButton
-                  onTankLinked={handleTankLinked}
-                  onCalculationLoaded={(metadata, loadedRevisionHistory) => {
-                    setCalculationMetadata(metadata)
-                    setRevisionHistory(loadedRevisionHistory)
-                  }}
-                />
-                <SaveCalculationButton
-                  equipmentId={linkedEquipmentId}
-                  calculationMetadata={calculationMetadata}
-                  revisionHistory={revisionHistory}
-                />
-                {linkedEquipmentId && <UpdateEquipmentButton equipmentId={linkedEquipmentId} />}
-                <Button type="button" variant="outline" size="sm" className="gap-2" onClick={handleClear}>
-                  <Eraser className="h-4 w-4" />
-                  Clear
-                </Button>
-                <ExportButton />
-              </div>
+              <ActionMenu
+                onTankLinked={handleTankLinked}
+                linkedTag={linkedTankTag}
+                linkedEquipmentId={linkedEquipmentId}
+                clearToken={clearToken}
+                onClear={handleClear}
+                calculationMetadata={calculationMetadata}
+                revisionHistory={revisionHistory}
+                onCalculationLoaded={(metadata, loadedRevisionHistory) => {
+                  setCalculationMetadata(metadata)
+                  setRevisionHistory(loadedRevisionHistory)
+                }}
+              />
             </div>
           </div>
         </div>

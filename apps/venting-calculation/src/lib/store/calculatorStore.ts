@@ -26,6 +26,14 @@ interface CalculatorState {
    * null when there is no error.
    */
   error: string | null
+
+  /**
+   * Zod validation issues from the last safeParse failure.
+   * null when the form is valid (or still incomplete / being filled).
+   * Populated when the form looks complete but fails schema validation,
+   * so the UI can show exactly what's wrong instead of a silent hang.
+   */
+  validationIssues: Array<{ path: string; message: string }> | null
 }
 
 // ─── Actions ──────────────────────────────────────────────────────────────────
@@ -35,6 +43,7 @@ interface CalculatorActions {
   setCalculationResult: (result: CalculationResult | null) => void
   setLoading: (loading: boolean) => void
   setError: (error: string | null) => void
+  setValidationIssues: (issues: Array<{ path: string; message: string }> | null) => void
   /** Reset all state to initial values (e.g. on form reset). */
   reset: () => void
 }
@@ -42,10 +51,11 @@ interface CalculatorActions {
 // ─── Initial state ────────────────────────────────────────────────────────────
 
 const INITIAL_STATE: CalculatorState = {
-  derivedGeometry:   null,
-  calculationResult: null,
-  isLoading:         false,
-  error:             null,
+  derivedGeometry:    null,
+  calculationResult:  null,
+  isLoading:          false,
+  error:              null,
+  validationIssues:   null,
 }
 
 // ─── Store ────────────────────────────────────────────────────────────────────
@@ -57,5 +67,6 @@ export const useCalculatorStore = create<CalculatorState & CalculatorActions>()(
   setCalculationResult: (result)   => set({ calculationResult: result }),
   setLoading:           (loading)  => set({ isLoading: loading }),
   setError:             (error)    => set({ error }),
+  setValidationIssues:  (issues)   => set({ validationIssues: issues }),
   reset:                ()         => set(INITIAL_STATE),
 }))

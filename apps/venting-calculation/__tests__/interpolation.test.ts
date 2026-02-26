@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest"
 import { interpolate } from "@/lib/lookups/interpolate"
 import { getYFactor } from "@/lib/lookups/yFactor"
-import { getCFactor, isLowVolatility } from "@/lib/lookups/cFactor"
+import { getCFactor, isLowVolatility, isLowVolatilityByVP } from "@/lib/lookups/cFactor"
 import { getFFactorInsulated, getEnvironmentalFactor } from "@/lib/lookups/fFactor"
 import { normalVentInbreathing, normalVentOutbreathing } from "@/lib/lookups/normalVentTable"
 import { emergencyVentTableLookup } from "@/lib/lookups/emergencyVentTable"
@@ -104,6 +104,21 @@ describe("isLowVolatility", () => {
   })
 })
 
+// ─── isLowVolatilityByVP ─────────────────────────────────────────────────────
+
+describe("isLowVolatilityByVP", () => {
+  it("VP ≤ 5 kPa → low volatility", () => {
+    expect(isLowVolatilityByVP(5)).toBe(true)
+    expect(isLowVolatilityByVP(4.9)).toBe(true)
+    expect(isLowVolatilityByVP(0)).toBe(true)
+  })
+
+  it("VP > 5 kPa → not low volatility", () => {
+    expect(isLowVolatilityByVP(5.1)).toBe(false)
+    expect(isLowVolatilityByVP(17.5)).toBe(false)
+  })
+})
+
 // ─── C-factor ─────────────────────────────────────────────────────────────────
 
 describe("getCFactor", () => {
@@ -151,6 +166,51 @@ describe("getCFactor", () => {
   // (non-specified flash point, so depends on flashBoilingPoint value)
   it("reference case: lat=12.7, low-vol small → 4", () => {
     expect(getCFactor(12.7, "FP", 38, 10)).toBe(4)
+  })
+})
+
+// ─── C-factor (edition-aware) ────────────────────────────────────────────────
+
+describe("getCFactor — edition-aware volatility", () => {
+  // 7th edition: should use VP, not FP/BP
+  it("7th ed: VP ≤ 5 (low-vol) + small tank → 4, ignoring FP < 37.8", () => {
+    // FP=10 < 37.8 would be "other" under FP rules, but VP=4 ≤ 5 → low-vol under VP rules
+    expect(getCFactor(12.7, "FP", 10, 10, "7TH", 4)).toBe(4)
+  })
+
+  it("7th ed: VP > 5 (other) + small tank → 6.5, ignoring FP ≥ 37.8", () => {
+    // FP=50 ≥ 37.8 would be "low-vol" under FP rules, but VP=6 > 5 → other under VP rules
+    expect(getCFactor(12.7, "FP", 50, 10, "7TH", 6)).toBe(6.5)
+  })
+
+  it("7th ed: VP ≤ 5 (low-vol) + large tank → 6.5", () => {
+    expect(getCFactor(12.7, "FP", 10, 30, "7TH", 4)).toBe(6.5)
+  })
+
+  // 6th edition: same VP-based logic as 7th
+  it("6th ed: VP ≤ 5 (low-vol) + small tank → 4", () => {
+    expect(getCFactor(12.7, "FP", 10, 10, "6TH", 4)).toBe(4)
+  })
+
+  it("6th ed: VP > 5 (other) → 6.5 regardless of FP", () => {
+    expect(getCFactor(12.7, "FP", 50, 10, "6TH", 6)).toBe(6.5)
+  })
+
+  // 5th edition: should use FP/BP, not VP
+  it("5th ed: FP ≥ 37.8 (low-vol) + small tank → 4, ignoring VP > 5", () => {
+    // VP=10 > 5 would be "other" under VP rules, but FP=50 ≥ 37.8 → low-vol under FP rules
+    expect(getCFactor(12.7, "FP", 50, 10, "5TH", 10)).toBe(4)
+  })
+
+  it("5th ed: FP < 37.8 (other) → 6.5, ignoring VP ≤ 5", () => {
+    // VP=3 ≤ 5 would be "low-vol" under VP rules, but FP=10 < 37.8 → other under FP rules
+    expect(getCFactor(12.7, "FP", 10, 10, "5TH", 3)).toBe(6.5)
+  })
+
+  // No edition specified: falls back to FP/BP (backward compatible)
+  it("no edition: uses FP/BP classification (backward compat)", () => {
+    expect(getCFactor(12.7, "FP", 50, 10)).toBe(4) // FP ≥ 37.8 → low-vol, small → 4
+    expect(getCFactor(12.7, "FP", 10, 10)).toBe(6.5) // FP < 37.8 → other
   })
 })
 
