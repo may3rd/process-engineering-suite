@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { FileText, History, Plus, Trash2 } from "lucide-react"
+import { ArrowDown, ArrowUp, FileText, History, Plus, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -61,12 +61,6 @@ function normalizeRevisionHistory(rows: RevisionRecord[]): RevisionRecord[] {
         row.approvedBy.length > 0
     )
 
-  trimmed.sort(
-    (a, b) =>
-      new Date(b.byDate || b.checkedDate || b.approvedDate || 0).getTime() -
-      new Date(a.byDate || a.checkedDate || a.approvedDate || 0).getTime()
-  )
-
   return trimmed.slice(0, 3)
 }
 
@@ -122,6 +116,19 @@ export function CalculationMetadataSection({
     setRevisionsDraft((prev) => [...prev, { ...EMPTY_REVISION }])
   }
 
+  const moveRevisionRow = (index: number, direction: "up" | "down") => {
+    setRevisionsDraft((prev) => {
+      const targetIndex = direction === "up" ? index - 1 : index + 1
+      if (targetIndex < 0 || targetIndex >= prev.length) {
+        return prev
+      }
+      const next = [...prev]
+      const [row] = next.splice(index, 1)
+      next.splice(targetIndex, 0, row)
+      return next
+    })
+  }
+
   return (
     <SectionCard
       title="Calculation Metadata"
@@ -144,7 +151,17 @@ export function CalculationMetadataSection({
 
               <div className="space-y-2">
                 <div className="overflow-x-auto rounded-md border">
-                  <table className="w-full text-xs">
+                  <table className="w-full min-w-[980px] table-fixed text-xs">
+                    <colgroup>
+                      <col className="w-[80px]" />
+                      <col className="w-[110px]" />
+                      <col className="w-[170px]" />
+                      <col className="w-[130px]" />
+                      <col className="w-[170px]" />
+                      <col className="w-[130px]" />
+                      <col className="w-[170px]" />
+                      <col className="w-[120px]" />
+                    </colgroup>
                     <thead>
                       <tr className="border-b text-left text-muted-foreground">
                         <th className="p-2">Rev</th>
@@ -154,7 +171,7 @@ export function CalculationMetadataSection({
                         <th className="p-2">Date</th>
                         <th className="p-2">Approved</th>
                         <th className="p-2">Date</th>
-                        <th className="p-2 w-10" />
+                        <th className="p-2" />
                       </tr>
                     </thead>
                     <tbody>
@@ -171,6 +188,7 @@ export function CalculationMetadataSection({
                               <Input
                                 value={row.rev}
                                 placeholder="O1"
+                                className="w-full"
                                 onChange={(event) =>
                                   setRevisionsDraft((prev) =>
                                     prev.map((item, i) =>
@@ -184,6 +202,7 @@ export function CalculationMetadataSection({
                               <Input
                                 value={row.by}
                                 placeholder="Originator"
+                                className="w-full"
                                 onChange={(event) =>
                                   setRevisionsDraft((prev) =>
                                     prev.map((item, i) =>
@@ -197,6 +216,7 @@ export function CalculationMetadataSection({
                               <Input
                                 type="date"
                                 value={row.byDate ?? ""}
+                                className="w-full"
                                 onChange={(event) =>
                                   setRevisionsDraft((prev) =>
                                     prev.map((item, i) =>
@@ -210,6 +230,7 @@ export function CalculationMetadataSection({
                               <Input
                                 value={row.checkedBy}
                                 placeholder="Checker"
+                                className="w-full"
                                 onChange={(event) =>
                                   setRevisionsDraft((prev) =>
                                     prev.map((item, i) =>
@@ -223,6 +244,7 @@ export function CalculationMetadataSection({
                               <Input
                                 type="date"
                                 value={row.checkedDate ?? ""}
+                                className="w-full"
                                 onChange={(event) =>
                                   setRevisionsDraft((prev) =>
                                     prev.map((item, i) =>
@@ -236,6 +258,7 @@ export function CalculationMetadataSection({
                               <Input
                                 value={row.approvedBy}
                                 placeholder="Approver"
+                                className="w-full"
                                 onChange={(event) =>
                                   setRevisionsDraft((prev) =>
                                     prev.map((item, i) =>
@@ -249,6 +272,7 @@ export function CalculationMetadataSection({
                               <Input
                                 type="date"
                                 value={row.approvedDate ?? ""}
+                                className="w-full"
                                 onChange={(event) =>
                                   setRevisionsDraft((prev) =>
                                     prev.map((item, i) =>
@@ -261,16 +285,39 @@ export function CalculationMetadataSection({
                               />
                             </td>
                             <td className="p-2">
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="icon"
-                                onClick={() =>
-                                  setRevisionsDraft((prev) => prev.filter((_, i) => i !== index))
-                                }
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                              <div className="flex items-center justify-center gap-1">
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => moveRevisionRow(index, "up")}
+                                  disabled={index === 0}
+                                  aria-label="Move revision up"
+                                >
+                                  <ArrowUp className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => moveRevisionRow(index, "down")}
+                                  disabled={index === revisionsDraft.length - 1}
+                                  aria-label="Move revision down"
+                                >
+                                  <ArrowDown className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() =>
+                                    setRevisionsDraft((prev) => prev.filter((_, i) => i !== index))
+                                  }
+                                  aria-label="Delete revision"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         ))
