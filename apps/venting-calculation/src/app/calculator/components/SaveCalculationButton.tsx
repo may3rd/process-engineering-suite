@@ -15,7 +15,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useCalculatorStore } from "@/lib/store/calculatorStore"
 import { useSavedCalculations } from "@/lib/hooks/useSavedCalculations"
 import type { CalculationInput, CalculationMetadata, RevisionRecord } from "@/types"
 
@@ -24,6 +23,7 @@ interface Props {
   equipmentId?: string | null
   calculationMetadata: CalculationMetadata
   revisionHistory: RevisionRecord[]
+  calculationResult: import("@/types").CalculationResult | null
   /** When provided, the dialog is controlled externally (no DialogTrigger rendered). */
   controlledOpen?: boolean
   onControlledOpenChange?: (open: boolean) => void
@@ -38,9 +38,9 @@ export function SaveCalculationButton({
   revisionHistory,
   controlledOpen,
   onControlledOpenChange,
+  calculationResult,
 }: Props) {
   const { getValues } = useFormContext<CalculationInput>()
-  const { calculationResult } = useCalculatorStore()
   const { save, overwrite, fetchList, isSaving } = useSavedCalculations()
 
   const [internalOpen, setInternalOpen] = useState(false)

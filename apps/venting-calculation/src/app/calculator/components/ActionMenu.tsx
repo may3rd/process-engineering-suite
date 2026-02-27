@@ -21,10 +21,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useCalculatorStore } from "@/lib/store/calculatorStore"
 import { apiClient } from "@/lib/apiClient"
 import { convertUnit } from "@eng-suite/physics"
-import { TankConfiguration, type CalculationInput, type CalculationMetadata, type RevisionRecord } from "@/types"
+import { TankConfiguration, type CalculationInput, type CalculationMetadata, type RevisionRecord, type CalculationResult, type DerivedGeometry } from "@/types"
 import { LinkTankButton } from "./LinkTankButton"
 import { LoadCalculationButton } from "./LoadCalculationButton"
 import { SaveCalculationButton } from "./SaveCalculationButton"
@@ -38,6 +37,8 @@ interface ActionMenuProps {
   calculationMetadata: CalculationMetadata
   revisionHistory: RevisionRecord[]
   onCalculationLoaded: (metadata: CalculationMetadata, revisionHistory: RevisionRecord[]) => void
+  calculationResult: CalculationResult | null
+  derivedGeometry: DerivedGeometry | null
 }
 
 function fromKPag(value: number, unit: string | null | undefined): number | null {
@@ -55,9 +56,10 @@ export function ActionMenu({
   calculationMetadata,
   revisionHistory,
   onCalculationLoaded,
+  calculationResult,
+  derivedGeometry,
 }: ActionMenuProps) {
   const { getValues } = useFormContext<CalculationInput>()
-  const { calculationResult, derivedGeometry } = useCalculatorStore()
 
   // Dialog open states for controlled-mode components
   const [linkOpen, setLinkOpen] = useState(false)
@@ -270,6 +272,7 @@ export function ActionMenu({
         revisionHistory={revisionHistory}
         controlledOpen={saveOpen}
         onControlledOpenChange={setSaveOpen}
+        calculationResult={calculationResult}
       />
     </>
   )

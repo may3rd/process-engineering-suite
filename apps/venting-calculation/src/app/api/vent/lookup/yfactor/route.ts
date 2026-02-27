@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getYFactor } from "@/lib/lookups/yFactor"
-import type { ApiError } from "@/types"
+// No extra types needed
 
 /**
  * GET /api/vent/lookup/yfactor?latitude=<number>
@@ -18,13 +18,13 @@ export async function GET(request: NextRequest) {
 
   const latRaw = searchParams.get("latitude")
   if (latRaw === null) {
-    const err: ApiError = { error: "Query parameter 'latitude' is required" }
+    const err = { error: "Query parameter 'latitude' is required" }
     return NextResponse.json(err, { status: 400 })
   }
 
   const latitude = Number(latRaw)
   if (!Number.isFinite(latitude) || latitude <= 0 || latitude > 90) {
-    const err: ApiError = { error: "latitude must be a number in the range (0, 90]" }
+    const err = { error: "latitude must be a number in the range (0, 90]" }
     return NextResponse.json(err, { status: 400 })
   }
 

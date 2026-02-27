@@ -1,46 +1,33 @@
 "use client"
 
-import { useCalculatorStore } from "@/lib/store/calculatorStore"
 import { useFormContext } from "react-hook-form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
-import { Loader2, AlertCircle, CheckCircle2, Circle } from "lucide-react"
+import { AlertCircle, CheckCircle2, Circle } from "lucide-react"
 import { SectionCard } from "./SectionCard"
 import { TankSchematic } from "./TankSchematic"
 import { SummaryResult } from "../results/SummaryResult"
 import { NormalVentingResult } from "../results/NormalVentingResult"
 import { EmergencyVentingResult } from "../results/EmergencyVentingResult"
-import type { CalculationInput } from "@/types"
+import type { CalculationInput, CalculationResult, DerivedGeometry } from "@/types"
 
-export function ResultsPanel() {
-  const { calculationResult, isLoading, error, validationIssues } = useCalculatorStore()
+interface Props {
+  calculationResult: CalculationResult | null
+  validationIssues: Array<{ path: string; message: string }> | null
+  derivedGeometry: DerivedGeometry | null
+}
 
+export function ResultsPanel({ calculationResult, validationIssues, derivedGeometry }: Props) {
   return (
     <div className="space-y-4">
-      {/* Loading */}
-      {isLoading && (
-        <div className="flex items-center gap-2 text-sm text-muted-foreground px-1">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Calculating…
-        </div>
-      )}
-
-      {/* Error */}
-      {error && (
-        <div className="flex items-start gap-2 rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-          <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-          {error}
-        </div>
-      )}
-
       {/* Empty state — show what's still needed */}
-      {!calculationResult && !isLoading && !error && !validationIssues && (
+      {!calculationResult && !validationIssues && (
         <RequirementsChecklist />
       )}
 
       {/* Validation issues — form looks complete but schema rejects the data */}
-      {!calculationResult && !isLoading && !error && validationIssues && validationIssues.length > 0 && (
+      {!calculationResult && validationIssues && validationIssues.length > 0 && (
         <ValidationIssuesCard issues={validationIssues} />
       )}
 
@@ -92,7 +79,7 @@ export function ResultsPanel() {
           </Card>
 
           {/* ── Tank Schematic ───────────────────────────────────────────────── */}
-          <TankSchematic />
+          <TankSchematic derivedGeometry={derivedGeometry} />
 
           {/* ── Normal Venting ───────────────────────────────────────────────── */}
           <SectionCard title="Normal Venting">
@@ -162,15 +149,15 @@ function RequirementsChecklist() {
     // VP required for 6th/7th; FP/BP required for 5th
     ...(is5th
       ? [{
-          label: "Flash / Boiling point",
-          hint: "Required for volatility classification (5th edition)",
-          done: isValidNumber(values.flashBoilingPoint),
-        }]
+        label: "Flash / Boiling point",
+        hint: "Required for volatility classification (5th edition)",
+        done: isValidNumber(values.flashBoilingPoint),
+      }]
       : [{
-          label: "Vapour pressure",
-          hint: "Required for volatility classification (6th/7th edition)",
-          done: isValidNumber(values.vapourPressure) && (values.vapourPressure as number) >= 0,
-        }]),
+        label: "Vapour pressure",
+        hint: "Required for volatility classification (6th/7th edition)",
+        done: isValidNumber(values.vapourPressure) && (values.vapourPressure as number) >= 0,
+      }]),
     ...(isInsulated
       ? [
         {
@@ -198,15 +185,15 @@ function RequirementsChecklist() {
     // The counterpart of the edition-required field above goes to optional
     ...(is5th
       ? [{
-          label: "Vapour pressure",
-          hint: "Optional for 5th edition — not used for volatility classification",
-          done: isValidNumber(values.vapourPressure) && (values.vapourPressure as number) >= 0,
-        }]
+        label: "Vapour pressure",
+        hint: "Optional for 5th edition — not used for volatility classification",
+        done: isValidNumber(values.vapourPressure) && (values.vapourPressure as number) >= 0,
+      }]
       : [{
-          label: "Flash / Boiling point",
-          hint: "Optional — not used for volatility (VP-based in 6th/7th edition)",
-          done: isValidNumber(values.flashBoilingPoint),
-        }]),
+        label: "Flash / Boiling point",
+        hint: "Optional — not used for volatility (VP-based in 6th/7th edition)",
+        done: isValidNumber(values.flashBoilingPoint),
+      }]),
     {
       label: "Reference fluid (emergency venting)",
       hint: "Latent heat, relieving temp, molecular mass — defaults to Hexane",

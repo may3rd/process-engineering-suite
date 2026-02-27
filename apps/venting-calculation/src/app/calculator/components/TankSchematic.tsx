@@ -1,6 +1,5 @@
 "use client"
 
-import { useCalculatorStore } from "@/lib/store/calculatorStore"
 import { useFormContext } from "react-hook-form"
 import type { CalculationInput } from "@/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -42,11 +41,11 @@ function SchematicSVG({ diameterMm, heightMm, wettedAreaM2, shellAreaM2 }: Schem
   const wettedPx = tankH * wettedRatio
 
   // ── Coordinates ─────────────────────────────────────────────────────────────
-  const tankLeft  = MARGIN_L
+  const tankLeft = MARGIN_L
   const tankRight = MARGIN_L + tankW
-  const tankTop   = MARGIN_T + coneH
-  const tankBot   = tankTop + tankH
-  const coneApex  = { x: MARGIN_L + tankW / 2, y: MARGIN_T }
+  const tankTop = MARGIN_T + coneH
+  const tankBot = tankTop + tankH
+  const coneApex = { x: MARGIN_L + tankW / 2, y: MARGIN_T }
 
   // Wetted fill (from bottom up)
   const wettedTop = tankBot - wettedPx
@@ -199,11 +198,10 @@ function SchematicSVG({ diameterMm, heightMm, wettedAreaM2, shellAreaM2 }: Schem
 
 // ─── Card wrapper ──────────────────────────────────────────────────────────────
 
-export function TankSchematic() {
-  const derivedGeometry = useCalculatorStore((s) => s.derivedGeometry)
+export function TankSchematic({ derivedGeometry }: { derivedGeometry: import("@/types").DerivedGeometry | null }) {
   const { watch } = useFormContext<CalculationInput>()
   const diameter = watch("diameter")
-  const height   = watch("height")
+  const height = watch("height")
 
   if (!derivedGeometry || !diameter || !height) return null
 

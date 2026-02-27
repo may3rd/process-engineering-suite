@@ -8,13 +8,14 @@ import { ApiEditionSelector } from "../sections/ApiEditionSelector"
 import { DerivedGeometry } from "./DerivedGeometry"
 import { SectionCard } from "./SectionCard"
 import { CalculationMetadataSection } from "./CalculationMetadataSection"
-import type { CalculationMetadata, RevisionRecord } from "@/types"
+import type { CalculationMetadata, RevisionRecord, DerivedGeometry as DerivedGeometryType } from "@/types"
 
 interface Props {
   metadata: CalculationMetadata
   onMetadataChange: (metadata: CalculationMetadata) => void
   revisionHistory: RevisionRecord[]
   onRevisionHistoryChange: (revisionHistory: RevisionRecord[]) => void
+  derivedGeometry: DerivedGeometryType | null
 }
 
 export function InputPanel({
@@ -22,6 +23,7 @@ export function InputPanel({
   onMetadataChange,
   revisionHistory,
   onRevisionHistoryChange,
+  derivedGeometry,
 }: Props) {
   return (
     <div className="space-y-4">
@@ -32,7 +34,7 @@ export function InputPanel({
         onRevisionHistoryChange={onRevisionHistoryChange}
       />
       <TankDetailSection />
-      <DerivedGeometry />
+      <DerivedGeometry derivedGeometry={derivedGeometry} />
       <FluidPropertiesSection />
       <StreamFlowSection />
       <DrainSystemSection />

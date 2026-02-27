@@ -4,7 +4,6 @@ import { useState } from "react"
 import { useFormContext } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { Download, Loader2 } from "lucide-react"
-import { useCalculatorStore } from "@/lib/store/calculatorStore"
 import type { CalculationInput } from "@/types"
 
 /**
@@ -13,8 +12,7 @@ import type { CalculationInput } from "@/types"
  *
  * Uses a dynamic import of @react-pdf/renderer to avoid SSR issues.
  */
-export function ExportButton() {
-  const { calculationResult } = useCalculatorStore()
+export function ExportButton({ calculationResult }: { calculationResult: import("@/types").CalculationResult | null }) {
   const { getValues } = useFormContext<CalculationInput>()
   const [generating, setGenerating] = useState(false)
 
@@ -36,8 +34,8 @@ export function ExportButton() {
 
       // Trigger download
       const url = URL.createObjectURL(blob)
-      const a   = document.createElement("a")
-      a.href     = url
+      const a = document.createElement("a")
+      a.href = url
       a.download = `venting-calc-${input.tankNumber || "report"}.pdf`
       a.click()
       URL.revokeObjectURL(url)

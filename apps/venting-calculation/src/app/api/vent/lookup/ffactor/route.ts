@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getEnvironmentalFactor } from "@/lib/lookups/fFactor"
 import { TankConfiguration } from "@/types"
-import type { ApiError } from "@/types"
+// No extra types needed
 
 const VALID_CONFIGS = new Set<string>(Object.values(TankConfiguration))
 
@@ -25,11 +25,11 @@ export async function GET(request: NextRequest) {
   // ── config ────────────────────────────────────────────────────────────────
   const configRaw = searchParams.get("config")
   if (configRaw === null) {
-    const err: ApiError = { error: "Query parameter 'config' is required" }
+    const err = { error: "Query parameter 'config' is required" }
     return NextResponse.json(err, { status: 400 })
   }
   if (!VALID_CONFIGS.has(configRaw)) {
-    const err: ApiError = {
+    const err = {
       error: `Invalid config. Valid values: ${[...VALID_CONFIGS].join(", ")}`,
     }
     return NextResponse.json(err, { status: 400 })
@@ -42,7 +42,7 @@ export async function GET(request: NextRequest) {
   if (condRaw !== null) {
     const parsed = Number(condRaw)
     if (!Number.isFinite(parsed) || parsed <= 0) {
-      const err: ApiError = { error: "conductivity must be a positive number (W/m·K)" }
+      const err = { error: "conductivity must be a positive number (W/m·K)" }
       return NextResponse.json(err, { status: 400 })
     }
     conductivity = parsed
@@ -54,7 +54,7 @@ export async function GET(request: NextRequest) {
   if (thickRaw !== null) {
     const parsed = Number(thickRaw)
     if (!Number.isFinite(parsed) || parsed < 0) {
-      const err: ApiError = { error: "thickness must be a non-negative number (mm)" }
+      const err = { error: "thickness must be a non-negative number (mm)" }
       return NextResponse.json(err, { status: 400 })
     }
     thickness = parsed
@@ -65,7 +65,7 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ fFactor })
   } catch (error) {
     const message = error instanceof Error ? error.message : "F-factor calculation error"
-    const err: ApiError = { error: message }
+    const err = { error: message }
     return NextResponse.json(err, { status: 400 })
   }
 }

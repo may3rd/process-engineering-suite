@@ -159,11 +159,3 @@ export interface CalculationResult {
   calculatedAt: string // ISO timestamp
 }
 
-// ─── API Error ────────────────────────────────────────────────────────────────
-
-export interface ApiError {
-  error: string
-  details?: unknown
-  requestId?: string  // present on 500 errors — use for server-side log correlation
-  timestamp?: string  // ISO-8601 — present on 500 errors
-}

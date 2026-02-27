@@ -1,9 +1,9 @@
 "use client"
 
-import { useCalculatorStore } from "@/lib/store/calculatorStore"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
+import type { DerivedGeometry as DerivedGeometryType } from "@/types"
 
 interface MetricRowProps {
   label: string
@@ -23,8 +23,7 @@ function MetricRow({ label, value, unit }: MetricRowProps) {
   )
 }
 
-export function DerivedGeometry() {
-  const derivedGeometry = useCalculatorStore((s) => s.derivedGeometry)
+export function DerivedGeometry({ derivedGeometry }: { derivedGeometry: DerivedGeometryType | null }) {
 
   return (
     <Card className="shadow-sm">

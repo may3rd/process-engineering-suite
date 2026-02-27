@@ -6,11 +6,12 @@ import { Loader2, Upload, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { apiClient } from "@/lib/apiClient"
 import { convertUnit } from "@eng-suite/physics"
-import { useCalculatorStore } from "@/lib/store/calculatorStore"
 import { TankConfiguration, type CalculationInput } from "@/types"
 
 interface Props {
   equipmentId: string | null
+  calculationResult: import("@/types").CalculationResult | null
+  derivedGeometry: import("@/types").DerivedGeometry | null
 }
 
 function fromKPag(value: number, unit: string | null | undefined): number | null {
@@ -19,9 +20,8 @@ function fromKPag(value: number, unit: string | null | undefined): number | null
   return Number.isFinite(converted) ? converted : null
 }
 
-export function UpdateEquipmentButton({ equipmentId }: Props) {
+export function UpdateEquipmentButton({ equipmentId, calculationResult, derivedGeometry }: Props) {
   const { getValues } = useFormContext<CalculationInput>()
-  const { calculationResult, derivedGeometry } = useCalculatorStore()
   const [isUpdating, setIsUpdating] = useState(false)
   const [updated, setUpdated] = useState(false)
   const [error, setError] = useState<string | null>(null)
