@@ -17,7 +17,8 @@ services:
       - "3001:3001" # Document Wiki (web)
       - "3002:3002" # Network Editor
       - "3003:3003" # PSV
-      - "3004:3004" # Venting Calculation
+      - "3004:3004" # Design Agents
+      - "3005:3005" # Venting Calculation
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:
