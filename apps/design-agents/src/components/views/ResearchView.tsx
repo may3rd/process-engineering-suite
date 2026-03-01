@@ -28,6 +28,7 @@ import {
 import { useDesignStore } from '../../store/useDesignStore';
 import { runAgent } from '../../lib/api';
 import { runTurboPipeline } from '../../lib/turbo';
+import { normalizeResearchConcepts } from '../../lib/researchConcepts';
 
 const MaturityChip = ({ maturity }: { maturity: string }) => {
   let color: 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' = 'default';
@@ -99,7 +100,7 @@ export const ResearchView = () => {
              conceptsData = result.data.output;
          }
 
-         updateDesignState({ research_concepts: conceptsData });
+         updateDesignState({ research_concepts: normalizeResearchConcepts(conceptsData) });
          updateStepStatus(activeStepId, 'completed'); // Mark step as done once we have concepts? 
          // Or maybe keep it 'running' until selection? Let's say 'completed' means "Research Done".
       } else {
@@ -116,9 +117,8 @@ export const ResearchView = () => {
 
   const handleSelectConcept = (index: number) => {
     setSelectedConceptIndex(index);
-    if (designState.research_concepts?.concepts) {
-        updateDesignState({ selected_concept: designState.research_concepts.concepts[index] });
-    }
+    const normalizedConcepts = normalizeResearchConcepts(designState.research_concepts);
+    updateDesignState({ selected_concept: normalizedConcepts.concepts[index] });
   };
 
   const handleConfirmSelection = async () => {
@@ -135,7 +135,7 @@ export const ResearchView = () => {
       }
   };
 
-  const concepts = designState.research_concepts?.concepts || [];
+  const concepts = normalizeResearchConcepts(designState.research_concepts).concepts;
 
   return (
     <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column', gap: 3 }}>
