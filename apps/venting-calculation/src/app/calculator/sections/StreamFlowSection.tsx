@@ -1,15 +1,24 @@
-"use client"
+'use client'
 
-import { useFormContext, useFieldArray } from "react-hook-form"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
-import { Plus, Trash2 } from "lucide-react"
-import type { CalculationInput } from "@/types"
-import { SectionCard } from "../components/SectionCard"
+import { useFormContext, useFieldArray, Controller } from 'react-hook-form'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Badge } from '@/components/ui/badge'
+import {
+  Select,
+  SelectTrigger,
+  SelectContent,
+  SelectItem,
+  SelectValue,
+} from '@/components/ui/select'
+import { Plus, Trash2 } from 'lucide-react'
+import { convertUnit } from '@eng-suite/physics'
+import type { CalculationInput } from '@/types'
+import { SectionCard } from '../components/SectionCard'
+import { useUomStore } from '@/lib/store/uomStore'
+import { UOM_LABEL, BASE_UNITS, UOM_OPTIONS } from '@/lib/uom'
 
 // ─── Incoming Streams (incomingStreams) ───────────────────────────────────────
-// Stream — streamNo + flowrate only
 
 function IncomingStreamTable() {
   const {
@@ -17,10 +26,12 @@ function IncomingStreamTable() {
     control,
     formState: { errors },
   } = useFormContext<CalculationInput>()
+  const { units, setUnit } = useUomStore()
+  const displayUnit = units.volumeFlow
 
   const { fields, append, remove } = useFieldArray({
     control,
-    name: "incomingStreams",
+    name: 'incomingStreams',
   })
 
   const fieldErrors = errors.incomingStreams
@@ -38,7 +49,7 @@ function IncomingStreamTable() {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => append({ streamNo: "", description: "", flowrate: 0 })}
+          onClick={() => append({ streamNo: '', description: '', flowrate: 0 })}
           className="h-7 text-xs gap-1"
         >
           <Plus className="h-3.5 w-3.5" />
@@ -54,16 +65,16 @@ function IncomingStreamTable() {
         </div>
       ) : (
         <div className="rounded-md border overflow-hidden">
-          <div className="grid grid-cols-[5rem_1fr_6rem_2rem] gap-2 px-3 py-1.5 bg-muted/50 border-b text-xs font-medium text-muted-foreground">
+          <div className="grid grid-cols-[5rem_1fr_1fr_2rem] gap-2 px-3 py-1.5 bg-muted/50 border-b text-xs font-medium text-muted-foreground">
             <span>Stream No.</span>
             <span>Description</span>
-            <span>Flowrate (m³/h)</span>
+            <span>Flowrate</span>
             <span />
           </div>
           {fields.map((field, index) => (
             <div
               key={field.id}
-              className="grid grid-cols-[5rem_1fr_6rem_2rem] gap-2 px-3 py-2 items-center border-b last:border-b-0"
+              className="grid grid-cols-[5rem_1fr_1fr_2rem] gap-2 px-3 py-2 items-center border-b last:border-b-0"
             >
               <Input
                 className="h-7 text-xs"
@@ -75,14 +86,47 @@ function IncomingStreamTable() {
                 placeholder="Optional"
                 {...register(`incomingStreams.${index}.description`)}
               />
-              <Input
-                className="h-7 text-xs"
-                type="number"
-                step="any"
-                placeholder="0"
-                {...register(`incomingStreams.${index}.flowrate`, {
-                  valueAsNumber: true,
-                })}
+              <Controller
+                name={`incomingStreams.${index}.flowrate`}
+                control={control}
+                render={({ field }) => {
+                  const displayValue = isFinite(field.value)
+                    ? convertUnit(field.value, BASE_UNITS.volumeFlow, displayUnit)
+                    : ''
+                  return (
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        className="h-7 text-xs flex-1"
+                        type="number"
+                        step="any"
+                        placeholder="0"
+                        value={displayValue === '' ? '' : Number(displayValue.toFixed(6))}
+                        onChange={(e) => {
+                          const raw = parseFloat(e.target.value)
+                          field.onChange(
+                            isNaN(raw) ? NaN : convertUnit(raw, displayUnit, BASE_UNITS.volumeFlow)
+                          )
+                        }}
+                        onBlur={field.onBlur}
+                      />
+                      <Select
+                        value={displayUnit}
+                        onValueChange={(newUnit) => setUnit('volumeFlow', newUnit)}
+                      >
+                        <SelectTrigger className="h-7 min-w-fit px-2 border-muted bg-muted/40 text-xs whitespace-nowrap">
+                          <SelectValue>{UOM_LABEL[displayUnit] ?? displayUnit}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {UOM_OPTIONS.volumeFlow.map((u) => (
+                            <SelectItem key={u} value={u} className="text-xs">
+                              {UOM_LABEL[u] ?? u}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )
+                }}
               />
               <Button
                 type="button"
@@ -116,7 +160,6 @@ function IncomingStreamTable() {
 }
 
 // ─── Outgoing Streams (outgoingStreams) ───────────────────────────────────────
-// OutgoingStream — streamNo + flowrate + description
 
 function OutgoingStreamTable() {
   const {
@@ -124,10 +167,12 @@ function OutgoingStreamTable() {
     control,
     formState: { errors },
   } = useFormContext<CalculationInput>()
+  const { units, setUnit } = useUomStore()
+  const displayUnit = units.volumeFlow
 
   const { fields, append, remove } = useFieldArray({
     control,
-    name: "outgoingStreams",
+    name: 'outgoingStreams',
   })
 
   const fieldErrors = errors.outgoingStreams
@@ -145,7 +190,7 @@ function OutgoingStreamTable() {
           type="button"
           variant="outline"
           size="sm"
-          onClick={() => append({ streamNo: "", flowrate: 0, description: "" })}
+          onClick={() => append({ streamNo: '', flowrate: 0, description: '' })}
           className="h-7 text-xs gap-1"
         >
           <Plus className="h-3.5 w-3.5" />
@@ -161,16 +206,16 @@ function OutgoingStreamTable() {
         </div>
       ) : (
         <div className="rounded-md border overflow-hidden">
-          <div className="grid grid-cols-[5rem_1fr_6rem_2rem] gap-2 px-3 py-1.5 bg-muted/50 border-b text-xs font-medium text-muted-foreground">
+          <div className="grid grid-cols-[5rem_1fr_1fr_2rem] gap-2 px-3 py-1.5 bg-muted/50 border-b text-xs font-medium text-muted-foreground">
             <span>Stream No.</span>
             <span>Description</span>
-            <span>Flowrate (m³/h)</span>
+            <span>Flowrate</span>
             <span />
           </div>
           {fields.map((field, index) => (
             <div
               key={field.id}
-              className="grid grid-cols-[5rem_1fr_6rem_2rem] gap-2 px-3 py-2 items-center border-b last:border-b-0"
+              className="grid grid-cols-[5rem_1fr_1fr_2rem] gap-2 px-3 py-2 items-center border-b last:border-b-0"
             >
               <Input
                 className="h-7 text-xs"
@@ -182,14 +227,47 @@ function OutgoingStreamTable() {
                 placeholder="Optional"
                 {...register(`outgoingStreams.${index}.description`)}
               />
-              <Input
-                className="h-7 text-xs"
-                type="number"
-                step="any"
-                placeholder="0"
-                {...register(`outgoingStreams.${index}.flowrate`, {
-                  valueAsNumber: true,
-                })}
+              <Controller
+                name={`outgoingStreams.${index}.flowrate`}
+                control={control}
+                render={({ field }) => {
+                  const displayValue = isFinite(field.value)
+                    ? convertUnit(field.value, BASE_UNITS.volumeFlow, displayUnit)
+                    : ''
+                  return (
+                    <div className="flex items-center gap-1.5">
+                      <Input
+                        className="h-7 text-xs flex-1"
+                        type="number"
+                        step="any"
+                        placeholder="0"
+                        value={displayValue === '' ? '' : Number(displayValue.toFixed(6))}
+                        onChange={(e) => {
+                          const raw = parseFloat(e.target.value)
+                          field.onChange(
+                            isNaN(raw) ? NaN : convertUnit(raw, displayUnit, BASE_UNITS.volumeFlow)
+                          )
+                        }}
+                        onBlur={field.onBlur}
+                      />
+                      <Select
+                        value={displayUnit}
+                        onValueChange={(newUnit) => setUnit('volumeFlow', newUnit)}
+                      >
+                        <SelectTrigger className="h-7 min-w-fit px-2 border-muted bg-muted/40 text-xs whitespace-nowrap">
+                          <SelectValue>{UOM_LABEL[displayUnit] ?? displayUnit}</SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {UOM_OPTIONS.volumeFlow.map((u) => (
+                            <SelectItem key={u} value={u} className="text-xs">
+                              {UOM_LABEL[u] ?? u}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )
+                }}
               />
               <Button
                 type="button"
@@ -226,11 +304,18 @@ function OutgoingStreamTable() {
 
 export function StreamFlowSection() {
   const { watch } = useFormContext<CalculationInput>()
-  const incoming = watch("incomingStreams") ?? []
-  const outgoing = watch("outgoingStreams") ?? []
+  const { units } = useUomStore()
+  const displayUnit = units.volumeFlow
+
+  const incoming = watch('incomingStreams') ?? []
+  const outgoing = watch('outgoingStreams') ?? []
 
   const inTotal = incoming.reduce((s, r) => s + (Number(r.flowrate) || 0), 0)
   const outTotal = outgoing.reduce((s, r) => s + (Number(r.flowrate) || 0), 0)
+
+  // Convert base unit totals to display unit
+  const inTotalDisplay = convertUnit(inTotal, BASE_UNITS.volumeFlow, displayUnit)
+  const outTotalDisplay = convertUnit(outTotal, BASE_UNITS.volumeFlow, displayUnit)
 
   return (
     <SectionCard
@@ -238,10 +323,10 @@ export function StreamFlowSection() {
       action={
         <div className="flex gap-2">
           <Badge variant="outline" className="text-xs">
-            In Σ {inTotal.toFixed(2)} m³/h
+            In Σ {inTotalDisplay.toFixed(2)} {UOM_LABEL[displayUnit] ?? displayUnit}
           </Badge>
           <Badge variant="outline" className="text-xs">
-            Out Σ {outTotal.toFixed(2)} m³/h
+            Out Σ {outTotalDisplay.toFixed(2)} {UOM_LABEL[displayUnit] ?? displayUnit}
           </Badge>
         </div>
       }

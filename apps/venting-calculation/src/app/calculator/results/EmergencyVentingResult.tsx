@@ -1,7 +1,10 @@
-"use client"
+'use client'
 
-import type { EmergencyVentingResult as EVResult } from "@/types"
-import type { ApiEdition } from "@/types"
+import { convertUnit } from '@eng-suite/physics'
+import type { EmergencyVentingResult as EVResult } from '@/types'
+import type { ApiEdition } from '@/types'
+import { useUomStore } from '@/lib/store/uomStore'
+import { UOM_LABEL, BASE_UNITS } from '@/lib/uom'
 
 interface Props {
   result: EVResult
@@ -27,7 +30,10 @@ function getEquationHint(result: EVResult, apiEdition: ApiEdition): string {
 }
 
 export function EmergencyVentingResult({ result, apiEdition }: Props) {
+  const { units } = useUomStore()
+  const displayUnit = units.ventRate
   const equationHint = getEquationHint(result, apiEdition)
+  const displayValue = convertUnit(result.emergencyVentRequired, BASE_UNITS.ventRate, displayUnit)
 
   return (
     <div className="divide-y rounded-md border overflow-hidden">
@@ -54,7 +60,7 @@ export function EmergencyVentingResult({ result, apiEdition }: Props) {
       <div className="flex justify-between px-3 py-1.5 text-xs bg-muted/30 font-semibold">
         <span>Emergency vent required</span>
         <span className="font-mono tabular-nums">
-          {result.emergencyVentRequired.toFixed(2)} Nm³/h
+          {displayValue.toFixed(2)} {UOM_LABEL[displayUnit] ?? displayUnit}
         </span>
       </div>
     </div>

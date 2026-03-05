@@ -1,19 +1,20 @@
-"use client"
+'use client'
 
-import { useState } from "react"
-import { useFormContext } from "react-hook-form"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import { useState } from 'react'
+import { useFormContext } from 'react-hook-form'
+import { Input } from '@/components/ui/input'
+import { Button } from '@/components/ui/button'
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
-} from "@/components/ui/collapsible"
-import { ChevronDown, ChevronRight } from "lucide-react"
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import type { CalculationInput } from "@/types"
-import { FieldRow } from "../components/FieldRow"
+} from '@/components/ui/collapsible'
+import { ChevronDown, ChevronRight } from 'lucide-react'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import type { CalculationInput } from '@/types'
+import { FieldRow } from '../components/FieldRow'
+import { UomInput } from '../components/UomInput'
 
 export function DrainSystemSection() {
   const [open, setOpen] = useState(false)
@@ -64,29 +65,25 @@ export function DrainSystemSection() {
               <FieldRow
                 label="Drain Line Size"
                 htmlFor="drainLineSize"
-                unit="mm"
                 error={errors.drainLineSize?.message}
               >
-                <Input
+                <UomInput
+                  name="drainLineSize"
+                  category="length"
                   id="drainLineSize"
-                  type="number"
-                  step="any"
                   placeholder="e.g. 100"
-                  {...register("drainLineSize", { valueAsNumber: true })}
                 />
               </FieldRow>
               <FieldRow
                 label="Max Height Above Drain"
                 htmlFor="maxHeightAboveDrain"
-                unit="mm"
                 error={errors.maxHeightAboveDrain?.message}
               >
-                <Input
+                <UomInput
+                  name="maxHeightAboveDrain"
+                  category="length"
                   id="maxHeightAboveDrain"
-                  type="number"
-                  step="any"
                   placeholder="e.g. 5000"
-                  {...register("maxHeightAboveDrain", { valueAsNumber: true })}
                 />
               </FieldRow>
             </div>

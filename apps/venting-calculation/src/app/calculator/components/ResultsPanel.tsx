@@ -1,16 +1,25 @@
-"use client"
+'use client'
 
-import { useFormContext } from "react-hook-form"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Separator } from "@/components/ui/separator"
-import { Badge } from "@/components/ui/badge"
-import { AlertCircle, CheckCircle2, Circle } from "lucide-react"
-import { SectionCard } from "./SectionCard"
-import { TankSchematic } from "./TankSchematic"
-import { SummaryResult } from "../results/SummaryResult"
-import { NormalVentingResult } from "../results/NormalVentingResult"
-import { EmergencyVentingResult } from "../results/EmergencyVentingResult"
-import type { CalculationInput, CalculationResult, DerivedGeometry } from "@/types"
+import { useFormContext } from 'react-hook-form'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { Badge } from '@/components/ui/badge'
+import { AlertCircle, CheckCircle2, Circle } from 'lucide-react'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import { SectionCard } from './SectionCard'
+import { TankSchematic } from './TankSchematic'
+import { SummaryResult } from '../results/SummaryResult'
+import { NormalVentingResult } from '../results/NormalVentingResult'
+import { EmergencyVentingResult } from '../results/EmergencyVentingResult'
+import type { CalculationInput, CalculationResult, DerivedGeometry } from '@/types'
+import { useUomStore } from '@/lib/store/uomStore'
+import { UOM_OPTIONS, UOM_LABEL } from '@/lib/uom'
 
 interface Props {
   calculationResult: CalculationResult | null
@@ -65,18 +74,7 @@ export function ResultsPanel({ calculationResult, validationIssues, derivedGeome
             )}
 
           {/* ── Design Summary ───────────────────────────────────────────────── */}
-          <Card className="shadow-sm border-primary/30 bg-primary/5">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-semibold">Design Summary</CardTitle>
-                <Badge variant="secondary">{calculationResult.apiEdition} Edition</Badge>
-              </div>
-              <Separator />
-            </CardHeader>
-            <CardContent>
-              <SummaryResult summary={calculationResult.summary} />
-            </CardContent>
-          </Card>
+          <DesignSummaryCard summary={calculationResult.summary} apiEdition={calculationResult.apiEdition} />
 
           {/* ── Tank Schematic ───────────────────────────────────────────────── */}
           <TankSchematic derivedGeometry={derivedGeometry} />
@@ -107,6 +105,47 @@ export function ResultsPanel({ calculationResult, validationIssues, derivedGeome
         </>
       )}
     </div>
+  )
+}
+
+// ─── Design Summary Card with Vent Rate Unit Selector ────────────────────────
+
+interface DesignSummaryCardProps {
+  summary: any
+  apiEdition: string
+}
+
+function DesignSummaryCard({ summary, apiEdition }: DesignSummaryCardProps) {
+  const { units, setUnit } = useUomStore()
+  const displayUnit = units.ventRate
+
+  return (
+    <Card className="shadow-sm border-primary/30 bg-primary/5">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle className="text-base font-semibold">Design Summary</CardTitle>
+          <div className="flex items-center gap-2">
+            <Select value={displayUnit} onValueChange={(newUnit) => setUnit('ventRate', newUnit)}>
+              <SelectTrigger className="h-8 w-auto min-w-[80px] text-xs px-2 border-muted bg-muted/40">
+                <SelectValue>{UOM_LABEL[displayUnit] ?? displayUnit}</SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                {UOM_OPTIONS.ventRate.map((u) => (
+                  <SelectItem key={u} value={u} className="text-xs">
+                    {UOM_LABEL[u] ?? u}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Badge variant="secondary">{apiEdition} Edition</Badge>
+          </div>
+        </div>
+        <Separator />
+      </CardHeader>
+      <CardContent>
+        <SummaryResult summary={summary} />
+      </CardContent>
+    </Card>
   )
 }
 
