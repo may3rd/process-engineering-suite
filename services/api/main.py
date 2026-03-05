@@ -16,7 +16,6 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(PROJECT_ROOT / "services/calc-engine"))
 sys.path.insert(0, str(PROJECT_ROOT / "services/calc-engine/hydraulics"))
-sys.path.insert(0, str(PROJECT_ROOT / "apps/multi-agents/ProcessDesignAgents"))
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware

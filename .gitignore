@@ -67,7 +67,6 @@ yarn-error.log*
 *.swo
 
 # user set
-apps/multi-agents/
 assets/
 .agent/
 conductor/

@@ -300,9 +300,9 @@ async def export_to_word(request: ExportRequest):
     """
     try:
         # Locate the template file
-        PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent
-        # Default template location
-        template_path = PROJECT_ROOT / "apps/multi-agents/ProcessDesignAgents/reports/template.docx"
+        current_dir = Path(__file__).resolve().parent
+        # Default template location: services/api/app/services/process_design_agents/reports/template.docx
+        template_path = current_dir.parent / "services/process_design_agents/reports/template.docx"
         
         # Override if user provided path (only if it exists)
         if request.template_path:

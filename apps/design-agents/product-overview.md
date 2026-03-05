@@ -4,7 +4,7 @@
 
 A specialized module within the **Process Engineering Suite** that turns a linear agent pipeline into an interactive, user-steered design workbench. It wraps the `ProcessDesignAgents` LangGraph workflow into a React interface where engineers don't just "prompt and pray"—they review, edit, and approve the output of each agent before the next one starts. It’s built to feel familiar to anyone who lives in Excel but wants the power of a 12-agent specialized team.
 
-`ProcessDesignAgents` located in `apps/multi-agents/ProcessDesignAgents`.
+`ProcessDesignAgents` refactored into `services/api/app/services/process_design_agents`.
 
 ## Goals and Scope
 
