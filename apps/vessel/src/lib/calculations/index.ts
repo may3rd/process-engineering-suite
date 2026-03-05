@@ -12,7 +12,7 @@ import {
   singleHeadVolume,
   singleHeadSurfaceArea,
 } from './vesselGeometry'
-import { partialVolume } from './partialVolume'
+import { partialVolume, headPartialVolume, circularSegmentArea } from './partialVolume'
 import { STEEL_DENSITY_KG_M3 } from '@/lib/constants'
 
 export function computeVesselResult(input: CalculationInput): CalculationResult {
@@ -70,14 +70,59 @@ export function computeVesselResult(input: CalculationInput): CalculationResult 
   const headSA2x = singleHeadSurfaceArea(headType, insideDiameter, headDepthUsed) * 2
   const totalSA = shellSA + headSA2x
 
-  // Wetted surface area: surface in contact with liquid
-  // For vertical: wetted = shell SA up to level + head SA if submerged
-  // Simplified: proportional to partial volume / total volume ratio × total SA
+  // ── Wetted surface area ──────────────────────────────────────────────────────
+  // Geometric calculation: shell wetted by height + head wetted by fill fraction.
+  // Head SA proportional to fill fraction within the head (volume-proportional SA
+  // approximation for heads; shell SA uses exact height geometry).
   let wettedSA = 0
-  if (liquidLevel != null && isFinite(liquidLevel) && partialVol != null && totalVol > 0) {
-    // Linear approximation: wetted SA ∝ fill fraction
-    const fillFraction = Math.min(1, partialVol / totalVol)
-    wettedSA = fillFraction * totalSA
+  if (liquidLevel != null && isFinite(liquidLevel)) {
+    const D = insideDiameter
+    const c = headDepthUsed
+    const singleHeadSA = singleHeadSurfaceArea(headType, D, c)
+    const fullSingleHeadVol = singleHeadVolume(headType, D, c)
+
+    if (orientation === VesselOrientation.VERTICAL) {
+      // Level measured from outer bottom tip.
+      const level = Math.max(0, Math.min(liquidLevel, headDepthUsed + shellLength + headDepthUsed))
+
+      // Bottom head contribution
+      const bottomFill = Math.min(level, c)
+      const bottomHeadFillVol = headPartialVolume(headType, D, c, bottomFill)
+      const bottomHeadFrac = fullSingleHeadVol > 0 ? bottomHeadFillVol / fullSingleHeadVol : 0
+      const bottomWettedSA = bottomHeadFrac * singleHeadSA
+
+      // Shell contribution: π·D·clampedShellHeight
+      const shellFill = Math.max(0, Math.min(level - c, shellLength))
+      const shellWetted = Math.PI * D * shellFill / 1e6  // mm² → m²
+
+      // Top head contribution (level above top tangent line)
+      const topFill = Math.max(0, level - c - shellLength)
+      const topHeadFillVol = headPartialVolume(headType, D, c, topFill)
+      const topHeadFrac = fullSingleHeadVol > 0 ? topHeadFillVol / fullSingleHeadVol : 0
+      const topWettedSA = topHeadFrac * singleHeadSA
+
+      wettedSA = bottomWettedSA + shellWetted + topWettedSA
+    } else {
+      // Horizontal: level measured from bottom cross-section (0 to 2r).
+      const r = D / 2
+      const level = Math.max(0, Math.min(liquidLevel, 2 * r))
+
+      // Shell: wetted arc length × shell length
+      // Arc subtended = 2·arccos((r-h)/r); wetted = (arc/circumference) × full shell SA
+      if (level > 0) {
+        const arcAngle = level < 2 * r
+          ? 2 * Math.acos((r - level) / r)
+          : 2 * Math.PI
+        const shellWetted = (arcAngle / (2 * Math.PI)) * shellSA
+        // Heads: proportional to cross-section fill fraction (same as volume calc)
+        const totalCircleArea = Math.PI * r * r
+        const segArea = circularSegmentArea(r, level)
+        const headFrac = totalCircleArea > 0 ? segArea / totalCircleArea : 0
+        wettedSA = shellWetted + headFrac * singleHeadSA * 2
+      }
+    }
+
+    wettedSA = Math.max(0, Math.min(wettedSA, totalSA))
   }
 
   // ── Mass ────────────────────────────────────────────────────────────────────
@@ -148,4 +193,4 @@ export function computeVesselResult(input: CalculationInput): CalculationResult 
 }
 
 export { autoHeadDepth, shellVolume, shellSurfaceArea, singleHeadVolume, singleHeadSurfaceArea }
-export { partialVolume, circularSegmentArea } from './partialVolume'
+export { partialVolume, headPartialVolume, circularSegmentArea } from './partialVolume'

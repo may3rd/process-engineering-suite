@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { convertUnit } from "@eng-suite/physics"
-import { UOM_LABEL, UOM_OPTIONS, BASE_UNITS, type VesselUomCategory } from "@/lib/uom"
+import { UOM_LABEL, BASE_UNITS, vesselUomOptions, type VesselUomCategory } from "@/lib/uom"
 import { useUomStore } from "@/lib/store/uomStore"
 import type { CalculationInput } from "@/types"
 
@@ -59,7 +59,7 @@ export function UomInput({ name, category, id, placeholder, disabled }: UomInput
                 <SelectValue>{UOM_LABEL[displayUnit] ?? displayUnit}</SelectValue>
               </SelectTrigger>
               <SelectContent>
-                {(UOM_OPTIONS as unknown as Record<string, string[]>)[category].map((u) => (
+                {vesselUomOptions(category).map((u) => (
                   <SelectItem key={u} value={u} className="text-xs">
                     {UOM_LABEL[u] ?? u}
                   </SelectItem>

@@ -28,3 +28,8 @@ export const BASE_UNITS = {
 } as const
 
 export type VesselUomCategory = keyof typeof BASE_UNITS
+
+/** Returns the list of selectable unit strings for a vessel UoM category. */
+export function vesselUomOptions(category: VesselUomCategory): readonly string[] {
+  return (SHARED_UOM_OPTIONS as Record<string, readonly string[]>)[category] ?? []
+}

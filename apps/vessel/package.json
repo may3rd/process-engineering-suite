@@ -13,9 +13,16 @@
     "test:run": "TMPDIR=./.tmp vitest run"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
     "@eng-suite/engineering-units": "*",
     "@eng-suite/physics": "*",
+    "@eng-suite/ui-kit": "workspace:*",
     "@hookform/resolvers": "^5.2.2",
+    "@mui/icons-material": "^7.3.9",
+    "@mui/material": "^7.3.9",
+    "@mui/material-nextjs": "^7.3.6",
+    "@react-pdf/renderer": "^4.3.0",
     "@tailwindcss/postcss": "^4.2.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

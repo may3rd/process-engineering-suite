@@ -7,7 +7,13 @@ import type { Resolver } from "react-hook-form"
 import { calculationInputSchema } from "@/lib/validation/inputSchema"
 import { computeVesselResult } from "@/lib/calculations"
 import { VesselOrientation, HeadType } from "@/types"
-import type { CalculationInput, CalculationMetadata, RevisionRecord, CalculationResult } from "@/types"
+import type {
+  CalculationInput,
+  CalculationMetadata,
+  RevisionRecord,
+  CalculationResult,
+  EquipmentLinkStatus,
+} from "@/types"
 import { InputPanel } from "./components/InputPanel"
 import { ResultsPanel } from "./components/ResultsPanel"
 import { ActionMenu } from "./components/ActionMenu"
@@ -47,6 +53,7 @@ export default function VesselCalculatorPage() {
 
   const [metadata, setMetadata] = useState<CalculationMetadata>(EMPTY_METADATA)
   const [revisionHistory, setRevisionHistory] = useState<RevisionRecord[]>([])
+  const [linkStatus, setLinkStatus] = useState<EquipmentLinkStatus>("idle")
 
   const watchedValues = form.watch()
 
@@ -65,36 +72,39 @@ export default function VesselCalculatorPage() {
     form.clearErrors()
     setMetadata(EMPTY_METADATA)
     setRevisionHistory([])
+    setLinkStatus("idle")
   }
 
   return (
     <FormProvider {...form}>
       <main className="min-h-screen bg-background">
-        {/* Top bar */}
-        <div className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
-          <div className="container mx-auto px-4 py-3">
-            <div className="flex items-center justify-between gap-4">
-              <div>
-                <h1 className="text-lg font-semibold">Vessel Calculator</h1>
-                <p className="text-sm text-muted-foreground">
-                  Volume &amp; Surface Area · Pressure Vessels &amp; Tanks
-                </p>
-              </div>
-              <ActionMenu
-                onClear={handleClear}
-                calculationMetadata={metadata}
-                revisionHistory={revisionHistory}
-                onCalculationLoaded={(m, r) => { setMetadata(m); setRevisionHistory(r) }}
-                calculationResult={calculationResult}
-              />
-            </div>
+        {/* Secondary action bar */}
+        <div className="border-b bg-card/50 backdrop-blur-sm">
+          <div className="container mx-auto px-4 py-2 flex items-center justify-between gap-4">
+            <p className="text-sm text-muted-foreground">
+              Vessel &amp; Tank · Volume, Surface Area &amp; Mass
+            </p>
+            <ActionMenu
+              onClear={handleClear}
+              calculationMetadata={metadata}
+              revisionHistory={revisionHistory}
+              onCalculationLoaded={(m, r) => { setMetadata(m); setRevisionHistory(r) }}
+              calculationResult={calculationResult}
+              linkStatus={linkStatus}
+              onLinkStatusChange={setLinkStatus}
+            />
           </div>
         </div>
 
         {/* Two-column grid */}
         <div className="container mx-auto px-4 py-6">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-            <InputPanel />
+            <InputPanel
+              metadata={metadata}
+              onMetadataChange={setMetadata}
+              revisionHistory={revisionHistory}
+              onRevisionHistoryChange={setRevisionHistory}
+            />
             <ResultsPanel calculationResult={calculationResult} />
           </div>
         </div>

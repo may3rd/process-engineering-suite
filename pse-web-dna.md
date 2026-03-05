@@ -1,7 +1,7 @@
 # PSE Web DNA
 > Design & architecture reference for all `apps/` in the process-engineering-suite monorepo.
 > Derived from `apps/venting-calculation`. Follow these patterns when building new apps.
-> **Template:** Use `apps/calculator-template` as the foundation for all new calculator-style web apps.
+> **Template:** Use `apps/calculation-template` as the foundation for all new calculator-style web apps.
 
 ---
 
@@ -22,51 +22,186 @@
 
 ## 2. Page Layout
 
-Every calculator app uses a **sticky two-panel layout**:
+Every calculator app uses a **three-tier layout**:
 
 ```
-┌─ top bar ──────────────────────────────────────────────────────────┐
-│  [App title + subtitle]                        [≡ Actions ▾]       │
+┌─ TopToolbar (layout.tsx) ─────────────────────────────────────────┐
+│  [Icon]  App Title                              [☀/🌙 toggle]     │
+│          Subtitle                                                   │
+└────────────────────────────────────────────────────────────────────┘
+┌─ secondary action bar (page.tsx) ─────────────────────────────────┐
+│  Descriptor Label                                      [≡ Actions ▾]│
 └────────────────────────────────────────────────────────────────────┘
 ┌─ left panel (inputs) ────────┬─ right panel (results) ─────────────┐
-│  SectionCard                 │  Empty/ValidationIssues/Results      │
+│  CalculationMetadataSection  │  Empty/ValidationIssues/Results      │
 │  SectionCard                 │                                      │
 │  SectionCard                 │  DesignSummaryCard                   │
-│  ...                         │  TankSchematic (or equivalent)       │
-│                              │  DetailResult1                       │
+│  ...                         │  DetailResult1                       │
 │                              │  DetailResult2                       │
 └──────────────────────────────┴──────────────────────────────────────┘
 ```
 
-**Tailwind grid:**
+**layout.tsx** — TopToolbar lives here, renders for all routes:
 ```tsx
-// page.tsx outer container
-<div className="container mx-auto px-4 py-6 min-h-screen bg-background">
-  {/* top action bar */}
-  <div className="flex items-center justify-between border-b pb-3 mb-6 bg-card/50 backdrop-blur-sm">
-    <div>
-      <h1 className="text-lg font-semibold">{appTitle}</h1>
-      <p className="text-sm text-muted-foreground">{subtitle}</p>
-    </div>
-    <ActionMenu ... />
-  </div>
+// app/layout.tsx
+import { Providers } from "./providers"
+import { TopToolbar } from "@/components/TopToolbar"
 
-  {/* two-column grid */}
-  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-    <InputPanel />
-    <ResultsPanel />
-  </div>
-</div>
+export default function RootLayout({ children }) {
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <body>
+        <Providers>
+          <TopToolbar />
+          {children}
+        </Providers>
+      </body>
+    </html>
+  )
+}
+```
+
+**page.tsx** — secondary action bar + two-column grid:
+```tsx
+// calculator/page.tsx
+<FormProvider {...form}>
+  <main className="min-h-screen bg-background">
+    {/* Secondary action bar — left descriptor + Actions menu */}
+    <div className="border-b bg-card/50 backdrop-blur-sm">
+      <div className="container mx-auto px-4 py-2 flex items-center justify-between gap-4">
+        <p className="text-sm text-muted-foreground">Descriptor Text</p>
+        <ActionMenu ... />
+      </div>
+    </div>
+
+    {/* Two-column grid */}
+    <div className="container mx-auto px-4 py-6">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+        <InputPanel metadata={...} onMetadataChange={...} revisionHistory={...} onRevisionHistoryChange={...} />
+        <ResultsPanel calculationResult={calculationResult} />
+      </div>
+    </div>
+  </main>
+</FormProvider>
 ```
 
 **Rules:**
+- `TopToolbar` always in `layout.tsx`, not `page.tsx`
+- Secondary action bar contains a left descriptor label and `<ActionMenu>` on the right
 - Single column on mobile, two columns at `xl` (1280 px)
 - `items-start` prevents stretching of shorter panel
 - Inputs always left, results always right
+- `CalculationMetadataSection` is always the **first** section in `InputPanel`
 
 ---
 
 ## 3. Core Components
+
+### 3.0 `TopToolbar` — Sticky branding + theme toggle
+
+Lives in `src/components/TopToolbar.tsx`. Mounted in `layout.tsx` so it persists across all routes.
+
+**Visual spec** (matches `apps/venting-calculation` `TopFloatingToolbar`):
+- Container: `sticky top-0 z-[1100]`, `bg-card backdrop-blur-[10px]`, `border-b`, `boxShadow: "0 2px 10px rgba(0,0,0,0.1)"`, `px-6 py-4`
+- Left — icon box: 40×40 (`size-10`), `rounded-[12px]`, gradient `linear-gradient(#00C4F9, #0076F0)`, inset highlight shadow, white icon (`size-5`)
+- Left — title: `text-[1.25rem] font-bold leading-[1.2] tracking-tight`
+- Left — subtitle: `block text-xs leading-[1] text-muted-foreground`
+- Right — theme button: 40×40 (`size-10`), `rounded-full`, glassmorphism (dark: `rgba(255,255,255,0.1)` bg + `rgba(255,255,255,0.2)` border; light: `rgba(255,255,255,0.9)` bg + `rgba(0,0,0,0.1)` border), `backdrop-blur(10px)`, `boxShadow: "0 4px 12px rgba(0,0,0,0.1)"`, `hover:scale-105 transition-all duration-200`
+
+```tsx
+// src/components/TopToolbar.tsx
+"use client"
+import { useTheme } from "@mui/material"
+import { TopFloatingToolbar } from "@eng-suite/ui-kit"
+import { Calculator } from "lucide-react"  // replace icon per app
+import { useColorMode } from "@/app/providers"
+
+export function TopToolbar() {
+  const theme = useTheme()
+  const { mode, toggleColorMode } = useColorMode()
+  const isDark = mode === "dark" || theme.palette.mode === "dark"
+  
+  return (
+    <TopFloatingToolbar
+      title="App Title" // TODO: replace per app
+      subtitle="Subtitle" // TODO: replace per app
+      icon={<Calculator className="size-5" />} // TODO: replace per app
+      onToggleTheme={toggleColorMode}
+      isDarkMode={isDark}
+    />
+  )
+}
+```
+
+**Per-app TODO:** replace `Calculator` icon, title string, subtitle string.
+
+---
+
+### 3.0b `Providers` + `ColorModeContext` — Theme context
+
+`src/app/providers.tsx` exports both `Providers` (wrap entire app) and `useColorMode` (consumed by `TopToolbar`).
+
+- Reads/writes `"ept-pes-theme"` in localStorage (`"dark"` default)
+- Syncs `.dark` class on `<html>` for Tailwind dark mode
+- `ColorModeContext` exposes `{ mode, toggleColorMode }`
+
+```tsx
+// app/providers.tsx
+export const ColorModeContext = React.createContext<{ mode, toggleColorMode }>({...})
+export const useColorMode = () => React.useContext(ColorModeContext)
+
+export function Providers({ children }) {
+  const [mode, setMode] = React.useState<"light"|"dark">("dark")
+  // useEffect: hydrate from localStorage
+  // useEffect: toggle .dark on <html>
+  const toggleColorMode = React.useCallback(() => {
+    setMode(prev => { const next = prev === "light" ? "dark" : "light"; localStorage.setItem("ept-pes-theme", JSON.stringify(next)); return next })
+  }, [])
+  return (
+    <ColorModeContext.Provider value={{ mode, toggleColorMode }}>
+      <div className="min-h-screen bg-background text-foreground antialiased font-sans">{children}</div>
+    </ColorModeContext.Provider>
+  )
+}
+```
+
+---
+
+### 3.0c `CalculationMetadataSection` — Calculation header card
+
+**Always the first section in `InputPanel`.** Lives in `calculator/components/CalculationMetadataSection.tsx`.
+
+Displays project/document metadata and revision history. Editing happens via two dialogs ("Edit Revisions", "Edit Metadata") opened from buttons in the `SectionCard` `action` slot.
+
+**Props:**
+```ts
+interface Props {
+  metadata: CalculationMetadata          // { projectNumber, documentNumber, title, projectName, client }
+  onMetadataChange: (m: CalculationMetadata) => void
+  revisionHistory: RevisionRecord[]      // max 3, each: { rev, by, byDate, checkedBy, checkedDate, approvedBy, approvedDate }
+  onRevisionHistoryChange: (r: RevisionRecord[]) => void
+}
+```
+
+**State lives in `page.tsx`** (not in the form):
+```tsx
+const [calculationMetadata, setCalculationMetadata] = useState<CalculationMetadata>(EMPTY_METADATA)
+const [revisionHistory, setRevisionHistory] = useState<RevisionRecord[]>([])
+// passed down: InputPanel → CalculationMetadataSection
+```
+
+**Display layout:**
+- 2-column grid: Project Number, Document Number, Title, Project Name, Client, Revision Records count
+- Revision history table (Rev, By, Date, Checked, Date, Approved, Date) — read-only
+- `Metadata completeness: n/5 fields` footer
+
+**Edit Revisions dialog:** inline table editing with up/down/delete row buttons, Add Revision button (max 3), Save/Cancel footer.
+
+**Edit Metadata dialog:** 5 labeled `<Input>` fields, Clear + Save Metadata footer.
+
+**`normalizeRevisionHistory`:** trims whitespace, drops blank rows, slices to 3.
+
+---
 
 ### 3.1 `SectionCard` — Section wrapper
 
@@ -629,10 +764,10 @@ When adding UoM categories, the `migrate` function in `uomStore` fills them in a
 apps/{app-name}/
 ├── src/
 │   ├── app/
-│   │   ├── layout.tsx            # root layout, providers
-│   │   ├── providers.tsx         # ThemeProvider, etc.
+│   │   ├── layout.tsx            # root layout: Providers + TopToolbar
+│   │   ├── providers.tsx         # ColorModeContext + Providers wrapper
 │   │   └── calculator/
-│   │       ├── page.tsx          # two-column layout, form setup, result trigger
+│   │       ├── page.tsx          # form setup, secondary action bar, two-column grid
 │   │       ├── components/
 │   │       │   ├── SectionCard.tsx
 │   │       │   ├── FieldRow.tsx
@@ -640,17 +775,19 @@ apps/{app-name}/
 │   │       │   ├── ActionMenu.tsx
 │   │       │   ├── InputPanel.tsx
 │   │       │   ├── ResultsPanel.tsx
+│   │       │   ├── CalculationMetadataSection.tsx   # always first in InputPanel
 │   │       │   ├── SaveCalculationButton.tsx
 │   │       │   ├── LoadCalculationButton.tsx
 │   │       │   └── ExportButton.tsx
 │   │       ├── sections/         # form input sections (one per SectionCard)
-│   │       │   ├── TankDetailSection.tsx
+│   │       │   ├── DetailsSection.tsx
 │   │       │   ├── FluidPropertiesSection.tsx
 │   │       │   └── ...
 │   │       └── results/          # result display components
 │   │           ├── SummaryResult.tsx
-│   │           ├── NormalVentingResult.tsx
 │   │           └── ...
+│   ├── components/
+│   │   └── TopToolbar.tsx        # sticky top bar with icon, title, theme toggle
 │   ├── lib/
 │   │   ├── uom.ts                # BASE_UNITS, UOM_OPTIONS, UOM_LABEL, UomCategory
 │   │   ├── calculations/         # pure calculation functions (no React)
@@ -673,7 +810,9 @@ apps/{app-name}/
 
 ## 13. Checklist — New App Setup
 
-- [ ] Copy `uom.ts`, `uomStore.ts`, `UomInput.tsx`, `SectionCard.tsx`, `FieldRow.tsx`
+- [ ] Start from `apps/calculation-template` (already has TopToolbar, CalculationMetadataSection)
+- [ ] Update `TopToolbar`: replace icon (lucide), title, subtitle
+- [ ] Update `layout.tsx` metadata: `title`, `description`
 - [ ] Update `uomStore` localStorage key to `{app-name}-uom-prefs`
 - [ ] Define `BASE_UNITS` for the new app's unit categories
 - [ ] Build Zod input schema with base-unit validation
@@ -683,5 +822,5 @@ apps/{app-name}/
 - [ ] Implement `normalizeLoadedInput()` in LoadCalculationButton
 - [ ] Use `font-mono tabular-nums` for all numeric result values
 - [ ] Verify save/load round-trips in base units (no conversion on load)
-- [ ] Test dark mode (toggle `.dark` on `<html>`)
+- [ ] Test dark mode (toggle button in TopToolbar)
 - [ ] Test at `xl` breakpoint for two-column layout

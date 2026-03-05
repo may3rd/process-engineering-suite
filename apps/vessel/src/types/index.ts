@@ -103,3 +103,24 @@ export interface CalculationResult {
   headDepthUsed: number       // mm — actual head depth used in calculation
   calculatedAt: string        // ISO timestamp
 }
+
+// ─── Equipment Link (API) ─────────────────────────────────────────────────────
+
+export interface EngineeringObjectPayload {
+  tag: string
+  object_type: string
+  properties: Record<string, unknown>
+  status: string | null
+}
+
+export interface EquipmentPushPayload {
+  object_type: string
+  properties: {
+    inputs: CalculationInput
+    result: CalculationResult
+    savedAt: string
+  }
+  status: string
+}
+
+export type EquipmentLinkStatus = 'idle' | 'linked' | 'unlinked' | 'loading' | 'error'

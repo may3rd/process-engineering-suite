@@ -5,5 +5,5 @@ import { redirect } from 'next/navigation'
  * With basePath "/vessel", this handles requests to /vessel/.
  */
 export default function RootPage() {
-  redirect('/vessel/calculator')
+  redirect('/calculator')
 }
