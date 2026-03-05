@@ -71,3 +71,8 @@ apps/multi-agents/
 assets/
 .agent/
 conductor/
+# TypeScript build info
+*.tsbuildinfo
+
+# Claude Code worktrees & session files
+.claude/worktrees/
