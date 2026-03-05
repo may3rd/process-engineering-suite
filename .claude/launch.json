@@ -42,6 +42,13 @@
       "runtimeArgs": ["run", "dev"],
       "cwd": "apps/vessel",
       "port": 3006
+    },
+    {
+      "name": "calculator-template",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "apps/calculator-template",
+      "port": 3010
     }
   ]
 }

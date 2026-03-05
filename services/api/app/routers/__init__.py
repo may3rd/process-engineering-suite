@@ -10,6 +10,7 @@ from .design_agents import router as design_agents_router
 from .vessels import router as vessels_router
 from .venting import router as venting_router
 from .network import router as network_router
+from .engineering_objects import router as engineering_objects_router
 
 
 __all__ = [
@@ -24,4 +25,5 @@ __all__ = [
     "vessels_router",
     "venting_router",
     "network_router",
+    "engineering_objects_router",
 ]

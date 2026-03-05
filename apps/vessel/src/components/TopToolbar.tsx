@@ -2,7 +2,7 @@
 
 import { useTheme } from "@mui/material"
 import { TopFloatingToolbar } from "@eng-suite/ui-kit"
-import InboxIcon from "@mui/icons-material/Inbox"
+import CalculateIcon from "@mui/icons-material/Calculate";
 import { useColorMode } from "@/app/providers"
 
 export function TopToolbar() {
@@ -15,7 +15,7 @@ export function TopToolbar() {
     <TopFloatingToolbar
       title="Vessel Calculator"
       subtitle="Volume & Surface Area · Pressure Vessels & Tanks"
-      icon={<InboxIcon fontSize="medium" />}
+      icon={<CalculateIcon fontSize="medium" />}
       onToggleTheme={toggleColorMode}
       isDarkMode={isDark}
     />

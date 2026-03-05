@@ -10,7 +10,8 @@ A monorepo for process engineering calculations and workflows.
 | `apps/docs` | 3001 | Documentation site |
 | `apps/network-editor` | 3002 | Hydraulic network editor |
 | `apps/psv` | 3003 | PSV sizing workflow |
-| `apps/venting-calculation` | 3004 | Tank venting calculator |
+| `apps/design-agents` | 3004 | AI design agents |
+| `apps/venting-calculation` | 3005 | Tank venting calculator |
 
 ## Backend
 
@@ -18,7 +19,6 @@ A monorepo for process engineering calculations and workflows.
 |---------|------|-------------|
 | `services/api` | 8000 | FastAPI REST API |
 | `services/calc-engine` | - | Python calculation engine |
-| `services/design-agents` | - | AI design agents |
 
 ## Quick Start
 
@@ -59,22 +59,26 @@ bun run format       # Format code
 ## Project Structure
 
 ```
-apps/           # Frontend applications (Next.js)
+apps/           # Frontend applications (Next.js / Vite)
 ├── web/
+├── docs/
 ├── network-editor/
 ├── psv/
+├── design-agents/
 └── venting-calculation/
 
 services/       # Backend services (Python)
-├── api/        # FastAPI REST API
-├── calc-engine/
-└── design-agents/
+├── api/        # FastAPI REST API (with design-agents logic)
+└── calc-engine/
 
 packages/       # Shared libraries
-├── api-client/
-├── types/
-├── ui/
-└── unit-converter/
+├── api-client/ # Generated API client
+├── api-std/    # Standard API definitions
+├── physics-engine/ # Calculation logic
+├── ui-kit/     # Shared UI components
+├── types/      # Shared TypeScript types
+├── unit-converter/ # Unit conversion utility
+└── ...
 
 infra/          # Docker & deployment config
 docs/           # Architecture documentation
@@ -89,7 +93,7 @@ docs/           # Architecture documentation
 
 ## Tech Stack
 
-- **Frontend**: Next.js, TypeScript, Tailwind, Bun
-- **Backend**: Python, FastAPI, SQLAlchemy, Alembic
+- **Frontend**: Next.js, Vite, TypeScript, Tailwind, Bun, Material UI
+- **Backend**: Python, FastAPI, SQLAlchemy, Alembic, LangGraph
 - **Database**: PostgreSQL
 - **Deployment**: Docker, Vercel

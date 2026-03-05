@@ -45,6 +45,14 @@ const tools = [
     status: "active" as const,
   },
   {
+    title: "Vessel & Tank Sizing",
+    description:
+      "Volume, surface area, and mass calculations for vertical and horizontal vessels with multiple head types.",
+    icon: <CalculateIcon fontSize="large" />,
+    href: "/vessel/calculator",
+    status: "active" as const,
+  },
+  {
     title: "Control Valve Sizing",
     description:
       "CV sizing based on ISA 75.01. Includes cavitation checks.",

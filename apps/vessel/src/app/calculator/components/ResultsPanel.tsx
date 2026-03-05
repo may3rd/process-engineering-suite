@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { CheckCircle2, Circle } from "lucide-react"
 import { SectionCard } from "./SectionCard"
 import { SummaryResult } from "../results/SummaryResult"
+import { VesselSchematic } from "./VesselSchematic"
 import { VolumeResult } from "../results/VolumeResult"
 import { SurfaceAreaResult } from "../results/SurfaceAreaResult"
 import { MassTimingResult } from "../results/MassTimingResult"
@@ -29,6 +30,7 @@ export function ResultsPanel({ calculationResult }: Props) {
   return (
     <div className="space-y-4">
       <SummaryResult result={calculationResult} />
+      <VesselSchematic />
       <VolumeResult result={calculationResult} />
       <SurfaceAreaResult result={calculationResult} />
       <MassTimingResult result={calculationResult} />

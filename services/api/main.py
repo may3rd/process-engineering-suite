@@ -65,6 +65,7 @@ from services.api.app.routers import (
     vessels_router,
     venting_router,
     network_router,
+    engineering_objects_router,
 )
 
 app.include_router(hierarchy_router)
@@ -78,6 +79,7 @@ app.include_router(design_agents_router)
 app.include_router(vessels_router)
 app.include_router(venting_router)
 app.include_router(network_router)
+app.include_router(engineering_objects_router)
 
 
 # Configure CORS for local development
