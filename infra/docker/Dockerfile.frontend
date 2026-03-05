@@ -1,0 +1,75 @@
+# Multi-stage build for Next.js frontends (AWS ECS/Fargate)
+# Supports building: web, network-editor, psv, docs
+# Usage: docker build --build-arg APP_NAME=web -f Dockerfile.frontend .
+
+# ============================================================================
+# Stage 1: Dependencies
+# ============================================================================
+FROM oven/bun:1 AS deps
+
+WORKDIR /app
+
+# Copy package files
+COPY package.json bun.lockb ./
+COPY packages ./packages
+COPY turbo.json ./
+
+# Install dependencies
+RUN bun install --frozen-lockfile
+
+# ============================================================================
+# Stage 2: Builder
+# ============================================================================
+FROM oven/bun:1 AS builder
+
+WORKDIR /app
+
+# Build argument for which app to build
+ARG APP_NAME
+ENV APP_NAME=${APP_NAME}
+
+# Copy dependencies from deps stage
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=deps /app/packages ./packages
+
+# Copy application code
+COPY apps/${APP_NAME} ./apps/${APP_NAME}
+COPY turbo.json ./
+COPY package.json ./
+
+# Build the specific app
+RUN bun run build --filter=@eng-suite/${APP_NAME}
+
+# ============================================================================
+# Stage 3: Production - Standalone Next.js
+# ============================================================================
+FROM node:20-alpine AS runner
+
+WORKDIR /app
+
+# Create non-root user
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+# Copy standalone output
+ARG APP_NAME
+ENV APP_NAME=${APP_NAME}
+
+COPY --from=builder --chown=nextjs:nodejs /app/apps/${APP_NAME}/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/apps/${APP_NAME}/.next/static ./apps/${APP_NAME}/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/${APP_NAME}/public ./apps/${APP_NAME}/public
+
+USER nextjs
+
+# Expose port (default 3000, override via environment)
+EXPOSE 3000
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+    CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})" || exit 1
+
+# Start the app (use shell form for variable expansion)
+CMD node apps/$APP_NAME/server.js

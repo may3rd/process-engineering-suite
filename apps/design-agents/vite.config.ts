@@ -14,4 +14,10 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  define: {
+    // Inject deployment environment for runtime detection
+    'import.meta.env.VITE_DEPLOYMENT_ENV': JSON.stringify(
+      process.env.DEPLOYMENT_ENV || process.env.VITE_DEPLOYMENT_ENV || 'local'
+    ),
+  },
 })
