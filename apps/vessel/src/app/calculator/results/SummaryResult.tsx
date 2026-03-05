@@ -6,12 +6,15 @@ import { convertUnit } from "@eng-suite/physics"
 import { BASE_UNITS, UOM_LABEL } from "@/lib/uom"
 import { useUomStore } from "@/lib/store/uomStore"
 import type { CalculationResult } from "@/types"
+import { EquipmentMode, TankType } from "@/types"
 
 interface Props {
   result: CalculationResult
+  equipmentMode?: EquipmentMode
+  tankType?: TankType
 }
 
-export function SummaryResult({ result }: Props) {
+export function SummaryResult({ result, equipmentMode, tankType }: Props) {
   const { units } = useUomStore()
   const volUnit = units.volume ?? BASE_UNITS.volume
   const areaUnit = units.area ?? BASE_UNITS.area
@@ -20,10 +23,27 @@ export function SummaryResult({ result }: Props) {
   const shellVol = convertUnit(result.volumes.shellVolume, BASE_UNITS.volume, volUnit)
   const totalSA = convertUnit(result.surfaceAreas.totalSurfaceArea, BASE_UNITS.area, areaUnit)
 
+  const isTank = equipmentMode === EquipmentMode.TANK
+  const isSphericalTank = isTank && tankType === TankType.SPHERICAL
+
   const metrics = [
-    { label: "Total Volume", value: totalVol.toFixed(3), unit: UOM_LABEL[volUnit] ?? volUnit },
-    { label: "Shell Volume", value: shellVol.toFixed(3), unit: UOM_LABEL[volUnit] ?? volUnit },
-    { label: "Total Surface Area", value: totalSA.toFixed(3), unit: UOM_LABEL[areaUnit] ?? areaUnit },
+    {
+      label: isSphericalTank ? "Sphere Volume" : isTank ? "Total Tank Volume" : "Total Volume",
+      value: totalVol.toFixed(3),
+      unit: UOM_LABEL[volUnit] ?? volUnit,
+    },
+    {
+      label: isSphericalTank ? "Wetted Volume (LL)" : "Shell Volume",
+      value: (isSphericalTank
+        ? convertUnit(result.volumes.partialVolume ?? 0, BASE_UNITS.volume, volUnit)
+        : shellVol).toFixed(3),
+      unit: UOM_LABEL[volUnit] ?? volUnit,
+    },
+    {
+      label: isSphericalTank ? "Sphere Surface Area" : isTank ? "Total Tank Surface Area" : "Total Surface Area",
+      value: totalSA.toFixed(3),
+      unit: UOM_LABEL[areaUnit] ?? areaUnit,
+    },
   ]
 
   return (

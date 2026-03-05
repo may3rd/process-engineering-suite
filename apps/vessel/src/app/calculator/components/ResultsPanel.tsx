@@ -8,17 +8,22 @@ import { CheckCircle2, Circle } from "lucide-react"
 import { SectionCard } from "./SectionCard"
 import { SummaryResult } from "../results/SummaryResult"
 import { VesselSchematic } from "./VesselSchematic"
+import { TankSchematic } from "./TankSchematic"
 import { VolumeResult } from "../results/VolumeResult"
 import { SurfaceAreaResult } from "../results/SurfaceAreaResult"
 import { MassTimingResult } from "../results/MassTimingResult"
 import type { CalculationInput, CalculationResult } from "@/types"
-import { HeadType } from "@/types"
+import { EquipmentMode, HeadType, TankType, TankRoofType } from "@/types"
 
 interface Props {
   calculationResult: CalculationResult | null
 }
 
 export function ResultsPanel({ calculationResult }: Props) {
+  const { watch } = useFormContext<CalculationInput>()
+  const equipmentMode = watch("equipmentMode") ?? EquipmentMode.VESSEL
+  const tankType = watch("tankType")
+
   if (!calculationResult) {
     return (
       <div className="space-y-4">
@@ -29,10 +34,10 @@ export function ResultsPanel({ calculationResult }: Props) {
 
   return (
     <div className="space-y-4">
-      <SummaryResult result={calculationResult} />
-      <VesselSchematic />
-      <VolumeResult result={calculationResult} />
-      <SurfaceAreaResult result={calculationResult} />
+      <SummaryResult result={calculationResult} equipmentMode={equipmentMode} tankType={tankType} />
+      {equipmentMode === EquipmentMode.TANK ? <TankSchematic /> : <VesselSchematic />}
+      <VolumeResult result={calculationResult} equipmentMode={equipmentMode} tankType={tankType} />
+      <SurfaceAreaResult result={calculationResult} equipmentMode={equipmentMode} tankType={tankType} />
       <MassTimingResult result={calculationResult} />
     </div>
   )
@@ -48,6 +53,9 @@ function RequirementsChecklist() {
     typeof v === "number" && !isNaN(v) && isFinite(v) && (v as number) > 0
 
   const isConical = values.headType === HeadType.CONICAL
+  const isTank = (values.equipmentMode ?? EquipmentMode.VESSEL) === EquipmentMode.TANK
+  const tankType = values.tankType
+  const roofType = values.tankRoofType
 
   const requiredChecks = [
     {
@@ -56,21 +64,41 @@ function RequirementsChecklist() {
       done: typeof values.tag === "string" && values.tag.trim().length > 0,
     },
     {
-      label: "Orientation & head type",
-      hint: "Select vessel orientation and head type",
-      done: !!values.orientation && !!values.headType,
+      label: "Equipment mode",
+      hint: "Select Vessel or Tank",
+      done: !!values.equipmentMode,
     },
+    ...(!isTank
+      ? [{
+        label: "Orientation & head type",
+        hint: "Select vessel orientation and head type",
+        done: !!values.orientation && !!values.headType,
+      }]
+      : [{
+        label: "Tank type",
+        hint: "Select top roof or spherical tank",
+        done: !!values.tankType,
+      }]),
+    ...(isTank && tankType === TankType.TOP_ROOF
+      ? [{
+        label: "Top roof type",
+        hint: "Select tank roof type",
+        done: !!roofType,
+      }]
+      : []),
     {
       label: "Inside diameter",
       hint: "Shell inside diameter in mm",
       done: isValidNumber(values.insideDiameter),
     },
-    {
-      label: "Shell length (TL–TL)",
-      hint: "Tangent-to-tangent length in mm",
-      done: isValidNumber(values.shellLength),
-    },
-    ...(isConical
+    ...(!isTank || tankType === TankType.TOP_ROOF
+      ? [{
+        label: isTank ? "Shell height" : "Shell length (TL–TL)",
+        hint: isTank ? "Tank shell height in mm" : "Tangent-to-tangent length in mm",
+        done: isValidNumber(values.shellLength),
+      }]
+      : []),
+    ...(!isTank && isConical
       ? [
         {
           label: "Head depth (conical)",
@@ -78,6 +106,16 @@ function RequirementsChecklist() {
           done: isValidNumber(values.headDepth),
         },
       ]
+      : []),
+    ...(isTank &&
+      tankType === TankType.TOP_ROOF &&
+      roofType != null &&
+      roofType !== TankRoofType.FLAT
+      ? [{
+        label: "Roof height",
+        hint: "Required for cone/dome roof",
+        done: isValidNumber(values.roofHeight),
+      }]
       : []),
   ]
 

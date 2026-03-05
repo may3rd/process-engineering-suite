@@ -1,123 +1,120 @@
 "use client"
 
 import { useFormContext } from "react-hook-form"
-import { CalculationInput, VesselOrientation, HeadType } from "@/types"
+import { CalculationInput, EquipmentMode, VesselOrientation, HeadType } from "@/types"
 import { SectionCard } from "./SectionCard"
 import { autoHeadDepth } from "@/lib/calculations/vesselGeometry"
-import { cn } from "@/lib/utils"
 
 export function VesselSchematic() {
   const { watch } = useFormContext<CalculationInput>()
 
   const id = watch("insideDiameter")
   const length = watch("shellLength")
-  const orientation = watch("orientation")
-  const headType = watch("headType")
+  const equipmentMode = watch("equipmentMode") ?? EquipmentMode.VESSEL
+  const orientation = watch("orientation") ?? VesselOrientation.VERTICAL
+  const headType = watch("headType") ?? HeadType.ELLIPSOIDAL_2_1
   const headDepthInput = watch("headDepth")
+  const bootHeight = watch("bootHeight") ?? 0
 
   const ll = watch("liquidLevel")
   const hll = watch("hll")
   const lll = watch("lll")
   const ofl = watch("ofl")
 
-  if (!id || id <= 0 || !length || length <= 0) {
+  if (equipmentMode === EquipmentMode.TANK || !id || id <= 0 || !length || length <= 0) {
     return null
   }
 
   const headDepth = headDepthInput || autoHeadDepth(headType, id) || 0
   const isVertical = orientation === VesselOrientation.VERTICAL
 
-  const padding = 60
-  const svgSize = 400
+  const padding = 56
+  const svgSize = 420
   const drawArea = svgSize - 2 * padding
 
-  // Calculate total dimensions for scaling
   const totalW = isVertical ? id : length + 2 * headDepth
-  const totalH = isVertical ? length + 2 * headDepth : id
+  const totalH = isVertical
+    ? length + headDepth + Math.max(headDepth, bootHeight)
+    : id + bootHeight
 
-  const scale = Math.min(drawArea / totalW, drawArea / totalH)
+  const scale = Math.min(drawArea / Math.max(totalW, 1), drawArea / Math.max(totalH, 1))
 
-  // Scaled dimensions
   const vW = (isVertical ? id : length) * scale
   const vH = (isVertical ? length : id) * scale
   const vHD = headDepth * scale
+  const boot = Math.max(0, bootHeight) * scale
 
-  // Origin point (top-left of shell for vertical, or left tangent for horizontal)
-  const x0 = (svgSize - (isVertical ? vW : vW + 2 * vHD)) / 2 + (isVertical ? 0 : vHD)
-  const y0 = (svgSize - (isVertical ? vH + 2 * vHD : vH)) / 2 + (isVertical ? vHD : 0)
+  const fullW = isVertical ? vW : vW + 2 * vHD
+  const fullH = isVertical
+    ? vH + vHD + Math.max(vHD, boot)
+    : vH + boot
 
-  // Vessel Outline Path
+  const left = (svgSize - fullW) / 2
+  const top = (svgSize - fullH) / 2
+  const x0 = isVertical ? left : left + vHD
+  const y0 = isVertical ? top + vHD : top
+
   let path = ""
   if (isVertical) {
-    // Shell
     path = `M ${x0},${y0} L ${x0 + vW},${y0} L ${x0 + vW},${y0 + vH} L ${x0},${y0 + vH} Z`
-    // Top Head
     if (headType === HeadType.HEMISPHERICAL) {
       path += ` M ${x0 + vW},${y0} A ${vW / 2},${vW / 2} 0 0 0 ${x0},${y0}`
-    } else if (headType === HeadType.ELLIPSOIDAL_2_1 || headType === HeadType.TORISPHERICAL_80_10) {
-      path += ` M ${x0 + vW},${y0} A ${vW / 2},${vHD} 0 0 0 ${x0},${y0}`
-    } else if (headType === HeadType.CONICAL) {
-      path += ` M ${x0 + vW},${y0} L ${x0 + vW / 2},${y0 - vHD} L ${x0},${y0}`
-    }
-    // Bottom Head
-    if (headType === HeadType.HEMISPHERICAL) {
       path += ` M ${x0},${y0 + vH} A ${vW / 2},${vW / 2} 0 0 0 ${x0 + vW},${y0 + vH}`
     } else if (headType === HeadType.ELLIPSOIDAL_2_1 || headType === HeadType.TORISPHERICAL_80_10) {
+      path += ` M ${x0 + vW},${y0} A ${vW / 2},${vHD} 0 0 0 ${x0},${y0}`
       path += ` M ${x0},${y0 + vH} A ${vW / 2},${vHD} 0 0 0 ${x0 + vW},${y0 + vH}`
     } else if (headType === HeadType.CONICAL) {
+      path += ` M ${x0 + vW},${y0} L ${x0 + vW / 2},${y0 - vHD} L ${x0},${y0}`
       path += ` M ${x0},${y0 + vH} L ${x0 + vW / 2},${y0 + vH + vHD} L ${x0 + vW},${y0 + vH}`
     }
   } else {
-    // Horizontal
-    // Shell
     path = `M ${x0},${y0} L ${x0 + vW},${y0} L ${x0 + vW},${y0 + vH} L ${x0},${y0 + vH} Z`
-    // Left Head
     if (headType === HeadType.HEMISPHERICAL) {
       path += ` M ${x0},${y0 + vH} A ${vH / 2},${vH / 2} 0 0 1 ${x0},${y0}`
-    } else if (headType === HeadType.ELLIPSOIDAL_2_1 || headType === HeadType.TORISPHERICAL_80_10) {
-      path += ` M ${x0},${y0 + vH} A ${vHD},${vH / 2} 0 0 1 ${x0},${y0}`
-    } else if (headType === HeadType.CONICAL) {
-      path += ` M ${x0},${y0 + vH} L ${x0 - vHD},${y0 + vH / 2} L ${x0},${y0}`
-    }
-    // Right Head
-    if (headType === HeadType.HEMISPHERICAL) {
       path += ` M ${x0 + vW},${y0} A ${vH / 2},${vH / 2} 0 0 1 ${x0 + vW},${y0 + vH}`
     } else if (headType === HeadType.ELLIPSOIDAL_2_1 || headType === HeadType.TORISPHERICAL_80_10) {
+      path += ` M ${x0},${y0 + vH} A ${vHD},${vH / 2} 0 0 1 ${x0},${y0}`
       path += ` M ${x0 + vW},${y0} A ${vHD},${vH / 2} 0 0 1 ${x0 + vW},${y0 + vH}`
     } else if (headType === HeadType.CONICAL) {
+      path += ` M ${x0},${y0 + vH} L ${x0 - vHD},${y0 + vH / 2} L ${x0},${y0}`
       path += ` M ${x0 + vW},${y0} L ${x0 + vW + vHD},${y0 + vH / 2} L ${x0 + vW},${y0 + vH}`
     }
   }
 
+  const lowerTangentY = y0 + vH
+  const bottomY = y0 + vH
+  const groundY = isVertical ? lowerTangentY + boot : bottomY + boot
+  const showBoots = boot > 0
+
   const getLevelY = (levelMm: number | undefined) => {
     if (levelMm === undefined || isNaN(levelMm)) return undefined
     if (isVertical) {
-      // Level from bottom tip
       return y0 + vH + vHD - levelMm * scale
-    } else {
-      // Level from bottom of shell
-      return y0 + vH - levelMm * scale
     }
+    return y0 + vH - levelMm * scale
   }
+
+  const legX1 = isVertical ? x0 : x0 + vW * 0.18
+  const legX2 = isVertical ? x0 + vW : x0 + vW * 0.82
+  const legTopY = isVertical ? lowerTangentY : bottomY
 
   return (
     <SectionCard title="Vessel Schematic">
       <div className="flex flex-col items-center gap-4 py-2">
         <svg
           viewBox={`0 0 ${svgSize} ${svgSize}`}
-          className="w-full max-w-[320px] h-auto text-foreground"
+          className="w-full max-w-[340px] h-auto text-foreground"
           aria-hidden="true"
         >
           <defs>
             <clipPath id="vesselClip">
               <path d={path} />
             </clipPath>
-            <marker id="arrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <marker id="vesselArrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
               <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
             </marker>
           </defs>
 
-          {/* Liquid Fill */}
           {ll !== undefined && ll > 0 && (
             <rect
               x="0"
@@ -129,7 +126,6 @@ export function VesselSchematic() {
             />
           )}
 
-          {/* Vessel Outline */}
           <path
             d={path}
             fill="none"
@@ -140,37 +136,61 @@ export function VesselSchematic() {
             className="opacity-90"
           />
 
-          {/* Level Lines */}
-          <LevelLine y={getLevelY(ll)} label="LL" color="#38bdf8" x0={x0} xW={isVertical ? vW : vW} vHD={isVertical ? 0 : vHD} />
-          <LevelLine y={getLevelY(hll)} label="HLL" color="#22c55e" x0={x0} xW={isVertical ? vW : vW} vHD={isVertical ? 0 : vHD} dashed />
-          <LevelLine y={getLevelY(lll)} label="LLL" color="#f59e0b" x0={x0} xW={isVertical ? vW : vW} vHD={isVertical ? 0 : vHD} dashed />
-          <LevelLine y={getLevelY(ofl)} label="OFL" color="#ef4444" x0={x0} xW={isVertical ? vW : vW} vHD={isVertical ? 0 : vHD} dashed />
+          {showBoots && (
+            <>
+              <line x1={legX1} y1={legTopY} x2={legX1} y2={groundY} stroke="currentColor" strokeWidth="2" />
+              <line x1={legX2} y1={legTopY} x2={legX2} y2={groundY} stroke="currentColor" strokeWidth="2" />
+            </>
+          )}
+          <line
+            x1={x0 - vHD - 24}
+            y1={groundY}
+            x2={x0 + vW + vHD + 24}
+            y2={groundY}
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeDasharray="4 3"
+            opacity="0.8"
+          />
 
-          {/* Annotations */}
-          {/* Diameter Annotation */}
-          <Annotation
-            x1={x0}
-            y1={y0 + vH + (isVertical ? vHD + 25 : 25)}
-            x2={x0 + vW}
-            y2={y0 + vH + (isVertical ? vHD + 25 : 25)}
-            label={`D = ${(id / 1000).toFixed(2)}m`}
-          />
-          {/* Length Annotation */}
-          <Annotation
-            x1={x0 - (isVertical ? 25 : vHD + 25)}
-            y1={y0}
-            x2={x0 - (isVertical ? 25 : vHD + 25)}
-            y2={y0 + vH}
-            label={`L = ${(length / 1000).toFixed(2)}m`}
-            vertical
-          />
+          <LevelLine y={getLevelY(ll)} label={`LL ${fmtM(ll)}`} color="#38bdf8" x0={x0} xW={vW} vHD={isVertical ? 0 : vHD} />
+          <LevelLine y={getLevelY(hll)} label={`HLL ${fmtM(hll)}`} color="#22c55e" x0={x0} xW={vW} vHD={isVertical ? 0 : vHD} dashed />
+          <LevelLine y={getLevelY(lll)} label={`LLL ${fmtM(lll)}`} color="#f59e0b" x0={x0} xW={vW} vHD={isVertical ? 0 : vHD} dashed />
+          <LevelLine y={getLevelY(ofl)} label={`OFL ${fmtM(ofl)}`} color="#ef4444" x0={x0} xW={vW} vHD={isVertical ? 0 : vHD} dashed />
+
+          {isVertical ? (
+            <>
+              <Annotation x1={x0 - 26} y1={y0} x2={x0 - 26} y2={y0 + vH} label={`T-T ${fmtM(length)}`} vertical />
+              <Annotation x1={x0} y1={y0 + vH + vHD + 18} x2={x0 + vW} y2={y0 + vH + vHD + 18} label={`D ${fmtM(id)}`} />
+              {showBoots && (
+                <Annotation x1={x0 + vW + 24} y1={lowerTangentY} x2={x0 + vW + 24} y2={groundY} label={`Boot ${fmtM(bootHeight)}`} vertical />
+              )}
+            </>
+          ) : (
+            <>
+              <Annotation x1={x0} y1={y0 - 20} x2={x0 + vW} y2={y0 - 20} label={`T-T ${fmtM(length)}`} />
+              <Annotation x1={x0 + vW + vHD + 20} y1={y0} x2={x0 + vW + vHD + 20} y2={y0 + vH} label={`D ${fmtM(id)}`} vertical />
+              {showBoots && (
+                <Annotation x1={x0 + vW + vHD + 36} y1={bottomY} x2={x0 + vW + vHD + 36} y2={groundY} label={`Boot ${fmtM(bootHeight)}`} vertical />
+              )}
+            </>
+          )}
         </svg>
 
-        {/* Legend */}
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
           <div className="flex items-center gap-1.5">
             <div className="w-3 h-3 bg-sky-400/25 border border-sky-400/50 rounded-sm" />
             <span>Liquid</span>
+          </div>
+          {showBoots && (
+            <div className="flex items-center gap-1.5">
+              <div className="w-3 h-3 border border-current rounded-sm" />
+              <span>Legs / Boots</span>
+            </div>
+          )}
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-0 border-t border-dashed border-current" />
+            <span>Ground</span>
           </div>
           {hll !== undefined && <LegendLineItem label="HLL" color="#22c55e" />}
           {lll !== undefined && <LegendLineItem label="LLL" color="#f59e0b" />}
@@ -181,20 +201,33 @@ export function VesselSchematic() {
   )
 }
 
-function LevelLine({ y, label, color, x0, xW, vHD, dashed }: { 
-  y?: number, 
-  label: string, 
-  color: string, 
-  x0: number, 
-  xW: number, 
-  vHD: number,
-  dashed?: boolean 
+function fmtM(value?: number): string {
+  if (value == null || isNaN(value)) return "—"
+  return `${(value / 1000).toFixed(2)}m`
+}
+
+function LevelLine({
+  y,
+  label,
+  color,
+  x0,
+  xW,
+  vHD,
+  dashed,
+}: {
+  y?: number
+  label: string
+  color: string
+  x0: number
+  xW: number
+  vHD: number
+  dashed?: boolean
 }) {
   if (y === undefined || isNaN(y)) return null
-  
+
   const lineX1 = x0 - vHD - 10
   const lineX2 = x0 + xW + vHD + 10
-  
+
   return (
     <g>
       <line
@@ -220,16 +253,39 @@ function LevelLine({ y, label, color, x0, xW, vHD, dashed }: {
   )
 }
 
-function Annotation({ x1, y1, x2, y2, label, vertical }: { x1: number, y1: number, x2: number, y2: number, label: string, vertical?: boolean }) {
+function LegendLineItem({ label, color }: { label: string; color: string }) {
   return (
-    <g className="text-muted-foreground/60">
-      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" strokeWidth="1" markerStart="url(#arrow)" markerEnd="url(#arrow)" />
+    <div className="flex items-center gap-1.5">
+      <div className="w-4 h-0 border-t border-dashed" style={{ borderColor: color }} />
+      <span>{label}</span>
+    </div>
+  )
+}
+
+function Annotation({
+  x1,
+  y1,
+  x2,
+  y2,
+  label,
+  vertical,
+}: {
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  label: string
+  vertical?: boolean
+}) {
+  return (
+    <g className="text-muted-foreground/70">
+      <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="currentColor" strokeWidth="1" markerStart="url(#vesselArrow)" markerEnd="url(#vesselArrow)" />
       <text
         x={(x1 + x2) / 2}
         y={(y1 + y2) / 2}
         dy={vertical ? "0" : "-6"}
         dx={vertical ? "-8" : "0"}
-        textAnchor={vertical ? "middle" : "middle"}
+        textAnchor="middle"
         fontSize="10"
         fill="currentColor"
         transform={vertical ? `rotate(-90 ${(x1 + x2) / 2} ${(y1 + y2) / 2})` : ""}
@@ -237,14 +293,5 @@ function Annotation({ x1, y1, x2, y2, label, vertical }: { x1: number, y1: numbe
         {label}
       </text>
     </g>
-  )
-}
-
-function LegendLineItem({ label, color }: { label: string, color: string }) {
-  return (
-    <div className="flex items-center gap-1.5">
-      <div className="w-4 h-0 border-t border-dashed" style={{ borderColor: color }} />
-      <span>{label}</span>
-    </div>
   )
 }

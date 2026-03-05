@@ -1,7 +1,14 @@
 import { describe, it, expect } from 'vitest'
-import { VesselOrientation, HeadType } from '../src/types'
+import {
+  EquipmentMode,
+  VesselOrientation,
+  HeadType,
+  TankType,
+  TankRoofType,
+} from '../src/types'
 import type { CalculationInput } from '../src/types'
 import { computeVesselResult } from '../src/lib/calculations'
+import { WETTED_AREA_HEIGHT_CAP_MM } from '../src/lib/constants'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -244,5 +251,69 @@ describe('computeVesselResult — horizontal vessel', () => {
     const frac = (r.volumes.partialVolume ?? 0) / r.volumes.totalVolume
     expect(frac).toBeGreaterThan(0.45)
     expect(frac).toBeLessThan(0.55)
+  })
+})
+
+describe('computeVesselResult — tank mode', () => {
+  it('computes top roof tank with cone roof', () => {
+    const r = computeVesselResult(baseInput({
+      equipmentMode: EquipmentMode.TANK,
+      tankType: TankType.TOP_ROOF,
+      tankRoofType: TankRoofType.CONE,
+      insideDiameter: 2000,
+      shellLength: 3000,
+      roofHeight: 500,
+      liquidLevel: 2500,
+    }))
+
+    expect(r.volumes.totalVolume).toBeGreaterThan(0)
+    expect(r.surfaceAreas.totalSurfaceArea).toBeGreaterThan(0)
+    expect(r.volumes.partialVolume).not.toBeNull()
+  })
+
+  it('computes spherical tank', () => {
+    const r = computeVesselResult(baseInput({
+      equipmentMode: EquipmentMode.TANK,
+      tankType: TankType.SPHERICAL,
+      insideDiameter: 2000,
+      shellLength: undefined,
+      liquidLevel: 1000,
+    }))
+
+    expect(r.volumes.totalVolume).toBeGreaterThan(0)
+    expect(r.surfaceAreas.totalSurfaceArea).toBeGreaterThan(0)
+    expect(r.volumes.shellVolume).toBe(0)
+  })
+})
+
+describe('computeVesselResult — wetted area cap', () => {
+  it('caps vessel wetted surface area at API flame height', () => {
+    const inputBase = baseInput({
+      insideDiameter: 2000,
+      shellLength: 15000,
+      headType: HeadType.FLAT,
+    })
+    const atCap = computeVesselResult({ ...inputBase, liquidLevel: WETTED_AREA_HEIGHT_CAP_MM })
+    const aboveCap = computeVesselResult({ ...inputBase, liquidLevel: WETTED_AREA_HEIGHT_CAP_MM + 3000 })
+    expect(aboveCap.surfaceAreas.wettedSurfaceArea).toBeCloseTo(
+      atCap.surfaceAreas.wettedSurfaceArea,
+      8,
+    )
+  })
+
+  it('caps tank wetted surface area at API flame height', () => {
+    const inputBase = baseInput({
+      equipmentMode: EquipmentMode.TANK,
+      tankType: TankType.TOP_ROOF,
+      tankRoofType: TankRoofType.FLAT,
+      insideDiameter: 3000,
+      shellLength: 15000,
+    })
+    const atCap = computeVesselResult({ ...inputBase, liquidLevel: WETTED_AREA_HEIGHT_CAP_MM })
+    const aboveCap = computeVesselResult({ ...inputBase, liquidLevel: WETTED_AREA_HEIGHT_CAP_MM + 3000 })
+    expect(aboveCap.surfaceAreas.wettedSurfaceArea).toBeCloseTo(
+      atCap.surfaceAreas.wettedSurfaceArea,
+      8,
+    )
   })
 })

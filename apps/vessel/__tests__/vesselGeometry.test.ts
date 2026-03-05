@@ -8,24 +8,25 @@ import {
   singleHeadSurfaceArea,
 } from '../src/lib/calculations/vesselGeometry'
 
-const D = 1000  // mm inside diameter
-const L = 2000  // mm shell length
+const D = 1000
+const L = 2000
 const r = D / 2
 
 describe('autoHeadDepth', () => {
   it('flat head depth = 0', () => {
     expect(autoHeadDepth(HeadType.FLAT, D)).toBe(0)
   })
+
   it('2:1 ellipsoidal depth = D/4', () => {
     expect(autoHeadDepth(HeadType.ELLIPSOIDAL_2_1, D)).toBeCloseTo(250, 3)
   })
+
   it('hemispherical depth = D/2', () => {
     expect(autoHeadDepth(HeadType.HEMISPHERICAL, D)).toBeCloseTo(500, 3)
   })
-  it('torispherical depth > 0 and < D/4', () => {
-    const h = autoHeadDepth(HeadType.TORISPHERICAL_80_10, D)
-    expect(h).toBeGreaterThan(0)
-    expect(h).toBeLessThan(D / 4)
+
+  it('torispherical depth is deterministic', () => {
+    expect(autoHeadDepth(HeadType.TORISPHERICAL_80_10, D)).toBeCloseTo(225.5437, 3)
   })
 })
 
@@ -65,9 +66,9 @@ describe('singleHeadVolume', () => {
     expect(singleHeadVolume(HeadType.CONICAL, D, h)).toBeCloseTo(expected, 6)
   })
 
-  it('torispherical head volume > 0', () => {
+  it('torispherical head volume is deterministic', () => {
     const h = autoHeadDepth(HeadType.TORISPHERICAL_80_10, D)
-    expect(singleHeadVolume(HeadType.TORISPHERICAL_80_10, D, h)).toBeGreaterThan(0)
+    expect(singleHeadVolume(HeadType.TORISPHERICAL_80_10, D, h)).toBeCloseTo(0.10988397, 6)
   })
 })
 
@@ -86,5 +87,10 @@ describe('singleHeadSurfaceArea', () => {
     const flatSA = singleHeadSurfaceArea(HeadType.FLAT, D, 0)
     const ellipSA = singleHeadSurfaceArea(HeadType.ELLIPSOIDAL_2_1, D, D / 4)
     expect(ellipSA).toBeGreaterThan(flatSA)
+  })
+
+  it('torispherical SA is deterministic', () => {
+    const h = autoHeadDepth(HeadType.TORISPHERICAL_80_10, D)
+    expect(singleHeadSurfaceArea(HeadType.TORISPHERICAL_80_10, D, h)).toBeCloseTo(1.01468034, 6)
   })
 })

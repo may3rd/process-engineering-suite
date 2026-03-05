@@ -5,9 +5,10 @@
  *  1. Empty state   — no calculationResult → shows guidance checklist
  *  2. Results state — valid calculationResult → shows result sections
  */
-import { describe, it, expect, vi, beforeAll } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 import React from 'react'
+import { FormProvider, useForm } from 'react-hook-form'
 
 // ── Mock zustand store (useUomStore) so tests don't need localStorage ──────────
 vi.mock('../../src/lib/store/uomStore', () => ({
@@ -30,7 +31,8 @@ vi.mock('@eng-suite/physics', () => ({
 }))
 
 import { ResultsPanel } from '../../src/app/calculator/components/ResultsPanel'
-import { VesselOrientation, HeadType } from '../../src/types'
+import { EquipmentMode, HeadType, VesselOrientation } from '../../src/types'
+import type { CalculationInput } from '../../src/types'
 import type { CalculationResult } from '../../src/types'
 
 // ─── Fixture ─────────────────────────────────────────────────────────────────
@@ -65,16 +67,37 @@ const MOCK_RESULT: CalculationResult = {
   calculatedAt: '2025-01-01T00:00:00.000Z',
 }
 
+function renderWithForm(result: CalculationResult | null) {
+  function Wrapper() {
+    const form = useForm<CalculationInput>({
+      defaultValues: {
+        tag: 'V-101',
+        equipmentMode: EquipmentMode.VESSEL,
+        orientation: VesselOrientation.VERTICAL,
+        headType: HeadType.ELLIPSOIDAL_2_1,
+        insideDiameter: 1000,
+        shellLength: 2000,
+      },
+    })
+    return (
+      <FormProvider {...form}>
+        <ResultsPanel calculationResult={result} />
+      </FormProvider>
+    )
+  }
+  return render(<Wrapper />)
+}
+
 // ─── Tests ────────────────────────────────────────────────────────────────────
 
 describe('ResultsPanel — empty state', () => {
   it('shows guidance text when no result', () => {
-    render(<ResultsPanel calculationResult={null} />)
-    expect(screen.getByText(/Enter valid inputs to see results/i)).toBeTruthy()
+    renderWithForm(null)
+    expect(screen.getByText(/Complete the following to generate results/i)).toBeTruthy()
   })
 
   it('shows required input checklist items', () => {
-    render(<ResultsPanel calculationResult={null} />)
+    renderWithForm(null)
     expect(screen.getByText(/Tag \/ Equipment number/i)).toBeTruthy()
     expect(screen.getByText(/Inside diameter/i)).toBeTruthy()
     expect(screen.getByText(/Shell length/i)).toBeTruthy()
@@ -82,7 +105,7 @@ describe('ResultsPanel — empty state', () => {
   })
 
   it('does not render any result sections', () => {
-    render(<ResultsPanel calculationResult={null} />)
+    renderWithForm(null)
     expect(screen.queryByText(/Total Volume/i)).toBeNull()
     expect(screen.queryByText(/Surface Area/i)).toBeNull()
   })
@@ -90,31 +113,31 @@ describe('ResultsPanel — empty state', () => {
 
 describe('ResultsPanel — results state', () => {
   it('does not show guidance text when result is provided', () => {
-    render(<ResultsPanel calculationResult={MOCK_RESULT} />)
-    expect(screen.queryByText(/Enter valid inputs to see results/i)).toBeNull()
+    renderWithForm(MOCK_RESULT)
+    expect(screen.queryByText(/Complete the following to generate results/i)).toBeNull()
   })
 
   it('renders volume section', () => {
-    render(<ResultsPanel calculationResult={MOCK_RESULT} />)
+    renderWithForm(MOCK_RESULT)
     // VolumeResult section title is "Volumes"
     expect(screen.getAllByText(/Volume/i).length).toBeGreaterThan(0)
     expect(screen.getByText('Volumes')).toBeTruthy()
   })
 
   it('renders surface area section', () => {
-    render(<ResultsPanel calculationResult={MOCK_RESULT} />)
+    renderWithForm(MOCK_RESULT)
     // SurfaceAreaResult section title is "Surface Areas"
     expect(screen.getByText('Surface Areas')).toBeTruthy()
   })
 
   it('renders mass and timing section', () => {
-    render(<ResultsPanel calculationResult={MOCK_RESULT} />)
+    renderWithForm(MOCK_RESULT)
     // MassTimingResult section title is "Mass & Timing"
     expect(screen.getByText('Mass & Timing')).toBeTruthy()
   })
 
   it('renders summary section with a total volume value', () => {
-    render(<ResultsPanel calculationResult={MOCK_RESULT} />)
+    renderWithForm(MOCK_RESULT)
     // SummaryResult shows total volume — check it's non-zero string
     const totalVolElements = screen.getAllByText(/1\.833|1\.57/i)
     expect(totalVolElements.length).toBeGreaterThan(0)

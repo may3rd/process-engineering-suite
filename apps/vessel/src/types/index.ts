@@ -5,6 +5,22 @@ export enum VesselOrientation {
   HORIZONTAL = "Horizontal",
 }
 
+export enum EquipmentMode {
+  VESSEL = "Vessel",
+  TANK = "Tank",
+}
+
+export enum TankType {
+  TOP_ROOF = "Top Roof Tank",
+  SPHERICAL = "Spherical Tank",
+}
+
+export enum TankRoofType {
+  FLAT = "Flat Roof",
+  CONE = "Cone Roof",
+  DOME = "Dome Roof",
+}
+
 export enum HeadType {
   FLAT = "Flat / Blind",
   ELLIPSOIDAL_2_1 = "2:1 Ellipsoidal",
@@ -41,14 +57,19 @@ export interface CalculationInput {
   description?: string
 
   // Configuration
-  orientation: VesselOrientation
-  headType: HeadType
+  equipmentMode?: EquipmentMode
+  orientation?: VesselOrientation
+  headType?: HeadType
+  tankType?: TankType
+  tankRoofType?: TankRoofType
 
   // Geometry — all in mm (base unit)
   insideDiameter: number
-  shellLength: number         // tangent-to-tangent length
+  shellLength?: number        // tangent-to-tangent length (vessel) or shell height (tank)
   wallThickness?: number      // mm
   headDepth?: number          // mm (auto-calculated from headType unless overridden)
+  roofHeight?: number         // mm (for cone/dome roof tank)
+  bootHeight?: number         // mm (support elevation reference by equipment/orientation)
 
   // Levels — all in mm
   liquidLevel?: number

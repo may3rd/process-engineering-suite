@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { HeadType, VesselOrientation } from '../src/types'
-import { partialVolume } from '../src/lib/calculations/partialVolume'
+import { partialVolume, headPartialVolume } from '../src/lib/calculations/partialVolume'
 import { shellVolume, singleHeadVolume, autoHeadDepth } from '../src/lib/calculations/vesselGeometry'
 
 const D = 1000
@@ -16,15 +16,11 @@ describe('partialVolume — vertical vessel', () => {
   })
 
   it('level = shellLength → bottom head + partial shell fill', () => {
-    // Level is measured from BOTTOM OF VESSEL (including head depth).
-    // At level = shellLength (2000mm), with headDepth=250mm:
-    //   bottom head fully submerged + shell filled to (2000 - 250) = 1750mm
-    // So v < full shell volume, but v > 0.
     const v = partialVolume(ori, headType, D, L, headDepth, L)
     const headVol = singleHeadVolume(headType, D, headDepth)
-    expect(v).toBeGreaterThan(headVol)          // at least the bottom head
-    expect(v).toBeGreaterThan(0.9)              // sanity: >0.9 m³
-    expect(v).toBeLessThan(shellVolume(D, L) + 2 * headVol)   // less than total
+    expect(v).toBeGreaterThan(headVol)
+    expect(v).toBeGreaterThan(0.9)
+    expect(v).toBeLessThan(shellVolume(D, L) + 2 * headVol)
   })
 
   it('full vessel level = total height → full volume', () => {
@@ -46,8 +42,27 @@ describe('partialVolume — horizontal vessel', () => {
     const r = D / 2
     const v = partialVolume(ori, headType, D, L, headDepth, r)
     const shellVol = shellVolume(D, L)
-    // Half should be within 5% of shellVol/2
     expect(v).toBeGreaterThan(shellVol * 0.45)
     expect(v).toBeLessThan(shellVol * 0.65)
+  })
+})
+
+describe('headPartialVolume — torispherical', () => {
+  it('full fill equals full single head volume', () => {
+    const c = autoHeadDepth(HeadType.TORISPHERICAL_80_10, D)
+    const partial = headPartialVolume(HeadType.TORISPHERICAL_80_10, D, c, c)
+    const full = singleHeadVolume(HeadType.TORISPHERICAL_80_10, D, c)
+    expect(partial).toBeCloseTo(full, 8)
+  })
+
+  it('increases monotonically with level', () => {
+    const c = autoHeadDepth(HeadType.TORISPHERICAL_80_10, D)
+    const levels = [0, c * 0.2, c * 0.4, c * 0.6, c * 0.8, c]
+    let prev = -1
+    for (const level of levels) {
+      const v = headPartialVolume(HeadType.TORISPHERICAL_80_10, D, c, level)
+      expect(v).toBeGreaterThanOrEqual(prev)
+      prev = v
+    }
   })
 })

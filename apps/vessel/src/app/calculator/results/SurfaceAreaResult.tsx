@@ -6,24 +6,42 @@ import { convertUnit } from "@eng-suite/physics"
 import { BASE_UNITS, UOM_LABEL } from "@/lib/uom"
 import { useUomStore } from "@/lib/store/uomStore"
 import type { CalculationResult } from "@/types"
+import { EquipmentMode, TankType } from "@/types"
 
 interface Props {
   result: CalculationResult
+  equipmentMode?: EquipmentMode
+  tankType?: TankType
 }
 
-export function SurfaceAreaResult({ result }: Props) {
+export function SurfaceAreaResult({ result, equipmentMode, tankType }: Props) {
   const { units } = useUomStore()
   const areaUnit = units.area ?? BASE_UNITS.area
   const label = UOM_LABEL[areaUnit] ?? areaUnit
 
   const fmt = (v: number) => convertUnit(v, BASE_UNITS.area, areaUnit).toFixed(4)
 
-  const rows = [
-    { label: "Head Surface Area (2 heads)", value: fmt(result.surfaceAreas.headSurfaceArea) },
-    { label: "Shell Surface Area", value: fmt(result.surfaceAreas.shellSurfaceArea) },
-    { label: "Total Surface Area", value: fmt(result.surfaceAreas.totalSurfaceArea), isTotal: true },
-    { label: "Wetted Surface Area (at LL)", value: fmt(result.surfaceAreas.wettedSurfaceArea) },
-  ]
+  const isTank = equipmentMode === EquipmentMode.TANK
+  const isSphericalTank = isTank && tankType === TankType.SPHERICAL
+
+  const rows = isSphericalTank
+    ? [
+      { label: "Sphere Surface Area", value: fmt(result.surfaceAreas.totalSurfaceArea), isTotal: true },
+      { label: "Wetted Surface Area (at LL)", value: fmt(result.surfaceAreas.wettedSurfaceArea) },
+    ]
+    : isTank
+      ? [
+        { label: "Roof + Bottom Surface Area", value: fmt(result.surfaceAreas.headSurfaceArea) },
+        { label: "Shell Surface Area", value: fmt(result.surfaceAreas.shellSurfaceArea) },
+        { label: "Total Tank Surface Area", value: fmt(result.surfaceAreas.totalSurfaceArea), isTotal: true },
+        { label: "Wetted Surface Area (at LL)", value: fmt(result.surfaceAreas.wettedSurfaceArea) },
+      ]
+      : [
+        { label: "Head Surface Area (2 heads)", value: fmt(result.surfaceAreas.headSurfaceArea) },
+        { label: "Shell Surface Area", value: fmt(result.surfaceAreas.shellSurfaceArea) },
+        { label: "Total Surface Area", value: fmt(result.surfaceAreas.totalSurfaceArea), isTotal: true },
+        { label: "Wetted Surface Area (at LL)", value: fmt(result.surfaceAreas.wettedSurfaceArea) },
+      ]
 
   return (
     <Card className="shadow-sm">

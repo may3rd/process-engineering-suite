@@ -207,8 +207,8 @@ export function VesselReport({ input, result, metadata, revisions, units }: Vess
           <MetaField label="Title" value={metadata.title} />
           <MetaField label="Project Name" value={metadata.projectName} />
           <MetaField label="Client" value={metadata.client} />
-          <MetaField label="Orientation" value={input.orientation} />
-          <MetaField label="Head Type" value={input.headType} />
+          <MetaField label="Orientation" value={input.orientation ?? ''} />
+          <MetaField label="Head Type" value={input.headType ?? ''} />
           <MetaField label="Calculated At" value={new Date(result.calculatedAt).toLocaleString()} />
         </View>
 
@@ -222,6 +222,7 @@ export function VesselReport({ input, result, metadata, revisions, units }: Vess
         <TableRow label="Inside Diameter" value={fmt(input.insideDiameter, 'mm', len)} unit={unitLabel(len)} />
         <TableRow label="Shell Length (TL–TL)" value={fmt(input.shellLength, 'mm', len)} unit={unitLabel(len)} />
         <TableRow label="Head Depth (used)" value={fmt(headDepthUsed, 'mm', len)} unit={unitLabel(len)} />
+        <TableRow label="Boot Height" value={fmt(input.bootHeight, 'mm', len)} unit={unitLabel(len)} />
         <TableRow label="Wall Thickness" value={fmt(input.wallThickness, 'mm', len)} unit={unitLabel(len)} />
 
         {/* ── Level inputs ───────────────────────────────────────────────── */}

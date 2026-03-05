@@ -1,5 +1,11 @@
 import { z } from 'zod'
-import { VesselOrientation, HeadType } from '@/types'
+import {
+  VesselOrientation,
+  HeadType,
+  EquipmentMode,
+  TankType,
+  TankRoofType,
+} from '@/types'
 
 /** NaN-tolerant optional positive number */
 const nanOptionalPositive = z.number().positive().optional().or(z.nan().transform(() => undefined))
@@ -12,14 +18,19 @@ export const calculationInputSchema = z.object({
   description: z.string().optional(),
 
   // Configuration
-  orientation: z.nativeEnum(VesselOrientation),
-  headType: z.nativeEnum(HeadType),
+  equipmentMode: z.nativeEnum(EquipmentMode).default(EquipmentMode.VESSEL),
+  orientation: z.nativeEnum(VesselOrientation).default(VesselOrientation.VERTICAL),
+  headType: z.nativeEnum(HeadType).default(HeadType.ELLIPSOIDAL_2_1),
+  tankType: z.nativeEnum(TankType).optional(),
+  tankRoofType: z.nativeEnum(TankRoofType).optional(),
 
   // Geometry — base unit: mm
   insideDiameter: z.number().positive('Inside diameter is required and must be positive'),
-  shellLength: z.number().positive('Shell length is required and must be positive'),
+  shellLength: nanOptionalPositive,
   wallThickness: nanOptionalPositive,
   headDepth: nanOptionalPositive,
+  roofHeight: nanOptionalPositive,
+  bootHeight: nanOptionalNonNeg,
 
   // Levels — base unit: mm
   liquidLevel: nanOptionalNonNeg,
@@ -40,8 +51,68 @@ export const calculationInputSchema = z.object({
     client: z.string().default(''),
   }).default({ projectNumber: '', documentNumber: '', title: '', projectName: '', client: '' }),
 }).superRefine((data, ctx) => {
-  // Conical head requires headDepth
-  if (data.headType === HeadType.CONICAL && !data.headDepth) {
+  if (
+    data.equipmentMode === EquipmentMode.VESSEL &&
+    (data.shellLength == null || !isFinite(data.shellLength) || data.shellLength <= 0)
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['shellLength'],
+      message: 'Shell length is required and must be positive',
+    })
+  }
+
+  if (data.equipmentMode === EquipmentMode.TANK && !data.tankType) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['tankType'],
+      message: 'Tank type is required',
+    })
+  }
+
+  if (
+    data.equipmentMode === EquipmentMode.TANK &&
+    data.tankType === TankType.TOP_ROOF &&
+    (data.shellLength == null || !isFinite(data.shellLength) || data.shellLength <= 0)
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['shellLength'],
+      message: 'Shell height is required and must be positive',
+    })
+  }
+
+  if (
+    data.equipmentMode === EquipmentMode.TANK &&
+    data.tankType === TankType.TOP_ROOF &&
+    !data.tankRoofType
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['tankRoofType'],
+      message: 'Top roof type is required',
+    })
+  }
+
+  if (
+    data.equipmentMode === EquipmentMode.TANK &&
+    data.tankType === TankType.TOP_ROOF &&
+    data.tankRoofType != null &&
+    data.tankRoofType !== TankRoofType.FLAT &&
+    (data.roofHeight == null || !isFinite(data.roofHeight) || data.roofHeight <= 0)
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['roofHeight'],
+      message: 'Roof height is required for cone/dome roof',
+    })
+  }
+
+  if (
+    data.equipmentMode === EquipmentMode.VESSEL &&
+    data.headType === HeadType.CONICAL &&
+    !data.headDepth
+  ) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       path: ['headDepth'],

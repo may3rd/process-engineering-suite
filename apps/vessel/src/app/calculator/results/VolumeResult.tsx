@@ -6,12 +6,15 @@ import { convertUnit } from "@eng-suite/physics"
 import { BASE_UNITS, UOM_LABEL } from "@/lib/uom"
 import { useUomStore } from "@/lib/store/uomStore"
 import type { CalculationResult } from "@/types"
+import { EquipmentMode, TankType } from "@/types"
 
 interface Props {
   result: CalculationResult
+  equipmentMode?: EquipmentMode
+  tankType?: TankType
 }
 
-export function VolumeResult({ result }: Props) {
+export function VolumeResult({ result, equipmentMode, tankType }: Props) {
   const { units } = useUomStore()
   const volUnit = units.volume ?? BASE_UNITS.volume
   const label = UOM_LABEL[volUnit] ?? volUnit
@@ -21,16 +24,38 @@ export function VolumeResult({ result }: Props) {
     return convertUnit(v, BASE_UNITS.volume, volUnit).toFixed(4)
   }
 
-  const rows = [
-    { label: "Head Volume (2 heads)", value: fmt(result.volumes.headVolume), isSub: false },
-    { label: "Shell Volume", value: fmt(result.volumes.shellVolume), isSub: false },
-    { label: "Total Volume", value: fmt(result.volumes.totalVolume), isSub: false, isTotal: true },
-    { label: "Tangent Volume (shell only)", value: fmt(result.volumes.tangentVolume), isSub: true },
-    { label: "Effective Volume (up to OFL)", value: fmt(result.volumes.effectiveVolume), isSub: false },
-    { label: "Working Volume (LLL–HLL)", value: fmt(result.volumes.workingVolume), isSub: false },
-    { label: "Overflow Volume (above OFL)", value: fmt(result.volumes.overflowVolume), isSub: false },
-    { label: "Partial Volume (at LL)", value: fmt(result.volumes.partialVolume), isSub: false },
-  ]
+  const isTank = equipmentMode === EquipmentMode.TANK
+  const isSphericalTank = isTank && tankType === TankType.SPHERICAL
+
+  const rows = isSphericalTank
+    ? [
+      { label: "Sphere Volume", value: fmt(result.volumes.totalVolume), isSub: false, isTotal: true },
+      { label: "Effective Volume (up to OFL)", value: fmt(result.volumes.effectiveVolume), isSub: false },
+      { label: "Working Volume (LLL–HLL)", value: fmt(result.volumes.workingVolume), isSub: false },
+      { label: "Overflow Volume (above OFL)", value: fmt(result.volumes.overflowVolume), isSub: false },
+      { label: "Partial Volume (at LL)", value: fmt(result.volumes.partialVolume), isSub: false },
+    ]
+    : isTank
+      ? [
+        { label: "Roof Volume", value: fmt(result.volumes.headVolume), isSub: false },
+        { label: "Shell Volume", value: fmt(result.volumes.shellVolume), isSub: false },
+        { label: "Total Tank Volume", value: fmt(result.volumes.totalVolume), isSub: false, isTotal: true },
+        { label: "Shell Volume (cylindrical body)", value: fmt(result.volumes.tangentVolume), isSub: true },
+        { label: "Effective Volume (up to OFL)", value: fmt(result.volumes.effectiveVolume), isSub: false },
+        { label: "Working Volume (LLL–HLL)", value: fmt(result.volumes.workingVolume), isSub: false },
+        { label: "Overflow Volume (above OFL)", value: fmt(result.volumes.overflowVolume), isSub: false },
+        { label: "Partial Volume (at LL)", value: fmt(result.volumes.partialVolume), isSub: false },
+      ]
+      : [
+        { label: "Head Volume (2 heads)", value: fmt(result.volumes.headVolume), isSub: false },
+        { label: "Shell Volume", value: fmt(result.volumes.shellVolume), isSub: false },
+        { label: "Total Volume", value: fmt(result.volumes.totalVolume), isSub: false, isTotal: true },
+        { label: "Tangent Volume (shell only)", value: fmt(result.volumes.tangentVolume), isSub: true },
+        { label: "Effective Volume (up to OFL)", value: fmt(result.volumes.effectiveVolume), isSub: false },
+        { label: "Working Volume (LLL–HLL)", value: fmt(result.volumes.workingVolume), isSub: false },
+        { label: "Overflow Volume (above OFL)", value: fmt(result.volumes.overflowVolume), isSub: false },
+        { label: "Partial Volume (at LL)", value: fmt(result.volumes.partialVolume), isSub: false },
+      ]
 
   return (
     <Card className="shadow-sm">

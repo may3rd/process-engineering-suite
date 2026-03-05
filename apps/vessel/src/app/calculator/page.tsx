@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import type { Resolver } from "react-hook-form"
 import { calculationInputSchema } from "@/lib/validation/inputSchema"
 import { computeVesselResult } from "@/lib/calculations"
-import { VesselOrientation, HeadType } from "@/types"
+import { EquipmentMode, VesselOrientation, HeadType } from "@/types"
 import type {
   CalculationInput,
   CalculationMetadata,
@@ -29,12 +29,15 @@ const EMPTY_METADATA: CalculationMetadata = {
 const createDefaultValues = (): Partial<CalculationInput> => ({
   tag: "",
   description: "",
+  equipmentMode: EquipmentMode.VESSEL,
   orientation: VesselOrientation.VERTICAL,
   headType: HeadType.ELLIPSOIDAL_2_1,
   insideDiameter: undefined,
   shellLength: undefined,
   wallThickness: undefined,
   headDepth: undefined,
+  roofHeight: undefined,
+  bootHeight: undefined,
   liquidLevel: undefined,
   hll: undefined,
   lll: undefined,
