@@ -14,6 +14,7 @@ import type { CalculationInput } from "@/types"
 import { HEXANE_DEFAULTS, FLASH_POINT_THRESHOLD, BOILING_POINT_THRESHOLD } from "@/lib/constants"
 import { SectionCard } from "../components/SectionCard"
 import { FieldRow } from "../components/FieldRow"
+import { UomInput } from "../components/UomInput"
 
 export function FluidPropertiesSection() {
   const {
@@ -55,22 +56,19 @@ export function FluidPropertiesSection() {
         <FieldRow
           label="Average Storage Temp"
           htmlFor="avgStorageTemp"
-          unit="°C"
           required
           error={errors.avgStorageTemp?.message}
         >
-          <Input
+          <UomInput
+            name="avgStorageTemp"
+            category="temperature"
             id="avgStorageTemp"
-            type="number"
-            step="any"
             placeholder="e.g. 25"
-            {...register("avgStorageTemp", { valueAsNumber: true })}
           />
         </FieldRow>
         <FieldRow
           label="Vapour Pressure"
           htmlFor="vapourPressure"
-          unit="kPa"
           required={!is5th}
           error={errors.vapourPressure?.message}
           hint={
@@ -79,12 +77,11 @@ export function FluidPropertiesSection() {
               : undefined
           }
         >
-          <Input
+          <UomInput
+            name="vapourPressure"
+            category="absolutePressure"
             id="vapourPressure"
-            type="number"
-            step="any"
             placeholder={vapourPressurePlaceholder}
-            {...register("vapourPressure", { valueAsNumber: true })}
           />
         </FieldRow>
       </div>
@@ -117,7 +114,6 @@ export function FluidPropertiesSection() {
         <FieldRow
           label={fpType === "FP" ? "Flash Point" : "Boiling Point"}
           htmlFor="flashBoilingPoint"
-          unit="°C"
           required={is5th}
           error={errors.flashBoilingPoint?.message}
           hint={
@@ -132,12 +128,11 @@ export function FluidPropertiesSection() {
               : "Not used for volatility classification in 6th/7th edition"
           }
         >
-          <Input
+          <UomInput
+            name="flashBoilingPoint"
+            category="temperature"
             id="flashBoilingPoint"
-            type="number"
-            step="any"
             placeholder={flashBoilingPointPlaceholder}
-            {...register("flashBoilingPoint", { valueAsNumber: true })}
           />
         </FieldRow>
       </div>
@@ -159,29 +154,25 @@ export function FluidPropertiesSection() {
           <FieldRow
             label="Latent Heat (L)"
             htmlFor="latentHeat"
-            unit="kJ/kg"
             error={errors.latentHeat?.message}
           >
-            <Input
+            <UomInput
+              name="latentHeat"
+              category="energy"
               id="latentHeat"
-              type="number"
-              step="any"
               placeholder={`${HEXANE_DEFAULTS.latentHeat}`}
-              {...register("latentHeat", { valueAsNumber: true })}
             />
           </FieldRow>
           <FieldRow
             label="Relieving Temp (T_r)"
             htmlFor="relievingTemperature"
-            unit="°C"
             error={errors.relievingTemperature?.message}
           >
-            <Input
+            <UomInput
+              name="relievingTemperature"
+              category="temperature"
               id="relievingTemperature"
-              type="number"
-              step="any"
               placeholder={`${HEXANE_DEFAULTS.relievingTemperature}`}
-              {...register("relievingTemperature", { valueAsNumber: true })}
             />
           </FieldRow>
           <FieldRow

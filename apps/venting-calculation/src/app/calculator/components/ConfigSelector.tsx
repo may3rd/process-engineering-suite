@@ -13,6 +13,7 @@ import { TankConfiguration } from "@/types"
 import type { CalculationInput } from "@/types"
 import { INSULATION_MATERIALS } from "@/lib/constants"
 import { FieldRow } from "./FieldRow"
+import { UomInput } from "./UomInput"
 
 const CONFIG_OPTIONS: { value: TankConfiguration; label: string }[] = [
   { value: TankConfiguration.BARE_METAL, label: "Bare Metal (No Insulation)" },
@@ -80,49 +81,43 @@ export function ConfigSelector() {
           <FieldRow
             label="Insulation Thickness"
             htmlFor="insulationThickness"
-            unit="mm"
             required
             error={errors.insulationThickness?.message}
           >
-            <Input
+            <UomInput
+              name="insulationThickness"
+              category="length"
               id="insulationThickness"
-              type="number"
-              step="any"
               placeholder="e.g. 102"
-              {...register("insulationThickness", { valueAsNumber: true })}
             />
           </FieldRow>
 
           <FieldRow
             label="Insulation Conductivity (k)"
             htmlFor="insulationConductivity"
-            unit="W/m·K"
             required
             error={errors.insulationConductivity?.message}
             hint={`Typical: ${INSULATION_MATERIALS.map((m) => `${m.name} ${m.conductivity}`).join(", ")}`}
           >
-            <Input
+            <UomInput
+              name="insulationConductivity"
+              category="thermalConductivity"
               id="insulationConductivity"
-              type="number"
-              step="any"
               placeholder="e.g. 0.05"
-              {...register("insulationConductivity", { valueAsNumber: true })}
             />
           </FieldRow>
 
           <FieldRow
             label="Inside Heat Transfer Coeff (U_i)"
             htmlFor="insideHeatTransferCoeff"
-            unit="W/m²·K"
             required
             error={errors.insideHeatTransferCoeff?.message}
           >
-            <Input
+            <UomInput
+              name="insideHeatTransferCoeff"
+              category="heatTransferCoeff"
               id="insideHeatTransferCoeff"
-              type="number"
-              step="any"
               placeholder="e.g. 11.4"
-              {...register("insideHeatTransferCoeff", { valueAsNumber: true })}
             />
           </FieldRow>
 

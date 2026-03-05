@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 interface FieldRowProps {
   label: string
   htmlFor?: string
-  unit?: string
+  unit?: React.ReactNode
   error?: string
   hint?: string
   required?: boolean

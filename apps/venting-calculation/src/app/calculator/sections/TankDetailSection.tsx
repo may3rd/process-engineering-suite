@@ -6,6 +6,7 @@ import type { CalculationInput } from "@/types"
 import { SectionCard } from "../components/SectionCard"
 import { FieldRow } from "../components/FieldRow"
 import { ConfigSelector } from "../components/ConfigSelector"
+import { UomInput } from "../components/UomInput"
 
 export function TankDetailSection() {
   const {
@@ -49,31 +50,27 @@ export function TankDetailSection() {
         <FieldRow
           label="Diameter (D)"
           htmlFor="diameter"
-          unit="mm"
           required
           error={errors.diameter?.message}
         >
-          <Input
+          <UomInput
+            name="diameter"
+            category="length"
             id="diameter"
-            type="number"
-            step="any"
             placeholder="e.g. 24000"
-            {...register("diameter", { valueAsNumber: true })}
           />
         </FieldRow>
         <FieldRow
           label="Height (TL–TL)"
           htmlFor="height"
-          unit="mm"
           required
           error={errors.height?.message}
         >
-          <Input
+          <UomInput
+            name="height"
+            category="length"
             id="height"
-            type="number"
-            step="any"
             placeholder="e.g. 17500"
-            {...register("height", { valueAsNumber: true })}
           />
         </FieldRow>
       </div>
@@ -98,17 +95,15 @@ export function TankDetailSection() {
         <FieldRow
           label="Design Pressure"
           htmlFor="designPressure"
-          unit="kPag"
           required
           error={errors.designPressure?.message}
-          hint="-101.3 to 103.4 kPag"
+          hint="-101.3 to 103.4 kPag (base units)"
         >
-          <Input
+          <UomInput
+            name="designPressure"
+            category="gaugePressure"
             id="designPressure"
-            type="number"
-            step="any"
             placeholder="e.g. 5"
-            {...register("designPressure", { valueAsNumber: true })}
           />
         </FieldRow>
       </div>
