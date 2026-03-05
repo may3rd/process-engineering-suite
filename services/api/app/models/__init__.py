@@ -24,6 +24,7 @@ from .todo import Todo
 from .project_note import ProjectNote
 from .revision_history import RevisionHistory
 from .audit_log import AuditLog
+from .engineering_object import EngineeringObject
 from .venting_calculation import VentingCalculation
 from .network_design import NetworkDesign
 from .design_agent_session import DesignAgentSession
@@ -62,6 +63,8 @@ __all__ = [
     "ProjectNote",
     # Audit
     "AuditLog",
+    # Core engineering objects
+    "EngineeringObject",
     # New app-specific resources
     "VentingCalculation",
     "NetworkDesign",

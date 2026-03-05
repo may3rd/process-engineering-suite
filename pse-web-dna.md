@@ -1,6 +1,7 @@
 # PSE Web DNA
 > Design & architecture reference for all `apps/` in the process-engineering-suite monorepo.
 > Derived from `apps/venting-calculation`. Follow these patterns when building new apps.
+> **Template:** Use `apps/calculator-template` as the foundation for all new calculator-style web apps.
 
 ---
 
