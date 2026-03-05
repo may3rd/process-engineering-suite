@@ -5,48 +5,57 @@ This file defines app-scoped rules for `apps/vessel`. Root [`/Users/maetee/Code/
 ## Scope
 
 - Applies to all files under `apps/vessel/**`.
-- Goal: deliver a vessel and tank volume/surface calculator UI that mirrors the legacy spreadsheet workflow while using PES service boundaries.
+- Goal: deliver a vessel/tank volume and surface calculator using the same web DNA as `apps/venting-calculation`.
 
 ## Rule 0 (must follow)
 
 - Volume and surface-area equations for vessel/tank geometry are allowed in TypeScript for `apps/vessel`.
-- TypeScript in this app handles UI, validation, state, rendering, and geometry calculations.
-- Keep formulas deterministic, explicit, and covered by regression tests against spreadsheet benchmarks.
+- Keep formulas deterministic, explicit, and covered by regression tests.
+- No hardcoded conversion constants; all unit conversion must call `convertUnit` from `@eng-suite/physics`.
 
-## Required Architecture
+## Required Stack (PSE Web DNA)
 
-- `apps/vessel`:
-  - Next.js app router UI.
-  - Zustand store for app state.
-  - MUI components and `@eng-suite/ui-kit` styles.
-  - Owns geometry calculation modules for volume/surface outputs.
-- `services/api`:
-  - Optional persistence/integration endpoints when needed.
-- `services/calc-engine/pes_calc/vessels`:
-  - Reference implementation for cross-checking and parity tests.
+- Next.js App Router.
+- shadcn/ui components (Radix primitives) + Tailwind CSS utility classes.
+- React Hook Form + Zod resolver for forms and validation.
+- Zustand with `persist` middleware for UI/UoM preferences.
+- `lucide-react` icons.
 
-## UX and Domain Coverage
+## Required Page Architecture
 
-The app must support:
-- Orientation: `vertical`, `horizontal`.
-- Vessel head types: `flat`, `elliptical`, `hemispherical`, `torispherical`, `conical`.
-- Tank types: `flat`, `conical`, `spherical`.
-- Outputs aligned with spreadsheet expectations: shell/head/total volume, partial volume at level, shell/head/total/wetted surface area, mass metrics, and inventory/surge-time helpers.
+- Sticky top bar with app title/subtitle and right-side action menu.
+- Two-panel calculator layout:
+  - left: input sections
+  - right: empty/validation/results sections
+- Mobile: single-column.
+- `xl` and above: two-column grid.
+
+## Required Component Pattern
+
+- Use `SectionCard` as base wrapper for every major input/output group.
+- Use `FieldRow` for every labeled input row.
+- Use `UomInput` for every unit-bearing numeric field.
+- Form stores base-unit values only; unit switching is display-layer only.
 
 ## Data and Units
 
-- Canonical internal units for calculation state: SI (`m`, `m2`, `m3`, `kg`, `kg/m3`, `h`, `min`).
-- Every unit-bearing input and output must support dynamic user-selectable UoM.
-- Any unit conversion in TypeScript must use `convertUnit` from `packages/physics-engine/src/unitConversion.ts`.
-- Never hardcode conversion factors in UI code.
+- Every physical input/output must support dynamic unit selection.
+- Implement `lib/uom.ts` with:
+  - `BASE_UNITS`
+  - `UOM_OPTIONS`
+  - `UOM_LABEL`
+- Implement `lib/store/uomStore.ts` with `persist` and `migrate` merge pattern.
 
 ## Implementation Rules
 
 - Named exports only.
 - `const` by default; avoid `any`.
-- Use strict runtime validation for user inputs before API calls.
-- Keep API client logic in `src/features/vessel/api`.
-- Keep UI state logic in `src/features/vessel/store`.
+- TypeScript strict mode; prefer inferred types from Zod schemas.
+- Keep app code split by template pattern:
+  - `src/app/calculator/page.tsx`
+  - `src/app/calculator/components/ActionMenu.tsx`
+  - `src/app/calculator/components/InputPanel.tsx`
+  - `src/app/calculator/components/ResultsPanel.tsx`
 
 ## Testing and Validation
 
@@ -56,24 +65,11 @@ Before merge, run at minimum:
 # from repo root
 bun turbo run lint --filter=vessel
 bun turbo run check-types --filter=vessel
-
-# app tests
-cd apps/vessel
-bun run test:run
-```
-
-For API/calc changes related to this app, also run:
-
-```bash
-cd services/api
-pytest -k vessel
-
-cd ../calc-engine
-pytest -k vessel
+bun turbo run build --filter=vessel
 ```
 
 ## Delivery Expectations
 
-- Maintain traceable formulas in TypeScript for this app.
-- Keep spreadsheet parity test cases as fixtures.
-- New calculation outputs require typed contracts and tests in app layers (and API layers if integrated).
+- Match `pse-web-dna.md` layout and component behavior.
+- Deliver production-grade calculations to replace spreadsheet workflows.
+- Add tests for formulas, UoM conversions, and component rendering states.

@@ -95,7 +95,7 @@ pytest -k "pattern"       # Run tests matching pattern
 ### React/Next.js
 
 - **State Management**: Use Zustand for global state, React Context for app-wide settings (e.g., Theme)
-- **UI Components**: Use Material UI (MUI) components with `sx` prop for styling
+- **UI Components**: Use either Material UI (`sx`-driven) or shadcn/ui + Tailwind, based on module-scoped guidance. Follow the nearest scoped `AGENTS.md` for the app you are modifying
 - **Glassmorphism**: Import from `@eng-suite/ui-kit`:
   - `glassPanelSx` for panels
   - `liquidGlassBorderSx` for borders
@@ -193,15 +193,16 @@ This file is **authoritative**. If any other document conflicts with it, **this 
 
 ---
 
-## Rule Zero (Non-Negotiable)
+## Rule Zero (Default Policy)
 
-> **No engineering equations are implemented in TypeScript. Ever.**
+> **Engineering equations should live in Python by default.**
 
-- TypeScript is used for **UI, orchestration, APIs, persistence, and visualization**
-- **All engineering calculations live in Python**
-- If a task requires equations and the target file is TypeScript, **stop and relocate to Python**
-
-Violating this rule invalidates calculation traceability and introduces technical debt.
+- TypeScript is primarily for **UI, orchestration, APIs, persistence, and visualization**
+- Python (`services/calc-engine`) remains the preferred location for shared, high-risk, or cross-domain engineering logic
+- Module-scoped exceptions are allowed when explicitly documented in the nearest scoped `AGENTS.md`, including:
+  - scope and ownership
+  - verification strategy
+  - performance and traceability constraints
 
 ---
 
@@ -224,8 +225,8 @@ Engineering Database
 
 | Layer | Language | Responsibilities | Explicitly Forbidden |
 |---|---|---|---|
-| UI / Editors | TypeScript | Input forms, visualization, interaction | Engineering math |
-| API / Orchestrator | TypeScript | Auth, RBAC, run lifecycle, persistence, reporting | Equations, correction factors |
+| UI / Editors | TypeScript | Input forms, visualization, interaction | Undocumented engineering math without scoped exception and verification |
+| API / Orchestrator | TypeScript | Auth, RBAC, run lifecycle, persistence, reporting | Unverified equations and correction factors |
 | Calculation Engine | Python | All engineering equations, standards, checks | UI logic, auth |
 | Database | SQL / Object | Inputs, outputs, provenance, versions | Hidden logic |
 
@@ -237,8 +238,8 @@ All engineering calculations use a **worker-based execution model** to ensure sc
 
 ### Execution Principles
 
-- API threads **must never** execute engineering math
-- Python calculations run in **isolated worker processes**
+- API threads should avoid long-running engineering calculations unless a scoped exception defines bounded execution.
+- Python calculations run in **isolated worker processes** by default.
 - Concurrency is **explicitly bounded**
 - Excess requests are **queued**, not blocked or rejected
 
@@ -287,7 +288,7 @@ This is expected behavior.
 ### Forbidden Patterns
 
 - Spawning Python per request
-- Running math inside TypeScript
+- Undocumented equation duplication across layers
 - Blocking API threads with long calculations
 - Duplicating formulas across languages
 
@@ -306,7 +307,7 @@ process-engineering-suite/
 │
 ├─ services/             # Backend services (Python)
 │  ├─ api/               # FastAPI REST API
-│  ├─ calc-engine/       # Engineering calculations (Python ONLY)
+│  ├─ calc-engine/       # Core engineering calculations (Python)
 │  │  ├─ hydraulics/      # Network hydraulics
 │  │  └─ pes_calc/        # PES calculation engine
 │  └─ design-agents/     # AI design agents
@@ -454,11 +455,11 @@ pytest -v tests/test_specific.py
 
 When generating or modifying code:
 
-- Put engineering logic **only** in `services/calc-engine/`
+- Prefer putting engineering logic in `services/calc-engine/` unless a scoped exception exists.
 - Put UI, orchestration, persistence in `apps/` or `packages/`
-- Respect the worker execution model
-- Never introduce math into TypeScript
-- Never duplicate calculation logic
+- Respect the worker execution model by default
+- Do not add engineering math to TypeScript unless the nearest scoped `AGENTS.md` explicitly allows it
+- Never duplicate calculation logic without a documented reason and verification plan
 
 Violations introduce latency, inconsistency, and loss of trust.
 
