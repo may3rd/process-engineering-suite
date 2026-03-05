@@ -206,6 +206,7 @@ export const BASE_UNITS: Record<UomCategory, string> = {
   energy:              'kJ/kg',
   thermalConductivity: 'W/(m·K)',
   heatTransferCoeff:   'W/(m²·K)',
+  time:                'hour', 
   // add new categories here
 }
 ```
@@ -223,6 +224,7 @@ export const UOM_OPTIONS: Record<UomCategory, string[]> = {
   energy:              ['kJ/kg', 'kcal/kg', 'Btu/lb'],
   thermalConductivity: ['W/(m·K)', 'Btu/(h·ft·°F)', 'kcal/(h·m·K)'],
   heatTransferCoeff:   ['W/(m²·K)', 'Btu/(h·ft²·°F)', 'kcal/(h·m²·K)'],
+  // …add more as needed
 }
 ```
 
