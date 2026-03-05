@@ -35,6 +35,13 @@
       "runtimeArgs": ["run", "dev"],
       "cwd": "apps/venting-calculation",
       "port": 3004
+    },
+    {
+      "name": "vessel",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "apps/vessel",
+      "port": 3006
     }
   ]
 }

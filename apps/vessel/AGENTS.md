@@ -1,6 +1,6 @@
 # AGENTS.md (apps/vessel)
 
-This file defines app-scoped rules for `apps/vessel`. Root [`/Users/maetee/Code/process-engineering-suite/.claude/worktrees/vessel-bootstrap/AGENTS.md`] remains authoritative when conflicts exist.
+This file defines app-scoped rules for `apps/vessel`.
 
 ## Scope
 

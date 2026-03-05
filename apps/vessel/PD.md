@@ -11,7 +11,7 @@ Build `apps/vessel` as a vessel/tank calculator intended to replace spreadsheet 
 
 ## 2) Design and Architecture Constraint (Mandatory)
 
-- UI and frontend architecture must follow [`pse-web-dna.md`](/Users/maetee/Code/process-engineering-suite/.claude/worktrees/vessel-bootstrap/pse-web-dna.md).
+- UI and frontend architecture must follow [`pse-web-dna.md`].
 - Vessel geometry formulas run in TypeScript in `apps/vessel`.
 - Unit conversion must use `convertUnit` from `@eng-suite/physics`.
 - No hardcoded conversion factors.

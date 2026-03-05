@@ -4,7 +4,7 @@ Vessel is a dedicated Process Engineering Suite calculator for industrial vessel
 
 ## Design Baseline
 
-UI/UX and frontend architecture must follow [`pse-web-dna.md`](/Users/maetee/Code/process-engineering-suite/.claude/worktrees/vessel-bootstrap/pse-web-dna.md), derived from `apps/venting-calculation`.
+UI/UX and frontend architecture must follow Root `pse-web-dna.md` and `apps/calculator-template`.
 
 ## Required Stack
 
@@ -18,8 +18,8 @@ UI/UX and frontend architecture must follow [`pse-web-dna.md`](/Users/maetee/Cod
 
 - Top bar with title/subtitle and action menu.
 - Two-panel grid (`xl:grid-cols-2`):
-  - left = InputPanel
-  - right = ResultsPanel
+    - left = InputPanel
+    - right = ResultsPanel
 - Mobile first single column.
 
 ## Required Calculator Structure
@@ -46,15 +46,15 @@ src/app/calculator/
 ## Feature Scope
 
 - Geometry and calculation outputs:
-  - shell/head/total volume
-  - shell/head/total/wetted surface area
-  - partial/effective/working/overflow volumes
-  - mass and timing helpers
+    - shell/head/total volume
+    - shell/head/total/wetted surface area
+    - partial/effective/working/overflow volumes
+    - mass and timing helpers
 - Lifecycle features:
-  - save/load calculations
-  - metadata and revision history
-  - PDF export
-  - equipment linking
+    - save/load calculations
+    - metadata and revision history
+    - PDF export
+    - equipment linking
 
 ## Quality Gates
 

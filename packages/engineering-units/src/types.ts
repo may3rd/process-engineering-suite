@@ -19,15 +19,20 @@ export const UOM_OPTIONS = {
   heatTransferCoeff:   ['W/(m²·K)', 'Btu/(h·ft²·°F)', 'kcal/(h·m²·K)'],
   density:             ['kg/m3', 'lb/ft3', 'g/cm3'],
   viscosity:           ['Pa.s', 'cP', 'mPa.s'],
+  volume:              ['m3', 'L', 'ft3'],
+  area:                ['m2', 'ft2'],
+  mass:                ['kg', 'lb'],
+  time:                ['s', 'min', 'h', 'day', 'd', 'year', 'yr'],
+  force:               ['N', 'lbf'],
 } as const
 
 export type UomCategory = keyof typeof UOM_OPTIONS
 
 /** The canonical base unit for each category (always stored in form state). */
 export const BASE_UNITS: Record<UomCategory, string> = {
-  length:              'mm',
+  length:              'm',
   gaugePressure:       'kPag',
-  absolutePressure:    'kPa',
+  absolutePressure:    'Pa',
   temperature:         'C',
   volumeFlow:          'm3/h',
   ventRate:            'Nm3/h',
@@ -37,6 +42,11 @@ export const BASE_UNITS: Record<UomCategory, string> = {
   heatTransferCoeff:   'W/(m²·K)',
   density:             'kg/m3',
   viscosity:           'Pa.s',
+  volume:              'm3',
+  area:                'm2',
+  mass:                'kg',
+  time:                's',
+  force:               'N',
 }
 
 /**
@@ -94,4 +104,25 @@ export const UOM_LABEL: Record<string, string> = {
   'Pa.s':  'Pa·s',
   cP:      'cP',
   'mPa.s': 'mPa·s',
+  // Volume
+  'm3':  'm³',
+  'L':   'L',
+  'ft3': 'ft³',
+  // Area
+  'm2':  'm²',
+  'ft2': 'ft²',
+  // Mass
+  'kg':  'kg',
+  'lb': 'lb',
+  // Time
+  's':  's',
+  'min': 'min',
+  'h': 'h',
+  'day': 'day',
+  'd': 'd',
+  'year': 'year',
+  'yr': 'yr',
+  // Force
+  'N':  'N',
+  'lbf': 'lbf',
 }
