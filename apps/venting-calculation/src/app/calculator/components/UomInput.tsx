@@ -38,9 +38,9 @@ export function UomInput({ name, category, id, placeholder, disabled }: UomInput
       name={name}
       control={control}
       render={({ field }) => {
-        // Convert base unit value to display unit for rendering
-        const displayValue = isFinite(field.value)
-          ? convertUnit(field.value, baseUnit, displayUnit)
+        const numericValue = typeof field.value === 'number' ? field.value : NaN
+        const displayValue = Number.isFinite(numericValue)
+          ? convertUnit(numericValue, baseUnit, displayUnit)
           : ''
 
         return (

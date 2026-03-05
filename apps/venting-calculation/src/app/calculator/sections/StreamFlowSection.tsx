@@ -90,8 +90,9 @@ function IncomingStreamTable() {
                 name={`incomingStreams.${index}.flowrate`}
                 control={control}
                 render={({ field }) => {
-                  const displayValue = isFinite(field.value)
-                    ? convertUnit(field.value, BASE_UNITS.volumeFlow, displayUnit)
+                  const numericValue = typeof field.value === 'number' ? field.value : NaN
+                  const displayValue = Number.isFinite(numericValue)
+                    ? convertUnit(numericValue, BASE_UNITS.volumeFlow, displayUnit)
                     : ''
                   return (
                     <div className="flex items-center gap-1.5">
@@ -231,8 +232,9 @@ function OutgoingStreamTable() {
                 name={`outgoingStreams.${index}.flowrate`}
                 control={control}
                 render={({ field }) => {
-                  const displayValue = isFinite(field.value)
-                    ? convertUnit(field.value, BASE_UNITS.volumeFlow, displayUnit)
+                  const numericValue = typeof field.value === 'number' ? field.value : NaN
+                  const displayValue = Number.isFinite(numericValue)
+                    ? convertUnit(numericValue, BASE_UNITS.volumeFlow, displayUnit)
                     : ''
                   return (
                     <div className="flex items-center gap-1.5">
