@@ -14,7 +14,11 @@ import {
   singleHeadSurfaceArea,
 } from './vesselGeometry'
 import { partialVolume, headPartialVolume, circularSegmentArea } from './partialVolume'
-import { torisphericalHeadPartialWettedAreaMm2 } from './torispherical'
+import {
+  torisphericalHeadPartialWettedAreaMm2,
+  torisphericalHorizontalHeadPartialVolumeMm3,
+  torisphericalHorizontalHeadPartialWettedAreaMm2,
+} from './torispherical'
 import { STEEL_DENSITY_KG_M3, WETTED_AREA_HEIGHT_CAP_MM } from '@/lib/constants'
 
 function clamp(value: number, min: number, max: number): number {
@@ -280,15 +284,26 @@ function computeProcessVesselResult(input: CalculationInput): CalculationResult 
   const headVol2x = singleHeadVolume(headType, insideDiameter, headDepthUsed) * 2
   const totalVol = shellVol + headVol2x
 
+  const partialAtLevel = (levelMm: number): number => {
+    if (orientation === VesselOrientation.HORIZONTAL && headType === HeadType.TORISPHERICAL_80_10) {
+      const r = insideDiameter / 2
+      const level = Math.max(0, Math.min(levelMm, 2 * r))
+      const shellPartial = (circularSegmentArea(r, level) * shellLength) / 1e9
+      const headPartial = torisphericalHorizontalHeadPartialVolumeMm3(insideDiameter, level) / 1e9 * 2
+      return shellPartial + headPartial
+    }
+    return partialVolume(orientation, headType, insideDiameter, shellLength, headDepthUsed, levelMm)
+  }
+
   const oflVol =
     ofl != null && isFinite(ofl)
-      ? partialVolume(orientation, headType, insideDiameter, shellLength, headDepthUsed, ofl)
+      ? partialAtLevel(ofl)
       : totalVol
 
   let workingVol = 0
   if (hll != null && lll != null && isFinite(hll) && isFinite(lll)) {
-    const vHll = partialVolume(orientation, headType, insideDiameter, shellLength, headDepthUsed, hll)
-    const vLll = partialVolume(orientation, headType, insideDiameter, shellLength, headDepthUsed, lll)
+    const vHll = partialAtLevel(hll)
+    const vLll = partialAtLevel(lll)
     workingVol = Math.max(0, vHll - vLll)
   }
 
@@ -296,7 +311,7 @@ function computeProcessVesselResult(input: CalculationInput): CalculationResult 
 
   const partialVol =
     liquidLevel != null && isFinite(liquidLevel)
-      ? partialVolume(orientation, headType, insideDiameter, shellLength, headDepthUsed, liquidLevel)
+      ? partialAtLevel(liquidLevel)
       : null
 
   const shellSA = shellSurfaceArea(insideDiameter, shellLength)
@@ -342,10 +357,15 @@ function computeProcessVesselResult(input: CalculationInput): CalculationResult 
           ? 2 * Math.acos((r - level) / r)
           : 2 * Math.PI
         const shellWetted = (arcAngle / (2 * Math.PI)) * shellSA
-        const totalCircleArea = Math.PI * r * r
-        const segArea = circularSegmentArea(r, level)
-        const headFrac = totalCircleArea > 0 ? segArea / totalCircleArea : 0
-        wettedSA = shellWetted + headFrac * singleHeadSA * 2
+        if (headType === HeadType.TORISPHERICAL_80_10) {
+          const headWetted = torisphericalHorizontalHeadPartialWettedAreaMm2(D, level) / 1e6
+          wettedSA = shellWetted + headWetted * 2
+        } else {
+          const totalCircleArea = Math.PI * r * r
+          const segArea = circularSegmentArea(r, level)
+          const headFrac = totalCircleArea > 0 ? segArea / totalCircleArea : 0
+          wettedSA = shellWetted + headFrac * singleHeadSA * 2
+        }
       }
     }
 
@@ -378,8 +398,8 @@ function computeProcessVesselResult(input: CalculationInput): CalculationResult 
     flowrate != null && isFinite(flowrate) && flowrate > 0 &&
     hll != null && lll != null && isFinite(hll) && isFinite(lll)
   ) {
-    const vHll = partialVolume(orientation, headType, insideDiameter, shellLength, headDepthUsed, hll)
-    const vLll = partialVolume(orientation, headType, insideDiameter, shellLength, headDepthUsed, lll)
+    const vHll = partialAtLevel(hll)
+    const vLll = partialAtLevel(lll)
     const deltaVol = Math.abs(vHll - vLll)
     surgeTime = deltaVol / flowrate
     inventory = deltaVol / flowrate

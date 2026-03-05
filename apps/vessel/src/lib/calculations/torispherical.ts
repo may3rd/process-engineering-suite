@@ -48,9 +48,32 @@ function torisphericalRadiusMm(diameterMm: number, u: number): number {
   return value <= 0 ? 0 : diameterMm * (0.5 - FK_TORI + Math.sqrt(value))
 }
 
+function torisphericalRadiusDerivative(diameterMm: number, zMm: number): number {
+  const { a1, a2 } = torisphericalGeometry()
+  const x = clamp(zMm / diameterMm, 0, a2)
+
+  if (x <= a1) {
+    const r = torisphericalRadiusMm(diameterMm, x)
+    if (r <= 0) return 0
+    return -diameterMm * (x - FD_TORI) / r
+  }
+
+  const value = FK_TORI ** 2 - (x - a2) ** 2
+  const sqrtTerm = value <= 0 ? 1e-9 : Math.sqrt(value)
+  return -(x - a2) / sqrtTerm
+}
+
 function torisphericalHeadCrossSectionAreaMm2(diameterMm: number, u: number): number {
   const radius = torisphericalRadiusMm(diameterMm, u)
   return Math.PI * radius * radius
+}
+
+function circularSegmentArea(radiusMm: number, depthMm: number): number {
+  if (depthMm <= 0) return 0
+  if (depthMm >= 2 * radiusMm) return Math.PI * radiusMm * radiusMm
+  const term1 = radiusMm * radiusMm * Math.acos((radiusMm - depthMm) / radiusMm)
+  const term2 = (radiusMm - depthMm) * Math.sqrt(2 * radiusMm * depthMm - depthMm * depthMm)
+  return term1 - term2
 }
 
 export function torisphericalHeadDepthMm(diameterMm: number): number {
@@ -101,4 +124,47 @@ export function torisphericalHeadPartialWettedAreaMm2(diameterMm: number, fillFr
     )
   )
   return Math.max(0, s1 + s2)
+}
+
+export function torisphericalHorizontalHeadPartialVolumeMm3(diameterMm: number, liquidLevelMm: number): number {
+  if (liquidLevelMm <= 0) return 0
+  const headDepthMm = torisphericalHeadDepthMm(diameterMm)
+  const full = torisphericalHeadVolumeMm3(diameterMm)
+  if (liquidLevelMm >= diameterMm) return full
+
+  const R = diameterMm / 2
+  return integrateSimpson((z) => {
+    const r = torisphericalRadiusMm(diameterMm, z / diameterMm)
+    if (r <= 0) return 0
+    const dist = Math.abs(R - liquidLevelMm)
+    if (dist >= r) {
+      return liquidLevelMm > R ? Math.PI * r * r : 0
+    }
+    const localDepth = liquidLevelMm < R ? r - dist : r + dist
+    return circularSegmentArea(r, localDepth)
+  }, 0, headDepthMm)
+}
+
+export function torisphericalHorizontalHeadPartialWettedAreaMm2(diameterMm: number, liquidLevelMm: number): number {
+  if (liquidLevelMm <= 0) return 0
+  const headDepthMm = torisphericalHeadDepthMm(diameterMm)
+  const full = torisphericalHeadWettedAreaMm2(diameterMm)
+  if (liquidLevelMm >= diameterMm) return full
+
+  const R = diameterMm / 2
+  return integrateSimpson((z) => {
+    const r = torisphericalRadiusMm(diameterMm, z / diameterMm)
+    if (r <= 0) return 0
+    const dr = torisphericalRadiusDerivative(diameterMm, z)
+    const arcFactor = Math.sqrt(1 + dr * dr)
+    const dist = Math.abs(R - liquidLevelMm)
+    if (dist >= r) {
+      return liquidLevelMm > R ? 2 * Math.PI * r * arcFactor : 0
+    }
+    const alpha = Math.acos(dist / r)
+    const wettedArc = liquidLevelMm < R
+      ? 2 * r * alpha
+      : 2 * Math.PI * r - 2 * r * alpha
+    return wettedArc * arcFactor
+  }, 0, headDepthMm)
 }
