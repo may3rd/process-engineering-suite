@@ -21,7 +21,9 @@
       "@eng-suite/ui-kit": ["../../packages/ui-kit/src/index.ts"],
       "@eng-suite/ui-kit/*": ["../../packages/ui-kit/src/*"],
       "@eng-suite/physics": ["../../packages/physics-engine/src/index.ts"],
-      "@eng-suite/physics/*": ["../../packages/physics-engine/src/*"]
+      "@eng-suite/physics/*": ["../../packages/physics-engine/src/*"],
+      "@eng-suite/engineering-units": ["../../packages/engineering-units/src/index.ts"],
+      "@eng-suite/engineering-units/*": ["../../packages/engineering-units/src/*"]
     }
   },
   "include": [

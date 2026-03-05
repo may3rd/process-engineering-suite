@@ -160,6 +160,7 @@
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.1",
         "@eng-suite/api-client": "*",
+        "@eng-suite/engineering-units": "*",
         "@eng-suite/types": "*",
         "@eng-suite/ui-kit": "*",
         "@hookform/resolvers": "^5.2.2",
@@ -243,6 +244,17 @@
       },
       "devDependencies": {
         "typescript": "^5.0.0",
+      },
+    },
+    "packages/engineering-units": {
+      "name": "@eng-suite/engineering-units",
+      "version": "0.0.1",
+      "devDependencies": {
+        "typescript": "^5.0.0",
+        "zustand": "^5.0.0",
+      },
+      "peerDependencies": {
+        "zustand": ">=4.0.0",
       },
     },
     "packages/eslint-config": {
@@ -442,6 +454,8 @@
     "@eng-suite/api": ["@eng-suite/api@workspace:packages/api-std"],
 
     "@eng-suite/api-client": ["@eng-suite/api-client@workspace:packages/api-client"],
+
+    "@eng-suite/engineering-units": ["@eng-suite/engineering-units@workspace:packages/engineering-units"],
 
     "@eng-suite/physics": ["@eng-suite/physics@workspace:packages/physics-engine"],
 

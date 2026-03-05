@@ -1,8 +1,49 @@
 # Claude Code Project Guide: process-engineering-suite
 
-## Unit Conversion
+## Unit of Measure (UoM) — Shared Package
 
-All unit conversion in this project defaults to **`packages/physics-engine/src/unitConversion.ts`**.
+All UoM constants, display labels, and the store factory now live in the shared package:
+
+**`packages/engineering-units`** → npm name `@eng-suite/engineering-units`
+
+### What the package exports
+
+```ts
+import {
+  UOM_OPTIONS,    // { length: ['mm','in',...], temperature: [...], ... }
+  BASE_UNITS,     // { length: 'mm', temperature: 'C', ... }
+  UOM_LABEL,      // { 'C': '°C', 'm3/h': 'm³/h', ... }
+  type UomCategory,
+  createUomStore, // Zustand store factory with persist + migrate
+} from '@eng-suite/engineering-units'
+```
+
+### Creating a UoM store for a new app
+
+```ts
+// apps/my-new-app/src/lib/store/uomStore.ts
+import { createUomStore } from '@eng-suite/engineering-units'
+import { BASE_UNITS } from '../uom'   // app-specific subset or full set
+
+export const useUomStore = createUomStore('my-app-uom-prefs', BASE_UNITS)
+```
+
+The factory automatically:
+- Persists preferences to localStorage under the given key
+- Merges `BASE_UNITS` with stale persisted state on load (schema evolution)
+
+### Architecture rules
+
+- **Form state always stores base units** (mm, kPag, C, m3/h, Nm3/h …)
+- **Conversion is UI-only** — happens inside `UomInput` component, never at the API boundary
+- **Zod schemas validate base units** — no changes needed when adding new display units
+- **Unit keys are ASCII** — `m3/h`, `Nm3/h`, `C`, `kg/cm2g` (not `m³/h`, `°C`, etc.)
+
+---
+
+## Unit Conversion (math)
+
+All numeric conversions use **`packages/physics-engine/src/unitConversion.ts`**.
 
 ### Primary Utilities
 
@@ -10,7 +51,6 @@ All unit conversion in this project defaults to **`packages/physics-engine/src/u
   - Converts a numeric value between two units (with error handling)
   - Returns the original value if conversion fails
   - Supports both linear and non-linear conversions (e.g., temperature)
-  - Unit keys use ASCII strings: `m3/h`, `Nm3/h`, `C` (not unicode superscripts)
 
 - **`normalizeUnit(unit?: string | null): string | undefined`**
   - Normalizes unit aliases (e.g., `tonn/day` → `ton/day`, `kg_cm2` → `kg/cm2`)
@@ -30,9 +70,11 @@ The physics-engine supports:
 - **Pressure Gradient**: `Pa/m`, `kPa/100m`, `bar/100m`, `kg/cm2/100m`, `psi/100ft`
 - **And more** — see `convert-units` library documentation
 
-### Apps Using Unit Conversion
+---
 
-#### apps/venting-calculation (API 2000 Vent Sizing)
+## Apps Using UoM
+
+### apps/venting-calculation (API 2000 Vent Sizing)
 
 **Base Units (always stored in form):**
 - Length: `mm`
@@ -41,20 +83,35 @@ The physics-engine supports:
 - Temperature: `C`
 - Volume Flow: `m3/h`
 - Vent Rate: `Nm3/h`
+- Energy: `kJ/kg`
+- Thermal Conductivity: `W/(m·K)`
+- Heat Transfer Coeff: `W/(m²·K)`
 
 **UoM Store:**
-- Location: `apps/venting-calculation/src/lib/store/uomStore.ts`
-- Persists user's display unit preferences to localStorage (`vent-uom-prefs`)
-- Categories: `length`, `gaugePressure`, `absolutePressure`, `temperature`, `volumeFlow`, `ventRate`
+- `apps/venting-calculation/src/lib/store/uomStore.ts` — thin wrapper around `createUomStore`
+- Persists to localStorage key `vent-uom-prefs`
+
+**UoM Constants:**
+- `apps/venting-calculation/src/lib/uom.ts` — re-exports from `@eng-suite/engineering-units`,
+  plus app-specific `GAUGE_PRESSURE_RANGES` for form validation hints
 
 **Input Component:**
-- `UomInput` — controlled input with inline unit selector
-- Always converts to/from base units
-- Form state always stores base units for consistent validation and API submission
+- `UomInput` — controlled input with inline unit selector (stays in each app for RHF typing)
+- Always converts to/from base units; form state always stores base units
 
-**Display Labels:**
-- Defined in `apps/venting-calculation/src/lib/uom.ts`
-- Maps ASCII unit keys to pretty unicode labels (`m3/h` → `m³/h`, `C` → `°C`, etc.)
+---
+
+## Adding UoM to a New App
+
+1. Add `"@eng-suite/engineering-units": "*"` to the app's `package.json` dependencies
+2. Add path alias to `tsconfig.json`:
+   ```json
+   "@eng-suite/engineering-units": ["../../packages/engineering-units/src/index.ts"]
+   ```
+3. Create `src/lib/uom.ts` (re-export from `@eng-suite/engineering-units`, add app-specific extras)
+4. Create `src/lib/store/uomStore.ts` using `createUomStore('my-app-uom-prefs', BASE_UNITS)`
+5. Build a `UomInput` component (copy from venting-calculation, adjust form type)
+6. Run `bun install` at the repo root to link the package
 
 ---
 
@@ -63,6 +120,11 @@ The physics-engine supports:
 ```
 process-engineering-suite/
 ├── packages/
+│   ├── engineering-units/      # ★ Shared UoM constants + store factory
+│   │   └── src/
+│   │       ├── types.ts        #   UOM_OPTIONS, BASE_UNITS, UOM_LABEL, UomCategory
+│   │       ├── store.ts        #   createUomStore() factory
+│   │       └── index.ts        #   re-exports
 │   ├── physics-engine/         # Shared physics calculations & unit conversion
 │   │   └── src/
 │   │       ├── unitConversion.ts   # convertUnit, normalizeUnit
@@ -73,11 +135,12 @@ process-engineering-suite/
     ├── venting-calculation/    # API 2000 tank vent sizing calculator
     │   └── src/
     │       ├── lib/
-    │       │   ├── uom.ts      # UoM constants, options, display labels
+    │       │   ├── uom.ts          # re-exports @eng-suite/engineering-units + GAUGE_PRESSURE_RANGES
     │       │   ├── store/
-    │       │   │   └── uomStore.ts  # Zustand + persist for user unit prefs
+    │       │   │   └── uomStore.ts # createUomStore('vent-uom-prefs', BASE_UNITS)
     │       │   └── ...
-    │       └── ...
+    │       └── app/calculator/components/
+    │           └── UomInput.tsx    # RHF-controlled input + inline unit selector
     └── ...
 ```
 
@@ -85,6 +148,7 @@ process-engineering-suite/
 
 ## Tips
 
-- When adding new unit-convertible fields, use the existing `UomInput` component in venting-calculation
+- When adding new unit-convertible fields, use the existing `UomInput` component pattern
 - Always validate in base units to keep Zod schemas simple
+- Add new unit categories to `packages/engineering-units/src/types.ts` — all apps pick them up automatically
 - Test unit conversion with the physics-engine directly before integrating into UI components

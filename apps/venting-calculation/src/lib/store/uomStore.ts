@@ -1,36 +1,12 @@
 /**
- * UoM preferences store (Zustand with localStorage persistence).
- * Stores the user's selected display unit per category.
- * Persists to localStorage key: 'vent-uom-prefs'
+ * UoM preferences store for the venting calculator.
+ *
+ * Built with the shared `createUomStore` factory from `@eng-suite/engineering-units`.
+ * User preferences are persisted to localStorage under the key 'vent-uom-prefs'.
+ * Newly-added categories are automatically back-filled from BASE_UNITS on load.
  */
 
-import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
-import { BASE_UNITS, type UomCategory } from '../uom'
+import { createUomStore } from '@eng-suite/engineering-units'
+import { BASE_UNITS } from '../uom'
 
-interface UomState {
-  units: Record<UomCategory, string>
-  setUnit: (category: UomCategory, unit: string) => void
-}
-
-export const useUomStore = create<UomState>()(
-  persist(
-    (set) => ({
-      units: { ...BASE_UNITS },
-      setUnit: (category, unit) =>
-        set((s) => ({
-          units: { ...s.units, [category]: unit },
-        })),
-    }),
-    {
-      name: 'vent-uom-prefs',
-      migrate: (persistedState: any, version: number) => {
-        // Ensure all BASE_UNITS categories are present (handles schema evolution)
-        if (persistedState?.state?.units) {
-          persistedState.state.units = { ...BASE_UNITS, ...persistedState.state.units }
-        }
-        return persistedState
-      },
-    }
-  )
-)
+export const useUomStore = createUomStore('vent-uom-prefs', BASE_UNITS)

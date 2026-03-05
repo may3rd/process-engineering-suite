@@ -1,0 +1,17 @@
+{
+  "name": "@eng-suite/engineering-units",
+  "version": "0.0.1",
+  "main": "./src/index.js",
+  "types": "./src/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc -w"
+  },
+  "peerDependencies": {
+    "zustand": ">=4.0.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0",
+    "zustand": "^5.0.0"
+  }
+}
