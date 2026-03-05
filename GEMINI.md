@@ -9,8 +9,9 @@
 - **Large Data Sets:** When displaying process data or stream tables, use `@tanstack/react-table` with virtualization (`@tanstack/react-virtual`) to ensure 60fps scrolling.
 
 ## 2. Engineering Logic & Units
-- **Physical Units:** store all values in SI units (e.g., `kg`, `m`, `K`) with metadata for display units.
-- **Unit Conversion:** Never hardcode conversions. Always use `convertUnit` from `packages/physics-engine/src/unitConversion.ts`.
+- **Physical Units:** Store all form values in base/SI units (e.g., `mm`, `kPag`, `C`, `m3/h`). Never store display units in form state or API payloads.
+- **Unit Conversion (math):** Never hardcode conversions. Always use `convertUnit` from `packages/physics-engine/src/unitConversion.ts`.
+- **Unit Conversion (display/UI):** Use `@eng-suite/engineering-units` for user-selectable display units in forms. See the **UoM System** section below.
 - **Immutability:** Use `Immer` for complex state updates to ensure stream properties aren't accidentally mutated across components.
 
 ## 3. Python & Excel Integration
@@ -37,10 +38,12 @@
 This is a monorepo containing a suite of tools for process engineering, built with Next.js, Turborepo, and Material UI.
 
 ### Packages
+- **`packages/engineering-units`** (`@eng-suite/engineering-units`): UoM constants + store factory.
+  - **Key Files**: `src/types.ts` (`UOM_OPTIONS`, `BASE_UNITS`, `UOM_LABEL`, `UomCategory`), `src/store.ts` (`createUomStore`).
 - **`packages/ui-kit`**: Shared UI components.
   - **Key Files**: `glassStyles.ts` (Glassmorphism styles).
-- **`packages/physics-engine`**: Calculation logic.
-  - **Key Files**: `src/types.ts` (Shared types like `PipeProps`, `NodeProps`).
+- **`packages/physics-engine`** (`@eng-suite/physics`): Unit conversion math + shared types.
+  - **Key Files**: `src/unitConversion.ts` (`convertUnit`, `normalizeUnit`), `src/types.ts` (`PipeProps`, `NodeProps`).
 
 ## Design System
 - **Theming**: Light and Dark modes supported. Theme preference is synced from Dashboard to other apps via URL query parameters (`?theme=dark`).
@@ -57,6 +60,39 @@ This is a monorepo containing a suite of tools for process engineering, built wi
 - **Hydraulics**:
   - **Bi-Directional Flow**: Supported via native checks.
   - **Backward Propagation**: Uses `InletState` of the pipe directly. No node swapping or manual drop adjustments are needed as the engine handles the physics of the segment direction.
+
+## UoM System
+
+User-selectable unit-of-measure logic for all frontend apps lives in `packages/engineering-units` (`@eng-suite/engineering-units`).
+
+### How it works
+
+- **Form state** always holds **base units** (`mm`, `kPag`, `C`, `m3/h`, …). This keeps Zod validation and API payloads consistent.
+- **`UomInput`** is an RHF-controlled input component with an inline unit selector. It converts base→display on render and display→base on change.
+- **`useUomStore`** (per app) persists the user's selected display unit per category to localStorage.
+- **`createUomStore(storeName, defaultUnits)`** is a Zustand factory that automatically migrates stale localStorage state when new categories are added.
+
+### Quick reference
+
+```ts
+import { UOM_OPTIONS, BASE_UNITS, UOM_LABEL, type UomCategory, createUomStore }
+  from '@eng-suite/engineering-units'
+
+// Create a store for a new app:
+export const useUomStore = createUomStore('my-app-uom-prefs', BASE_UNITS)
+```
+
+### Unit key rules
+
+- Always ASCII: `m3/h`, `Nm3/h`, `C`, `kg/cm2g` — never `m³/h`, `°C`, etc.
+- Display labels are mapped in `UOM_LABEL` (e.g., `'C' → '°C'`, `'m3/h' → 'm³/h'`)
+- Conversion math uses `convertUnit(value, fromUnit, toUnit)` from `@eng-suite/physics`
+
+### Reference implementation
+
+See `apps/venting-calculation` for the canonical full implementation including `UomInput.tsx`, `src/lib/uom.ts`, and `src/lib/store/uomStore.ts`.
+
+---
 
 ## Deployment Options (Vercel + AWS)
 - Use lane-based configuration to prevent cross-platform regressions:

@@ -82,7 +82,7 @@ pytest -k "pattern"       # Run tests matching pattern
 - **Imports**: Named exports only (`export {MyClass}`), no default exports. Use ES6 modules
 - **Variables**: `const` by default, `let` only when reassignment is needed. Never `var`
 - **Types**: Strict mode enabled. Avoid `any`; prefer `unknown` or specific types. Be explicit for complex types
-- **Units/UOM**: Never hardcode unit conversions. Always use `convertUnit` from `packages/physics-engine/src/unitConversion.ts`
+- **Units/UOM**: Never hardcode unit conversions. Always use `convertUnit` from `packages/physics-engine/src/unitConversion.ts`. For display unit selection in forms, use `@eng-suite/engineering-units` — see **UoM System** section below
 - **Formatting**: Explicit semicolons, single quotes for strings, template literals for interpolation
 - **Naming**:
   - Classes/Interfaces/Types: `UpperCamelCase`
@@ -177,7 +177,7 @@ pytest -k "pattern"       # Run tests matching pattern
 ## Repository Structure
 
 - `apps/`: Next.js applications (docs, network-editor, psv, venting-calculation, web)
-- `packages/`: Shared packages (api-client, api-std, eslint-config, physics-engine, tsconfig, types, typescript-config, ui, ui-kit, unit-converter)
+- `packages/`: Shared packages (api-client, api-std, engineering-units, eslint-config, physics-engine, tsconfig, types, typescript-config, ui, ui-kit, unit-converter)
 - `conductor/`: Development guidelines and track metadata
 - `infra/`: Docker and infrastructure configs
 - `services/`: Backend services (api, calc-engine, design-agents)
@@ -314,8 +314,9 @@ process-engineering-suite/
 ├─ packages/             # Shared libraries
 │  ├─ api-client/        # API client SDKs
 │  ├─ api-std/           # API standards and shared contracts
+│  ├─ engineering-units/ # ★ Shared UoM constants + store factory (@eng-suite/engineering-units)
 │  ├─ eslint-config/     # ESLint shared configuration
-│  ├─ physics-engine/    # Shared physics helpers
+│  ├─ physics-engine/    # Shared physics helpers + convertUnit
 │  ├─ tsconfig/          # Shared tsconfig presets
 │  ├─ types/             # Shared TypeScript types
 │  ├─ typescript-config/ # TypeScript tooling defaults
@@ -408,6 +409,7 @@ pytest -v tests/test_specific.py
 - `const` by default, no `var`
 - Strict typing; avoid `any`
 - Never hardcode unit conversions; use `convertUnit` from `packages/physics-engine/src/unitConversion.ts`
+- For user-selectable display units in forms, use `@eng-suite/engineering-units` — see **UoM System** section
 - Explicit semicolons, single quotes
 - `===` / `!==` only
 - **No comments unless explicitly requested**
@@ -461,6 +463,56 @@ When generating or modifying code:
 - Never duplicate calculation logic
 
 Violations introduce latency, inconsistency, and loss of trust.
+
+---
+
+## UoM System
+
+All user-selectable unit-of-measure logic for frontend apps lives in:
+
+**`packages/engineering-units`** (`@eng-suite/engineering-units`)
+
+### Key exports
+
+```ts
+import {
+  UOM_OPTIONS,      // available units per category (12 categories)
+  BASE_UNITS,       // canonical base unit per category (always stored in form)
+  UOM_LABEL,        // ASCII key → unicode display label  ('C' → '°C')
+  type UomCategory, // keyof UOM_OPTIONS
+  createUomStore,   // Zustand store factory with persist + migrate
+} from '@eng-suite/engineering-units'
+```
+
+### Architecture rules
+
+| Rule | Detail |
+|---|---|
+| Form state → **base units always** | `mm`, `kPag`, `C`, `m3/h`, `Nm3/h`, … |
+| Conversion is **UI-only** | Happens inside `UomInput` component, never at the API boundary |
+| Zod validation → **base units** | Ranges stay consistent; no schema changes when adding display units |
+| Unit keys are **ASCII** | `m3/h`, `Nm3/h`, `C`, `kg/cm2g` — never unicode superscripts |
+
+### Adding UoM to a new app
+
+1. Add `"@eng-suite/engineering-units": "*"` to the app's `package.json`
+2. Add tsconfig path alias:
+   ```json
+   "@eng-suite/engineering-units": ["../../packages/engineering-units/src/index.ts"]
+   ```
+3. Create `src/lib/uom.ts` — re-export from `@eng-suite/engineering-units`, add any app-specific constants
+4. Create `src/lib/store/uomStore.ts`:
+   ```ts
+   import { createUomStore } from '@eng-suite/engineering-units'
+   import { BASE_UNITS } from '../uom'
+   export const useUomStore = createUomStore('my-app-uom-prefs', BASE_UNITS)
+   ```
+5. Copy `UomInput.tsx` from `apps/venting-calculation` and adjust the RHF form type
+6. Run `bun install` at repo root to link the package
+
+### Reference implementation
+
+`apps/venting-calculation` is the canonical example app with a complete UoM implementation.
 
 ---
 
