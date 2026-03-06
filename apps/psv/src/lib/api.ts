@@ -37,6 +37,19 @@ export interface LoginResponse {
 
 export class ApiClient {
   private token: string | null = null;
+  private static readonly SUPPORTED_EQUIPMENT_TYPES = new Set([
+    "VESSEL",
+    "TANK",
+    "HEAT_EXCHANGER",
+    "COLUMN",
+    "REACTOR",
+    "PUMP",
+    "COMPRESSOR",
+    "PIPING",
+    "CONTROL_VALVE",
+    "VENDOR_PACKAGE",
+    "OTHER",
+  ]);
 
   constructor() {
     // Load token from localStorage on initialization
@@ -342,6 +355,47 @@ export class ApiClient {
 
   // --- Equipment ---
 
+  private mapEquipmentTypeToObjectType(type: Equipment["type"]): string {
+    return type.toUpperCase();
+  }
+
+  private buildEngineeringObjectPayload(
+    equipment: Omit<Equipment, "id" | "createdAt" | "updatedAt">,
+    existingProperties?: Record<string, unknown>,
+  ) {
+    const designParameters = {
+      designPressure: equipment.designPressure,
+      designPressureUnit: equipment.designPressureUnit ?? "barg",
+      mawp: equipment.mawp,
+      mawpUnit: equipment.mawpUnit ?? "barg",
+      designTemperature: equipment.designTemperature,
+      designTempUnit: equipment.designTempUnit ?? "C",
+    };
+
+    return {
+      object_type: this.mapEquipmentTypeToObjectType(equipment.type),
+      area_id: equipment.areaId,
+      owner_id: equipment.ownerId,
+      name: equipment.name,
+      description: equipment.description ?? null,
+      is_active: equipment.status !== "inactive",
+      status: equipment.status,
+      properties: {
+        ...(existingProperties ?? {}),
+        details: equipment.details ?? (existingProperties?.details as Record<string, unknown> | undefined) ?? {},
+        design_parameters: {
+          ...(
+            existingProperties?.design_parameters as Record<string, unknown> | undefined
+          ),
+          ...designParameters,
+        },
+      },
+    };
+  }
+
+  private async getEngineeringObjectByEquipmentId(id: string): Promise<any> {
+    return this.request<any>(`/engineering-objects/by-id/${id}`);
+  }
 
   private mapEngineeringObjectToEquipment(raw: any): Equipment {
     const properties =
@@ -396,12 +450,15 @@ export class ApiClient {
   }
 
   async getEquipment(areaId?: string): Promise<Equipment[]> {
-    const [tanks, vessels] = await Promise.all([
-      this.request<any[]>(`/engineering-objects?object_type=TANK&include_inactive=true`),
-      this.request<any[]>(`/engineering-objects?object_type=VESSEL&include_inactive=true`),
-    ]);
-
-    const mapped = [...tanks, ...vessels].map((item) =>
+    const objects = await this.request<any[]>(
+      "/engineering-objects?include_inactive=true",
+    );
+    const mapped = objects
+      .filter((item) =>
+        typeof item?.object_type === "string" &&
+        ApiClient.SUPPORTED_EQUIPMENT_TYPES.has(item.object_type.toUpperCase()),
+      )
+      .map((item) =>
       this.mapEngineeringObjectToEquipment(item),
     );
     return areaId ? mapped.filter((item) => item.areaId === areaId) : mapped;
@@ -410,24 +467,48 @@ export class ApiClient {
   async createEquipment(
     data: Omit<Equipment, "id" | "createdAt" | "updatedAt">,
   ): Promise<Equipment> {
-    return this.request<Equipment>("/equipment", {
-      method: "POST",
-      body: JSON.stringify(data),
-    });
+    const created = await this.request<any>(
+      `/engineering-objects/${encodeURIComponent(data.tag)}`,
+      {
+        method: "PUT",
+        body: JSON.stringify(
+          this.buildEngineeringObjectPayload(data),
+        ),
+      },
+    );
+    return this.mapEngineeringObjectToEquipment(created);
   }
 
   async updateEquipment(
     id: string,
     data: Partial<Equipment>,
   ): Promise<Equipment> {
-    return this.request<Equipment>(`/equipment/${id}`, {
+    const current = await this.getEngineeringObjectByEquipmentId(id);
+    const merged = {
+      ...this.mapEngineeringObjectToEquipment(current),
+      ...data,
+      id,
+    };
+    const updated = await this.request<any>(`/engineering-objects/by-id/${id}`, {
       method: "PUT",
-      body: JSON.stringify(data),
+      body: JSON.stringify({
+        tag: merged.tag,
+        ...this.buildEngineeringObjectPayload(merged, current.properties),
+      }),
     });
+    return this.mapEngineeringObjectToEquipment(updated);
   }
 
   async deleteEquipment(id: string): Promise<void> {
-    await this.request(`/equipment/${id}`, { method: "DELETE" });
+    const current = await this.getEngineeringObjectByEquipmentId(id);
+    await this.request(`/engineering-objects/by-id/${id}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        status: "inactive",
+        is_active: false,
+        properties: current.properties ?? {},
+      }),
+    });
   }
 
   private mapEquipmentLink(raw: any): EquipmentLink {

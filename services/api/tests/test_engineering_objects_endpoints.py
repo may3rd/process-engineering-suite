@@ -173,3 +173,60 @@ async def test_engineering_object_endpoint_excludes_inactive_rows_by_default(db_
         full_tags = {item['tag'] for item in full_list.json()}
         assert 'V-EO-001' in full_tags
         assert 'V-EO-002' in full_tags
+
+
+@pytest.mark.asyncio
+async def test_engineering_object_by_id_update_supports_tag_rename_and_soft_delete(db_session):
+    area_id, owner_id = await _create_min_hierarchy(db_session)
+
+    app = FastAPI()
+    app.include_router(engineering_objects_router)
+
+    async with AsyncClient(transport=ASGITransport(app=app), base_url='http://test') as client:
+        create_response = await client.put(
+            '/engineering-objects/P-EO-001',
+            json={
+                'object_type': 'PUMP',
+                'area_id': area_id,
+                'owner_id': owner_id,
+                'name': 'Feed Pump',
+                'is_active': True,
+                'status': 'active',
+                'properties': {'details': {'pumpType': 'centrifugal'}},
+            },
+        )
+        assert create_response.status_code == 200
+        created = create_response.json()
+
+        update_response = await client.put(
+            f"/engineering-objects/by-id/{created['id']}",
+            json={
+                'tag': 'P-EO-009',
+                'name': 'Feed Pump Renamed',
+                'status': 'inactive',
+                'is_active': False,
+                'properties': {'details': {'pumpType': 'centrifugal', 'service': 'transfer'}},
+            },
+        )
+        assert update_response.status_code == 200
+        updated = update_response.json()
+        assert updated['tag'] == 'P-EO-009'
+        assert updated['name'] == 'Feed Pump Renamed'
+        assert updated['status'] == 'inactive'
+        assert updated['is_active'] is False
+
+        by_id_response = await client.get(f"/engineering-objects/by-id/{created['id']}")
+        assert by_id_response.status_code == 200
+        assert by_id_response.json()['tag'] == 'P-EO-009'
+
+        by_tag_response = await client.get('/engineering-objects/P-EO-009')
+        assert by_tag_response.status_code == 200
+        assert by_tag_response.json()['name'] == 'Feed Pump Renamed'
+
+        default_list = await client.get('/engineering-objects?object_type=PUMP')
+        assert default_list.status_code == 200
+        assert default_list.json() == []
+
+        full_list = await client.get('/engineering-objects?object_type=PUMP&include_inactive=true')
+        assert full_list.status_code == 200
+        assert [item['tag'] for item in full_list.json()] == ['P-EO-009']
