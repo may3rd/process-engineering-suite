@@ -17,9 +17,6 @@ import { Input } from "@/components/ui/input"
 import { apiClient } from "@/lib/apiClient"
 import { convertUnit } from "@eng-suite/physics"
 import { TankConfiguration, type CalculationInput } from "@/types"
-import type { components } from "@eng-suite/types"
-
-type Equipment = components["schemas"]["EquipmentResponse"]
 
 interface Props {
   onTankLinked: (equipmentId: string, tankTag: string) => void
@@ -28,6 +25,16 @@ interface Props {
   /** When provided, the dialog is controlled externally (no DialogTrigger rendered). */
   controlledOpen?: boolean
   onControlledOpenChange?: (open: boolean) => void
+}
+
+interface TankListItem {
+  id: string
+  tag: string
+  name: string
+  description?: string | null
+  details?: Record<string, unknown> | null
+  designPressure?: number
+  designPressureUnit?: string
 }
 
 interface LoadedFromTankPreview {
@@ -98,7 +105,7 @@ export function LinkTankButton({ onTankLinked, linkedTag, clearToken, controlled
   const isControlled = controlledOpen !== undefined
   const open = isControlled ? controlledOpen : internalOpen
   const setOpen = isControlled ? (v: boolean) => onControlledOpenChange?.(v) : setInternalOpen
-  const [tanks, setTanks] = useState<Equipment[]>([])
+  const [tanks, setTanks] = useState<TankListItem[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [search, setSearch] = useState("")
@@ -119,8 +126,34 @@ export function LinkTankButton({ onTankLinked, linkedTag, clearToken, controlled
     setIsLoading(true)
     setError(null)
     try {
-      const items = await apiClient.equipment.list({ type: "tank" })
-      setTanks(items)
+      const items = await apiClient.engineeringObjects.list({ objectType: "TANK" })
+      const mapped = items
+        .map((item) => ({ item, itemId: (item as { id?: string | null }).id ?? null }))
+        .filter(({ itemId }) => Boolean(itemId))
+        .map(({ item, itemId }) => {
+          const properties = (item.properties ?? {}) as Record<string, unknown>
+          const details = (properties.details as Record<string, unknown> | undefined) ?? {}
+          const design = (properties.design_parameters as Record<string, unknown> | undefined) ?? {}
+          const meta = (properties.meta as Record<string, unknown> | undefined) ?? {}
+
+          const name = typeof meta.name === "string"
+            ? meta.name
+            : item.tag
+          const description = typeof meta.description === "string"
+            ? meta.description
+            : null
+
+          return {
+            id: itemId as string,
+            tag: item.tag,
+            name,
+            description,
+            details,
+            designPressure: typeof design.designPressure === "number" ? design.designPressure : undefined,
+            designPressureUnit: typeof design.designPressureUnit === "string" ? design.designPressureUnit : undefined,
+          } satisfies TankListItem
+        })
+      setTanks(mapped)
     } catch {
       setError("Could not load tanks — is the API running?")
     } finally {
@@ -150,7 +183,7 @@ export function LinkTankButton({ onTankLinked, linkedTag, clearToken, controlled
     return haystack.includes(query)
   })
 
-  const handleSelect = (tank: Equipment) => {
+  const handleSelect = (tank: TankListItem) => {
     const details = (tank.details ?? {}) as Record<string, unknown>
     const preview: LoadedFromTankPreview = {
       tankTag: tank.tag,
@@ -281,7 +314,7 @@ export function LinkTankButton({ onTankLinked, linkedTag, clearToken, controlled
     setOpen(false)
   }
 
-  const formatDimensions = (tank: Equipment) => {
+  const formatDimensions = (tank: TankListItem) => {
     const d = (tank.details ?? {}) as Record<string, unknown>
     const parts: string[] = []
     if (typeof d.innerDiameter === "number") parts.push(`Ø${d.innerDiameter} mm`)
