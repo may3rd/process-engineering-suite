@@ -41,17 +41,34 @@ export function EquipmentLinkButton({
     setError(null);
     try {
       const [tanks, vessels] = await Promise.all([
-        apiClient.equipment.list({ type: 'tank' }),
-        apiClient.equipment.list({ type: 'vessel' }),
+        apiClient.engineeringObjects.list({ objectType: 'TANK' }),
+        apiClient.engineeringObjects.list({ objectType: 'VESSEL' }),
       ]);
       const map = new Map<string, EquipmentItem>();
-      for (const eq of [...tanks, ...vessels]) {
-        map.set(eq.id, {
-          id: eq.id,
-          tag: eq.tag,
-          name: eq.name,
-          description: eq.description,
-          type: eq.type,
+      for (const obj of [...tanks, ...vessels]) {
+        if (!obj.id) {
+          continue;
+        }
+        const props = obj.properties as Record<string, unknown>;
+        const meta = (props.meta as Record<string, unknown> | undefined) ?? {};
+        const inputs = (props.inputs as Record<string, unknown> | undefined) ?? {};
+        const name = typeof meta.name === 'string'
+          ? meta.name
+          : typeof inputs.tag === 'string'
+            ? inputs.tag
+            : obj.tag;
+        const description = typeof meta.description === 'string'
+          ? meta.description
+          : typeof inputs.description === 'string'
+            ? inputs.description
+            : null;
+
+        map.set(obj.id, {
+          id: obj.id,
+          tag: obj.tag,
+          name,
+          description,
+          type: obj.object_type.toLowerCase(),
         });
       }
       setItems(Array.from(map.values()));
