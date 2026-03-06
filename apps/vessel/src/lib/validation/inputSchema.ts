@@ -5,6 +5,7 @@ import {
   EquipmentMode,
   TankType,
   TankRoofType,
+  VesselMaterial,
 } from '@/types'
 import { MIN_CONICAL_DEPTH_FRACTION } from '@/lib/constants'
 
@@ -24,11 +25,13 @@ export const calculationInputSchema = z.object({
   headType: z.nativeEnum(HeadType).default(HeadType.ELLIPSOIDAL_2_1),
   tankType: z.nativeEnum(TankType).optional(),
   tankRoofType: z.nativeEnum(TankRoofType).optional(),
+  material: z.nativeEnum(VesselMaterial).optional(),
 
   // Geometry — base unit: mm
   insideDiameter: z.number().positive('Inside diameter is required and must be positive'),
   shellLength: nanOptionalPositive,
   wallThickness: nanOptionalPositive,
+  materialDensity: nanOptionalPositive,
   headDepth: nanOptionalPositive,
   roofHeight: nanOptionalPositive,
   bootHeight: nanOptionalNonNeg,

@@ -224,6 +224,8 @@ export function VesselReport({ input, result, metadata, revisions, units }: Vess
         <TableRow label="Head Depth (used)" value={fmt(headDepthUsed, 'mm', len)} unit={unitLabel(len)} />
         <TableRow label="Boot Height" value={fmt(input.bootHeight, 'mm', len)} unit={unitLabel(len)} />
         <TableRow label="Wall Thickness" value={fmt(input.wallThickness, 'mm', len)} unit={unitLabel(len)} />
+        <TableRow label="Vessel Material" value={input.material ?? "—"} unit="" />
+        <TableRow label="Material Density" value={fmt(input.materialDensity, BASE_UNITS.density, units.density)} unit={unitLabel(units.density)} />
 
         {/* ── Level inputs ───────────────────────────────────────────────── */}
         <Text style={S.sectionTitle}>Level Inputs</Text>

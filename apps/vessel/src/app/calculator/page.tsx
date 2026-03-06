@@ -6,6 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import type { Resolver } from "react-hook-form"
 import { calculationInputSchema } from "@/lib/validation/inputSchema"
 import { computeVesselResult } from "@/lib/calculations"
+import { DEFAULT_VESSEL_MATERIAL, defaultMaterialDensityKgM3 } from "@/lib/materials"
 import { EquipmentMode, VesselOrientation, HeadType } from "@/types"
 import type {
   CalculationInput,
@@ -32,9 +33,11 @@ const createDefaultValues = (): Partial<CalculationInput> => ({
   equipmentMode: EquipmentMode.VESSEL,
   orientation: VesselOrientation.VERTICAL,
   headType: HeadType.ELLIPSOIDAL_2_1,
+  material: DEFAULT_VESSEL_MATERIAL,
   insideDiameter: undefined,
   shellLength: undefined,
   wallThickness: undefined,
+  materialDensity: defaultMaterialDensityKgM3(DEFAULT_VESSEL_MATERIAL),
   headDepth: undefined,
   roofHeight: undefined,
   bootHeight: undefined,

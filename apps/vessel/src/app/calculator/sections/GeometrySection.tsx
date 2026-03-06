@@ -4,17 +4,20 @@ import { useFormContext } from "react-hook-form"
 import { SectionCard } from "../components/SectionCard"
 import { FieldRow } from "../components/FieldRow"
 import { UomInput } from "../components/UomInput"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { CalculationInput } from "@/types"
 import { EquipmentMode, HeadType, TankType, TankRoofType, VesselOrientation } from "@/types"
 import { autoHeadDepth } from "@/lib/calculations"
+import { DEFAULT_VESSEL_MATERIAL, VESSEL_MATERIAL_OPTIONS, defaultMaterialDensityKgM3 } from "@/lib/materials"
 
 export function GeometrySection() {
-  const { watch, formState: { errors } } = useFormContext<CalculationInput>()
+  const { watch, setValue, formState: { errors } } = useFormContext<CalculationInput>()
   const equipmentMode = watch("equipmentMode") ?? EquipmentMode.VESSEL
   const headType = watch("headType") ?? HeadType.ELLIPSOIDAL_2_1
   const tankType = watch("tankType")
   const tankRoofType = watch("tankRoofType")
   const insideDiameter = watch("insideDiameter")
+  const material = watch("material") ?? DEFAULT_VESSEL_MATERIAL
 
   const autoDepth = insideDiameter && isFinite(insideDiameter)
     ? autoHeadDepth(headType, insideDiameter)
@@ -74,6 +77,38 @@ export function GeometrySection() {
         error={errors.wallThickness?.message}
       >
         <UomInput name="wallThickness" category="length" id="wallThickness" placeholder="e.g. 10" />
+      </FieldRow>
+
+      <FieldRow
+        label="Vessel Material"
+        htmlFor="material"
+      >
+        <Select
+          value={material}
+          onValueChange={(v) => {
+            const selected = v as CalculationInput["material"]
+            setValue("material", selected)
+            setValue("materialDensity", defaultMaterialDensityKgM3(selected))
+          }}
+        >
+          <SelectTrigger id="material">
+            <SelectValue placeholder="Select material" />
+          </SelectTrigger>
+          <SelectContent>
+            {VESSEL_MATERIAL_OPTIONS.map((item) => (
+              <SelectItem key={item.value} value={item.value}>{item.label}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FieldRow>
+
+      <FieldRow
+        label="Material Density"
+        htmlFor="materialDensity"
+        hint="Used for empty mass estimate"
+        error={errors.materialDensity?.message}
+      >
+        <UomInput name="materialDensity" category="density" id="materialDensity" placeholder="e.g. 7850" />
       </FieldRow>
 
       {showHeadDepthField ? (

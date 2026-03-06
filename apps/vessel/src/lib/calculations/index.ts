@@ -19,7 +19,8 @@ import {
   torisphericalHorizontalHeadPartialVolumeMm3,
   torisphericalHorizontalHeadPartialWettedAreaMm2,
 } from './torispherical'
-import { STEEL_DENSITY_KG_M3, WETTED_AREA_HEIGHT_CAP_MM } from '@/lib/constants'
+import { WETTED_AREA_HEIGHT_CAP_MM } from '@/lib/constants'
+import { getMaterialDensityKgM3 } from '@/lib/materials'
 
 function clamp(value: number, min: number, max: number): number {
   return Math.max(min, Math.min(value, max))
@@ -121,6 +122,7 @@ function computeTankResult(input: CalculationInput): CalculationResult {
   const ofl = input.ofl
   const density = input.density
   const flowrate = input.flowrate
+  const materialDensityKgM3 = getMaterialDensityKgM3(input.material, input.materialDensity)
 
   let headVolume = 0
   let shellVol = 0
@@ -149,7 +151,7 @@ function computeTankResult(input: CalculationInput): CalculationResult {
     wettedAt = (levelMm) => sphereCapArea(r, levelMm)
     if (wallThickness != null && isFinite(wallThickness) && wallThickness > 0) {
       const metalVol = totalSA * 1e6 * wallThickness / 1e9
-      massEmpty = metalVol * STEEL_DENSITY_KG_M3
+      massEmpty = metalVol * materialDensityKgM3
     }
   } else {
     const bottomArea = (Math.PI * r * r) / 1e6
@@ -181,7 +183,7 @@ function computeTankResult(input: CalculationInput): CalculationResult {
 
     if (wallThickness != null && isFinite(wallThickness) && wallThickness > 0) {
       const metalVol = totalSA * 1e6 * wallThickness / 1e9
-      massEmpty = metalVol * STEEL_DENSITY_KG_M3
+      massEmpty = metalVol * materialDensityKgM3
     }
   }
 
@@ -276,6 +278,8 @@ function computeProcessVesselResult(input: CalculationInput): CalculationResult 
     ofl,
     density,
     flowrate,
+    material,
+    materialDensity,
   } = input
 
   const headDepthUsed: number =
@@ -326,6 +330,7 @@ function computeProcessVesselResult(input: CalculationInput): CalculationResult 
   const shellSA = shellSurfaceArea(insideDiameter, shellLength)
   const headSA2x = singleHeadSurfaceArea(headType, insideDiameter, headDepthUsed) * 2
   const totalSA = shellSA + headSA2x
+  const materialDensityKgM3 = getMaterialDensityKgM3(material, materialDensity)
 
   let wettedSA = 0
   if (liquidLevel != null && isFinite(liquidLevel)) {
@@ -406,7 +411,7 @@ function computeProcessVesselResult(input: CalculationInput): CalculationResult 
     const shellVolMetal =
       (Math.PI / 4) * ((od ** 2) - (insideDiameter ** 2)) * shellLength / 1e9
     const headVolMetal = headVol2x * 0.1
-    massEmpty = (shellVolMetal + headVolMetal) * STEEL_DENSITY_KG_M3
+    massEmpty = (shellVolMetal + headVolMetal) * materialDensityKgM3
   }
 
   const massLiquid =

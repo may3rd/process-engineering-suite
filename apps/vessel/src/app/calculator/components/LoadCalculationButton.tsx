@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import type { CalculationInput, CalculationMetadata, RevisionRecord } from "@/types"
-import { VesselOrientation, HeadType } from "@/types"
+import { EquipmentMode, VesselOrientation, HeadType, TankType, TankRoofType, VesselMaterial } from "@/types"
 
 const STORAGE_KEY = "vessel-calculations"
 
@@ -44,18 +44,26 @@ function normalizeInput(raw: any): Partial<CalculationInput> {
   return {
     tag: raw.tag ?? "",
     description: raw.description ?? "",
+    equipmentMode: Object.values(EquipmentMode).includes(raw.equipmentMode)
+      ? raw.equipmentMode : EquipmentMode.VESSEL,
     orientation: Object.values(VesselOrientation).includes(raw.orientation)
       ? raw.orientation : VesselOrientation.VERTICAL,
     headType: Object.values(HeadType).includes(raw.headType)
       ? raw.headType : HeadType.ELLIPSOIDAL_2_1,
+    tankType: Object.values(TankType).includes(raw.tankType) ? raw.tankType : undefined,
+    tankRoofType: Object.values(TankRoofType).includes(raw.tankRoofType) ? raw.tankRoofType : undefined,
+    material: Object.values(VesselMaterial).includes(raw.material) ? raw.material : undefined,
     insideDiameter: toNum(raw.insideDiameter),
     shellLength: toNum(raw.shellLength),
     wallThickness: toNum(raw.wallThickness),
     headDepth: toNum(raw.headDepth),
+    roofHeight: toNum(raw.roofHeight),
+    bootHeight: toNum(raw.bootHeight),
     liquidLevel: toNum(raw.liquidLevel),
     hll: toNum(raw.hll),
     lll: toNum(raw.lll),
     ofl: toNum(raw.ofl),
+    materialDensity: toNum(raw.materialDensity),
     density: toNum(raw.density),
     flowrate: toNum(raw.flowrate),
     metadata: raw.metadata ?? {},

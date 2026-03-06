@@ -14,7 +14,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { fetchEquipmentObject, upsertEquipmentObject } from "@/lib/api"
 import { calculationInputSchema } from "@/lib/validation/inputSchema"
-import { VesselOrientation, HeadType } from "@/types"
+import { EquipmentMode, VesselOrientation, HeadType, TankType, TankRoofType, VesselMaterial } from "@/types"
 import type {
   CalculationInput,
   CalculationResult,
@@ -117,20 +117,35 @@ export function EquipmentLinkButton({
     const normalized: Partial<CalculationInput> = {
       tag: (rawInputs.tag as string) ?? "",
       description: (rawInputs.description as string) ?? "",
+      equipmentMode: Object.values(EquipmentMode).includes(rawInputs.equipmentMode as EquipmentMode)
+        ? rawInputs.equipmentMode as EquipmentMode
+        : EquipmentMode.VESSEL,
       orientation: Object.values(VesselOrientation).includes(rawInputs.orientation as VesselOrientation)
         ? rawInputs.orientation as VesselOrientation
         : VesselOrientation.VERTICAL,
       headType: Object.values(HeadType).includes(rawInputs.headType as HeadType)
         ? rawInputs.headType as HeadType
         : HeadType.ELLIPSOIDAL_2_1,
+      tankType: Object.values(TankType).includes(rawInputs.tankType as TankType)
+        ? rawInputs.tankType as TankType
+        : undefined,
+      tankRoofType: Object.values(TankRoofType).includes(rawInputs.tankRoofType as TankRoofType)
+        ? rawInputs.tankRoofType as TankRoofType
+        : undefined,
+      material: Object.values(VesselMaterial).includes(rawInputs.material as VesselMaterial)
+        ? rawInputs.material as VesselMaterial
+        : undefined,
       insideDiameter: toNum(rawInputs.insideDiameter),
       shellLength: toNum(rawInputs.shellLength),
       wallThickness: toNum(rawInputs.wallThickness),
       headDepth: toNum(rawInputs.headDepth),
+      roofHeight: toNum(rawInputs.roofHeight),
+      bootHeight: toNum(rawInputs.bootHeight),
       liquidLevel: toNum(rawInputs.liquidLevel),
       hll: toNum(rawInputs.hll),
       lll: toNum(rawInputs.lll),
       ofl: toNum(rawInputs.ofl),
+      materialDensity: toNum(rawInputs.materialDensity),
       density: toNum(rawInputs.density),
       flowrate: toNum(rawInputs.flowrate),
       metadata: (rawInputs.metadata as CalculationMetadata) ?? calculationMetadata,

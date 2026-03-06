@@ -29,6 +29,21 @@ export enum HeadType {
   CONICAL = "Conical",
 }
 
+export enum VesselMaterial {
+  CS = "CS (Carbon Steel)",
+  LTCS = "LTCS (Low-Temperature Carbon Steel)",
+  A387_22 = "Alloy Steel A387 Gr22",
+  SS304 = "SS 304",
+  SS304L = "SS 304L",
+  SS316 = "SS 316",
+  SS316L = "SS 316L",
+  DUPLEX_2205 = "Duplex 2205",
+  SUPER_DUPLEX_2507 = "Super Duplex 2507",
+  AL6061 = "Aluminum 6061",
+  MONEL_400 = "Monel 400",
+  TITANIUM_GR2 = "Titanium Gr2",
+}
+
 // ─── Metadata & Revisions ─────────────────────────────────────────────────────
 
 export interface CalculationMetadata {
@@ -62,11 +77,13 @@ export interface CalculationInput {
   headType?: HeadType
   tankType?: TankType
   tankRoofType?: TankRoofType
+  material?: VesselMaterial
 
   // Geometry — all in mm (base unit)
   insideDiameter: number
   shellLength?: number        // tangent-to-tangent length (vessel) or shell height (tank)
   wallThickness?: number      // mm
+  materialDensity?: number     // kg/m3 (base unit), overrides selected material default if provided
   headDepth?: number          // mm (auto-calculated from headType unless overridden)
   roofHeight?: number         // mm (for cone/dome roof tank)
   bootHeight?: number         // mm (support elevation reference by equipment/orientation)

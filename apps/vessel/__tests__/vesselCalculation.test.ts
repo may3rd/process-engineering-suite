@@ -5,6 +5,7 @@ import {
   HeadType,
   TankType,
   TankRoofType,
+  VesselMaterial,
 } from '../src/types'
 import type { CalculationInput } from '../src/types'
 import { computeVesselResult } from '../src/lib/calculations'
@@ -196,6 +197,26 @@ describe('computeVesselResult — mass', () => {
   it('massFull > massLiquid at partial fill', () => {
     const r = computeVesselResult(baseInput({ liquidLevel: 1000, density: 850 }))
     expect(r.masses.massFull!).toBeGreaterThan(r.masses.massLiquid!)
+  })
+
+  it('massEmpty uses selected material density when provided', () => {
+    const cs = computeVesselResult(baseInput({
+      wallThickness: 10,
+      material: VesselMaterial.CS,
+      materialDensity: 7850,
+    }))
+    const al = computeVesselResult(baseInput({
+      wallThickness: 10,
+      material: VesselMaterial.AL6061,
+      materialDensity: 2700,
+    }))
+    expect(cs.masses.massEmpty!).toBeGreaterThan(al.masses.massEmpty!)
+  })
+
+  it('massEmpty falls back to selected material default density when override is not set', () => {
+    const cs = computeVesselResult(baseInput({ wallThickness: 10, material: VesselMaterial.CS }))
+    const ss316l = computeVesselResult(baseInput({ wallThickness: 10, material: VesselMaterial.SS316L }))
+    expect(ss316l.masses.massEmpty!).toBeGreaterThan(cs.masses.massEmpty!)
   })
 })
 
