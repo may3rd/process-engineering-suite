@@ -13,19 +13,21 @@
  * @returns The API base URL to use for all API requests
  */
 export function getApiUrl(): string {
-  // Check for explicit override (works for both Next.js and Vite)
+  const importMetaEnv = (typeof import.meta !== 'undefined'
+    ? (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env
+    : undefined);
+
   const explicitUrl =
-    typeof process !== 'undefined' && process.env?.NEXT_PUBLIC_API_URL ||
-    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL);
+    (typeof process !== 'undefined' ? process.env?.NEXT_PUBLIC_API_URL : undefined) ||
+    importMetaEnv?.VITE_API_URL;
 
   if (explicitUrl) {
     return explicitUrl;
   }
 
-  // Detect deployment environment
   const deploymentEnv =
-    typeof process !== 'undefined' && process.env?.DEPLOYMENT_ENV ||
-    (typeof import.meta !== 'undefined' && import.meta.env?.VITE_DEPLOYMENT_ENV) ||
+    (typeof process !== 'undefined' ? process.env?.DEPLOYMENT_ENV : undefined) ||
+    importMetaEnv?.VITE_DEPLOYMENT_ENV ||
     'local';
 
   // Return environment-specific defaults

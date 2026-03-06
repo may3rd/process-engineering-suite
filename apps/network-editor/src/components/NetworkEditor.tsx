@@ -19,6 +19,7 @@ import {
   FormControlLabel,
   Typography,
 } from "@mui/material";
+import type { SxProps, Theme } from "@mui/material/styles";
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
@@ -78,6 +79,8 @@ import { type ViewSettings } from "@/lib/types";
 import { useCopyPaste } from "@/hooks/useCopyPaste";
 import { CustomCursor } from "./CustomCursor";
 import { glassDialogSx } from "@eng-suite/ui-kit";
+
+const glassDialogPaperSx = glassDialogSx as unknown as SxProps<Theme>;
 import { useNetworkStore } from "@/store/useNetworkStore";
 
 /**
@@ -1026,7 +1029,7 @@ function EditorCanvas({
         fullWidth
         slotProps={{
           paper: {
-            sx: glassDialogSx
+            sx: glassDialogPaperSx
           }
         }}
       >

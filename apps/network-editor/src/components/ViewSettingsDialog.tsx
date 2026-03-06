@@ -10,6 +10,7 @@ import {
     Typography,
     Box
 } from "@mui/material";
+import type { SxProps, Theme } from "@mui/material/styles";
 import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
 import AddIcon from '@mui/icons-material/Add';
@@ -17,6 +18,8 @@ import RemoveIcon from '@mui/icons-material/Remove';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { ViewSettings } from "@/lib/types";
 import { IOSListGroup, IOSListItem, glassDialogSx } from "@eng-suite/ui-kit";
+
+const glassDialogPaperSx = glassDialogSx as unknown as SxProps<Theme>;
 import { useState } from "react";
 
 type Props = {
@@ -157,7 +160,7 @@ export default function ViewSettingsDialog({ open, onClose, settings, onSettings
             fullWidth
             slotProps={{
                 paper: {
-                    sx: glassDialogSx
+                    sx: glassDialogPaperSx
                 }
             }}
         >
