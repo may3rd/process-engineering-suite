@@ -83,15 +83,37 @@ export function ActionMenu({
     }
   };
 
+  const resolveLinkedTag = async (): Promise<string | null> => {
+    if (linkedEquipmentTag) {
+      return linkedEquipmentTag;
+    }
+    if (!linkedEquipmentId) {
+      return null;
+    }
+
+    const [tanks, vessels] = await Promise.all([
+      apiClient.engineeringObjects.list({ objectType: 'TANK', includeInactive: true }),
+      apiClient.engineeringObjects.list({ objectType: 'VESSEL', includeInactive: true }),
+    ]);
+    const found = [...tanks, ...vessels].find((obj) => obj.id === linkedEquipmentId);
+    return found?.tag ?? null;
+  };
+
   const handleUpdateEquipment = async () => {
     if (!linkedEquipmentId) return;
     setUpdateError(null);
     setUpdated(false);
     setIsUpdating(true);
     try {
-      const current = await apiClient.equipment.get(linkedEquipmentId);
+      const resolvedTag = await resolveLinkedTag();
+      if (!resolvedTag) {
+        throw new Error('Linked engineering object tag could not be resolved');
+      }
+
+      const current = await apiClient.engineeringObjects.get(resolvedTag);
+      const currentProperties = (current.properties ?? {}) as Record<string, unknown>;
       const values = getValues();
-      const existingDetails = (current.details ?? {}) as Record<string, unknown>;
+      const existingDetails = (currentProperties.details ?? {}) as Record<string, unknown>;
       const details: Record<string, unknown> = {
         ...existingDetails,
         insideDiameter: values.insideDiameter,
@@ -109,9 +131,16 @@ export function ActionMenu({
           syncedAt: new Date().toISOString(),
         },
       };
-      await apiClient.equipment.update(linkedEquipmentId, {
-        details,
-      } as never);
+
+      await apiClient.engineeringObjects.upsert(resolvedTag, {
+        object_type: current.object_type,
+        status: current.status ?? undefined,
+        properties: {
+          ...currentProperties,
+          details,
+        },
+      });
+
       setUpdated(true);
       setTimeout(() => setUpdated(false), 1600);
     } catch (err) {
