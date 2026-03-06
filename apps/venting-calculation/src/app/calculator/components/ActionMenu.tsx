@@ -102,17 +102,41 @@ export function ActionMenu({
     }
   }
 
+  const resolveLinkedTankTag = async (): Promise<string | null> => {
+    if (linkedTag) {
+      return linkedTag
+    }
+    if (!linkedEquipmentId) {
+      return null
+    }
+
+    const tanks = await apiClient.engineeringObjects.list({
+      objectType: 'TANK',
+      includeInactive: true,
+    })
+    const found = tanks.find((item) => (item as { id?: string | null }).id === linkedEquipmentId)
+    return found?.tag ?? null
+  }
+
   const handleUpdateEquipment = async () => {
     if (!linkedEquipmentId) return
     setUpdateError(null)
     setUpdated(false)
     setIsUpdating(true)
     try {
-      const current = await apiClient.equipment.get(linkedEquipmentId)
-      if (current.type !== "tank") throw new Error("Linked equipment is not a tank")
+      const resolvedTag = await resolveLinkedTankTag()
+      if (!resolvedTag) {
+        throw new Error('Linked engineering object tag could not be resolved')
+      }
+
+      const current = await apiClient.engineeringObjects.get(resolvedTag)
+      if (current.object_type !== 'TANK') throw new Error('Linked object is not a tank')
 
       const values = getValues()
-      const existingDetails = (current.details ?? {}) as Record<string, unknown>
+      const currentProperties = (current.properties ?? {}) as Record<string, unknown>
+      const designParameters =
+        (currentProperties.design_parameters as Record<string, unknown> | undefined) ?? {}
+      const existingDetails = (currentProperties.details ?? {}) as Record<string, unknown>
       const insulated =
         values.tankConfiguration === TankConfiguration.INSULATED_FULL ||
         values.tankConfiguration === TankConfiguration.INSULATED_PARTIAL
@@ -131,21 +155,21 @@ export function ActionMenu({
             : null,
         latitude: values.latitude,
         workingTemperature: values.avgStorageTemp,
-        workingTemperatureUnit: "C",
+        workingTemperatureUnit: 'C',
         fluid:
-          (typeof existingDetails.fluid === "string" ? existingDetails.fluid : null) ??
+          (typeof existingDetails.fluid === 'string' ? existingDetails.fluid : null) ??
           calculationResult?.emergencyVenting.referenceFluid ??
           null,
         vapourPressure: values.vapourPressure,
-        vapourPressureUnit: "kPa",
-        flashPoint: values.flashBoilingPointType === "FP" ? values.flashBoilingPoint ?? null : null,
-        flashPointUnit: "C",
-        boilingPoint: values.flashBoilingPointType === "BP" ? values.flashBoilingPoint ?? null : null,
-        boilingPointUnit: "C",
+        vapourPressureUnit: 'kPa',
+        flashPoint: values.flashBoilingPointType === 'FP' ? values.flashBoilingPoint ?? null : null,
+        flashPointUnit: 'C',
+        boilingPoint: values.flashBoilingPointType === 'BP' ? values.flashBoilingPoint ?? null : null,
+        boilingPointUnit: 'C',
         latentHeat: values.latentHeat ?? null,
-        latentHeatUnit: "kJ/kg",
+        latentHeatUnit: 'kJ/kg',
         relievingTemperature: values.relievingTemperature ?? null,
-        relievingTemperatureUnit: "C",
+        relievingTemperatureUnit: 'C',
         molecularWeight: values.molecularMass ?? null,
         tankConfiguration: values.tankConfiguration,
         volume: derivedGeometry?.maxTankVolume ?? calculationResult?.derived.maxTankVolume ?? null,
@@ -157,22 +181,33 @@ export function ActionMenu({
         },
       }
 
-      const targetPressureUnit = current.designPressureUnit ?? "barg"
+      const targetPressureUnit =
+        typeof designParameters.designPressureUnit === 'string'
+          ? designParameters.designPressureUnit
+          : 'barg'
       const convertedDesignPressure = fromKPag(values.designPressure, targetPressureUnit)
       if (convertedDesignPressure === null) {
         throw new Error(`Unsupported pressure unit for update: ${targetPressureUnit}`)
       }
 
-      await apiClient.equipment.update(linkedEquipmentId, {
-        designPressure: convertedDesignPressure,
-        designPressureUnit: targetPressureUnit,
-        details,
+      await apiClient.engineeringObjects.upsert(resolvedTag, {
+        object_type: current.object_type,
+        status: current.status ?? undefined,
+        properties: {
+          ...currentProperties,
+          design_parameters: {
+            ...designParameters,
+            designPressure: convertedDesignPressure,
+            designPressureUnit: targetPressureUnit,
+          },
+          details,
+        },
       })
 
       setUpdated(true)
       setTimeout(() => setUpdated(false), 1800)
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Failed to update equipment"
+      const msg = err instanceof Error ? err.message : 'Failed to update equipment'
       setUpdateError(msg)
       setTimeout(() => setUpdateError(null), 4000)
     } finally {
