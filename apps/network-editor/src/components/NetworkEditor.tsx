@@ -19,7 +19,7 @@ import {
   FormControlLabel,
   Typography,
 } from "@mui/material";
-import type { SxProps, Theme } from "@mui/material/styles";
+import type { SxProps } from "@mui/material/styles";
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
@@ -80,7 +80,7 @@ import { useCopyPaste } from "@/hooks/useCopyPaste";
 import { CustomCursor } from "./CustomCursor";
 import { glassDialogSx } from "@eng-suite/ui-kit";
 
-const glassDialogPaperSx = glassDialogSx as unknown as SxProps<Theme>;
+const glassDialogPaperSx = glassDialogSx as unknown as SxProps;
 import { useNetworkStore } from "@/store/useNetworkStore";
 
 /**

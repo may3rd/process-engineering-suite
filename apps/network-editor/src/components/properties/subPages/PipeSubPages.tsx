@@ -1,8 +1,8 @@
 import { Box, TextField, FormControl, InputLabel, Select, MenuItem, Stack, Typography, Switch, RadioGroup, FormControlLabel, Radio, IconButton, Button, Dialog, DialogTitle, DialogContent, DialogActions } from "@mui/material";
-import type { SxProps, Theme } from "@mui/material/styles";
+import type { SxProps } from "@mui/material/styles";
 import { glassInputSx, glassSelectSx, glassRadioSx, glassDialogSx } from "@eng-suite/ui-kit";
 
-const glassDialogPaperSx = glassDialogSx as unknown as SxProps<Theme>;
+const glassDialogPaperSx = glassDialogSx as unknown as SxProps;
 import { QuantityInput, QUANTITY_UNIT_OPTIONS } from "../QuantityInput";
 import { getScheduleEntries, nearest_pipe_diameter, PIPE_FITTING_OPTIONS } from "./PipeDimension";
 import { PipeProps, PipePatch, FittingType, ViewSettings, NodeProps, NodePatch, UpdateStatus } from "@/lib/types";

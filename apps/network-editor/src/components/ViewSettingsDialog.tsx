@@ -10,7 +10,7 @@ import {
     Typography,
     Box
 } from "@mui/material";
-import type { SxProps, Theme } from "@mui/material/styles";
+import type { SxProps } from "@mui/material/styles";
 import CloseIcon from '@mui/icons-material/Close';
 import CheckIcon from '@mui/icons-material/Check';
 import AddIcon from '@mui/icons-material/Add';
@@ -19,7 +19,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { ViewSettings } from "@/lib/types";
 import { IOSListGroup, IOSListItem, glassDialogSx } from "@eng-suite/ui-kit";
 
-const glassDialogPaperSx = glassDialogSx as unknown as SxProps<Theme>;
+const glassDialogPaperSx = glassDialogSx as unknown as SxProps;
 import { useState } from "react";
 
 type Props = {

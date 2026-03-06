@@ -11,11 +11,11 @@ import {
     Divider,
     Stack
 } from "@mui/material";
-import type { SxProps, Theme } from "@mui/material/styles";
+import type { SxProps } from "@mui/material/styles";
 import CloseIcon from '@mui/icons-material/Close';
 import { glassDialogSx } from "@eng-suite/ui-kit";
 
-const glassDialogPaperSx = glassDialogSx as unknown as SxProps<Theme>;
+const glassDialogPaperSx = glassDialogSx as unknown as SxProps;
 import { ProjectDetails } from "@/lib/types";
 import { useState, useEffect } from "react";
 
