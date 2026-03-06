@@ -51,6 +51,10 @@ def _is_active(properties: Dict[str, Any]) -> bool:
     return meta.get("isActive", True) is not False
 
 
+def _response_is_active(item: EngineeringObjectResponse) -> bool:
+    return (item.is_active is not False) and _is_active(item.properties)
+
+
 def _matches_query(item: EngineeringObjectResponse, query: str) -> bool:
     if not query:
         return True
@@ -114,7 +118,7 @@ async def list_engineering_objects(
                     for obj in objects
                 ]
                 if not include_inactive:
-                    payload = [item for item in payload if _is_active(item.properties)]
+                    payload = [item for item in payload if _response_is_active(item)]
                 if query:
                     payload = [item for item in payload if _matches_query(item, query)]
                 return payload
@@ -126,7 +130,7 @@ async def list_engineering_objects(
     if object_type:
         payload = [item for item in payload if item.object_type == object_type]
     if not include_inactive:
-        payload = [item for item in payload if _is_active(item.properties)]
+        payload = [item for item in payload if _response_is_active(item)]
     if query:
         payload = [item for item in payload if _matches_query(item, query)]
     return payload
@@ -200,12 +204,25 @@ async def upsert_engineering_object(
                         tag=tag_upper,
                         object_type=payload.object_type,
                         properties=payload.properties,
+                        area_id=payload.area_id,
+                        owner_id=payload.owner_id,
+                        name=payload.name,
+                        description=payload.description,
+                        location_ref=payload.location_ref,
+                        is_active=payload.is_active if payload.is_active is not None else True,
                         status=payload.status,
                     )
                     db.add(obj)
                 else:
                     obj.object_type = payload.object_type
                     obj.properties = payload.properties
+                    obj.area_id = payload.area_id
+                    obj.owner_id = payload.owner_id
+                    obj.name = payload.name
+                    obj.description = payload.description
+                    obj.location_ref = payload.location_ref
+                    if payload.is_active is not None:
+                        obj.is_active = payload.is_active
                     obj.status = payload.status
                 await db.commit()
                 await db.refresh(obj)
@@ -232,12 +249,12 @@ async def upsert_engineering_object(
         "tag": tag_upper,
         "object_type": payload.object_type,
         "properties": payload.properties,
-        "area_id": None,
-        "owner_id": None,
-        "name": None,
-        "description": None,
-        "location_ref": None,
-        "is_active": True,
+        "area_id": payload.area_id,
+        "owner_id": payload.owner_id,
+        "name": payload.name,
+        "description": payload.description,
+        "location_ref": payload.location_ref,
+        "is_active": payload.is_active if payload.is_active is not None else True,
         "status": payload.status,
     }
     return EngineeringObjectResponse(**_fallback_store[tag_upper])
