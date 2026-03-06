@@ -21,11 +21,13 @@ Database schema was updated to use `engineering_objects` as the unified object s
 - `202603060001_create_engineering_objects_table.py`
 - `202603060002_unify_equipment_into_engineering_objects.py`
 - `202603060003_move_design_params_to_properties.py`
+- `202603060004_drop_engineering_object_design_columns.py`
 
 ## Compatibility and Behavior
 - Existing frontends can keep calling `/equipment`.
 - Equipment payload shape remains compatible: `id`, `type`, `tag`, `name`, `details`, etc.
-- Design parameters are stored in `properties.design_parameters`; column fields are transitional fallback only in this phase.
+- Design parameters are stored in `properties.design_parameters` as canonical source.
+- Transitional design columns were removed in phase 2.
 - Soft delete uses `is_active` + `deleted_at` in `engineering_objects`.
 
 ## Operational Notes

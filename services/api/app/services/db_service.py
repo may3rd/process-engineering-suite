@@ -499,15 +499,12 @@ class DatabaseService(DataAccessLayer):
         meta = properties.get('meta') if isinstance(properties.get('meta'), dict) else {}
         design_parameters = self._extract_design_parameters(properties)
 
-        design_pressure = design_parameters.get('designPressure', obj.design_pressure)
-        design_pressure_unit = design_parameters.get(
-            'designPressureUnit',
-            obj.design_pressure_unit or 'barg',
-        )
-        mawp = design_parameters.get('mawp', obj.mawp)
-        mawp_unit = design_parameters.get('mawpUnit', obj.mawp_unit or 'barg')
-        design_temp = design_parameters.get('designTemperature', obj.design_temp)
-        design_temp_unit = design_parameters.get('designTempUnit', obj.design_temp_unit or 'C')
+        design_pressure = design_parameters.get('designPressure')
+        design_pressure_unit = design_parameters.get('designPressureUnit', 'barg')
+        mawp = design_parameters.get('mawp')
+        mawp_unit = design_parameters.get('mawpUnit', 'barg')
+        design_temp = design_parameters.get('designTemperature')
+        design_temp_unit = design_parameters.get('designTempUnit', 'C')
 
         return {
             'id': str(obj.uuid),

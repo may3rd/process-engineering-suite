@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Any, Dict, Optional
 from uuid import UUID as PyUUID, uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, Numeric, String, Text
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 
@@ -49,14 +49,6 @@ class EngineeringObject(Base, TimestampMixin):
     )
     name: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
-    design_pressure: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
-    design_pressure_unit: Mapped[Optional[str]] = mapped_column(
-        String(20), nullable=True, default='barg'
-    )
-    mawp: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
-    mawp_unit: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, default='barg')
-    design_temp: Mapped[Optional[float]] = mapped_column(Numeric(10, 2), nullable=True)
-    design_temp_unit: Mapped[Optional[str]] = mapped_column(String(20), nullable=True, default='C')
     location_ref: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     is_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default='true'

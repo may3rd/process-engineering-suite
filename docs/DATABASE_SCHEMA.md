@@ -76,12 +76,6 @@ Single source of truth for process equipment and calculator-linked objects.
 | owner_id | uuid | FK → users.id (SET NULL), nullable |
 | name | varchar(255) | Display name |
 | description | text | Optional free-text |
-| design_pressure | numeric(10,2) | Transitional column (read fallback only) |
-| design_pressure_unit | varchar(20) | Transitional column (read fallback only) |
-| mawp | numeric(10,2) | Transitional column (read fallback only) |
-| mawp_unit | varchar(20) | Transitional column (read fallback only) |
-| design_temp | numeric(10,2) | Transitional column (read fallback only) |
-| design_temp_unit | varchar(20) | Transitional column (read fallback only) |
 | location_ref | varchar(255) | Optional location reference |
 | status | varchar | Lifecycle/status label |
 | is_active | boolean | Soft-delete flag |
