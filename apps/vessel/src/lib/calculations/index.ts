@@ -285,12 +285,18 @@ function computeProcessVesselResult(input: CalculationInput): CalculationResult 
   const totalVol = shellVol + headVol2x
 
   const partialAtLevel = (levelMm: number): number => {
-    if (orientation === VesselOrientation.HORIZONTAL && headType === HeadType.TORISPHERICAL_80_10) {
+    if (orientation === VesselOrientation.HORIZONTAL) {
       const r = insideDiameter / 2
       const level = Math.max(0, Math.min(levelMm, 2 * r))
       const shellPartial = (circularSegmentArea(r, level) * shellLength) / 1e9
-      const headPartial = torisphericalHorizontalHeadPartialVolumeMm3(insideDiameter, level) / 1e9 * 2
-      return shellPartial + headPartial
+      if (headType === HeadType.TORISPHERICAL_80_10) {
+        const headPartial = torisphericalHorizontalHeadPartialVolumeMm3(insideDiameter, level) / 1e9 * 2
+        return shellPartial + headPartial
+      }
+      if (headType === HeadType.HEMISPHERICAL) {
+        const headPartial = sphereCapVolume(r, level)
+        return shellPartial + headPartial
+      }
     }
     return partialVolume(orientation, headType, insideDiameter, shellLength, headDepthUsed, levelMm)
   }
@@ -332,22 +338,38 @@ function computeProcessVesselResult(input: CalculationInput): CalculationResult 
       const bottomWettedSA =
         headType === HeadType.TORISPHERICAL_80_10
           ? torisphericalHeadPartialWettedAreaMm2(D, bottomFill) / 1e6
-          : (() => {
-            const bottomHeadFillVol = headPartialVolume(headType, D, c, bottomFill)
-            const bottomHeadFrac = fullSingleHeadVol > 0 ? bottomHeadFillVol / fullSingleHeadVol : 0
-            return bottomHeadFrac * singleHeadSA
-          })()
+          : headType === HeadType.HEMISPHERICAL
+            ? (2 * Math.PI * (D / 2) * Math.min(bottomFill, D / 2)) / 1e6
+            : headType === HeadType.CONICAL
+              ? (() => {
+                if (c <= 0 || bottomFill <= 0) return 0
+                const rr = (bottomFill / c) * (D / 2)
+                return (Math.PI * rr * Math.sqrt(bottomFill * bottomFill + rr * rr)) / 1e6
+              })()
+              : (() => {
+                const bottomHeadFillVol = headPartialVolume(headType, D, c, bottomFill)
+                const bottomHeadFrac = fullSingleHeadVol > 0 ? bottomHeadFillVol / fullSingleHeadVol : 0
+                return bottomHeadFrac * singleHeadSA
+              })()
       const shellFill = Math.max(0, Math.min(level - c, shellLength))
       const shellWetted = Math.PI * D * shellFill / 1e6
       const topFill = Math.max(0, level - c - shellLength)
       const topWettedSA =
         headType === HeadType.TORISPHERICAL_80_10
           ? torisphericalHeadPartialWettedAreaMm2(D, topFill) / 1e6
-          : (() => {
-            const topHeadFillVol = headPartialVolume(headType, D, c, topFill)
-            const topHeadFrac = fullSingleHeadVol > 0 ? topHeadFillVol / fullSingleHeadVol : 0
-            return topHeadFrac * singleHeadSA
-          })()
+          : headType === HeadType.HEMISPHERICAL
+            ? (2 * Math.PI * (D / 2) * Math.min(topFill, D / 2)) / 1e6
+            : headType === HeadType.CONICAL
+              ? (() => {
+                if (c <= 0 || topFill <= 0) return 0
+                const rr = (topFill / c) * (D / 2)
+                return (Math.PI * rr * Math.sqrt(topFill * topFill + rr * rr)) / 1e6
+              })()
+              : (() => {
+                const topHeadFillVol = headPartialVolume(headType, D, c, topFill)
+                const topHeadFrac = fullSingleHeadVol > 0 ? topHeadFillVol / fullSingleHeadVol : 0
+                return topHeadFrac * singleHeadSA
+              })()
       wettedSA = bottomWettedSA + shellWetted + topWettedSA
     } else {
       const r = D / 2
@@ -360,6 +382,9 @@ function computeProcessVesselResult(input: CalculationInput): CalculationResult 
         if (headType === HeadType.TORISPHERICAL_80_10) {
           const headWetted = torisphericalHorizontalHeadPartialWettedAreaMm2(D, level) / 1e6
           wettedSA = shellWetted + headWetted * 2
+        } else if (headType === HeadType.HEMISPHERICAL) {
+          const headWetted = sphereCapArea(r, level)
+          wettedSA = shellWetted + headWetted
         } else {
           const totalCircleArea = Math.PI * r * r
           const segArea = circularSegmentArea(r, level)
