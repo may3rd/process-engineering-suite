@@ -342,9 +342,69 @@ export class ApiClient {
 
   // --- Equipment ---
 
+
+  private mapEngineeringObjectToEquipment(raw: any): Equipment {
+    const properties =
+      raw && typeof raw.properties === "object" && raw.properties !== null
+        ? raw.properties
+        : {};
+    const details =
+      properties && typeof properties.details === "object" && properties.details !== null
+        ? properties.details
+        : undefined;
+    const design =
+      properties && typeof properties.design_parameters === "object" && properties.design_parameters !== null
+        ? properties.design_parameters
+        : {};
+
+    const type = typeof raw.object_type === "string" ? raw.object_type.toLowerCase() : "other";
+
+    return {
+      id: raw.id,
+      areaId: raw.area_id ?? "",
+      type: type as Equipment["type"],
+      tag: raw.tag,
+      name: raw.name ?? raw.tag,
+      description: raw.description ?? undefined,
+      designPressure:
+        typeof design.designPressure === "number"
+          ? design.designPressure
+          : null,
+      designPressureUnit:
+        typeof design.designPressureUnit === "string"
+          ? design.designPressureUnit
+          : "barg",
+      mawp: typeof design.mawp === "number" ? design.mawp : null,
+      mawpUnit:
+        typeof design.mawpUnit === "string"
+          ? design.mawpUnit
+          : "barg",
+      designTemperature:
+        typeof design.designTemperature === "number"
+          ? design.designTemperature
+          : null,
+      designTempUnit:
+        typeof design.designTempUnit === "string"
+          ? design.designTempUnit
+          : "C",
+      ownerId: raw.owner_id ?? "",
+      status: raw.status === "inactive" ? "inactive" : "active",
+      details: details as Equipment["details"],
+      createdAt: raw.created_at ?? new Date().toISOString(),
+      updatedAt: raw.updated_at ?? new Date().toISOString(),
+    };
+  }
+
   async getEquipment(areaId?: string): Promise<Equipment[]> {
-    const query = areaId ? `?area_id=${areaId}` : "";
-    return this.request<Equipment[]>(`/equipment${query}`);
+    const [tanks, vessels] = await Promise.all([
+      this.request<any[]>(`/engineering-objects?object_type=TANK&include_inactive=true`),
+      this.request<any[]>(`/engineering-objects?object_type=VESSEL&include_inactive=true`),
+    ]);
+
+    const mapped = [...tanks, ...vessels].map((item) =>
+      this.mapEngineeringObjectToEquipment(item),
+    );
+    return areaId ? mapped.filter((item) => item.areaId === areaId) : mapped;
   }
 
   async createEquipment(
