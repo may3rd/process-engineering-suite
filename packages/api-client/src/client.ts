@@ -5,7 +5,6 @@
  */
 
 import { createAuthModule } from "./modules/auth";
-import { createEquipmentModule } from "./modules/equipment";
 import { createHierarchyModule } from "./modules/hierarchy";
 import { createPsvModule } from "./modules/psv";
 import { createVentingModule } from "./modules/venting";
@@ -85,7 +84,6 @@ export function createApiClient(
 
   return {
     auth: createAuthModule(req),
-    equipment: createEquipmentModule(req),
     hierarchy: createHierarchyModule(req),
     psv: createPsvModule(req),
     venting: createVentingModule(req),

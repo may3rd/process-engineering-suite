@@ -24,7 +24,7 @@ Database schema was updated to use `engineering_objects` as the unified object s
 - `202603060004_drop_engineering_object_design_columns.py`
 
 ## Compatibility and Behavior
-- Existing frontends can keep calling `/equipment`.
+- Existing frontends can keep calling `/equipment`, but it is now compatibility-only and deprecated for new work.
 - Equipment payload shape remains compatible: `id`, `type`, `tag`, `name`, `details`, etc.
 - Design parameters are stored in `properties.design_parameters` as canonical source.
 - Transitional design columns were removed in phase 2.
@@ -34,6 +34,10 @@ Database schema was updated to use `engineering_objects` as the unified object s
 ## Operational Notes
 - `equipment` table still exists during transition for backward compatibility.
 - New development should treat `engineering_objects` as source of truth.
+- Shared client guidance:
+  - prefer `apiClient.engineeringObjects`
+  - `createApiClient()` no longer exposes `apiClient.equipment`
+  - use raw `/equipment` routes only for legacy compatibility or external transition work
 - Future cleanup phase can remove legacy equipment table dependencies after all modules are migrated.
 
 ## Validation Checklist
