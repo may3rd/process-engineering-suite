@@ -29,6 +29,7 @@ Database schema was updated to use `engineering_objects` as the unified object s
 - Design parameters are stored in `properties.design_parameters` as canonical source.
 - Transitional design columns were removed in phase 2.
 - Soft delete uses `is_active` + `deleted_at` in `engineering_objects`.
+- JSONB payload reference by object class: `docs/ENGINEERING_OBJECT_PROPERTIES_REFERENCE.md`
 
 ## Operational Notes
 - `equipment` table still exists during transition for backward compatibility.

@@ -37,11 +37,11 @@ def migrated_db(test_database_url: str) -> Iterator[None]:
     config = Config(str(config_path))
     config.set_main_option("script_location", str(api_root / "alembic"))
 
-    command.upgrade(config, "head")
+    command.upgrade(config, "heads")
     yield
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture
 async def engine(test_database_url: str) -> AsyncIterator[AsyncEngine]:
     if not test_database_url:
         pytest.skip("TEST_DATABASE_URL or DATABASE_URL is required to run DB integration tests.")
@@ -55,6 +55,11 @@ async def engine(test_database_url: str) -> AsyncIterator[AsyncEngine]:
 
 @pytest_asyncio.fixture
 async def db_session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
+    from app import database as app_database
+
+    if app_database.engine is not None:
+        await app_database.engine.dispose()
+
     async with engine.begin() as conn:
         rows = await conn.execute(
             text(
@@ -79,3 +84,5 @@ async def db_session(engine: AsyncEngine) -> AsyncIterator[AsyncSession]:
     async with session_factory() as session:
         yield session
 
+    if app_database.engine is not None:
+        await app_database.engine.dispose()

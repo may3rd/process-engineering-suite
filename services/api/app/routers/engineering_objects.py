@@ -151,102 +151,6 @@ async def list_engineering_objects(
     return payload
 
 
-@router.get("/{tag}", response_model=EngineeringObjectResponse)
-async def get_engineering_object(tag: str) -> EngineeringObjectResponse:
-    tag_upper = tag.upper()
-
-    try:
-        from ..database import is_db_available, get_db_optional
-        from ..models.engineering_object import EngineeringObject
-        from sqlalchemy import select
-
-        if await is_db_available():
-            async for db in get_db_optional():
-                if db is None:
-                    continue
-                result = await db.execute(
-                    select(EngineeringObject).where(EngineeringObject.tag == tag_upper)
-                )
-                obj = result.scalar_one_or_none()
-                if obj is None:
-                    raise HTTPException(status_code=404, detail=f"Engineering object '{tag}' not found")
-                return _to_response(obj)
-    except ImportError:
-        pass
-
-    entry = _fallback_store.get(tag_upper)
-    if entry is None:
-        raise HTTPException(status_code=404, detail=f"Engineering object '{tag}' not found")
-    return EngineeringObjectResponse(**entry)
-
-
-@router.put("/{tag}", response_model=EngineeringObjectResponse)
-async def upsert_engineering_object(
-    tag: str,
-    payload: EngineeringObjectUpsert,
-) -> EngineeringObjectResponse:
-    tag_upper = tag.upper()
-
-    try:
-        from ..database import is_db_available, get_db_optional
-        from ..models.engineering_object import EngineeringObject
-        from sqlalchemy import select
-
-        if await is_db_available():
-            async for db in get_db_optional():
-                if db is None:
-                    continue
-                result = await db.execute(
-                    select(EngineeringObject).where(EngineeringObject.tag == tag_upper)
-                )
-                obj = result.scalar_one_or_none()
-                if obj is None:
-                    obj = EngineeringObject(
-                        tag=tag_upper,
-                        object_type=payload.object_type,
-                        properties=payload.properties,
-                        area_id=payload.area_id,
-                        owner_id=payload.owner_id,
-                        name=payload.name,
-                        description=payload.description,
-                        location_ref=payload.location_ref,
-                        is_active=payload.is_active if payload.is_active is not None else True,
-                        status=payload.status,
-                    )
-                    db.add(obj)
-                else:
-                    obj.object_type = payload.object_type
-                    obj.properties = payload.properties
-                    obj.area_id = payload.area_id
-                    obj.owner_id = payload.owner_id
-                    obj.name = payload.name
-                    obj.description = payload.description
-                    obj.location_ref = payload.location_ref
-                    if payload.is_active is not None:
-                        obj.is_active = payload.is_active
-                    obj.status = payload.status
-                await db.commit()
-                await db.refresh(obj)
-                return _to_response(obj)
-    except ImportError:
-        pass
-
-    _fallback_store[tag_upper] = {
-        "id": None,
-        "tag": tag_upper,
-        "object_type": payload.object_type,
-        "properties": payload.properties,
-        "area_id": payload.area_id,
-        "owner_id": payload.owner_id,
-        "name": payload.name,
-        "description": payload.description,
-        "location_ref": payload.location_ref,
-        "is_active": payload.is_active if payload.is_active is not None else True,
-        "status": payload.status,
-    }
-    return EngineeringObjectResponse(**_fallback_store[tag_upper])
-
-
 @router.get("/by-id/{object_id}", response_model=EngineeringObjectResponse)
 async def get_engineering_object_by_id(object_id: str) -> EngineeringObjectResponse:
     try:
@@ -367,3 +271,99 @@ async def update_engineering_object_by_id(
         del _fallback_store[target]
     _fallback_store[updated_tag] = updated
     return EngineeringObjectResponse(**updated)
+
+
+@router.get("/{tag}", response_model=EngineeringObjectResponse)
+async def get_engineering_object(tag: str) -> EngineeringObjectResponse:
+    tag_upper = tag.upper()
+
+    try:
+        from ..database import is_db_available, get_db_optional
+        from ..models.engineering_object import EngineeringObject
+        from sqlalchemy import select
+
+        if await is_db_available():
+            async for db in get_db_optional():
+                if db is None:
+                    continue
+                result = await db.execute(
+                    select(EngineeringObject).where(EngineeringObject.tag == tag_upper)
+                )
+                obj = result.scalar_one_or_none()
+                if obj is None:
+                    raise HTTPException(status_code=404, detail=f"Engineering object '{tag}' not found")
+                return _to_response(obj)
+    except ImportError:
+        pass
+
+    entry = _fallback_store.get(tag_upper)
+    if entry is None:
+        raise HTTPException(status_code=404, detail=f"Engineering object '{tag}' not found")
+    return EngineeringObjectResponse(**entry)
+
+
+@router.put("/{tag}", response_model=EngineeringObjectResponse)
+async def upsert_engineering_object(
+    tag: str,
+    payload: EngineeringObjectUpsert,
+) -> EngineeringObjectResponse:
+    tag_upper = tag.upper()
+
+    try:
+        from ..database import is_db_available, get_db_optional
+        from ..models.engineering_object import EngineeringObject
+        from sqlalchemy import select
+
+        if await is_db_available():
+            async for db in get_db_optional():
+                if db is None:
+                    continue
+                result = await db.execute(
+                    select(EngineeringObject).where(EngineeringObject.tag == tag_upper)
+                )
+                obj = result.scalar_one_or_none()
+                if obj is None:
+                    obj = EngineeringObject(
+                        tag=tag_upper,
+                        object_type=payload.object_type,
+                        properties=payload.properties,
+                        area_id=payload.area_id,
+                        owner_id=payload.owner_id,
+                        name=payload.name,
+                        description=payload.description,
+                        location_ref=payload.location_ref,
+                        is_active=payload.is_active if payload.is_active is not None else True,
+                        status=payload.status,
+                    )
+                    db.add(obj)
+                else:
+                    obj.object_type = payload.object_type
+                    obj.properties = payload.properties
+                    obj.area_id = payload.area_id
+                    obj.owner_id = payload.owner_id
+                    obj.name = payload.name
+                    obj.description = payload.description
+                    obj.location_ref = payload.location_ref
+                    if payload.is_active is not None:
+                        obj.is_active = payload.is_active
+                    obj.status = payload.status
+                await db.commit()
+                await db.refresh(obj)
+                return _to_response(obj)
+    except ImportError:
+        pass
+
+    _fallback_store[tag_upper] = {
+        "id": None,
+        "tag": tag_upper,
+        "object_type": payload.object_type,
+        "properties": payload.properties,
+        "area_id": payload.area_id,
+        "owner_id": payload.owner_id,
+        "name": payload.name,
+        "description": payload.description,
+        "location_ref": payload.location_ref,
+        "is_active": payload.is_active if payload.is_active is not None else True,
+        "status": payload.status,
+    }
+    return EngineeringObjectResponse(**_fallback_store[tag_upper])
