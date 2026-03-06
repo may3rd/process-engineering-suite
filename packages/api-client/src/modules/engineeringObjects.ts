@@ -1,6 +1,7 @@
 import type { RequestFn } from '../client';
 
 export interface EngineeringObject {
+  id?: string | null;
   tag: string;
   object_type: string;
   properties: Record<string, unknown>;

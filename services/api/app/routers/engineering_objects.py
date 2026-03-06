@@ -12,6 +12,7 @@ router = APIRouter(prefix="/engineering-objects", tags=["engineering-objects"])
 class EngineeringObjectResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True, populate_by_name=True)
 
+    id: Optional[str] = None
     tag: str
     object_type: str
     properties: Dict[str, Any]
@@ -72,7 +73,7 @@ async def list_engineering_objects(
         from ..models.engineering_object import EngineeringObject
         from sqlalchemy import select
 
-        if is_db_available():
+        if await is_db_available():
             async for db in get_db_optional():
                 if db is None:
                     continue
@@ -84,6 +85,7 @@ async def list_engineering_objects(
                 objects = result.scalars().all()
                 payload = [
                     EngineeringObjectResponse(
+                        id=str(getattr(obj, "uuid", "")) or None,
                         tag=obj.tag,
                         object_type=obj.object_type,
                         properties=obj.properties or {},
@@ -121,7 +123,7 @@ async def get_engineering_object(tag: str) -> EngineeringObjectResponse:
         from ..models.engineering_object import EngineeringObject
         from sqlalchemy import select
 
-        if is_db_available():
+        if await is_db_available():
             async for db in get_db_optional():
                 if db is None:
                     continue
@@ -132,6 +134,7 @@ async def get_engineering_object(tag: str) -> EngineeringObjectResponse:
                 if obj is None:
                     raise HTTPException(status_code=404, detail=f"Engineering object '{tag}' not found")
                 return EngineeringObjectResponse(
+                    id=str(getattr(obj, "uuid", "")) or None,
                     tag=obj.tag,
                     object_type=obj.object_type,
                     properties=obj.properties or {},
@@ -160,7 +163,7 @@ async def upsert_engineering_object(
         from ..models.engineering_object import EngineeringObject
         from sqlalchemy import select
 
-        if is_db_available():
+        if await is_db_available():
             async for db in get_db_optional():
                 if db is None:
                     continue
@@ -183,6 +186,7 @@ async def upsert_engineering_object(
                 await db.commit()
                 await db.refresh(obj)
                 return EngineeringObjectResponse(
+                    id=str(getattr(obj, "uuid", "")) or None,
                     tag=obj.tag,
                     object_type=obj.object_type,
                     properties=obj.properties or {},
@@ -194,6 +198,7 @@ async def upsert_engineering_object(
         pass
 
     _fallback_store[tag_upper] = {
+        "id": None,
         "tag": tag_upper,
         "object_type": payload.object_type,
         "properties": payload.properties,
