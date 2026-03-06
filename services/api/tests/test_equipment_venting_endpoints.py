@@ -117,7 +117,7 @@ async def test_equipment_endpoint_persists_design_parameters_in_json(db_session)
         assert response.status_code == 200
         assert (
             response.headers.get('x-pes-deprecated')
-            == '/equipment root is deprecated; use /engineering-objects or /legacy/equipment during transition'
+            == '/legacy/equipment is deprecated; use /engineering-objects for new development'
         )
         payload = response.json()
         assert payload['designPressure'] == pytest.approx(2.4)
@@ -168,7 +168,7 @@ async def test_venting_endpoint_filters_by_equipment_engineering_object_id(db_se
         assert equipment_resp.status_code == 200
         assert (
             equipment_resp.headers.get('x-pes-deprecated')
-            == '/equipment root is deprecated; use /engineering-objects or /legacy/equipment during transition'
+            == '/legacy/equipment is deprecated; use /engineering-objects for new development'
         )
         equipment_id = equipment_resp.json()['id']
 
@@ -176,12 +176,10 @@ async def test_venting_endpoint_filters_by_equipment_engineering_object_id(db_se
         assert read_equipment.status_code == 200
         assert (
             read_equipment.headers.get('x-pes-deprecated')
-            == '/equipment root is deprecated; use /engineering-objects or /legacy/equipment during transition'
+            == '/legacy/equipment is deprecated; use /engineering-objects for new development'
         )
-
         root_alias = await client.get(f'/equipment/{equipment_id}')
-        assert root_alias.status_code == 200
-        assert root_alias.json()['id'] == equipment_id
+        assert root_alias.status_code == 404
 
         create_venting = await client.post(
             '/venting',

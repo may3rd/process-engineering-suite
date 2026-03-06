@@ -479,13 +479,13 @@ export interface paths {
         };
         /**
          * Get Equipment
-         * @description Deprecated compatibility endpoint. Use `/engineering-objects` for new development. `/equipment` remains as an undocumented alias during transition.
+         * @description Deprecated compatibility endpoint. Use `/engineering-objects` for new development.
          */
         get: operations["get_equipment_equipment_get"];
         put?: never;
         /**
          * Create Equipment
-         * @description Deprecated compatibility endpoint. Use `/engineering-objects/{tag}` for new development. `/equipment` remains as an undocumented alias during transition.
+         * @description Deprecated compatibility endpoint. Use `/engineering-objects/{tag}` for new development.
          */
         post: operations["create_equipment_equipment_post"];
         delete?: never;
@@ -504,13 +504,13 @@ export interface paths {
         get?: never;
         /**
          * Update Equipment
-         * @description Deprecated compatibility endpoint. Use `/engineering-objects/by-id/{id}` for new development. `/equipment/{equipment_id}` remains as an undocumented alias during transition.
+         * @description Deprecated compatibility endpoint. Use `/engineering-objects/by-id/{id}` for new development.
          */
         put: operations["update_equipment_equipment__equipment_id__put"];
         post?: never;
         /**
          * Delete Equipment
-         * @description Deprecated compatibility endpoint. Use `/engineering-objects/by-id/{id}` for soft delete. `/equipment/{equipment_id}` remains as an undocumented alias during transition.
+         * @description Deprecated compatibility endpoint. Use `/engineering-objects/by-id/{id}` for soft delete.
          */
         delete: operations["delete_equipment_equipment__equipment_id__delete"];
         options?: never;

@@ -24,8 +24,8 @@ Database schema was updated to use `engineering_objects` as the unified object s
 - `202603060004_drop_engineering_object_design_columns.py`
 
 ## Compatibility and Behavior
-- Existing callers can still use `/equipment`, but the root path is being phased out.
-- The documented transition path is now `/legacy/equipment`.
+- `/equipment` root has been removed from the documented and runtime API surface.
+- The compatibility path is `/legacy/equipment`.
 - Equipment payload shape remains compatible: `id`, `type`, `tag`, `name`, `details`, etc.
 - Design parameters are stored in `properties.design_parameters` as canonical source.
 - Transitional design columns were removed in phase 2.
