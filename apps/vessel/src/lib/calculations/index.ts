@@ -92,9 +92,11 @@ function tankTopRoofPartialRoofWettedArea(
   roofHeightMm: number,
   roofFillMm: number,
 ): number {
+  if (roofType === TankRoofType.FLAT) {
+    return roofFillMm >= 0 ? (Math.PI * radiusMm * radiusMm) / 1e6 : 0
+  }
   const x = clamp(roofFillMm, 0, roofHeightMm)
   if (x <= 0) return 0
-  if (roofType === TankRoofType.FLAT) return (Math.PI * radiusMm * radiusMm) / 1e6
   if (roofType === TankRoofType.CONE) {
     const s = Math.sqrt(radiusMm * radiusMm + roofHeightMm * roofHeightMm)
     const rx = radiusMm * (1 - x / roofHeightMm)
@@ -219,13 +221,14 @@ function computeTankResult(input: CalculationInput): CalculationResult {
   let surgeTime: number | null = null
   let inventory: number | null = null
 
-  if (
-    flowrate != null && isFinite(flowrate) && flowrate > 0 &&
-    hll != null && lll != null && isFinite(hll) && isFinite(lll)
-  ) {
-    const deltaVol = Math.abs(partialAt(hll) - partialAt(lll))
-    surgeTime = deltaVol / flowrate
-    inventory = deltaVol / flowrate
+  if (flowrate != null && isFinite(flowrate) && flowrate > 0) {
+    const inventoryBase = partialVol ?? oflVol
+    inventory = inventoryBase / flowrate
+
+    if (hll != null && lll != null && isFinite(hll) && isFinite(lll)) {
+      const deltaVol = Math.abs(partialAt(hll) - partialAt(lll))
+      surgeTime = deltaVol / flowrate
+    }
   }
 
   return {
@@ -419,15 +422,16 @@ function computeProcessVesselResult(input: CalculationInput): CalculationResult 
   let surgeTime: number | null = null
   let inventory: number | null = null
 
-  if (
-    flowrate != null && isFinite(flowrate) && flowrate > 0 &&
-    hll != null && lll != null && isFinite(hll) && isFinite(lll)
-  ) {
-    const vHll = partialAtLevel(hll)
-    const vLll = partialAtLevel(lll)
-    const deltaVol = Math.abs(vHll - vLll)
-    surgeTime = deltaVol / flowrate
-    inventory = deltaVol / flowrate
+  if (flowrate != null && isFinite(flowrate) && flowrate > 0) {
+    const inventoryBase = partialVol ?? oflVol
+    inventory = inventoryBase / flowrate
+
+    if (hll != null && lll != null && isFinite(hll) && isFinite(lll)) {
+      const vHll = partialAtLevel(hll)
+      const vLll = partialAtLevel(lll)
+      const deltaVol = Math.abs(vHll - vLll)
+      surgeTime = deltaVol / flowrate
+    }
   }
 
   return {

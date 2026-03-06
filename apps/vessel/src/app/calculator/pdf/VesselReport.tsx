@@ -276,7 +276,7 @@ export function VesselReport({ input, result, metadata, revisions, units }: Vess
         <TableRow label="Liquid Mass (at LL)" value={fmt(M.massLiquid, BASE_UNITS.mass, mass)} unit={unitLabel(mass)} />
         <TableRow label="Full Liquid Mass" value={fmt(M.massFull, BASE_UNITS.mass, mass)} unit={unitLabel(mass)} bold />
         <TableRow label="Surge Time (LLL→HLL)" value={T.surgeTime != null ? (T.surgeTime * 60).toFixed(2) : '—'} unit="min" />
-        <TableRow label="Inventory Time (HLL→LLL)" value={T.inventory != null ? (T.inventory * 60).toFixed(2) : '—'} unit="min" />
+        <TableRow label="Inventory Time (LL/OFL volume)" value={T.inventory != null ? (T.inventory * 60).toFixed(2) : '—'} unit="min" />
 
         {/* ── Revision table ─────────────────────────────────────────────── */}
         {revisions.length > 0 && (

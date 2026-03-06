@@ -64,7 +64,7 @@ export function MassTimingResult({ result }: Props) {
             <span className="font-mono tabular-nums">{fmtTime(result.timing.surgeTime)}</span>
           </div>
           <div className="flex justify-between items-center px-3 py-1.5">
-            <span>Inventory time (HLL → LLL)</span>
+            <span>Inventory time (LL/OFL volume)</span>
             <span className="font-mono tabular-nums">{fmtTime(result.timing.inventory)}</span>
           </div>
         </div>

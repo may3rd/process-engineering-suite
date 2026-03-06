@@ -6,6 +6,7 @@ import {
   TankType,
   TankRoofType,
 } from '@/types'
+import { MIN_CONICAL_DEPTH_FRACTION } from '@/lib/constants'
 
 /** NaN-tolerant optional positive number */
 const nanOptionalPositive = z.number().positive().optional().or(z.nan().transform(() => undefined))
@@ -117,6 +118,20 @@ export const calculationInputSchema = z.object({
       code: z.ZodIssueCode.custom,
       path: ['headDepth'],
       message: 'Head depth is required for conical heads',
+    })
+  }
+
+  if (
+    data.equipmentMode === EquipmentMode.VESSEL &&
+    data.headType === HeadType.CONICAL &&
+    data.headDepth != null &&
+    data.insideDiameter > 0 &&
+    data.headDepth < (MIN_CONICAL_DEPTH_FRACTION * data.insideDiameter)
+  ) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['headDepth'],
+      message: `Head depth must be at least ${(MIN_CONICAL_DEPTH_FRACTION * 100).toFixed(0)}% of inside diameter`,
     })
   }
   // Level ordering: LLL < HLL

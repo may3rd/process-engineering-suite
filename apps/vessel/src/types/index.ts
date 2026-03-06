@@ -112,8 +112,8 @@ export interface MassResult {
 }
 
 export interface TimingResult {
-  surgeTime: number | null    // hours — time to fill from LLL to HLL at given flowrate
-  inventory: number | null    // hours — time to drain from HLL to LLL at given flowrate
+  surgeTime: number | null    // hours — time across LLL↔HLL band at given flowrate (requires HLL and LLL)
+  inventory: number | null    // hours — time represented by current LL volume (or effective volume if LL is not set)
 }
 
 export interface CalculationResult {
