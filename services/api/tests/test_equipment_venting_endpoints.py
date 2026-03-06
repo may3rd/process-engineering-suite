@@ -97,7 +97,7 @@ async def test_equipment_endpoint_persists_design_parameters_in_json(db_session)
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url='http://test') as client:
         response = await client.post(
-            '/equipment',
+            '/legacy/equipment',
             json={
                 'areaId': area_id,
                 'ownerId': owner_id,
@@ -117,7 +117,7 @@ async def test_equipment_endpoint_persists_design_parameters_in_json(db_session)
         assert response.status_code == 200
         assert (
             response.headers.get('x-pes-deprecated')
-            == '/equipment endpoints are compatibility-only; use /engineering-objects instead'
+            == '/equipment root is deprecated; use /engineering-objects or /legacy/equipment during transition'
         )
         payload = response.json()
         assert payload['designPressure'] == pytest.approx(2.4)
@@ -153,7 +153,7 @@ async def test_venting_endpoint_filters_by_equipment_engineering_object_id(db_se
 
     async with AsyncClient(transport=ASGITransport(app=app), base_url='http://test') as client:
         equipment_resp = await client.post(
-            '/equipment',
+            '/legacy/equipment',
             json={
                 'areaId': area_id,
                 'ownerId': owner_id,
@@ -168,16 +168,20 @@ async def test_venting_endpoint_filters_by_equipment_engineering_object_id(db_se
         assert equipment_resp.status_code == 200
         assert (
             equipment_resp.headers.get('x-pes-deprecated')
-            == '/equipment endpoints are compatibility-only; use /engineering-objects instead'
+            == '/equipment root is deprecated; use /engineering-objects or /legacy/equipment during transition'
         )
         equipment_id = equipment_resp.json()['id']
 
-        read_equipment = await client.get(f'/equipment/{equipment_id}')
+        read_equipment = await client.get(f'/legacy/equipment/{equipment_id}')
         assert read_equipment.status_code == 200
         assert (
             read_equipment.headers.get('x-pes-deprecated')
-            == '/equipment endpoints are compatibility-only; use /engineering-objects instead'
+            == '/equipment root is deprecated; use /engineering-objects or /legacy/equipment during transition'
         )
+
+        root_alias = await client.get(f'/equipment/{equipment_id}')
+        assert root_alias.status_code == 200
+        assert root_alias.json()['id'] == equipment_id
 
         create_venting = await client.post(
             '/venting',

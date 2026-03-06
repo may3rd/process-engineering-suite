@@ -470,7 +470,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/equipment": {
+    "/legacy/equipment": {
         parameters: {
             query?: never;
             header?: never;
@@ -479,13 +479,13 @@ export interface paths {
         };
         /**
          * Get Equipment
-         * @description Deprecated compatibility endpoint. Use `/engineering-objects` for new development.
+         * @description Deprecated compatibility endpoint. Use `/engineering-objects` for new development. `/equipment` remains as an undocumented alias during transition.
          */
         get: operations["get_equipment_equipment_get"];
         put?: never;
         /**
          * Create Equipment
-         * @description Deprecated compatibility endpoint. Use `/engineering-objects/{tag}` for new development.
+         * @description Deprecated compatibility endpoint. Use `/engineering-objects/{tag}` for new development. `/equipment` remains as an undocumented alias during transition.
          */
         post: operations["create_equipment_equipment_post"];
         delete?: never;
@@ -494,7 +494,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/equipment/{equipment_id}": {
+    "/legacy/equipment/{equipment_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -504,13 +504,13 @@ export interface paths {
         get?: never;
         /**
          * Update Equipment
-         * @description Deprecated compatibility endpoint. Use `/engineering-objects/by-id/{id}` for new development.
+         * @description Deprecated compatibility endpoint. Use `/engineering-objects/by-id/{id}` for new development. `/equipment/{equipment_id}` remains as an undocumented alias during transition.
          */
         put: operations["update_equipment_equipment__equipment_id__put"];
         post?: never;
         /**
          * Delete Equipment
-         * @description Deprecated compatibility endpoint. Use `/engineering-objects/by-id/{id}` for soft delete.
+         * @description Deprecated compatibility endpoint. Use `/engineering-objects/by-id/{id}` for soft delete. `/equipment/{equipment_id}` remains as an undocumented alias during transition.
          */
         delete: operations["delete_equipment_equipment__equipment_id__delete"];
         options?: never;
