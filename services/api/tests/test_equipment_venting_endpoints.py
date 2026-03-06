@@ -115,6 +115,10 @@ async def test_equipment_endpoint_persists_design_parameters_in_json(db_session)
         )
 
         assert response.status_code == 200
+        assert (
+            response.headers.get('x-pes-deprecated')
+            == '/equipment endpoints are compatibility-only; use /engineering-objects instead'
+        )
         payload = response.json()
         assert payload['designPressure'] == pytest.approx(2.4)
         assert payload['designPressureUnit'] == 'barg'
@@ -162,7 +166,18 @@ async def test_venting_endpoint_filters_by_equipment_engineering_object_id(db_se
             },
         )
         assert equipment_resp.status_code == 200
+        assert (
+            equipment_resp.headers.get('x-pes-deprecated')
+            == '/equipment endpoints are compatibility-only; use /engineering-objects instead'
+        )
         equipment_id = equipment_resp.json()['id']
+
+        read_equipment = await client.get(f'/equipment/{equipment_id}')
+        assert read_equipment.status_code == 200
+        assert (
+            read_equipment.headers.get('x-pes-deprecated')
+            == '/equipment endpoints are compatibility-only; use /engineering-objects instead'
+        )
 
         create_venting = await client.post(
             '/venting',

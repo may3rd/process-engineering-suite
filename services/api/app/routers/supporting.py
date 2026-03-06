@@ -2,12 +2,19 @@
 from typing import List, Optional
 from datetime import datetime, date
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Response
 from pydantic import BaseModel, ConfigDict, Field
 
 from ..dependencies import DAL
 
 router = APIRouter(tags=["supporting"])
+EQUIPMENT_DEPRECATION_MESSAGE = (
+    '/equipment endpoints are compatibility-only; use /engineering-objects instead'
+)
+
+
+def _mark_equipment_endpoint_deprecated(response: Response) -> None:
+    response.headers['X-PES-Deprecated'] = EQUIPMENT_DEPRECATION_MESSAGE
 
 
 # --- Equipment Schemas ---
@@ -172,15 +179,22 @@ class TodoUpdate(BaseModel):
 
 # --- Equipment Endpoints ---
 
-@router.get("/equipment", response_model=List[EquipmentResponse])
-async def get_equipment(dal: DAL, area_id: Optional[str] = None, type: Optional[str] = None):
+@router.get("/equipment", response_model=List[EquipmentResponse], deprecated=True)
+async def get_equipment(
+    response: Response,
+    dal: DAL,
+    area_id: Optional[str] = None,
+    type: Optional[str] = None,
+):
     """Get all equipment, optionally filtered by area and/or equipment type (e.g. type=tank)."""
+    _mark_equipment_endpoint_deprecated(response)
     return await dal.get_equipment(area_id=area_id, type=type)
 
 
-@router.get("/equipment/{equipment_id}", response_model=EquipmentResponse)
-async def get_equipment_by_id(equipment_id: str, dal: DAL):
+@router.get("/equipment/{equipment_id}", response_model=EquipmentResponse, deprecated=True)
+async def get_equipment_by_id(equipment_id: str, response: Response, dal: DAL):
     """Get one equipment by ID."""
+    _mark_equipment_endpoint_deprecated(response)
     equipment = await dal.get_equipment_by_id(equipment_id)
     if not equipment:
         raise HTTPException(status_code=404, detail="Equipment not found")
@@ -221,9 +235,10 @@ class EquipmentUpdate(BaseModel):
     details: Optional[dict] = None
 
 
-@router.post("/equipment", response_model=EquipmentResponse)
-async def create_equipment(data: EquipmentCreate, dal: DAL):
+@router.post("/equipment", response_model=EquipmentResponse, deprecated=True)
+async def create_equipment(data: EquipmentCreate, response: Response, dal: DAL):
     """Create a new equipment."""
+    _mark_equipment_endpoint_deprecated(response)
     equipment_data = data.model_dump()
     
     # If ownerId is not provided or is empty, use the first user as default
@@ -238,9 +253,10 @@ async def create_equipment(data: EquipmentCreate, dal: DAL):
     return await dal.create_equipment(equipment_data)
 
 
-@router.put("/equipment/{equipment_id}", response_model=EquipmentResponse)
-async def update_equipment(equipment_id: str, data: EquipmentUpdate, dal: DAL):
+@router.put("/equipment/{equipment_id}", response_model=EquipmentResponse, deprecated=True)
+async def update_equipment(equipment_id: str, data: EquipmentUpdate, response: Response, dal: DAL):
     """Update an equipment."""
+    _mark_equipment_endpoint_deprecated(response)
     try:
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         return await dal.update_equipment(equipment_id, update_data)
@@ -248,9 +264,19 @@ async def update_equipment(equipment_id: str, data: EquipmentUpdate, dal: DAL):
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.post("/equipment/{equipment_id}/update", response_model=EquipmentResponse)
-async def update_equipment_post(equipment_id: str, data: EquipmentUpdate, dal: DAL):
+@router.post(
+    "/equipment/{equipment_id}/update",
+    response_model=EquipmentResponse,
+    deprecated=True,
+)
+async def update_equipment_post(
+    equipment_id: str,
+    data: EquipmentUpdate,
+    response: Response,
+    dal: DAL,
+):
     """Update an equipment (POST alias for environments that block PUT)."""
+    _mark_equipment_endpoint_deprecated(response)
     try:
         update_data = {k: v for k, v in data.model_dump().items() if v is not None}
         return await dal.update_equipment(equipment_id, update_data)
@@ -258,9 +284,10 @@ async def update_equipment_post(equipment_id: str, data: EquipmentUpdate, dal: D
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.delete("/equipment/{equipment_id}")
-async def delete_equipment(equipment_id: str, dal: DAL):
+@router.delete("/equipment/{equipment_id}", deprecated=True)
+async def delete_equipment(equipment_id: str, response: Response, dal: DAL):
     """Delete an equipment."""
+    _mark_equipment_endpoint_deprecated(response)
     success = await dal.delete_equipment(equipment_id)
     if not success:
         raise HTTPException(status_code=404, detail="Equipment not found")
