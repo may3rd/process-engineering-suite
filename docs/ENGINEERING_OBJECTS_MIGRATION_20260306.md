@@ -37,6 +37,7 @@ Database schema was updated to use `engineering_objects` as the unified object s
 - Shared client guidance:
   - prefer `apiClient.engineeringObjects`
   - `createApiClient()` no longer exposes `apiClient.equipment`
+  - the legacy shared client wrapper for `/equipment` has been removed
   - use raw `/equipment` routes only for legacy compatibility or external transition work
 - Future cleanup phase can remove legacy equipment table dependencies after all modules are migrated.
 
