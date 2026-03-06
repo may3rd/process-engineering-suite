@@ -65,4 +65,3 @@ class Equipment(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     # Relationships
     area = relationship("Area", back_populates="equipment")
     owner = relationship("User", back_populates="owned_equipment")
-    equipment_links = relationship("EquipmentLink", back_populates="equipment", cascade="all, delete-orphan")

@@ -3,7 +3,11 @@
   "compilerOptions": {
     "baseUrl": ".",
     "target": "ES2017",
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
@@ -15,13 +19,33 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "incremental": true,
-    "plugins": [{ "name": "next" }],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@eng-suite/physics": ["../../packages/physics-engine/src/index.ts"],
-      "@eng-suite/physics/*": ["../../packages/physics-engine/src/*"],
-      "@eng-suite/engineering-units": ["../../packages/engineering-units/src/index.ts"],
-      "@eng-suite/engineering-units/*": ["../../packages/engineering-units/src/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@eng-suite/physics": [
+        "../../packages/physics-engine/src/index.ts"
+      ],
+      "@eng-suite/physics/*": [
+        "../../packages/physics-engine/src/*"
+      ],
+      "@eng-suite/engineering-units": [
+        "../../packages/engineering-units/src/index.ts"
+      ],
+      "@eng-suite/engineering-units/*": [
+        "../../packages/engineering-units/src/*"
+      ],
+      "@eng-suite/api-client": [
+        "../../packages/api-client/src/index.ts"
+      ],
+      "@eng-suite/api-client/*": [
+        "../../packages/api-client/src/*"
+      ]
     }
   },
   "include": [
@@ -31,5 +55,7 @@
     ".next/types/**/*.ts",
     ".next/dev/types/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": [
+    "node_modules"
+  ]
 }

@@ -1,7 +1,7 @@
 """EquipmentLink model - junction table between PSV and Equipment."""
 from typing import Optional
 
-from sqlalchemy import String, Text, Boolean, ForeignKey, Enum as SQLEnum
+from sqlalchemy import Text, Boolean, ForeignKey, Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.dialects.postgresql import UUID
 
@@ -20,7 +20,7 @@ class EquipmentLink(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     )
     equipment_id: Mapped[str] = mapped_column(
         UUID(as_uuid=False),
-        ForeignKey("equipment.id", ondelete="CASCADE"),
+        ForeignKey("engineering_objects.uuid", ondelete="CASCADE"),
         nullable=False,
     )
     is_primary: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
@@ -38,4 +38,4 @@ class EquipmentLink(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     
     # Relationships
     protective_system = relationship("ProtectiveSystem", back_populates="equipment_links")
-    equipment = relationship("Equipment", back_populates="equipment_links")
+    engineering_object = relationship("EngineeringObject")

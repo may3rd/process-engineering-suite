@@ -255,6 +255,7 @@
       "dependencies": {
         "@emotion/react": "^11.14.0",
         "@emotion/styled": "^11.14.1",
+        "@eng-suite/api-client": "*",
         "@eng-suite/engineering-units": "*",
         "@eng-suite/physics": "*",
         "@eng-suite/ui-kit": "workspace:*",

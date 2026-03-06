@@ -1699,8 +1699,8 @@
       "accumulationPct": 10,
       "requiredCapacity": 120000,
       "assumptions": [
-        "Maximum pump capacity = 150 m³/h",
-        "Density at relieving conditions = 720 kg/m³"
+        "Maximum pump capacity = 150 m\u00b3/h",
+        "Density at relieving conditions = 720 kg/m\u00b3"
       ],
       "codeRefs": [
         "API-521 Section 4.4.1"
@@ -1722,7 +1722,7 @@
       "requiredCapacity": 280000,
       "assumptions": [
         "Single tube rupture (2 open ends)",
-        "Maximum ΔP across tube",
+        "Maximum \u0394P across tube",
         "Sonic velocity not limiting"
       ],
       "codeRefs": [
@@ -1791,7 +1791,7 @@
       "requiredCapacity": 500,
       "assumptions": [
         "Exchanger fully blocked in",
-        "Solar heating 800 W/m²",
+        "Solar heating 800 W/m\u00b2",
         "No insulation"
       ],
       "codeRefs": [
@@ -1814,7 +1814,7 @@
       "requiredCapacity": 500,
       "assumptions": [
         "Exchanger fully blocked in",
-        "Solar heating 800 W/m²",
+        "Solar heating 800 W/m\u00b2",
         "No insulation"
       ],
       "codeRefs": [
@@ -1837,7 +1837,7 @@
       "requiredCapacity": 500,
       "assumptions": [
         "Exchanger fully blocked in",
-        "Solar heating 800 W/m²",
+        "Solar heating 800 W/m\u00b2",
         "No insulation"
       ],
       "codeRefs": [
@@ -1860,7 +1860,7 @@
       "requiredCapacity": 500,
       "assumptions": [
         "Exchanger fully blocked in",
-        "Solar heating 800 W/m²",
+        "Solar heating 800 W/m\u00b2",
         "No insulation"
       ],
       "codeRefs": [
@@ -1883,7 +1883,7 @@
       "requiredCapacity": 32000,
       "assumptions": [
         "Pump at maximum capacity",
-        "Crude density 850 kg/m³"
+        "Crude density 850 kg/m\u00b3"
       ],
       "codeRefs": [
         "API-521 Section 4.4.1"
@@ -1905,7 +1905,7 @@
       "requiredCapacity": 32000,
       "assumptions": [
         "Pump at maximum capacity",
-        "Crude density 850 kg/m³"
+        "Crude density 850 kg/m\u00b3"
       ],
       "codeRefs": [
         "API-521 Section 4.4.1"
@@ -1996,7 +1996,7 @@
       "requiredCapacity": 95000,
       "assumptions": [
         "Pool fire per API-521",
-        "Wetted area 120 m²",
+        "Wetted area 120 m\u00b2",
         "F = 0.3 (insulated)"
       ],
       "codeRefs": [
@@ -2087,7 +2087,7 @@
       "requiredCapacity": 15000,
       "assumptions": [
         "Pool fire",
-        "Wetted area 25 m²",
+        "Wetted area 25 m\u00b2",
         "F = 1.0 (no insulation)"
       ],
       "codeRefs": [
@@ -2110,7 +2110,7 @@
       "requiredCapacity": 12000,
       "assumptions": [
         "Pool fire",
-        "Wetted area 18 m²",
+        "Wetted area 18 m\u00b2",
         "F = 0.5 (partial insulation)"
       ],
       "codeRefs": [
@@ -2180,8 +2180,8 @@
       "requiredCapacity": 2200,
       "assumptions": [
         "Line fully blocked",
-        "Ambient heat leak 12 W/m²",
-        "Density 450 kg/m³"
+        "Ambient heat leak 12 W/m\u00b2",
+        "Density 450 kg/m\u00b3"
       ],
       "codeRefs": [
         "API-521 Section 4.4.11"
@@ -2203,8 +2203,8 @@
       "requiredCapacity": 2200,
       "assumptions": [
         "Line fully blocked",
-        "Ambient heat leak 12 W/m²",
-        "Density 450 kg/m³"
+        "Ambient heat leak 12 W/m\u00b2",
+        "Density 450 kg/m\u00b3"
       ],
       "codeRefs": [
         "API-521 Section 4.4.11"
@@ -2339,7 +2339,7 @@
       "requiredCapacity": 42000,
       "assumptions": [
         "Pool fire",
-        "Wetted area 55 m²",
+        "Wetted area 55 m\u00b2",
         "F = 0.7 (partial insulation)"
       ],
       "codeRefs": [
@@ -2410,8 +2410,8 @@
         "temperature": "C",
         "flow": "kg/h",
         "length": "m",
-        "area": "mm²",
-        "density": "kg/m³",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
         "viscosity": "cP"
       },
       "status": "verified",
@@ -2456,8 +2456,8 @@
         "temperature": "C",
         "flow": "kg/h",
         "length": "m",
-        "area": "mm²",
-        "density": "kg/m³",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
         "viscosity": "cP"
       },
       "status": "approved",
@@ -2504,8 +2504,8 @@
         "temperature": "C",
         "flow": "kg/h",
         "length": "m",
-        "area": "mm²",
-        "density": "kg/m³",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
         "viscosity": "cP"
       },
       "status": "calculated",
@@ -2549,8 +2549,8 @@
         "temperature": "C",
         "flow": "kg/h",
         "length": "m",
-        "area": "mm²",
-        "density": "kg/m³",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
         "viscosity": "cP"
       },
       "status": "approved",
@@ -2597,8 +2597,8 @@
         "temperature": "C",
         "flow": "kg/h",
         "length": "m",
-        "area": "mm²",
-        "density": "kg/m³",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
         "viscosity": "cP"
       },
       "status": "approved",
@@ -2645,8 +2645,8 @@
         "temperature": "C",
         "flow": "kg/h",
         "length": "m",
-        "area": "mm²",
-        "density": "kg/m³",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
         "viscosity": "cP"
       },
       "status": "verified",
@@ -2695,8 +2695,8 @@
         "temperature": "C",
         "flow": "kg/h",
         "length": "m",
-        "area": "mm²",
-        "density": "kg/m³",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
         "viscosity": "cP"
       },
       "status": "approved",
@@ -2743,8 +2743,8 @@
         "temperature": "C",
         "flow": "kg/h",
         "length": "m",
-        "area": "mm²",
-        "density": "kg/m³",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
         "viscosity": "cP"
       },
       "status": "approved",
@@ -2792,8 +2792,8 @@
         "temperature": "C",
         "flow": "kg/h",
         "length": "m",
-        "area": "mm²",
-        "density": "kg/m³",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
         "viscosity": "cP"
       },
       "status": "calculated",
@@ -2838,8 +2838,8 @@
         "temperature": "C",
         "flow": "kg/h",
         "length": "m",
-        "area": "mm²",
-        "density": "kg/m³",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
         "viscosity": "cP"
       },
       "status": "calculated",
@@ -2884,8 +2884,8 @@
         "temperature": "C",
         "flow": "kg/h",
         "length": "m",
-        "area": "mm²",
-        "density": "kg/m³",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
         "viscosity": "cP"
       },
       "status": "calculated",
@@ -2931,8 +2931,8 @@
         "temperature": "C",
         "flow": "kg/h",
         "length": "m",
-        "area": "mm²",
-        "density": "kg/m³",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
         "viscosity": "cP"
       },
       "status": "verified",
@@ -2979,8 +2979,8 @@
         "temperature": "C",
         "flow": "kg/h",
         "length": "m",
-        "area": "mm²",
-        "density": "kg/m³",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
         "viscosity": "cP"
       },
       "status": "verified",
@@ -3026,8 +3026,8 @@
         "temperature": "C",
         "flow": "kg/h",
         "length": "m",
-        "area": "mm²",
-        "density": "kg/m³",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
         "viscosity": "cP"
       },
       "status": "verified",
@@ -3075,8 +3075,8 @@
         "temperature": "C",
         "flow": "kg/h",
         "length": "m",
-        "area": "mm²",
-        "density": "kg/m³",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
         "viscosity": "cP"
       },
       "status": "verified",
@@ -3123,8 +3123,8 @@
         "temperature": "C",
         "flow": "kg/h",
         "length": "m",
-        "area": "mm²",
-        "density": "kg/m³",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
         "viscosity": "cP"
       },
       "status": "approved",
@@ -3170,8 +3170,8 @@
         "temperature": "C",
         "flow": "kg/h",
         "length": "m",
-        "area": "mm²",
-        "density": "kg/m³",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
         "viscosity": "cP"
       },
       "status": "approved",
@@ -3215,8 +3215,8 @@
         "temperature": "C",
         "flow": "kg/h",
         "length": "m",
-        "area": "mm²",
-        "density": "kg/m³",
+        "area": "mm\u00b2",
+        "density": "kg/m\u00b3",
         "viscosity": "cP"
       },
       "status": "approved",
@@ -3508,6 +3508,142 @@
       "approvedAt": "2024-06-12T16:00:00Z",
       "snapshot": {},
       "createdAt": "2024-06-10T08:00:00Z"
+    }
+  ],
+  "engineeringObjects": [
+    {
+      "tag": "VCALC-MOCK-001",
+      "objectType": "VESSEL_CALCULATION",
+      "status": "In-Design",
+      "properties": {
+        "inputs": {
+          "tag": "V-102",
+          "description": "Mock vertical vessel linked to V-102",
+          "equipmentMode": "Vessel",
+          "orientation": "Vertical",
+          "headType": "2:1 Ellipsoidal",
+          "insideDiameter": 2000,
+          "shellLength": 6000,
+          "liquidLevel": 1100,
+          "hll": 1500,
+          "lll": 700,
+          "bootHeight": 2000
+        },
+        "result": {
+          "volumes": {
+            "totalVolume": 21.0,
+            "partialVolume": 8.1
+          },
+          "surfaceAreas": {
+            "totalSurfaceArea": 52.3
+          }
+        },
+        "linkedEquipmentId": "e0000002-0002-0002-0002-000000000002",
+        "linkedEquipmentTag": "V-102",
+        "calculationMetadata": {
+          "projectNumber": "P-001",
+          "documentNumber": "DOC-V-001",
+          "title": "Vessel mock case",
+          "projectName": "Seed Project",
+          "client": "Seed Client"
+        },
+        "revisionHistory": [
+          {
+            "rev": "0",
+            "by": "Seed",
+            "byDate": "2026-03-06",
+            "checkedBy": "",
+            "checkedDate": "",
+            "approvedBy": "",
+            "approvedDate": ""
+          }
+        ],
+        "meta": {
+          "app": "vessel",
+          "name": "Mock Vessel Linked V-102",
+          "description": "Seeded test case for vessel-equipment link",
+          "isActive": true,
+          "deletedAt": null,
+          "createdAt": "2026-03-06T00:00:00Z",
+          "updatedAt": "2026-03-06T00:00:00Z"
+        }
+      }
+    },
+    {
+      "tag": "VCALC-MOCK-002",
+      "objectType": "VESSEL_CALCULATION",
+      "status": "In-Design",
+      "properties": {
+        "inputs": {
+          "tag": "T-SEED-100",
+          "description": "Mock spherical tank linked to T-SEED-100",
+          "equipmentMode": "Tank",
+          "tankType": "Spherical Tank",
+          "insideDiameter": 3000,
+          "liquidLevel": 900,
+          "hll": 1200,
+          "lll": 500,
+          "bootHeight": 3000
+        },
+        "result": {
+          "volumes": {
+            "totalVolume": 14.1,
+            "partialVolume": 2.9
+          },
+          "surfaceAreas": {
+            "totalSurfaceArea": 28.2
+          }
+        },
+        "linkedEquipmentId": "bb40cb96-1f9d-4f41-9b20-1290f8d48011",
+        "linkedEquipmentTag": "T-SEED-100",
+        "calculationMetadata": {
+          "projectNumber": "P-001",
+          "documentNumber": "DOC-T-001",
+          "title": "Tank mock case",
+          "projectName": "Seed Project",
+          "client": "Seed Client"
+        },
+        "revisionHistory": [],
+        "meta": {
+          "app": "vessel",
+          "name": "Mock Tank Linked T-SEED-100",
+          "description": "Seeded test case for tank-equipment link",
+          "isActive": true,
+          "deletedAt": null,
+          "createdAt": "2026-03-06T00:10:00Z",
+          "updatedAt": "2026-03-06T00:10:00Z"
+        }
+      }
+    },
+    {
+      "tag": "VCALC-MOCK-003",
+      "objectType": "VESSEL_CALCULATION",
+      "status": "In-Design",
+      "properties": {
+        "inputs": {
+          "tag": "V-202",
+          "description": "Soft-deleted sample for restore flow",
+          "equipmentMode": "Vessel",
+          "orientation": "Horizontal",
+          "headType": "Hemispherical",
+          "insideDiameter": 2400,
+          "shellLength": 7200,
+          "bootHeight": 1200
+        },
+        "result": null,
+        "linkedEquipmentId": "2a975764-16a8-48b2-b103-61ce229a4358",
+        "linkedEquipmentTag": "V-202",
+        "revisionHistory": [],
+        "meta": {
+          "app": "vessel",
+          "name": "Mock Deleted V-202",
+          "description": "Seeded inactive case for soft-delete testing",
+          "isActive": false,
+          "deletedAt": "2026-03-06T00:20:00Z",
+          "createdAt": "2026-03-06T00:20:00Z",
+          "updatedAt": "2026-03-06T00:20:00Z"
+        }
+      }
     }
   ]
 }

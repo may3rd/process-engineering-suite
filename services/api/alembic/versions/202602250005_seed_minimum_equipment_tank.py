@@ -27,9 +27,22 @@ SEED_EQUIPMENT_ID = "bb40cb96-1f9d-4f41-9b20-1290f8d48011"
 def upgrade() -> None:
     op.execute(
         f"""
-        INSERT INTO users (id, name, initials, email, role, status, created_at, updated_at)
-        SELECT '{SEED_USER_ID}', 'Seed User', 'SU', 'seed.user@engsuite.local', 'engineer', 'active', NOW(), NOW()
-        WHERE NOT EXISTS (SELECT 1 FROM users WHERE id = '{SEED_USER_ID}');
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_name = 'users' AND column_name = 'initials'
+          ) THEN
+            INSERT INTO users (id, name, initials, email, role, status, created_at, updated_at)
+            SELECT '{SEED_USER_ID}', 'Seed User', 'SU', 'seed.user@engsuite.local', 'engineer', 'active', NOW(), NOW()
+            WHERE NOT EXISTS (SELECT 1 FROM users WHERE id = '{SEED_USER_ID}');
+          ELSE
+            INSERT INTO users (id, name, email, role, status, created_at, updated_at)
+            SELECT '{SEED_USER_ID}', 'Seed User', 'seed.user@engsuite.local', 'engineer', 'active', NOW(), NOW()
+            WHERE NOT EXISTS (SELECT 1 FROM users WHERE id = '{SEED_USER_ID}');
+          END IF;
+        END$$;
         """
     )
 
@@ -67,22 +80,48 @@ def upgrade() -> None:
 
     op.execute(
         f"""
-        INSERT INTO equipment (
-          id, area_id, type, tag, name, description,
-          design_pressure, design_pressure_unit, owner_id, is_active, status, details,
-          created_at, updated_at
-        )
-        SELECT
-          '{SEED_EQUIPMENT_ID}', '{SEED_AREA_ID}', 'tank', 'T-SEED-100', 'Seed Tank', 'Seeded tank for venting linkage test',
-          0.10, 'barg', '{SEED_USER_ID}', true, 'active',
-          jsonb_build_object(
-            'tankType', 'vertical_cylindrical',
-            'orientation', 'vertical',
-            'innerDiameter', 3200,
-            'height', 12500
-          ),
-          NOW(), NOW()
-        WHERE NOT EXISTS (SELECT 1 FROM equipment WHERE id = '{SEED_EQUIPMENT_ID}');
+        DO $$
+        BEGIN
+          IF EXISTS (
+            SELECT 1
+            FROM information_schema.columns
+            WHERE table_name = 'equipment' AND column_name = 'design_pressure_unit'
+          ) THEN
+            INSERT INTO equipment (
+              id, area_id, type, tag, name, description,
+              design_pressure, design_pressure_unit, owner_id, is_active, status, details,
+              created_at, updated_at
+            )
+            SELECT
+              '{SEED_EQUIPMENT_ID}', '{SEED_AREA_ID}', 'tank', 'T-SEED-100', 'Seed Tank', 'Seeded tank for venting linkage test',
+              0.10, 'barg', '{SEED_USER_ID}', true, 'active',
+              jsonb_build_object(
+                'tankType', 'vertical_cylindrical',
+                'orientation', 'vertical',
+                'innerDiameter', 3200,
+                'height', 12500
+              ),
+              NOW(), NOW()
+            WHERE NOT EXISTS (SELECT 1 FROM equipment WHERE id = '{SEED_EQUIPMENT_ID}');
+          ELSE
+            INSERT INTO equipment (
+              id, area_id, type, tag, name, description,
+              design_pressure, owner_id, is_active, status, details,
+              created_at, updated_at
+            )
+            SELECT
+              '{SEED_EQUIPMENT_ID}', '{SEED_AREA_ID}', 'tank', 'T-SEED-100', 'Seed Tank', 'Seeded tank for venting linkage test',
+              0.10, '{SEED_USER_ID}', true, 'active',
+              jsonb_build_object(
+                'tankType', 'vertical_cylindrical',
+                'orientation', 'vertical',
+                'innerDiameter', 3200,
+                'height', 12500
+              ),
+              NOW(), NOW()
+            WHERE NOT EXISTS (SELECT 1 FROM equipment WHERE id = '{SEED_EQUIPMENT_ID}');
+          END IF;
+        END$$;
         """
     )
 

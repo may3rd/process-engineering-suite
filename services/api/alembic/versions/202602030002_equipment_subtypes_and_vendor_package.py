@@ -192,6 +192,8 @@ def upgrade() -> None:
         ),
     )
 
+    op.execute("ALTER TABLE equipment ADD COLUMN IF NOT EXISTS details JSONB")
+
     bind = op.get_bind()
     rows = list(
         bind.execute(

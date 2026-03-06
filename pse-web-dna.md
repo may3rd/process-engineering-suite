@@ -701,32 +701,89 @@ Exception: glass panel overlay shadow uses:
 
 ## 10. Save / Load Architecture
 
-### 10.1 What is saved
+### 10.1 Persistence model (engineering objects)
+
+Calculator apps should persist saved cases through `engineering-objects` using `@eng-suite/api-client`:
+
+```ts
+const items = await apiClient.engineeringObjects.list({
+  objectType: 'VESSEL_CALCULATION',
+  includeInactive: false,
+})
+
+await apiClient.engineeringObjects.upsert(tag, {
+  object_type: 'VESSEL_CALCULATION',
+  status: 'In-Design',
+  properties: {
+    inputs,
+    result,
+    linkedEquipmentId,
+    calculationMetadata,
+    revisionHistory,
+    meta: {
+      app: 'vessel',
+      name,
+      description,
+      isActive: true,
+      deletedAt: null,
+      updatedAt: new Date().toISOString(),
+    },
+  },
+})
+```
+
+For new apps, define an app-specific `object_type` constant and keep the same `properties.meta` shape.
+
+### 10.2 What is saved
 
 `getValues()` from React Hook Form captures the current form state. Since all fields store **base units**, the persisted JSON is always unit-agnostic.
 
 ```ts
-// SaveCalculationButton
-const inputs  = getValues()           // base units, no conversion needed
-const results = calculationResult     // raw API response
-await save(name, inputs, results, equipmentId, metadata, revisionHistory)
+const inputs = getValues()
+await save({
+  name,
+  inputs,
+  results: calculationResult,
+  equipmentId,
+  calculationMetadata,
+  revisionHistory,
+})
 ```
 
-### 10.2 What is loaded
+UoM preferences are not saved with calculations. They stay in the app UoM store (`persist` localStorage key).
+
+### 10.3 What is loaded
 
 ```ts
-// LoadCalculationButton — normalizeLoadedInput()
 for (const key of NUMERIC_KEYS) {
-  mutable[key] = toNumberOrUndefined(source[key])  // parse as-is, no conversion
+  mutable[key] = toNumberOrUndefined(source[key])
 }
-reset(normalizedInputs)   // restores form to base unit values
+
+reset(normalizedInputs)
 ```
 
-UoM preferences are **not** saved with the calculation — they live separately in `localStorage` and persist independently.
+Loaders should restore:
+- form inputs
+- calculation metadata
+- revision history
+- linked equipment id/tag (when present)
 
-### 10.3 Schema evolution
+### 10.4 Soft delete / restore
+
+Saved calculations are soft-deleted by toggling:
+- `properties.meta.isActive = false`
+- `properties.meta.deletedAt = <ISO timestamp>`
+
+Restore resets:
+- `isActive = true`
+- `deletedAt = null`
+
+List views should default to active records and expose a `Show deleted` toggle via `include_inactive=true`.
+
+### 10.5 Schema evolution
 
 When adding fields to `CalculationInput`, the load normalizer must handle missing keys gracefully:
+
 ```ts
 mutable[newField] = toNumberOrUndefined(source[newField]) ?? DEFAULT_VALUE
 ```

@@ -1,40 +1,38 @@
 """add revisions and equipment details
 
 Revision ID: add_rev_and_equip_details
-Revises: 202410140001, 202412150001, 202512140001
+Revises: add_project_notes, 202412150001, add_case_consideration
 Create Date: 2025-12-15 00:01:00.000000
 """
 
 from typing import Sequence, Union
 
 from alembic import op
-import sqlalchemy as sa
-from sqlalchemy.dialects import postgresql
 
 
-# revision identifiers, used by Alembic.
 revision: str = "add_rev_and_equip_details"
-down_revision: Union[str, tuple[str, ...], None] = ("202410140001", "202412150001", "202512140001")
+down_revision: Union[str, tuple[str, ...], None] = (
+    "add_project_notes",
+    "202412150001",
+    "add_case_consideration",
+)
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column(
-        "protective_systems",
-        sa.Column("revision_no", sa.Integer(), server_default=sa.text("1"), nullable=False),
+    op.execute(
+        "ALTER TABLE protective_systems "
+        "ADD COLUMN IF NOT EXISTS revision_no INTEGER NOT NULL DEFAULT 1"
     )
-    op.add_column(
-        "overpressure_scenarios",
-        sa.Column("revision_no", sa.Integer(), server_default=sa.text("1"), nullable=False),
+    op.execute(
+        "ALTER TABLE overpressure_scenarios "
+        "ADD COLUMN IF NOT EXISTS revision_no INTEGER NOT NULL DEFAULT 1"
     )
-    op.add_column(
-        "equipment",
-        sa.Column("details", postgresql.JSONB(astext_type=sa.Text()), nullable=True),
-    )
+    op.execute("ALTER TABLE equipment ADD COLUMN IF NOT EXISTS details JSONB")
 
 
 def downgrade() -> None:
-    op.drop_column("equipment", "details")
-    op.drop_column("overpressure_scenarios", "revision_no")
-    op.drop_column("protective_systems", "revision_no")
+    op.execute("ALTER TABLE equipment DROP COLUMN IF EXISTS details")
+    op.execute("ALTER TABLE overpressure_scenarios DROP COLUMN IF EXISTS revision_no")
+    op.execute("ALTER TABLE protective_systems DROP COLUMN IF EXISTS revision_no")

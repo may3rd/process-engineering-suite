@@ -37,6 +37,11 @@ def _assert_no_duplicates(connection: sa.Connection, sql: str, label: str) -> No
 def upgrade() -> None:
     connection = op.get_bind()
 
+    op.execute(
+        "ALTER TABLE protective_systems "
+        "ADD COLUMN IF NOT EXISTS is_active BOOLEAN NOT NULL DEFAULT true"
+    )
+
     connection.execute(
         sa.text(
             """

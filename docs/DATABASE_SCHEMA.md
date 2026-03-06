@@ -63,6 +63,56 @@
 
 ---
 
+## Engineering Objects (Unified Object Store)
+### `engineering_objects`
+Single source of truth for process equipment and calculator-linked objects.
+
+| Column | Type | Notes |
+|---|---|---|
+| uuid | uuid | PK (canonical object identity) |
+| tag | varchar | Unique plant tag, normalized uppercase |
+| object_type | varchar | Object discriminator, e.g. `TANK`, `VESSEL`, `PUMP`, `VESSEL_CALCULATION` |
+| area_id | uuid | FK → areas.id (SET NULL), nullable |
+| owner_id | uuid | FK → users.id (SET NULL), nullable |
+| name | varchar(255) | Display name |
+| description | text | Optional free-text |
+| design_pressure | numeric(10,2) | Transitional column (read fallback only) |
+| design_pressure_unit | varchar(20) | Transitional column (read fallback only) |
+| mawp | numeric(10,2) | Transitional column (read fallback only) |
+| mawp_unit | varchar(20) | Transitional column (read fallback only) |
+| design_temp | numeric(10,2) | Transitional column (read fallback only) |
+| design_temp_unit | varchar(20) | Transitional column (read fallback only) |
+| location_ref | varchar(255) | Optional location reference |
+| status | varchar | Lifecycle/status label |
+| is_active | boolean | Soft-delete flag |
+| deleted_at | timestamptz | Soft-delete timestamp |
+| properties | jsonb | Flexible payload. Equipment details are under `properties.details` |
+| project_id | uuid | FK → projects.id, nullable |
+| created_at | timestamptz | Auto |
+| updated_at | timestamptz | Auto |
+
+**Canonical design parameters (JSONB):** `properties.design_parameters`
+- `designPressure`
+- `designPressureUnit`
+- `mawp`
+- `mawpUnit`
+- `designTemperature`
+- `designTempUnit`
+
+**Indexes:** `uq_engineering_objects_tag`, `ix_engineering_objects_area_id`, `ix_engineering_objects_owner_id`, `ix_engineering_objects_properties_gin`
+
+### Compatibility Layer
+- `/equipment` API remains available for existing clients.
+- Backend now persists equipment reads/writes in `engineering_objects`.
+- `equipment.id` compatible UUIDs are preserved during backfill into `engineering_objects.uuid`.
+- Existing clients can continue using `id`, `type`, `details` payload shape.
+
+### FK Changes
+- `equipment_links.equipment_id` now references `engineering_objects.uuid`.
+- `venting_calculations.equipment_id` now references `engineering_objects.uuid`.
+
+---
+
 ## App-Specific Resources
 These three tables were added (migration `202602250001`) to give the stateless frontend apps persistent storage via the same centralised API.
 
@@ -73,7 +123,7 @@ Stores saved API 2000 tank venting calculations from `apps/venting-calculation` 
 |---|---|---|
 | id | uuid | PK |
 | area_id | uuid | FK → areas.id (SET NULL), nullable |
-| equipment_id | uuid | FK → equipment.id (SET NULL), nullable |
+| equipment_id | uuid | FK → engineering_objects.uuid (SET NULL), nullable |
 | owner_id | uuid | FK → users.id, nullable (no auth in this app yet) |
 | name | varchar(255) | Human-readable label, e.g. "T-101 Rev 0" |
 | description | text | Optional free-text |

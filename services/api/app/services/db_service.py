@@ -27,6 +27,7 @@ from ..models import (
     VentingCalculation,
     NetworkDesign,
     DesignAgentSession,
+    EngineeringObject,
 )
 from .dal import DataAccessLayer
 from .equipment_subtypes import build_details_from_subtype_row, build_subtype_row_values
@@ -432,30 +433,170 @@ class DatabaseService(DataAccessLayer):
         await self._update(SizingCase, case_id, {"is_active": False})
         return True
 
-    # --- Equipment ---
+    # --- Equipment (object-based via engineering_objects) ---
+
+    _equipment_object_types = {
+        'vessel',
+        'tank',
+        'heat_exchanger',
+        'column',
+        'reactor',
+        'pump',
+        'compressor',
+        'piping',
+        'vendor_package',
+        'other',
+    }
+
+    def _normalize_equipment_type(self, object_type: str) -> str:
+        value = (object_type or '').strip().lower()
+        return value if value in self._equipment_object_types else 'other'
+
+    def _to_equipment_object_type(self, equipment_type: str) -> str:
+        return self._normalize_equipment_type(equipment_type).upper()
+
+    def _extract_design_parameters(self, properties: dict[str, Any]) -> dict[str, Any]:
+        raw = properties.get('design_parameters')
+        if isinstance(raw, dict):
+            return raw
+        return {}
+
+    def _merge_design_parameters(
+        self,
+        current: dict[str, Any],
+        converted_data: dict[str, Any],
+    ) -> dict[str, Any]:
+        next_values = dict(current)
+
+        mapping = {
+            'design_pressure': 'designPressure',
+            'design_pressure_unit': 'designPressureUnit',
+            'mawp': 'mawp',
+            'mawp_unit': 'mawpUnit',
+            'design_temp': 'designTemperature',
+            'design_temp_unit': 'designTempUnit',
+        }
+        for source_key, target_key in mapping.items():
+            if source_key in converted_data:
+                value = converted_data[source_key]
+                if value is None:
+                    next_values.pop(target_key, None)
+                else:
+                    next_values[target_key] = value
+
+        if 'designPressure' in next_values and 'designPressureUnit' not in next_values:
+            next_values['designPressureUnit'] = 'barg'
+        if 'mawp' in next_values and 'mawpUnit' not in next_values:
+            next_values['mawpUnit'] = 'barg'
+        if 'designTemperature' in next_values and 'designTempUnit' not in next_values:
+            next_values['designTempUnit'] = 'C'
+
+        return next_values
+
+    def _to_equipment_response(self, obj: EngineeringObject) -> dict:
+        properties = dict(obj.properties) if isinstance(obj.properties, dict) else {}
+        details = properties.get('details') if isinstance(properties.get('details'), dict) else None
+        meta = properties.get('meta') if isinstance(properties.get('meta'), dict) else {}
+        design_parameters = self._extract_design_parameters(properties)
+
+        design_pressure = design_parameters.get('designPressure', obj.design_pressure)
+        design_pressure_unit = design_parameters.get(
+            'designPressureUnit',
+            obj.design_pressure_unit or 'barg',
+        )
+        mawp = design_parameters.get('mawp', obj.mawp)
+        mawp_unit = design_parameters.get('mawpUnit', obj.mawp_unit or 'barg')
+        design_temp = design_parameters.get('designTemperature', obj.design_temp)
+        design_temp_unit = design_parameters.get('designTempUnit', obj.design_temp_unit or 'C')
+
+        return {
+            'id': str(obj.uuid),
+            'area_id': obj.area_id,
+            'type': self._normalize_equipment_type(obj.object_type),
+            'tag': obj.tag,
+            'name': obj.name or str(meta.get('name') or obj.tag),
+            'description': obj.description,
+            'design_pressure': design_pressure,
+            'design_pressure_unit': design_pressure_unit,
+            'mawp': mawp,
+            'mawp_unit': mawp_unit,
+            'design_temp': design_temp,
+            'design_temp_unit': design_temp_unit,
+            'owner_id': obj.owner_id,
+            'status': obj.status or 'active',
+            'is_active': bool(obj.is_active),
+            'location_ref': obj.location_ref,
+            'details': details,
+            'created_at': obj.created_at,
+            'updated_at': obj.updated_at,
+        }
 
     async def get_equipment(self, area_id: Optional[str] = None, type: Optional[str] = None) -> List[dict]:
-        filters = []
+        filters = [EngineeringObject.object_type.in_([v.upper() for v in self._equipment_object_types])]
         if area_id:
-            filters.append(Equipment.area_id == area_id)
+            filters.append(EngineeringObject.area_id == area_id)
         if type:
-            filters.append(Equipment.type == type)
-        equipment_list = await self._get_all(Equipment, *filters)
-        await self._hydrate_equipment_details_from_subtypes(equipment_list)
-        return equipment_list
+            filters.append(EngineeringObject.object_type == self._to_equipment_object_type(type))
+
+        stmt = (
+            select(EngineeringObject)
+            .where(*filters)
+            .order_by(nullslast(EngineeringObject.updated_at.desc()), EngineeringObject.tag.asc())
+        )
+        result = await self.session.execute(stmt)
+        rows = list(result.scalars().all())
+        return [self._to_equipment_response(row) for row in rows]
 
     async def get_equipment_by_id(self, equipment_id: str) -> Optional[dict]:
-        equipment = await self._get_by_id(Equipment, equipment_id)
-        if not equipment:
+        try:
+            from uuid import UUID
+            target_uuid = UUID(str(equipment_id))
+        except (ValueError, TypeError):
             return None
-        await self._hydrate_equipment_details_from_subtypes([equipment])
-        return equipment
+
+        stmt = select(EngineeringObject).where(EngineeringObject.uuid == target_uuid)
+        result = await self.session.execute(stmt)
+        row = result.scalar_one_or_none()
+        if row is None:
+            return None
+        if self._normalize_equipment_type(row.object_type) == 'other' and row.object_type.upper() not in {
+            v.upper() for v in self._equipment_object_types
+        }:
+            return None
+        return self._to_equipment_response(row)
 
     async def get_equipment_links_by_psv(self, psv_id: str) -> List[dict]:
-        return await self._get_all(EquipmentLink, EquipmentLink.protective_system_id == psv_id)
+        rows = await self._get_all(EquipmentLink, EquipmentLink.protective_system_id == psv_id)
+        return [
+            {
+                'id': row.id,
+                'protective_system_id': row.protective_system_id,
+                'equipment_id': row.equipment_id,
+                'is_primary': row.is_primary,
+                'scenario_id': row.scenario_id,
+                'relationship_type': row.relationship_type,
+                'notes': row.notes,
+                'created_at': row.created_at,
+            }
+            for row in rows
+        ]
 
     async def create_equipment_link(self, data: dict) -> dict:
         converted_data = self._convert_keys(data)
+        equipment_id = converted_data.get('equipment_id')
+        if not equipment_id:
+            raise ValueError('equipment_id is required')
+        try:
+            from uuid import UUID
+            equipment_uuid = UUID(str(equipment_id))
+        except (ValueError, TypeError):
+            raise ValueError('equipment_id must be a UUID')
+
+        exists_stmt = select(EngineeringObject.uuid).where(EngineeringObject.uuid == equipment_uuid)
+        exists = await self.session.execute(exists_stmt)
+        if exists.scalar_one_or_none() is None:
+            raise ValueError(f'Engineering object {equipment_id} not found')
+
         return await self._create(EquipmentLink, converted_data)
 
     async def delete_equipment_link(self, link_id: str) -> bool:
@@ -463,45 +604,84 @@ class DatabaseService(DataAccessLayer):
 
     async def create_equipment(self, data: dict) -> dict:
         converted_data = self._convert_keys(data)
-        details = converted_data.get("details")
-        instance = await self._create(Equipment, converted_data)
-        await self._write_equipment_subtype_from_details(instance.id, instance.type, details)
+        equipment_type = self._normalize_equipment_type(str(converted_data.get('type') or 'other'))
+
+        design_parameters = self._merge_design_parameters({}, converted_data)
+        properties: dict[str, Any] = {'details': converted_data.get('details') or {}}
+        if design_parameters:
+            properties['design_parameters'] = design_parameters
+
+        obj = EngineeringObject(
+            tag=str(converted_data.get('tag', '')).upper(),
+            object_type=equipment_type.upper(),
+            area_id=converted_data.get('area_id'),
+            owner_id=converted_data.get('owner_id'),
+            name=converted_data.get('name'),
+            description=converted_data.get('description'),
+            location_ref=converted_data.get('location_ref'),
+            status=converted_data.get('status', 'active'),
+            is_active=converted_data.get('is_active', True),
+            properties=properties,
+        )
+        self.session.add(obj)
         await self.session.commit()
-        await self.session.refresh(instance)
-        await self._hydrate_equipment_details_from_subtypes([instance])
-        return instance
+        await self.session.refresh(obj)
+        return self._to_equipment_response(obj)
 
     async def update_equipment(self, equipment_id: str, data: dict) -> dict:
         converted_data = self._convert_keys(data)
-        instance = await self._get_by_id(Equipment, equipment_id)
-        if not instance:
-            raise ValueError(f"Equipment {equipment_id} not found")
-        
-        previous_type = instance.type
-        next_type = converted_data.get("type", previous_type)
-        details = converted_data.get("details")
+        try:
+            from uuid import UUID
+            target_uuid = UUID(str(equipment_id))
+        except (ValueError, TypeError):
+            raise ValueError(f'Equipment {equipment_id} not found')
 
-        for key, value in converted_data.items():
-            if hasattr(instance, key):
-                setattr(instance, key, value)
+        stmt = select(EngineeringObject).where(EngineeringObject.uuid == target_uuid)
+        result = await self.session.execute(stmt)
+        obj = result.scalar_one_or_none()
+        if obj is None:
+            raise ValueError(f'Equipment {equipment_id} not found')
 
-        if details is not None or next_type != previous_type:
-            await self._write_equipment_subtype_from_details(
-                equipment_id,
-                next_type,
-                details,
-            )
-            if details is None and next_type != previous_type:
-                instance.details = None
+        if 'type' in converted_data:
+            obj.object_type = self._to_equipment_object_type(str(converted_data['type']))
+        if 'tag' in converted_data and converted_data['tag']:
+            obj.tag = str(converted_data['tag']).upper()
+        if 'area_id' in converted_data:
+            obj.area_id = converted_data['area_id']
+        if 'owner_id' in converted_data:
+            obj.owner_id = converted_data['owner_id']
+        if 'name' in converted_data:
+            obj.name = converted_data['name']
+        if 'description' in converted_data:
+            obj.description = converted_data['description']
+        if 'location_ref' in converted_data:
+            obj.location_ref = converted_data['location_ref']
+        if 'status' in converted_data:
+            obj.status = converted_data['status']
+        if 'is_active' in converted_data:
+            obj.is_active = bool(converted_data['is_active'])
+            obj.deleted_at = None if obj.is_active else datetime.utcnow()
+
+        properties = dict(obj.properties) if isinstance(obj.properties, dict) else {}
+
+        if 'details' in converted_data:
+            properties = {**properties, 'details': converted_data['details'] or {}}
+
+        design_parameters = self._merge_design_parameters(
+            self._extract_design_parameters(properties),
+            converted_data,
+        )
+        if design_parameters:
+            properties['design_parameters'] = design_parameters
+
+        obj.properties = properties
 
         await self.session.commit()
-        await self.session.refresh(instance)
-        await self._hydrate_equipment_details_from_subtypes([instance])
-        return instance
+        await self.session.refresh(obj)
+        return self._to_equipment_response(obj)
 
     async def delete_equipment(self, equipment_id: str) -> bool:
-        # Perform soft delete
-        await self._update(Equipment, equipment_id, {"is_active": False})
+        await self.update_equipment(equipment_id, {'isActive': False})
         return True
 
     # --- Attachments ---
@@ -735,6 +915,7 @@ class DatabaseService(DataAccessLayer):
             "projectName": "project_name",
             # Soft delete
             "isActive": "is_active",
+            "objectType": "object_type",
         }
         new_data = data.copy()
         
@@ -800,6 +981,7 @@ class DatabaseService(DataAccessLayer):
         await self.session.execute(delete(protective_system_projects)) # Association table
         await self.session.execute(delete(ProtectiveSystem))
         await self.session.execute(delete(Equipment))
+        await self.session.execute(delete(EngineeringObject))
         await self.session.execute(delete(Project))
         await self.session.execute(delete(Area))
         await self.session.execute(delete(Unit))
@@ -856,11 +1038,66 @@ class DatabaseService(DataAccessLayer):
              await self._create(Project, self._convert_keys(item))
         counts["projects"] = len(projects)
 
-        # Equipment
+        # Engineering Objects (single source of truth for all equipment/object records)
         equipment = data.get("equipment", [])
+        engineering_objects = data.get("engineeringObjects", [])
+
+        merged_objects: list[dict] = []
+        seen_tags: set[str] = set()
+
+        for item in engineering_objects:
+            converted = self._convert_keys(item)
+            tag = str(converted.get('tag', '')).upper()
+            if not tag or tag in seen_tags:
+                continue
+            converted['tag'] = tag
+            if 'is_active' not in converted:
+                converted['is_active'] = True
+            merged_objects.append(converted)
+            seen_tags.add(tag)
+
         for item in equipment:
-             await self._create(Equipment, self._convert_keys(item))
+            converted = self._convert_keys(item)
+            tag = str(converted.get('tag', '')).upper()
+            if not tag or tag in seen_tags:
+                continue
+            design_parameters = {
+                'designPressure': converted.get('design_pressure'),
+                'designPressureUnit': converted.get('design_pressure_unit') or 'barg',
+                'mawp': converted.get('mawp'),
+                'mawpUnit': converted.get('mawp_unit') or 'barg',
+                'designTemperature': converted.get('design_temp'),
+                'designTempUnit': converted.get('design_temp_unit') or 'C',
+            }
+            design_parameters = {
+                key: value for key, value in design_parameters.items() if value is not None
+            }
+
+            properties = {'details': converted.get('details') or {}}
+            if design_parameters:
+                properties['design_parameters'] = design_parameters
+
+            mapped = {
+                'uuid': converted.get('id'),
+                'tag': tag,
+                'object_type': str(converted.get('type') or 'other').upper(),
+                'area_id': converted.get('area_id'),
+                'owner_id': converted.get('owner_id'),
+                'name': converted.get('name'),
+                'description': converted.get('description'),
+                'location_ref': converted.get('location_ref'),
+                'status': converted.get('status', 'active'),
+                'is_active': converted.get('is_active', True),
+                'properties': properties,
+            }
+            merged_objects.append(mapped)
+            seen_tags.add(tag)
+
+        for item in merged_objects:
+            await self._create(EngineeringObject, item)
+
         counts["equipment"] = len(equipment)
+        counts["engineeringObjects"] = len(merged_objects)
 
         # Protective Systems
         psvs = data.get("protectiveSystems", [])
@@ -1046,6 +1283,8 @@ class DatabaseService(DataAccessLayer):
             filters.append(VentingCalculation.deleted_at.is_(None))
         calculations = await self._get_all(VentingCalculation, *filters)
         for calculation in calculations:
+            calculation.calculation_metadata = calculation.calculation_metadata or {}
+            calculation.inputs = calculation.inputs or {}
             calculation.revision_history = self._normalize_venting_revision_history(
                 calculation.revision_history
             )
@@ -1055,6 +1294,8 @@ class DatabaseService(DataAccessLayer):
         calculation = await self._get_by_id(VentingCalculation, calc_id)
         if not calculation:
             return None
+        calculation.calculation_metadata = calculation.calculation_metadata or {}
+        calculation.inputs = calculation.inputs or {}
         calculation.revision_history = self._normalize_venting_revision_history(
             calculation.revision_history
         )
@@ -1071,8 +1312,8 @@ class DatabaseService(DataAccessLayer):
             "status": data.get("status", "draft"),
             "inputs": data.get("inputs", {}),
             "results": data.get("results"),
-            "calculation_metadata": data.get("calculationMetadata", {}),
-            "revision_history": self._normalize_venting_revision_history(data.get("revisionHistory")),
+            "calculation_metadata": data.get("calculationMetadata") or {},
+            "revision_history": self._normalize_venting_revision_history(data.get("revisionHistory") or []),
             "api_edition": data.get("apiEdition", "7TH"),
         }
         calculation = await self._create(

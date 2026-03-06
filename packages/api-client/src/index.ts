@@ -9,3 +9,5 @@ export { createVentingModule } from "./modules/venting";
 export { createNetworkModule } from "./modules/network";
 export { createDesignAgentsModule } from "./modules/designAgents";
 export { createHydraulicsModule } from "./modules/hydraulics";
+
+export { createEngineeringObjectsModule } from "./modules/engineeringObjects";

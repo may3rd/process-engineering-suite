@@ -23,7 +23,7 @@ class VentingCalculation(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMi
     # Optional link to an existing Tank equipment record
     equipment_id: Mapped[Optional[str]] = mapped_column(
         UUID(as_uuid=False),
-        ForeignKey("equipment.id", ondelete="SET NULL"),
+        ForeignKey("engineering_objects.uuid", ondelete="SET NULL"),
         nullable=True,
     )
     owner_id: Mapped[Optional[str]] = mapped_column(
@@ -71,5 +71,5 @@ class VentingCalculation(Base, UUIDPrimaryKeyMixin, TimestampMixin, SoftDeleteMi
 
     # Relationships
     area = relationship("Area")
-    equipment = relationship("Equipment")
+    engineering_object = relationship("EngineeringObject")
     owner = relationship("User")

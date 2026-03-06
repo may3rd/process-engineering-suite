@@ -20,6 +20,7 @@ sys.path.insert(0, str(PROJECT_ROOT / "services/calc-engine/hydraulics"))
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from typing import Optional
+import os
 
 from services.api.app.database import is_db_available
 from services.api.schemas import (
@@ -82,28 +83,61 @@ app.include_router(network_router)
 app.include_router(engineering_objects_router)
 
 
-# Configure CORS for local development
+# Configure CORS (local + Docker host bridge + env overrides)
+def _load_allowed_origins() -> list[str]:
+    defaults = [
+        'http://localhost:3000',
+        'http://localhost:3001',
+        'http://localhost:3002',
+        'http://localhost:3003',
+        'http://localhost:3004',
+        'http://localhost:3005',
+        'http://127.0.0.1:3000',
+        'http://127.0.0.1:3001',
+        'http://127.0.0.1:3002',
+        'http://127.0.0.1:3003',
+        'http://127.0.0.1:3004',
+        'http://127.0.0.1:3005',
+        'http://localhost:8000',
+        'http://127.0.0.1:8000',
+        'http://host.docker.internal:3000',
+        'http://host.docker.internal:3001',
+        'http://host.docker.internal:3002',
+        'http://host.docker.internal:3003',
+        'http://host.docker.internal:3004',
+        'http://host.docker.internal:3005',
+    ]
+    extra = [item.strip() for item in os.getenv('CORS_ALLOWED_ORIGINS', '').split(',') if item.strip()]
+    merged: list[str] = []
+    for item in [*defaults, *extra]:
+        if item not in merged:
+            merged.append(item)
+    return merged
+
+
+def _load_allowed_origin_regex() -> str:
+    return os.getenv(
+        'CORS_ALLOWED_ORIGIN_REGEX',
+        r'^https?://('
+        r'localhost|'
+        r'127\.0\.0\.1|'
+        r'0\.0\.0\.0|'
+        r'host\.docker\.internal|'
+        r'192\.168\.\d+\.\d+|'
+        r'10\.\d+\.\d+\.\d+|'
+        r'172\.(1[6-9]|2\d|3[0-1])\.\d+\.\d+|'
+        r'([a-zA-Z0-9-]+\.)*vercel\.app'
+        r')(:\d+)?$',
+    )
+
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://localhost:3001",
-        "http://localhost:3002",
-        "http://localhost:3003",
-        "http://localhost:3004",
-        "http://localhost:3005",
-        "http://127.0.0.1:3000",
-        "http://127.0.0.1:3001",
-        "http://127.0.0.1:3002",
-        "http://127.0.0.1:3003",
-        "http://127.0.0.1:3004",
-        "http://127.0.0.1:3005",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-    ],
+    allow_origins=_load_allowed_origins(),
+    allow_origin_regex=_load_allowed_origin_regex(),
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=['*'],
+    allow_headers=['*'],
 )
 
 

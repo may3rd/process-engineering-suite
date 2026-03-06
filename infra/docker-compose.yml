@@ -44,7 +44,7 @@ services:
       - postgres
 
     # Run migrations then start API (dev reload)
-    command: sh -c "alembic -c /app/services/api/alembic.ini upgrade head && python /app/services/api/scripts/seed_from_mock.py && uvicorn services.api.main:app --host 0.0.0.0 --port 8000 --reload"
+    command: sh -c "until pg_isready -h postgres -p 5432 -U postgres; do sleep 1; done && alembic -c /app/services/api/alembic.ini upgrade heads && python /app/services/api/scripts/seed_from_mock.py && uvicorn services.api.main:app --host 0.0.0.0 --port 8000 --reload"
 
   postgres:
     image: postgres:17-alpine # Latest stable version as of 2025-12-12

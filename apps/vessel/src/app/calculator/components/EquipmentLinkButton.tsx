@@ -1,246 +1,166 @@
-"use client"
+'use client';
 
-import { useState } from "react"
-import { Link, Unlink, Upload, Download, Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
-import { useFormContext } from "react-hook-form"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { fetchEquipmentObject, upsertEquipmentObject } from "@/lib/api"
-import { calculationInputSchema } from "@/lib/validation/inputSchema"
-import { EquipmentMode, VesselOrientation, HeadType, TankType, TankRoofType, VesselMaterial } from "@/types"
-import type {
-  CalculationInput,
-  CalculationResult,
-  CalculationMetadata,
-  RevisionRecord,
-  EquipmentLinkStatus,
-  EngineeringObjectPayload,
-} from "@/types"
+import { useState } from 'react';
+import { Search, Loader2, RefreshCw, Link2, Unlink2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { apiClient } from '@/lib/apiClient';
+
+interface EquipmentItem {
+  id: string;
+  tag: string;
+  name: string;
+  description?: string | null;
+  type: string;
+}
 
 interface Props {
-  controlledOpen: boolean
-  onControlledOpenChange: (open: boolean) => void
-  calculationResult: CalculationResult | null
-  calculationMetadata: CalculationMetadata
-  revisionHistory: RevisionRecord[]
-  linkStatus: EquipmentLinkStatus
-  onLinkStatusChange: (status: EquipmentLinkStatus) => void
-  onCalculationLoaded: (metadata: CalculationMetadata, revisions: RevisionRecord[]) => void
+  controlledOpen: boolean;
+  onControlledOpenChange: (open: boolean) => void;
+  linkedEquipmentId: string | null;
+  linkedEquipmentTag: string | null;
+  onEquipmentLinked: (equipmentId: string | null, equipmentTag?: string | null) => void;
 }
 
 export function EquipmentLinkButton({
   controlledOpen,
   onControlledOpenChange,
-  calculationResult,
-  calculationMetadata,
-  revisionHistory,
-  linkStatus,
-  onLinkStatusChange,
-  onCalculationLoaded,
+  linkedEquipmentId,
+  linkedEquipmentTag,
+  onEquipmentLinked,
 }: Props) {
-  const { getValues, reset } = useFormContext<CalculationInput>()
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
-  const [pulledData, setPulledData] = useState<EngineeringObjectPayload | null>(null)
-  const [confirmPull, setConfirmPull] = useState(false)
+  const [items, setItems] = useState<EquipmentItem[]>([]);
+  const [search, setSearch] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const tag = getValues("tag")
-  const canPush = !!tag && !!calculationResult
-  const canPull = !!tag
-
-  const reset_ = () => {
-    setMessage(null)
-    setPulledData(null)
-    setConfirmPull(false)
-  }
-
-  // ── Push ────────────────────────────────────────────────────────────────────
-  const handlePush = async () => {
-    if (!calculationResult || !tag) return
-    onLinkStatusChange("loading")
-    setMessage(null)
+  const fetchEquipment = async () => {
+    setLoading(true);
+    setError(null);
     try {
-      await upsertEquipmentObject(tag, {
-        object_type: "VESSEL",
-        properties: {
-          inputs: getValues(),
-          result: calculationResult,
-          savedAt: new Date().toISOString(),
-        },
-        status: "In-Design",
-      })
-      onLinkStatusChange("linked")
-      setMessage({ type: "success", text: `Pushed to API as "${tag.toUpperCase()}"` })
-    } catch (err) {
-      onLinkStatusChange("error")
-      setMessage({ type: "error", text: err instanceof Error ? err.message : "Push failed" })
-    }
-  }
-
-  // ── Pull ─────────────────────────────────────────────────────────────────────
-  const handlePull = async () => {
-    if (!tag) return
-    onLinkStatusChange("loading")
-    setMessage(null)
-    try {
-      const obj = await fetchEquipmentObject(tag)
-      if (!obj) {
-        onLinkStatusChange("unlinked")
-        setMessage({ type: "error", text: `No record found for tag "${tag.toUpperCase()}"` })
-        return
+      const [tanks, vessels] = await Promise.all([
+        apiClient.equipment.list({ type: 'tank' }),
+        apiClient.equipment.list({ type: 'vessel' }),
+      ]);
+      const map = new Map<string, EquipmentItem>();
+      for (const eq of [...tanks, ...vessels]) {
+        map.set(eq.id, {
+          id: eq.id,
+          tag: eq.tag,
+          name: eq.name,
+          description: eq.description,
+          type: eq.type,
+        });
       }
-      setPulledData(obj)
-      setConfirmPull(true)
-      onLinkStatusChange("idle")
-    } catch (err) {
-      onLinkStatusChange("error")
-      setMessage({ type: "error", text: err instanceof Error ? err.message : "Pull failed" })
+      setItems(Array.from(map.values()));
+    } catch {
+      setError('Could not load equipment list.');
+    } finally {
+      setLoading(false);
     }
-  }
+  };
 
-  // ── Confirm pull — load into form ───────────────────────────────────────────
-  const handleConfirmPull = () => {
-    if (!pulledData?.properties?.inputs) {
-      setMessage({ type: "error", text: "No input data in fetched record" })
-      setConfirmPull(false)
-      return
+  const handleOpen = async (open: boolean) => {
+    onControlledOpenChange(open);
+    if (open) {
+      await fetchEquipment();
+      setSearch('');
     }
+  };
 
-    const rawInputs = pulledData.properties.inputs as Record<string, unknown>
-    const toNum = (v: unknown) => { const n = Number(v); return isNaN(n) ? undefined : n }
-    const normalized: Partial<CalculationInput> = {
-      tag: (rawInputs.tag as string) ?? "",
-      description: (rawInputs.description as string) ?? "",
-      equipmentMode: Object.values(EquipmentMode).includes(rawInputs.equipmentMode as EquipmentMode)
-        ? rawInputs.equipmentMode as EquipmentMode
-        : EquipmentMode.VESSEL,
-      orientation: Object.values(VesselOrientation).includes(rawInputs.orientation as VesselOrientation)
-        ? rawInputs.orientation as VesselOrientation
-        : VesselOrientation.VERTICAL,
-      headType: Object.values(HeadType).includes(rawInputs.headType as HeadType)
-        ? rawInputs.headType as HeadType
-        : HeadType.ELLIPSOIDAL_2_1,
-      tankType: Object.values(TankType).includes(rawInputs.tankType as TankType)
-        ? rawInputs.tankType as TankType
-        : undefined,
-      tankRoofType: Object.values(TankRoofType).includes(rawInputs.tankRoofType as TankRoofType)
-        ? rawInputs.tankRoofType as TankRoofType
-        : undefined,
-      material: Object.values(VesselMaterial).includes(rawInputs.material as VesselMaterial)
-        ? rawInputs.material as VesselMaterial
-        : undefined,
-      insideDiameter: toNum(rawInputs.insideDiameter),
-      shellLength: toNum(rawInputs.shellLength),
-      wallThickness: toNum(rawInputs.wallThickness),
-      headDepth: toNum(rawInputs.headDepth),
-      roofHeight: toNum(rawInputs.roofHeight),
-      bootHeight: toNum(rawInputs.bootHeight),
-      liquidLevel: toNum(rawInputs.liquidLevel),
-      hll: toNum(rawInputs.hll),
-      lll: toNum(rawInputs.lll),
-      ofl: toNum(rawInputs.ofl),
-      materialDensity: toNum(rawInputs.materialDensity),
-      density: toNum(rawInputs.density),
-      flowrate: toNum(rawInputs.flowrate),
-      metadata: (rawInputs.metadata as CalculationMetadata) ?? calculationMetadata,
-    }
-    reset(normalized as CalculationInput, { keepDefaultValues: false })
-    if (rawInputs.metadata) onCalculationLoaded(rawInputs.metadata as CalculationMetadata, [])
-    onLinkStatusChange("linked")
-    setMessage({ type: "success", text: `Loaded data for "${pulledData.tag}"` })
-    setConfirmPull(false)
-    setPulledData(null)
-  }
+  const query = search.trim().toLowerCase();
+  const filtered = items.filter((item) => {
+    if (!query) return true;
+    const hay = `${item.tag} ${item.name} ${item.description ?? ''} ${item.type}`.toLowerCase();
+    return hay.includes(query);
+  });
 
   return (
-    <Dialog
-      open={controlledOpen}
-      onOpenChange={(v) => { onControlledOpenChange(v); if (!v) reset_() }}
-    >
-      <DialogContent className="sm:max-w-md">
+    <Dialog open={controlledOpen} onOpenChange={(v) => { void handleOpen(v); }}>
+      <DialogContent className="sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            {linkStatus === "linked"
-              ? <Link className="h-4 w-4 text-green-600" />
-              : <Unlink className="h-4 w-4 text-muted-foreground" />
-            }
-            Equipment Link
-          </DialogTitle>
+          <DialogTitle>Link Equipment</DialogTitle>
           <DialogDescription>
-            Push the current calculation to the API, or pull existing data for tag{" "}
-            <span className="font-mono font-medium">{tag?.toUpperCase() || "—"}</span>.
+            Link this calculation to an equipment object (tank or vessel).
           </DialogDescription>
         </DialogHeader>
 
-        {/* Confirm pull preview */}
-        {confirmPull && pulledData && (
-          <div className="rounded-md border border-amber-200 bg-amber-50 p-3 space-y-2 text-sm">
-            <p className="font-medium text-amber-800">Replace current form with pulled data?</p>
-            <p className="text-amber-700 text-xs">
-              Object type: <span className="font-mono">{pulledData.object_type}</span> ·{" "}
-              Status: <span className="font-mono">{pulledData.status ?? "—"}</span>
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Search className="h-4 w-4 text-muted-foreground absolute left-2 top-2" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-8"
+              placeholder="Search by tag, name, description"
+            />
+          </div>
+          <Button type="button" variant="ghost" size="sm" onClick={() => { void fetchEquipment(); }} disabled={loading}>
+            <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+
+        {error && <p className="text-xs text-destructive">{error}</p>}
+
+        {linkedEquipmentId && (
+          <div className="flex items-center justify-between rounded-md border p-2">
+            <p className="text-xs text-muted-foreground">
+              Currently linked: <span className="text-foreground font-medium">{linkedEquipmentTag ?? linkedEquipmentId}</span>
             </p>
-            <div className="flex gap-2 pt-1">
-              <Button size="sm" variant="default" onClick={handleConfirmPull}>
-                Load data
-              </Button>
-              <Button size="sm" variant="outline" onClick={() => { setConfirmPull(false); setPulledData(null) }}>
-                Cancel
-              </Button>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => onEquipmentLinked(null, null)}
+              className="gap-1"
+            >
+              <Unlink2 className="h-3 w-3" />
+              Unlink
+            </Button>
+          </div>
+        )}
+
+        <ScrollArea className="h-72 rounded-md border">
+          {loading ? (
+            <div className="flex h-full items-center justify-center">
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
             </div>
-          </div>
-        )}
-
-        {/* Status message */}
-        {message && (
-          <div className={`flex items-start gap-2 rounded-md p-2 text-sm ${
-            message.type === "success"
-              ? "bg-green-50 text-green-800 border border-green-200"
-              : "bg-destructive/10 text-destructive border border-destructive/20"
-          }`}>
-            {message.type === "success"
-              ? <CheckCircle2 className="h-4 w-4 mt-0.5 shrink-0" />
-              : <AlertCircle className="h-4 w-4 mt-0.5 shrink-0" />
-            }
-            <span>{message.text}</span>
-          </div>
-        )}
-
-        <DialogFooter className="flex-col sm:flex-row gap-2">
-          <Button
-            type="button"
-            variant="default"
-            className="gap-2 flex-1"
-            disabled={!canPush || linkStatus === "loading"}
-            onClick={handlePush}
-          >
-            {linkStatus === "loading"
-              ? <Loader2 className="h-4 w-4 animate-spin" />
-              : <Upload className="h-4 w-4" />
-            }
-            Push to API
-          </Button>
-          <Button
-            type="button"
-            variant="outline"
-            className="gap-2 flex-1"
-            disabled={!canPull || linkStatus === "loading"}
-            onClick={handlePull}
-          >
-            {linkStatus === "loading"
-              ? <Loader2 className="h-4 w-4 animate-spin" />
-              : <Download className="h-4 w-4" />
-            }
-            Pull from API
-          </Button>
-        </DialogFooter>
+          ) : filtered.length === 0 ? (
+            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+              No equipment found.
+            </div>
+          ) : (
+            <div className="p-2 space-y-1">
+              {filtered.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className="w-full rounded-md border px-3 py-2 text-left hover:bg-muted/40"
+                  onClick={() => {
+                    onEquipmentLinked(item.id, item.tag);
+                    onControlledOpenChange(false);
+                  }}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium text-sm">{item.tag}</span>
+                    <span className="text-[10px] uppercase tracking-wide text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded">{item.type}</span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{item.name}</p>
+                  {item.description && (
+                    <p className="text-xs text-muted-foreground truncate">{item.description}</p>
+                  )}
+                  <div className="mt-1 text-[10px] text-blue-600 dark:text-blue-400 inline-flex items-center gap-1">
+                    <Link2 className="h-3 w-3" />
+                    Link this equipment
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

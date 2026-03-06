@@ -13,7 +13,6 @@ import type {
   CalculationMetadata,
   RevisionRecord,
   CalculationResult,
-  EquipmentLinkStatus,
 } from "@/types"
 import { InputPanel } from "./components/InputPanel"
 import { ResultsPanel } from "./components/ResultsPanel"
@@ -59,7 +58,8 @@ export default function VesselCalculatorPage() {
 
   const [metadata, setMetadata] = useState<CalculationMetadata>(EMPTY_METADATA)
   const [revisionHistory, setRevisionHistory] = useState<RevisionRecord[]>([])
-  const [linkStatus, setLinkStatus] = useState<EquipmentLinkStatus>("idle")
+  const [linkedEquipmentId, setLinkedEquipmentId] = useState<string | null>(null)
+  const [linkedEquipmentTag, setLinkedEquipmentTag] = useState<string | null>(null)
 
   const watchedValues = form.watch()
 
@@ -78,13 +78,13 @@ export default function VesselCalculatorPage() {
     form.clearErrors()
     setMetadata(EMPTY_METADATA)
     setRevisionHistory([])
-    setLinkStatus("idle")
+    setLinkedEquipmentId(null)
+    setLinkedEquipmentTag(null)
   }
 
   return (
     <FormProvider {...form}>
       <main className="min-h-screen bg-background">
-        {/* Secondary action bar */}
         <div className="border-b bg-card/50 backdrop-blur-sm">
           <div className="container mx-auto px-4 py-2 flex items-center justify-between gap-4">
             <p className="text-sm text-muted-foreground">
@@ -96,13 +96,16 @@ export default function VesselCalculatorPage() {
               revisionHistory={revisionHistory}
               onCalculationLoaded={(m, r) => { setMetadata(m); setRevisionHistory(r) }}
               calculationResult={calculationResult}
-              linkStatus={linkStatus}
-              onLinkStatusChange={setLinkStatus}
+              linkedEquipmentId={linkedEquipmentId}
+              linkedEquipmentTag={linkedEquipmentTag}
+              onEquipmentLinked={(equipmentId, equipmentTag) => {
+                setLinkedEquipmentId(equipmentId)
+                setLinkedEquipmentTag(equipmentTag ?? null)
+              }}
             />
           </div>
         </div>
 
-        {/* Two-column grid */}
         <div className="container mx-auto px-4 py-6">
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
             <InputPanel

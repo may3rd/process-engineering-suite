@@ -43,6 +43,7 @@ def upgrade() -> None:
         
         # Snapshot of entity state at this revision
         sa.Column("snapshot", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+        sa.Column("is_active", sa.Boolean(), server_default=sa.text("true"), nullable=False),
         
         # Timestamps
         sa.Column("created_at", sa.TIMESTAMP(timezone=True), server_default=sa.text("NOW()"), nullable=False),

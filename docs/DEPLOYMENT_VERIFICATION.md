@@ -330,6 +330,8 @@ aws ecs update-service \
 ```
 
 ### Database Verification
+Reference: [Engineering Objects Unification (2026-03-06)](./ENGINEERING_OBJECTS_MIGRATION_20260306.md) for equipment-to-object migration details.
+
 
 **Test RDS connectivity:**
 ```bash

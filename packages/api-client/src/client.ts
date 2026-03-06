@@ -12,6 +12,7 @@ import { createVentingModule } from "./modules/venting";
 import { createNetworkModule } from "./modules/network";
 import { createDesignAgentsModule } from "./modules/designAgents";
 import { createHydraulicsModule } from "./modules/hydraulics";
+import { createEngineeringObjectsModule } from "./modules/engineeringObjects";
 
 export interface ApiClientConfig {
   baseUrl?: string;
@@ -91,6 +92,7 @@ export function createApiClient(
     network: createNetworkModule(req),
     designAgents: createDesignAgentsModule(req),
     hydraulics: createHydraulicsModule(req),
+    engineeringObjects: createEngineeringObjectsModule(req),
   };
 }
 
