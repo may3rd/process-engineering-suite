@@ -5,6 +5,12 @@ export interface EngineeringObject {
   tag: string;
   object_type: string;
   properties: Record<string, unknown>;
+  area_id?: string | null;
+  owner_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  location_ref?: string | null;
+  is_active?: boolean | null;
   status?: string | null;
   created_at?: string | null;
   updated_at?: string | null;
@@ -13,6 +19,12 @@ export interface EngineeringObject {
 export interface EngineeringObjectUpsertPayload {
   object_type: string;
   properties: Record<string, unknown>;
+  area_id?: string | null;
+  owner_id?: string | null;
+  name?: string | null;
+  description?: string | null;
+  location_ref?: string | null;
+  is_active?: boolean | null;
   status?: string | null;
 }
 

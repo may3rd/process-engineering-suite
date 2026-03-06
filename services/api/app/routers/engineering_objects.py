@@ -16,6 +16,12 @@ class EngineeringObjectResponse(BaseModel):
     tag: str
     object_type: str
     properties: Dict[str, Any]
+    area_id: Optional[str] = None
+    owner_id: Optional[str] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    location_ref: Optional[str] = None
+    is_active: Optional[bool] = None
     status: Optional[str] = None
     created_at: Optional[datetime] = None
     updated_at: Optional[datetime] = None
@@ -24,6 +30,12 @@ class EngineeringObjectResponse(BaseModel):
 class EngineeringObjectUpsert(BaseModel):
     object_type: str
     properties: Dict[str, Any]
+    area_id: Optional[str] = None
+    owner_id: Optional[str] = None
+    name: Optional[str] = None
+    description: Optional[str] = None
+    location_ref: Optional[str] = None
+    is_active: Optional[bool] = None
     status: Optional[str] = None
 
 
@@ -89,6 +101,12 @@ async def list_engineering_objects(
                         tag=obj.tag,
                         object_type=obj.object_type,
                         properties=obj.properties or {},
+                        area_id=getattr(obj, "area_id", None),
+                        owner_id=getattr(obj, "owner_id", None),
+                        name=getattr(obj, "name", None),
+                        description=getattr(obj, "description", None),
+                        location_ref=getattr(obj, "location_ref", None),
+                        is_active=getattr(obj, "is_active", None),
                         status=obj.status,
                         created_at=getattr(obj, "created_at", None),
                         updated_at=getattr(obj, "updated_at", None),
@@ -138,6 +156,12 @@ async def get_engineering_object(tag: str) -> EngineeringObjectResponse:
                     tag=obj.tag,
                     object_type=obj.object_type,
                     properties=obj.properties or {},
+                    area_id=getattr(obj, "area_id", None),
+                    owner_id=getattr(obj, "owner_id", None),
+                    name=getattr(obj, "name", None),
+                    description=getattr(obj, "description", None),
+                    location_ref=getattr(obj, "location_ref", None),
+                    is_active=getattr(obj, "is_active", None),
                     status=obj.status,
                     created_at=getattr(obj, "created_at", None),
                     updated_at=getattr(obj, "updated_at", None),
@@ -190,6 +214,12 @@ async def upsert_engineering_object(
                     tag=obj.tag,
                     object_type=obj.object_type,
                     properties=obj.properties or {},
+                    area_id=getattr(obj, "area_id", None),
+                    owner_id=getattr(obj, "owner_id", None),
+                    name=getattr(obj, "name", None),
+                    description=getattr(obj, "description", None),
+                    location_ref=getattr(obj, "location_ref", None),
+                    is_active=getattr(obj, "is_active", None),
                     status=obj.status,
                     created_at=getattr(obj, "created_at", None),
                     updated_at=getattr(obj, "updated_at", None),
@@ -202,6 +232,12 @@ async def upsert_engineering_object(
         "tag": tag_upper,
         "object_type": payload.object_type,
         "properties": payload.properties,
+        "area_id": None,
+        "owner_id": None,
+        "name": None,
+        "description": None,
+        "location_ref": None,
+        "is_active": True,
         "status": payload.status,
     }
     return EngineeringObjectResponse(**_fallback_store[tag_upper])
