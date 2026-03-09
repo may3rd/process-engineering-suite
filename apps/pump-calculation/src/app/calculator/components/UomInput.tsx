@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import { Controller, useFormContext } from 'react-hook-form'
 import { Input } from '@/components/ui/input'
 import {
@@ -10,14 +11,15 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { convertUnit } from '@eng-suite/physics'
-import { UOM_LABEL, UOM_OPTIONS } from '@/lib/uom'
-import { BASE_UNITS, type PumpUomCategory } from '@/lib/uom'
-import { useUomStore } from '@/lib/store/uomStore'
+import { UOM_LABEL, UOM_OPTIONS, BASE_UNITS } from '@/lib/uom'
+import type { PumpUomCategory } from '@/lib/uom'
 import type { CalculationInput } from '@/types'
 
 interface UomInputProps {
   name: keyof CalculationInput
   category: PumpUomCategory
+  /** Override the initial display unit (defaults to BASE_UNITS[category]). */
+  defaultUnit?: string
   id?: string
   placeholder?: string
   disabled?: boolean
@@ -25,16 +27,17 @@ interface UomInputProps {
 
 /**
  * UomInput — numeric input with inline unit selector.
- * Form always stores base unit values. Display converts to user's preferred unit.
+ *
+ * Each instance manages its own display unit independently via local state.
+ * Form state always stores values in the base unit for the category.
  */
-export function UomInput({ name, category, id, placeholder, disabled }: UomInputProps) {
+export function UomInput({ name, category, defaultUnit, id, placeholder, disabled }: UomInputProps) {
   const { control } = useFormContext<CalculationInput>()
-  const { units, setUnit } = useUomStore()
-  const displayUnit = (units as Record<string, string>)[category] ?? BASE_UNITS[category]
   const baseUnit = BASE_UNITS[category]
-
-  // Get options from UOM_OPTIONS (only categories that exist there)
   const options = (UOM_OPTIONS as Record<string, readonly string[]>)[category] ?? [baseUnit]
+
+  // Per-instance unit — independent of other inputs in the same category
+  const [displayUnit, setDisplayUnit] = useState<string>(defaultUnit ?? baseUnit)
 
   return (
     <Controller
@@ -62,7 +65,7 @@ export function UomInput({ name, category, id, placeholder, disabled }: UomInput
               onBlur={field.onBlur}
               className="flex-1"
             />
-            <Select value={displayUnit} onValueChange={(newUnit) => setUnit(category, newUnit)}>
+            <Select value={displayUnit} onValueChange={setDisplayUnit}>
               <SelectTrigger className="h-8 min-w-fit px-2 border-muted bg-muted/40 text-xs whitespace-nowrap">
                 <SelectValue>{UOM_LABEL[displayUnit] ?? displayUnit}</SelectValue>
               </SelectTrigger>

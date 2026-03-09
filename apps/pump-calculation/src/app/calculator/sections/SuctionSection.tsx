@@ -8,7 +8,7 @@ export function SuctionSection() {
   return (
     <SectionCard title="Suction Conditions">
       <FieldRow label="Source Vessel Pressure" htmlFor="suctionSourcePressure">
-        <UomInput name="suctionSourcePressure" category="absolutePressure" id="suctionSourcePressure" placeholder="e.g. 101.325" />
+        <UomInput name="suctionSourcePressure" category="pressure" id="suctionSourcePressure" placeholder="e.g. 101.325" />
       </FieldRow>
 
       <FieldRow label="Liquid Level / Elevation Above Pump" htmlFor="suctionElevation" hint="Positive = source above pump (flooded), negative = pump above source">

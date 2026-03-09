@@ -10,6 +10,8 @@ export const UOM_OPTIONS = {
   length:              ['mm', 'in', 'm', 'cm', 'ft'],
   gaugePressure:       ['kPag', 'barg', 'psig', 'kg/cm2g'],
   absolutePressure:    ['kPa', 'bar', 'psi', 'atm'],
+  /** Combined absolute + gauge — base unit is kPa (absolute). Use for vessel/source pressures. */
+  pressure:            ['kPa', 'kPag', 'bar', 'barg', 'psi', 'psig', 'kg/cm2g', 'atm'],
   temperature:         ['C', 'F', 'K'],
   volumeFlow:          ['m3/h', 'ft3/h'],
   ventRate:            ['Nm3/h', 'MSCFD', 'ft3/h'],
@@ -34,6 +36,7 @@ export const BASE_UNITS: Record<UomCategory, string> = {
   length:              'm',
   gaugePressure:       'kPag',
   absolutePressure:    'Pa',
+  pressure:            'kPa',
   temperature:         'C',
   volumeFlow:          'm3/h',
   ventRate:            'Nm3/h',

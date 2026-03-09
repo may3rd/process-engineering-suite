@@ -17,6 +17,8 @@ export const BASE_UNITS = {
   length:           'm',
   absolutePressure: 'kPa',
   gaugePressure:    'kPag',
+  /** Combined absolute + gauge — use for source/destination vessel pressures. */
+  pressure:         'kPa',
   viscosity:        'cP',
   power:            'kW',
 } as const

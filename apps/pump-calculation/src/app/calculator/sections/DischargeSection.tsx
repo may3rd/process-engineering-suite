@@ -14,7 +14,7 @@ export function DischargeSection() {
   return (
     <SectionCard title="Discharge Conditions">
       <FieldRow label="Destination Vessel Pressure" htmlFor="dischargeDestPressure">
-        <UomInput name="dischargeDestPressure" category="absolutePressure" id="dischargeDestPressure" placeholder="e.g. 500" />
+        <UomInput name="dischargeDestPressure" category="pressure" id="dischargeDestPressure" placeholder="e.g. 500" />
       </FieldRow>
 
       <FieldRow label="Elevation Difference (Discharge – Suction)" htmlFor="dischargeElevation" hint="Net elevation from pump to highest point">
