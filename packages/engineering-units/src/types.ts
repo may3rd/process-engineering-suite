@@ -24,6 +24,7 @@ export const UOM_OPTIONS = {
   mass:                ['kg', 'lb'],
   time:                ['s', 'min', 'h', 'day', 'd', 'year', 'yr'],
   force:               ['N', 'lbf'],
+  power:               ['kW', 'hp', 'MW', 'W'],
 } as const
 
 export type UomCategory = keyof typeof UOM_OPTIONS
@@ -47,6 +48,7 @@ export const BASE_UNITS: Record<UomCategory, string> = {
   mass:                'kg',
   time:                's',
   force:               'N',
+  power:               'kW',
 }
 
 /**
@@ -125,4 +127,9 @@ export const UOM_LABEL: Record<string, string> = {
   // Force
   'N':  'N',
   'lbf': 'lbf',
+  // Power
+  'kW': 'kW',
+  'hp': 'hp',
+  'MW': 'MW',
+  'W':  'W',
 }

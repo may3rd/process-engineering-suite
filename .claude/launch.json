@@ -49,6 +49,13 @@
       "runtimeArgs": ["run", "dev"],
       "cwd": "apps/calculator-template",
       "port": 3010
+    },
+    {
+      "name": "pump-calculation",
+      "runtimeExecutable": "bun",
+      "runtimeArgs": ["run", "dev"],
+      "cwd": "apps/pump-calculation",
+      "port": 3007
     }
   ]
 }

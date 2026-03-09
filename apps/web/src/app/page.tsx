@@ -8,6 +8,7 @@ import TuneIcon from "@mui/icons-material/Tune";
 import ScienceIcon from "@mui/icons-material/Science";
 import AutoFixHighIcon from '@mui/icons-material/AutoFixHigh';
 import AirIcon from '@mui/icons-material/Air';
+import BoltIcon from '@mui/icons-material/Bolt';
 import { Timeline } from "@mui/icons-material";
 import { motion, Variants } from "framer-motion";
 
@@ -50,6 +51,14 @@ const tools = [
       "Volume, surface area, and mass calculations for vertical and horizontal vessels with multiple head types.",
     icon: <CalculateIcon fontSize="large" />,
     href: "/vessel/calculator",
+    status: "active" as const,
+  },
+  {
+    title: "Pump Sizing Calculator",
+    description:
+      "Differential head, NPSHa, shaft power and standard motor sizing per API 610. Includes orifice, control valve ΔP and minimum flow.",
+    icon: <BoltIcon fontSize="large" />,
+    href: "/pump-calculation/calculator",
     status: "active" as const,
   },
   {

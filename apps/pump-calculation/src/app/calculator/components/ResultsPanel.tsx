@@ -1,55 +1,127 @@
 "use client"
 
-import { SectionCard } from "./SectionCard"
+import { useFormContext } from "react-hook-form"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { AlertCircle, CheckCircle2, Circle } from "lucide-react"
-import type { CalculationResult, ValidationIssue, DerivedGeometry } from "@/types"
+import { SectionCard } from "./SectionCard"
+import { SummaryResult } from "@/app/calculator/results/SummaryResult"
+import { PressureResult } from "@/app/calculator/results/PressureResult"
+import { PowerResult } from "@/app/calculator/results/PowerResult"
+import { OptionalResults } from "@/app/calculator/results/OptionalResults"
+import type { PumpCalculationResult, CalculationInput } from "@/types"
 
 interface Props {
-  calculationResult: CalculationResult | null
-  validationIssues: ValidationIssue[] | null
-  derivedGeometry: DerivedGeometry | null
+  result: PumpCalculationResult | null
+  validationIssues: Array<{ path: string; message: string }> | null
 }
 
-export function ResultsPanel({ calculationResult, validationIssues }: Props) {
+export function ResultsPanel({ result, validationIssues }: Props) {
   return (
     <div className="space-y-4">
       {/* Empty state — show what's still needed */}
-      {!calculationResult && !validationIssues && (
+      {!result && !validationIssues && (
         <RequirementsChecklist />
       )}
 
-      {/* Validation issues — form looks complete but schema rejects the data */}
-      {!calculationResult && validationIssues && validationIssues.length > 0 && (
+      {/* Validation issues — cross-field rules failed */}
+      {!result && validationIssues && validationIssues.length > 0 && (
         <ValidationIssuesCard issues={validationIssues} />
       )}
 
-      {calculationResult && (
-        <SectionCard title="Results">
-          {/* TODO: Add app-specific results display here */}
-          <pre className="text-xs text-muted-foreground whitespace-pre-wrap break-all">
-            {JSON.stringify(calculationResult, null, 2)}
-          </pre>
-        </SectionCard>
+      {result && (
+        <>
+          <SectionCard title="Results Summary">
+            <SummaryResult result={result} />
+          </SectionCard>
+          <PressureResult result={result} />
+          <PowerResult result={result} />
+          <OptionalResults result={result} />
+        </>
       )}
     </div>
   )
 }
 
-// ─── Requirements checklist (empty state) ─────────────────────────────────────
-// TODO: Replace with app-specific checks using useFormContext<YourInput>()
+// ─── Pump-specific requirements checklist ─────────────────────────────────────
 
 function RequirementsChecklist() {
+  const { watch } = useFormContext<CalculationInput>()
+  const values = watch()
+
+  const isValidPositive = (v: unknown) =>
+    typeof v === "number" && !isNaN(v) && isFinite(v) && v > 0
+
   const requiredChecks = [
-    { label: "Equipment tag", hint: "Tag / equipment number", done: false },
-    { label: "Key input A", hint: "e.g. flow rate, diameter", done: false },
-    { label: "Key input B", hint: "e.g. pressure, temperature", done: false },
+    {
+      label: "Equipment tag",
+      hint: "Tag / equipment number — e.g. P-101A",
+      done: typeof values.tag === "string" && values.tag.trim().length > 0,
+    },
+    {
+      label: "Design flow rate",
+      hint: "Must be a positive number (m³/h)",
+      done: isValidPositive(values.flowDesign),
+    },
+    {
+      label: "Specific gravity (SG)",
+      hint: "Liquid SG relative to water at 15 °C — must be > 0",
+      done: isValidPositive(values.sg),
+    },
+    ...(values.showOrifice
+      ? [
+        {
+          label: "Orifice — pipe inside diameter",
+          hint: "Required when orifice section is enabled",
+          done: isValidPositive(values.orificePipeId),
+        },
+        {
+          label: "Orifice — beta ratio (β)",
+          hint: "Must be between 0.1 and 0.9",
+          done:
+            typeof values.orificeBeta === "number" &&
+            !isNaN(values.orificeBeta) &&
+            values.orificeBeta >= 0.1 &&
+            values.orificeBeta <= 0.9,
+        },
+      ]
+      : []),
+    ...(values.showMinFlow
+      ? [
+        {
+          label: "Min flow — specific heat",
+          hint: "Required when minimum flow section is enabled (kJ/kg·°C)",
+          done: isValidPositive(values.specificHeat),
+        },
+        {
+          label: "Min flow — allowed temperature rise",
+          hint: "Typical 8–15 °C",
+          done: isValidPositive(values.allowedTempRise),
+        },
+        {
+          label: "Shut-off section enabled",
+          hint: "Required for minimum flow calculation — enable the Shut-off section",
+          done: values.showShutoff === true,
+        },
+      ]
+      : []),
   ]
 
   const optionalChecks = [
-    { label: "Optional field", hint: "Improves accuracy", done: false },
+    {
+      label: "Fluid name",
+      hint: "Label for the working fluid — appears on PDF report",
+      done: typeof values.fluidName === "string" && values.fluidName.trim().length > 0,
+    },
+    {
+      label: "Vapour pressure",
+      hint: "Required for accurate NPSHa — defaults to 0 kPa (abs)",
+      done:
+        typeof values.vapourPressure === "number" &&
+        !isNaN(values.vapourPressure) &&
+        values.vapourPressure > 0,
+    },
   ]
 
   const allChecks = [
@@ -88,7 +160,7 @@ function RequirementsChecklist() {
 
 // ─── Validation issues card ───────────────────────────────────────────────────
 
-export function ValidationIssuesCard({ issues }: { issues: ValidationIssue[] }) {
+function ValidationIssuesCard({ issues }: { issues: Array<{ path: string; message: string }> }) {
   return (
     <Card className="shadow-sm border-orange-300/50">
       <CardHeader className="pb-3">
@@ -124,7 +196,7 @@ export function ValidationIssuesCard({ issues }: { issues: ValidationIssue[] }) 
 
 // ─── Shared checklist item ────────────────────────────────────────────────────
 
-export function ChecklistItem({
+function ChecklistItem({
   check,
   optional,
 }: {
