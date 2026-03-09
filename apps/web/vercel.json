@@ -19,6 +19,11 @@
             "source": "/vessel/calculator",
             "destination": "https://process-engineering-suite-vessel.vercel.app/vessel/calculator",
             "permanent": false
+        },
+        {
+            "source": "/pump-calculation/calculator",
+            "destination": "https://pump-calculation-ten.vercel.app/pump-calculation/calculator",
+            "permanent": false
         }
     ]
 }

@@ -25,8 +25,8 @@ This file defines app-scoped rules for `apps/vessel`.
 
 - Sticky top bar with app title/subtitle and right-side action menu.
 - Two-panel calculator layout:
-  - left: input sections
-  - right: empty/validation/results sections
+    - left: input sections
+    - right: empty/validation/results sections
 - Mobile: single-column.
 - `xl` and above: two-column grid.
 
@@ -41,9 +41,9 @@ This file defines app-scoped rules for `apps/vessel`.
 
 - Every physical input/output must support dynamic unit selection.
 - Implement `lib/uom.ts` with:
-  - `BASE_UNITS`
-  - `UOM_OPTIONS`
-  - `UOM_LABEL`
+    - `BASE_UNITS`
+    - `UOM_OPTIONS`
+    - `UOM_LABEL`
 - Implement `lib/store/uomStore.ts` with `persist` and `migrate` merge pattern.
 
 ## Implementation Rules
@@ -52,10 +52,10 @@ This file defines app-scoped rules for `apps/vessel`.
 - `const` by default; avoid `any`.
 - TypeScript strict mode; prefer inferred types from Zod schemas.
 - Keep app code split by template pattern:
-  - `src/app/calculator/page.tsx`
-  - `src/app/calculator/components/ActionMenu.tsx`
-  - `src/app/calculator/components/InputPanel.tsx`
-  - `src/app/calculator/components/ResultsPanel.tsx`
+    - `src/app/calculator/page.tsx`
+    - `src/app/calculator/components/ActionMenu.tsx`
+    - `src/app/calculator/components/InputPanel.tsx`
+    - `src/app/calculator/components/ResultsPanel.tsx`
 
 ## Testing and Validation
 
@@ -70,6 +70,6 @@ bun turbo run build --filter=vessel
 
 ## Delivery Expectations
 
-- Match `pse-web-dna.md` layout and component behavior.
+- Match `pes-web-dna.md` layout and component behavior.
 - Deliver production-grade calculations to replace spreadsheet workflows.
 - Add tests for formulas, UoM conversions, and component rendering states.

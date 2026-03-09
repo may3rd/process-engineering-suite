@@ -11,7 +11,7 @@ Build `apps/vessel` as a vessel/tank calculator intended to replace spreadsheet 
 
 ## 2) Design and Architecture Constraint (Mandatory)
 
-- UI and frontend architecture must follow [`pse-web-dna.md`].
+- UI and frontend architecture must follow [`pes-web-dna.md`].
 - Vessel geometry formulas run in TypeScript in `apps/vessel`.
 - Unit conversion must use `convertUnit` from `@eng-suite/physics`.
 - No hardcoded conversion factors.
@@ -28,21 +28,24 @@ Build `apps/vessel` as a vessel/tank calculator intended to replace spreadsheet 
 
 - Sticky top bar: app title/subtitle + action menu.
 - Two-panel calculator layout:
-  - left panel: InputPanel with SectionCards
-  - right panel: ResultsPanel with Empty/Validation/Results states
+    - left panel: InputPanel with SectionCards
+    - right panel: ResultsPanel with Empty/Validation/Results states
 - Grid behavior:
-  - mobile: single-column
-  - desktop (`xl`): two-column
+    - mobile: single-column
+    - desktop (`xl`): two-column
 
 ## 5) Core UI Components (Required)
 
 1. `SectionCard`
+
 - Wrapper for all major input/output blocks.
 
 2. `FieldRow`
+
 - Label + input + optional unit/hint/error for every field.
 
 3. `UomInput`
+
 - Required for all unit-bearing numeric fields.
 - Stores base values only; display conversions are reversible.
 
@@ -75,16 +78,19 @@ Build `apps/vessel` as a vessel/tank calculator intended to replace spreadsheet 
 ## 7) UoM Architecture
 
 1. Central unit config
+
 - `lib/uom.ts`
-  - `BASE_UNITS`
-  - `UOM_OPTIONS`
-  - `UOM_LABEL`
+    - `BASE_UNITS`
+    - `UOM_OPTIONS`
+    - `UOM_LABEL`
 
 2. Unit preference store
+
 - `lib/store/uomStore.ts` (Zustand persist)
 - Must include `migrate` merge to add new categories safely.
 
 3. Conversion behavior
+
 - Render: base -> selected display unit
 - Input edit: display -> base unit
 - Validation always runs on base units
@@ -104,14 +110,14 @@ Build `apps/vessel` as a vessel/tank calculator intended to replace spreadsheet 
 - Formula tests by geometry type and edge cases.
 - UoM conversion tests (round-trip tolerance).
 - Component tests:
-  - Empty state
-  - Validation issues state
-  - Results state
+    - Empty state
+    - Validation issues state
+    - Results state
 - Save/load and metadata tests.
 
 ## 10) Definition of Done
 
-- Layout and component structure matches `pse-web-dna.md`.
+- Layout and component structure matches `pes-web-dna.md`.
 - All required vessel/tank geometries calculate correctly.
 - Unit-bearing fields use `UomInput` and base-unit storage.
 - Save/load/PDF/equipment-link flows are operational.
