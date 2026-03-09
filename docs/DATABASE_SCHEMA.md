@@ -96,7 +96,8 @@ Single source of truth for process equipment and calculator-linked objects.
 **Indexes:** `uq_engineering_objects_tag`, `ix_engineering_objects_area_id`, `ix_engineering_objects_owner_id`, `ix_engineering_objects_properties_gin`
 
 ### Compatibility Layer
-- `/equipment` API remains available for existing clients, but is compatibility-only and deprecated for new development.
+- `/legacy/equipment` is the documented compatibility path during transition.
+- `/equipment` root has been removed from the API surface.
 - Backend now persists equipment reads/writes in `engineering_objects`.
 - `equipment.id` compatible UUIDs are preserved during backfill into `engineering_objects.uuid`.
 - Existing clients can continue using `id`, `type`, `details` payload shape.

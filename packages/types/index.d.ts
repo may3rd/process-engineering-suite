@@ -470,7 +470,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/equipment": {
+    "/legacy/equipment": {
         parameters: {
             query?: never;
             header?: never;
@@ -494,7 +494,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/equipment/{equipment_id}": {
+    "/legacy/equipment/{equipment_id}": {
         parameters: {
             query?: never;
             header?: never;

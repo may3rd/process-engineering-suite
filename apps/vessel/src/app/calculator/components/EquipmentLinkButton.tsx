@@ -2,11 +2,21 @@
 
 import { useState } from 'react';
 import { Search, Loader2, RefreshCw, Link2, Unlink2 } from 'lucide-react';
+import { useFormContext } from 'react-hook-form';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { apiClient } from '@/lib/apiClient';
+import {
+  EquipmentMode,
+  VesselOrientation,
+  HeadType,
+  TankType,
+  TankRoofType,
+  VesselMaterial,
+} from '@/types';
+import type { CalculationInput } from '@/types';
 
 interface EquipmentItem {
   id: string;
@@ -14,6 +24,7 @@ interface EquipmentItem {
   name: string;
   description?: string | null;
   type: string;
+  details: Record<string, unknown>;
 }
 
 interface Props {
@@ -31,6 +42,7 @@ export function EquipmentLinkButton({
   linkedEquipmentTag,
   onEquipmentLinked,
 }: Props) {
+  const { setValue } = useFormContext<CalculationInput>();
   const [items, setItems] = useState<EquipmentItem[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(false);
@@ -63,12 +75,14 @@ export function EquipmentLinkButton({
             ? inputs.description
             : null;
 
+        const details = (props.details as Record<string, unknown> | undefined) ?? {};
         map.set(obj.id, {
           id: obj.id,
           tag: obj.tag,
           name,
           description,
           type: obj.object_type.toLowerCase(),
+          details,
         });
       }
       setItems(Array.from(map.values()));
@@ -77,6 +91,46 @@ export function EquipmentLinkButton({
     } finally {
       setLoading(false);
     }
+  };
+
+  const populateFormFromDetails = (details: Record<string, unknown>) => {
+    const toNum = (v: unknown) => (typeof v === 'number' && isFinite(v) ? v : undefined);
+    const d = details;
+
+    const mode = Object.values(EquipmentMode).includes(d.equipmentMode as EquipmentMode)
+      ? (d.equipmentMode as EquipmentMode) : undefined;
+    if (mode) setValue('equipmentMode', mode);
+
+    const orientation = Object.values(VesselOrientation).includes(d.orientation as VesselOrientation)
+      ? (d.orientation as VesselOrientation) : undefined;
+    if (orientation) setValue('orientation', orientation);
+
+    const headType = Object.values(HeadType).includes(d.headType as HeadType)
+      ? (d.headType as HeadType) : undefined;
+    if (headType) setValue('headType', headType);
+
+    const tankType = Object.values(TankType).includes(d.tankType as TankType)
+      ? (d.tankType as TankType) : undefined;
+    if (tankType) setValue('tankType', tankType);
+
+    const tankRoofType = Object.values(TankRoofType).includes(d.tankRoofType as TankRoofType)
+      ? (d.tankRoofType as TankRoofType) : undefined;
+    if (tankRoofType) setValue('tankRoofType', tankRoofType);
+
+    const material = Object.values(VesselMaterial).includes(d.material as VesselMaterial)
+      ? (d.material as VesselMaterial) : undefined;
+    if (material) setValue('material', material);
+
+    const id = toNum(d.insideDiameter) ?? toNum(d.innerDiameter);
+    if (id != null) setValue('insideDiameter', id);
+    const sl = toNum(d.shellLength) ?? toNum(d.height);
+    if (sl != null) setValue('shellLength', sl);
+    const wt = toNum(d.wallThickness);
+    if (wt != null) setValue('wallThickness', wt);
+    const hd = toNum(d.headDepth);
+    if (hd != null) setValue('headDepth', hd);
+    const rh = toNum(d.roofHeight);
+    if (rh != null) setValue('roofHeight', rh);
   };
 
   const handleOpen = async (open: boolean) => {
@@ -157,6 +211,9 @@ export function EquipmentLinkButton({
                   className="w-full rounded-md border px-3 py-2 text-left hover:bg-muted/40"
                   onClick={() => {
                     onEquipmentLinked(item.id, item.tag);
+                    if (Object.keys(item.details).length > 0) {
+                      populateFormFromDetails(item.details);
+                    }
                     onControlledOpenChange(false);
                   }}
                 >

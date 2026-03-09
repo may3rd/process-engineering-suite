@@ -9,7 +9,7 @@ from ..dependencies import DAL
 
 router = APIRouter(tags=["supporting"])
 EQUIPMENT_DEPRECATION_MESSAGE = (
-    '/equipment endpoints are compatibility-only; use /engineering-objects instead'
+    '/legacy/equipment is deprecated; use /engineering-objects for new development'
 )
 
 
@@ -179,7 +179,7 @@ class TodoUpdate(BaseModel):
 
 # --- Equipment Endpoints ---
 
-@router.get("/equipment", response_model=List[EquipmentResponse], deprecated=True)
+@router.get("/legacy/equipment", response_model=List[EquipmentResponse], deprecated=True)
 async def get_equipment(
     response: Response,
     dal: DAL,
@@ -191,7 +191,11 @@ async def get_equipment(
     return await dal.get_equipment(area_id=area_id, type=type)
 
 
-@router.get("/equipment/{equipment_id}", response_model=EquipmentResponse, deprecated=True)
+@router.get(
+    "/legacy/equipment/{equipment_id}",
+    response_model=EquipmentResponse,
+    deprecated=True,
+)
 async def get_equipment_by_id(equipment_id: str, response: Response, dal: DAL):
     """Get one equipment by ID."""
     _mark_equipment_endpoint_deprecated(response)
@@ -235,7 +239,7 @@ class EquipmentUpdate(BaseModel):
     details: Optional[dict] = None
 
 
-@router.post("/equipment", response_model=EquipmentResponse, deprecated=True)
+@router.post("/legacy/equipment", response_model=EquipmentResponse, deprecated=True)
 async def create_equipment(data: EquipmentCreate, response: Response, dal: DAL):
     """Create a new equipment."""
     _mark_equipment_endpoint_deprecated(response)
@@ -253,7 +257,11 @@ async def create_equipment(data: EquipmentCreate, response: Response, dal: DAL):
     return await dal.create_equipment(equipment_data)
 
 
-@router.put("/equipment/{equipment_id}", response_model=EquipmentResponse, deprecated=True)
+@router.put(
+    "/legacy/equipment/{equipment_id}",
+    response_model=EquipmentResponse,
+    deprecated=True,
+)
 async def update_equipment(equipment_id: str, data: EquipmentUpdate, response: Response, dal: DAL):
     """Update an equipment."""
     _mark_equipment_endpoint_deprecated(response)
@@ -265,7 +273,7 @@ async def update_equipment(equipment_id: str, data: EquipmentUpdate, response: R
 
 
 @router.post(
-    "/equipment/{equipment_id}/update",
+    "/legacy/equipment/{equipment_id}/update",
     response_model=EquipmentResponse,
     deprecated=True,
 )
@@ -284,7 +292,7 @@ async def update_equipment_post(
         raise HTTPException(status_code=404, detail=str(e))
 
 
-@router.delete("/equipment/{equipment_id}", deprecated=True)
+@router.delete("/legacy/equipment/{equipment_id}", deprecated=True)
 async def delete_equipment(equipment_id: str, response: Response, dal: DAL):
     """Delete an equipment."""
     _mark_equipment_endpoint_deprecated(response)

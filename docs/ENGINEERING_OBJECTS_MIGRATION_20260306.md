@@ -24,7 +24,8 @@ Database schema was updated to use `engineering_objects` as the unified object s
 - `202603060004_drop_engineering_object_design_columns.py`
 
 ## Compatibility and Behavior
-- Existing frontends can keep calling `/equipment`, but it is now compatibility-only and deprecated for new work.
+- `/equipment` root has been removed from the documented and runtime API surface.
+- The compatibility path is `/legacy/equipment`.
 - Equipment payload shape remains compatible: `id`, `type`, `tag`, `name`, `details`, etc.
 - Design parameters are stored in `properties.design_parameters` as canonical source.
 - Transitional design columns were removed in phase 2.
@@ -42,8 +43,8 @@ Database schema was updated to use `engineering_objects` as the unified object s
 - Future cleanup phase can remove legacy equipment table dependencies after all modules are migrated.
 
 ## Validation Checklist
-1. `GET /equipment?type=tank` returns expected rows.
-2. `GET /equipment?type=vessel` returns expected rows.
+1. `GET /legacy/equipment?type=tank` returns expected rows.
+2. `GET /legacy/equipment?type=vessel` returns expected rows.
 3. `POST /venting` accepts `equipmentId` from engineering object UUID.
 4. `GET /venting?equipmentId=<uuid>` filters correctly.
 5. `POST /equipment-links` creates links using engineering object UUID.
