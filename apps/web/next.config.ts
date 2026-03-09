@@ -55,6 +55,11 @@ const vesselOrigin = createProxyTarget(
   "https://process-engineering-suite-vessel.vercel.app",
   "http://localhost:3006",
 );
+const pumpOrigin = createProxyTarget(
+  "PUMP_URL",
+  "https://process-engineering-suite-pump.vercel.app",
+  "http://localhost:3007",
+);
 
 const nextConfig: NextConfig = {
   /* config options here */
@@ -92,6 +97,10 @@ const nextConfig: NextConfig = {
       {
         source: "/vessel/:path*",
         destination: `${vesselOrigin}/vessel/:path*`,
+      },
+      {
+        source: "/pump-calculation/:path*",
+        destination: `${pumpOrigin}/pump-calculation/:path*`,
       },
     ];
   },
