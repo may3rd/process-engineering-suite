@@ -56,6 +56,8 @@ export default function PumpCalculatorPage() {
 
   const [metadata, setMetadata] = useState<CalculationMetadata>(EMPTY_METADATA)
   const [revisionHistory, setRevisionHistory] = useState<RevisionRecord[]>([])
+  const [linkedEquipmentId, setLinkedEquipmentId] = useState<string | null>(null)
+  const [linkedEquipmentTag, setLinkedEquipmentTag] = useState<string | null>(null)
 
   const watchedValues = form.watch()
 
@@ -95,6 +97,8 @@ export default function PumpCalculatorPage() {
     form.clearErrors()
     setMetadata(EMPTY_METADATA)
     setRevisionHistory([])
+    setLinkedEquipmentId(null)
+    setLinkedEquipmentTag(null)
   }
 
   return (
@@ -109,8 +113,19 @@ export default function PumpCalculatorPage() {
               onClear={handleClear}
               calculationMetadata={metadata}
               revisionHistory={revisionHistory}
-              onCalculationLoaded={(m, r) => { setMetadata(m); setRevisionHistory(r) }}
+              onCalculationLoaded={(m, r, equipId, equipTag) => {
+                setMetadata(m)
+                setRevisionHistory(r)
+                setLinkedEquipmentId(equipId ?? null)
+                setLinkedEquipmentTag(equipTag ?? null)
+              }}
               calculationResult={calculationResult}
+              linkedEquipmentId={linkedEquipmentId}
+              linkedEquipmentTag={linkedEquipmentTag}
+              onEquipmentLinked={(id, tag) => {
+                setLinkedEquipmentId(id)
+                setLinkedEquipmentTag(tag ?? null)
+              }}
             />
           </div>
         </div>

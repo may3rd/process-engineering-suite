@@ -17,8 +17,8 @@ import type { CalculationInput } from '../src/types'
 
 describe('dpToHead', () => {
   it('converts differential pressure to head', () => {
-    // dP = 200 kPa, sg = 0.8 → head = 200 / (0.8 × 9.807) = 25.485 m
-    expect(dpToHead(200, 0.8)).toBeCloseTo(25.49, 1)
+    // dP = 200 kPa, sg = 0.8 → head = 200 / (0.8 × 9.80665) = 25.484 m
+    expect(dpToHead(200, 0.8)).toBeCloseTo(25.48, 1)
   })
 
   it('converts water at 101.325 kPa to ~10.33 m', () => {
@@ -29,7 +29,7 @@ describe('dpToHead', () => {
 describe('calcNpsha', () => {
   it('calculates NPSHa correctly', () => {
     // P_suction=200 kPa, P_vapour=20 kPa, sg=0.8
-    // NPSHa = (200-20) / (0.8×9.807) = 180/7.846 ≈ 22.95 m
+    // NPSHa = (200-20) / (0.8×9.80665) = 180/7.845 ≈ 22.94 m
     expect(calcNpsha(200, 20, 0.8)).toBeCloseTo(22.94, 1)
   })
 
@@ -43,7 +43,7 @@ describe('calcNpsha', () => {
 describe('calcHydraulicPower', () => {
   it('calculates hydraulic power correctly', () => {
     // Q=100 m3/h, head=50 m, sg=1.0
-    // P = 1.0 × 9.807 × 100 × 50 / 3600 = 13.62 kW
+    // P = 1.0 × 9.80665 × 100 × 50 / 3600 = 13.620 kW
     expect(calcHydraulicPower(100, 50, 1.0)).toBeCloseTo(13.62, 1)
   })
 
@@ -93,11 +93,16 @@ describe('nextStandardMotor', () => {
 })
 
 describe('calcMinFlow (temperature rise)', () => {
-  it('calculates min flow per PD.md formula', () => {
+  it('calculates min flow using SI energy balance', () => {
     // P_shutoff=10 kW, sg=1.0, Cp=4.18 kJ/(kg·°C), ΔT=10 °C
-    // Q_min = (10 × 0.746 × 2544.43) / (1.0 × 4.18 × 3600 × 10)
-    const expected = (10 * 0.746 * 2544.43) / (1.0 * 4.18 * 3600 * 10)
-    expect(calcMinFlow(10, 1.0, 4.18, 10)).toBeCloseTo(expected, 6)
+    // Q_min = (10 × 3600) / (1.0 × 1000 × 4.18 × 10) = 36000 / 41800 ≈ 0.8612 m³/h
+    expect(calcMinFlow(10, 1.0, 4.18, 10)).toBeCloseTo(0.8612, 3)
+  })
+
+  it('scales linearly with power', () => {
+    const q1 = calcMinFlow(10, 1.0, 4.18, 10)
+    const q2 = calcMinFlow(20, 1.0, 4.18, 10)
+    expect(q2).toBeCloseTo(q1 * 2, 6)
   })
 })
 
@@ -105,8 +110,8 @@ describe('calcShutoffHead', () => {
   it('method A - curve factor multiplies design head', () => {
     const result = calcShutoffHead(ShutoffMethod.CURVE_FACTOR, 100, 200, 1.0, { curveFactor: 1.15 })
     expect(result.headM).toBeCloseTo(115, 4)
-    // pressure = 200 + 115 × 1.0 × 9.807 = 200 + 1127.8 kPa
-    expect(result.pressureKpa).toBeCloseTo(200 + 115 * 9.807, 1)
+    // pressure = 200 + 115 × 1.0 × 9.80665 = 200 + 1127.76 kPa
+    expect(result.pressureKpa).toBeCloseTo(200 + 115 * 9.80665, 1)
   })
 
   it('method C - uses known head directly', () => {
@@ -146,8 +151,8 @@ describe('calcSuctionPressure', () => {
   }
 
   it('adds static head from elevation above pump', () => {
-    // P_suction = 200 + (1.0 × 9.807 × 5) - (10 + 5 + 2) = 200 + 49.035 - 17 = 232.035 kPa
-    expect(calcSuctionPressure(baseInput)).toBeCloseTo(232.04, 1)
+    // P_suction = 200 + (1.0 × 9.80665 × 5) - (10 + 5 + 2) = 200 + 49.033 - 17 = 232.033 kPa
+    expect(calcSuctionPressure(baseInput)).toBeCloseTo(232.03, 1)
   })
 
   it('subtracts losses from suction pressure', () => {

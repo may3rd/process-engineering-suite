@@ -13,7 +13,7 @@ import type { CalculationInput } from '@/types'
 import { ShutoffMethod } from '@/types'
 import { nextStandardMotor } from './motorTable'
 
-const G = 9.807 // m/s²
+const G = 9.80665 // m/s²
 
 /** Convert kPa differential pressure to metres of head. */
 export function dpToHead(dPKpa: number, sg: number): number {
@@ -119,9 +119,10 @@ export function calcOrificeDeltaP(
 
 /**
  * Minimum flow to protect against temperature rise (m³/h).
- * Formula per PD.md §6:
- * Q_min = (P_shutoff_kW × 0.746 × 2544.43) / (sg × Cp × 3600 × ΔT)
- * Note: this is the original Excel formula using mixed unit conversion factors.
+ * Derived from energy balance: P = ṁ × Cp × ΔT
+ *   ṁ [kg/s] = ρ × Q_m3s = sg × 1000 × Q_m3h / 3600
+ * Solving for Q:
+ *   Q_m3h = P_kW × 3600 / (sg × 1000 × Cp_kJ_kgC × ΔT_C)
  */
 export function calcMinFlow(
   shutoffPowerKw: number,
@@ -129,8 +130,7 @@ export function calcMinFlow(
   specificHeatKJkgC: number,
   allowedTempRiseC: number,
 ): number {
-  return (shutoffPowerKw * 0.746 * 2544.43) /
-    (sg * specificHeatKJkgC * 3600 * allowedTempRiseC)
+  return (shutoffPowerKw * 3600) / (sg * 1000 * specificHeatKJkgC * allowedTempRiseC)
 }
 
 /**

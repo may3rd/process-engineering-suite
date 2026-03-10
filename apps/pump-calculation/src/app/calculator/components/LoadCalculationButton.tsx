@@ -68,7 +68,7 @@ function normalizeInput(raw: Record<string, unknown>): Partial<CalculationInput>
 interface Props {
   controlledOpen?: boolean
   onControlledOpenChange?: (open: boolean) => void
-  onCalculationLoaded: (metadata: CalculationMetadata, revisions: RevisionRecord[]) => void
+  onCalculationLoaded: (metadata: CalculationMetadata, revisions: RevisionRecord[], equipmentId?: string | null, equipmentTag?: string | null) => void
 }
 
 export function LoadCalculationButton({
@@ -128,7 +128,7 @@ export function LoadCalculationButton({
     reset(normalized as CalculationInput, { keepDefaultValues: false })
     const metadata = item.calculationMetadata ?? EMPTY_METADATA
     const revisions = item.revisionHistory ?? []
-    onCalculationLoaded(metadata, revisions)
+    onCalculationLoaded(metadata, revisions, item.equipmentId, item.equipmentTag)
     setOpen(false)
   }
 

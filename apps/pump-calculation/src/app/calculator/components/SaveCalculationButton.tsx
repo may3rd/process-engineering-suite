@@ -20,6 +20,8 @@ import type { CalculationInput, CalculationMetadata, RevisionRecord, PumpCalcula
 interface Props {
   controlledOpen?: boolean
   onControlledOpenChange?: (open: boolean) => void
+  equipmentId?: string | null
+  equipmentTag?: string | null
   calculationMetadata: CalculationMetadata
   revisionHistory: RevisionRecord[]
   calculationResult: PumpCalculationResult | null
@@ -28,6 +30,8 @@ interface Props {
 export function SaveCalculationButton({
   controlledOpen,
   onControlledOpenChange,
+  equipmentId,
+  equipmentTag,
   calculationMetadata,
   revisionHistory,
   calculationResult,
@@ -72,6 +76,8 @@ export function SaveCalculationButton({
         description: typeof inputs.description === 'string' ? inputs.description : '',
         inputs,
         results: resultPayload,
+        equipmentId: equipmentId ?? null,
+        equipmentTag: equipmentTag ?? null,
         calculationMetadata,
         revisionHistory,
       })

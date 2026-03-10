@@ -15,7 +15,7 @@ import {
 } from './pumpCalc'
 import { nextStandardMotor } from './motorTable'
 
-const G = 9.807
+const G = 9.80665
 
 export function computePumpResult(input: CalculationInput): PumpCalculationResult {
   // ── Core pressures ──────────────────────────────────────────────────────
@@ -134,7 +134,7 @@ export function computePumpResult(input: CalculationInput): PumpCalculationResul
  * Here we use a conservative 5% of differential head as an approximation.
  */
 function estimateAccelHead(input: CalculationInput): number {
-  // Rough estimate: 5% of NPSH potential if source pressure > vapour pressure
+  // Rough estimate: 5% of source vessel head above vapour pressure (conservative approximation)
   const dPKpa = input.suctionSourcePressure - input.vapourPressure
   if (dPKpa <= 0) return 0
   return dpToHead(dPKpa, input.sg) * 0.05

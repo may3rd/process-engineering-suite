@@ -13,6 +13,8 @@ export interface SavedCalculationItem {
   description: string
   inputs: Record<string, unknown>
   results?: Record<string, unknown>
+  equipmentId?: string | null
+  equipmentTag?: string | null
   calculationMetadata?: CalculationMetadata
   revisionHistory?: RevisionRecord[]
   status?: string | null
@@ -27,6 +29,8 @@ interface SavePayload {
   description?: string
   inputs: Record<string, unknown>
   results?: Record<string, unknown> | null
+  equipmentId?: string | null
+  equipmentTag?: string | null
   calculationMetadata?: CalculationMetadata
   revisionHistory?: RevisionRecord[]
 }
@@ -59,6 +63,8 @@ function parseSavedItem(raw: {
     description,
     inputs: (props.inputs ?? {}) as Record<string, unknown>,
     results: (props.result ?? undefined) as Record<string, unknown> | undefined,
+    equipmentId: (props.linkedEquipmentId ?? null) as string | null,
+    equipmentTag: (props.linkedEquipmentTag ?? null) as string | null,
     calculationMetadata: props.calculationMetadata as CalculationMetadata | undefined,
     revisionHistory: props.revisionHistory as RevisionRecord[] | undefined,
     status: raw.status ?? null,
@@ -83,6 +89,8 @@ export function useSavedCalculations() {
     description,
     inputs,
     results,
+    equipmentId,
+    equipmentTag,
     calculationMetadata,
     revisionHistory,
   }: SavePayload) => {
@@ -97,6 +105,8 @@ export function useSavedCalculations() {
         properties: {
           inputs,
           result: results ?? null,
+          linkedEquipmentId: equipmentId ?? null,
+          linkedEquipmentTag: equipmentTag ?? null,
           calculationMetadata: calculationMetadata ?? undefined,
           revisionHistory: revisionHistory ?? [],
           meta: {
