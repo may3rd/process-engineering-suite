@@ -19,6 +19,9 @@ import { VesselReport } from '../pdf/VesselReport';
 import { useUomStore } from '@/lib/store/uomStore';
 import type { VesselUomCategory } from '@/lib/uom';
 import { apiClient } from '@/lib/apiClient';
+import {
+  EquipmentMode,
+} from '@/types';
 import type {
   CalculationInput,
   CalculationMetadata,
@@ -114,15 +117,38 @@ export function ActionMenu({
       const currentProperties = (current.properties ?? {}) as Record<string, unknown>;
       const values = getValues();
       const existingDetails = (currentProperties.details ?? {}) as Record<string, unknown>;
+      const isVessel = values.equipmentMode !== EquipmentMode.TANK;
+      const totalHeight = values.shellLength ?? 0;
+      const pctOf = (level: number | undefined): number | null =>
+        totalHeight > 0 && level != null ? Math.round((level / totalHeight) * 10000) / 100 : null;
+
       const details: Record<string, unknown> = {
         ...existingDetails,
-        insideDiameter: values.insideDiameter,
-        shellLength: values.shellLength,
-        wallThickness: values.wallThickness,
+        // DB-aligned keys (equipment_vessel / equipment_tank column names → camelCase)
+        equipmentMode: values.equipmentMode,
         orientation: values.orientation,
-        headType: values.headType,
-        tankType: values.tankType,
-        tankRoofType: values.tankRoofType,
+        material: values.material ?? null,
+        innerDiameterMm: values.insideDiameter ?? null,
+        // Vessel-specific columns
+        ...(isVessel && {
+          tangentToTangentLengthMm: values.shellLength ?? null,
+          wallThicknessMm: values.wallThickness ?? null,
+          headType: values.headType ?? null,
+          totalSurfaceAreaM2: calculationResult?.surfaceAreas.totalSurfaceArea ?? null,
+        }),
+        // Tank-specific columns
+        ...(!isVessel && {
+          heightMm: values.shellLength ?? null,
+          tankType: values.tankType ?? null,
+          roofType: values.tankRoofType ?? null,
+        }),
+        // Shared computed columns
+        wettedAreaM2: calculationResult?.surfaceAreas.wettedSurfaceArea ?? null,
+        volumeM3: calculationResult?.volumes.totalVolume ?? null,
+        normalLiquidLevelPct: pctOf(values.liquidLevel),
+        highLiquidLevelPct: pctOf(values.hll),
+        lowLiquidLevelPct: pctOf(values.lll),
+        // Full calculation snapshot
         vesselCalculation: {
           inputs: values,
           result: calculationResult ?? null,

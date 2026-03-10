@@ -113,19 +113,25 @@ export function EquipmentLinkButton({
       ? (d.tankType as TankType) : undefined;
     if (tankType) setValue('tankType', tankType);
 
-    const tankRoofType = Object.values(TankRoofType).includes(d.tankRoofType as TankRoofType)
-      ? (d.tankRoofType as TankRoofType) : undefined;
+    // roofType is the DB-aligned key; tankRoofType is the legacy fallback
+    const tankRoofType = Object.values(TankRoofType).includes(d.roofType as TankRoofType)
+      ? (d.roofType as TankRoofType)
+      : Object.values(TankRoofType).includes(d.tankRoofType as TankRoofType)
+      ? (d.tankRoofType as TankRoofType)
+      : undefined;
     if (tankRoofType) setValue('tankRoofType', tankRoofType);
 
     const material = Object.values(VesselMaterial).includes(d.material as VesselMaterial)
       ? (d.material as VesselMaterial) : undefined;
     if (material) setValue('material', material);
 
-    const id = toNum(d.insideDiameter) ?? toNum(d.innerDiameter);
+    // Numeric fields — new DB-aligned key first, then legacy fallbacks for existing data
+    const id = toNum(d.innerDiameterMm) ?? toNum(d.insideDiameter) ?? toNum(d.innerDiameter);
     if (id != null) setValue('insideDiameter', id);
-    const sl = toNum(d.shellLength) ?? toNum(d.height);
+    const sl = toNum(d.tangentToTangentLengthMm) ?? toNum(d.heightMm)
+               ?? toNum(d.shellLength) ?? toNum(d.height);
     if (sl != null) setValue('shellLength', sl);
-    const wt = toNum(d.wallThickness);
+    const wt = toNum(d.wallThicknessMm) ?? toNum(d.wallThickness);
     if (wt != null) setValue('wallThickness', wt);
     const hd = toNum(d.headDepth);
     if (hd != null) setValue('headDepth', hd);
