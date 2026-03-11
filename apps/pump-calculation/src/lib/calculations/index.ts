@@ -7,6 +7,7 @@ import {
   calcNpsha,
   calcHydraulicPower,
   calcShaftPower,
+  estimateShutoffPower,
   calcApiMinMotor,
   calcOrificeDeltaP,
   calcMinFlow,
@@ -70,12 +71,11 @@ export function computePumpResult(input: CalculationInput): PumpCalculationResul
     )
     shutoffHead = soh.headM
     shutoffPressureKpa = soh.pressureKpa
-    // Shut-off power = hydraulic power at shut-off head (approx — same flow concept)
-    shutoffPowerKw = calcShaftPower(
-      calcHydraulicPower(input.flowDesign, shutoffHead, input.sg),
-      input.efficiency,
-      input.wearMarginPct,
-    )
+
+    // For centrifugal pumps, shut-off power is typically estimated from design power
+    // If user provided a specific efficiency for shut-off, we could use that,
+    // but usually, it's a factor of design shaft power.
+    shutoffPowerKw = estimateShutoffPower(shaftPowerKw)
   }
 
   // ── Optional: orifice ΔP ────────────────────────────────────────────────
@@ -129,13 +129,13 @@ export function computePumpResult(input: CalculationInput): PumpCalculationResul
 
 /**
  * Estimate acceleration head for reciprocating PD pumps.
- * h_accel = L × Q × n × C / (g × A_pipe)
- * This is a simplified estimate — proper calculation requires suction pipe geometry.
- * Here we use a conservative 5% of differential head as an approximation.
+ * Standard formula: h_accel = L * V * n * C / (G * K)
+ * Since we lack suction pipe geometry (L, A_pipe) and pump speed (n),
+ * we use a conservative 10% of the available static suction head as an allowance.
+ * This is a common process engineering placeholder when piping design is not yet fixed.
  */
 function estimateAccelHead(input: CalculationInput): number {
-  // Rough estimate: 5% of source vessel head above vapour pressure (conservative approximation)
-  const dPKpa = input.suctionSourcePressure - input.vapourPressure
-  if (dPKpa <= 0) return 0
-  return dpToHead(dPKpa, input.sg) * 0.05
+  const suctionHeadKpa = input.sg * G * input.suctionElevation
+  if (suctionHeadKpa <= 0) return 0
+  return dpToHead(suctionHeadKpa, input.sg) * 0.10
 }

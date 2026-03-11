@@ -78,7 +78,17 @@ export function calcShaftPower(
   efficiencyPct: number,
   wearMarginPct: number,
 ): number {
-  return (hydraulicKw / (efficiencyPct / 100)) * (1 + wearMarginPct / 100)
+  return (hydraulicKw / (Math.max(efficiencyPct, 1) / 100)) * (1 + wearMarginPct / 100)
+}
+
+/**
+ * Shut-off power (kW).
+ * For centrifugal pumps, shut-off power is typically 35-70% of design power.
+ * If specific curves aren't known, 50-60% is a safe industry estimate.
+ * We use 55% as default.
+ */
+export function estimateShutoffPower(designShaftPowerKw: number): number {
+  return designShaftPowerKw * 0.55
 }
 
 /**
