@@ -50,7 +50,7 @@ const tools = [
     description:
       "Volume, surface area, and mass calculations for vertical and horizontal vessels with multiple head types.",
     icon: <CalculateIcon fontSize="large" />,
-    href: "/vessel-calculation/calculator",
+    href: "/vessels-calculation/calculator",
     status: "active" as const,
   },
   {
