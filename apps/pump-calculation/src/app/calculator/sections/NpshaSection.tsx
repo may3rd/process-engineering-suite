@@ -16,7 +16,7 @@ export function NpshaSection({ result }: Props) {
   const isPD = pumpType === PumpType.POSITIVE_DISPLACEMENT
 
   return (
-    <SectionCard title="NPSH Available">
+    <SectionCard title="NPSH Available" collapsible defaultOpen={false}>
       {isPD && (
         <FieldRow label="Acceleration Head" hint="Only applicable to reciprocating PD pumps">
           <label className="flex items-center gap-2 text-sm">

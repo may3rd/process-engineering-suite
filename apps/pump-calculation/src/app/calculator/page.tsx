@@ -6,7 +6,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import type { Resolver } from "react-hook-form"
 import { calculationInputSchema } from "@/lib/validation/inputSchema"
 import { computePumpResult } from "@/lib/calculations"
-import { PumpType } from "@/types"
+import { PumpType, EquipmentType } from "@/types"
 import type {
   CalculationInput,
   CalculationMetadata,
@@ -37,6 +37,8 @@ const createDefaultValues = (): Partial<CalculationInput> => ({
   showMinFlow: false,
   showShutoff: false,
   isExistingSystem: false,
+  suctionSourceType: EquipmentType.VESSEL,
+  dischargeDestType: EquipmentType.VESSEL,
   suctionLineLoss: 0,
   suctionStrainerLoss: 0,
   suctionOtherLoss: 0,

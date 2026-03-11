@@ -17,7 +17,7 @@ export function OrificeSection() {
   const showOrifice = watch('showOrifice')
 
   return (
-    <SectionCard title="Orifice Plate Estimate">
+    <SectionCard title="Orifice Plate Estimate" collapsible defaultOpen={false}>
       <Collapsible open={showOrifice}>
         <CollapsibleTrigger asChild>
           <label className="flex items-center justify-between cursor-pointer">

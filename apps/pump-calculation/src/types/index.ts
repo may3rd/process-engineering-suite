@@ -45,6 +45,14 @@ export enum ValveType {
   V_BALL = 'V-ball',
 }
 
+export enum EquipmentType {
+  VESSEL = 'Vessel',
+  TANK = 'Tank',
+  COLUMN = 'Column',
+  HEADER = 'Header / Manifold',
+  ATMOSPHERIC = 'Atmospheric',
+}
+
 export interface CalculationInput {
   tag: string
   description?: string
@@ -109,6 +117,10 @@ export interface CalculationInput {
   knownShutoffHead?: number   // m
   shutoffCurveFactor?: number // e.g. 1.15
   shutoffRatio?: number       // e.g. 1.2
+
+  // Visual-only — affects schematic shape, not calculations
+  suctionSourceType?: EquipmentType
+  dischargeDestType?: EquipmentType
 }
 
 export interface PumpCalculationResult {

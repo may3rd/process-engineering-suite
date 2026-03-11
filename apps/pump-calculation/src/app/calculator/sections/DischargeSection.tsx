@@ -5,14 +5,33 @@ import { Input } from '@/components/ui/input'
 import { SectionCard } from '@/app/calculator/components/SectionCard'
 import { FieldRow } from '@/app/calculator/components/FieldRow'
 import { UomInput } from '@/app/calculator/components/UomInput'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { EquipmentType } from '@/types'
 import type { CalculationInput } from '@/types'
 
 export function DischargeSection() {
   const { register, watch, setValue } = useFormContext<CalculationInput>()
   const useRecommendedCv = watch('dischargeControlValveDp') === undefined
+  const destType = watch('dischargeDestType') ?? EquipmentType.VESSEL
 
   return (
-    <SectionCard title="Discharge Conditions">
+    <SectionCard title="Discharge Conditions" collapsible defaultOpen={false}>
+      <FieldRow label="Destination Equipment Type" htmlFor="dischargeDestType">
+        <Select
+          value={destType}
+          onValueChange={(v) => setValue('dischargeDestType', v as EquipmentType, { shouldDirty: true })}
+        >
+          <SelectTrigger id="dischargeDestType">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.values(EquipmentType).map((et) => (
+              <SelectItem key={et} value={et}>{et}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FieldRow>
+
       <FieldRow label="Destination Vessel Pressure" htmlFor="dischargeDestPressure">
         <UomInput name="dischargeDestPressure" category="pressure" id="dischargeDestPressure" placeholder="e.g. 500" />
       </FieldRow>

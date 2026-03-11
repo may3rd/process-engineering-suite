@@ -17,7 +17,7 @@ export function MinFlowSection() {
   const showMinFlow = watch('showMinFlow')
 
   return (
-    <SectionCard title="Minimum Flow by Temperature Rise">
+    <SectionCard title="Minimum Flow by Temperature Rise" collapsible defaultOpen={false}>
       <Collapsible open={showMinFlow}>
         <CollapsibleTrigger asChild>
           <label className="flex items-center justify-between cursor-pointer">

@@ -10,6 +10,7 @@ import { SummaryResult } from "@/app/calculator/results/SummaryResult"
 import { PressureResult } from "@/app/calculator/results/PressureResult"
 import { PowerResult } from "@/app/calculator/results/PowerResult"
 import { OptionalResults } from "@/app/calculator/results/OptionalResults"
+import { PumpSystemSchematic } from "@/app/calculator/components/PumpSystemSchematic"
 import type { PumpCalculationResult, CalculationInput } from "@/types"
 
 interface Props {
@@ -22,12 +23,18 @@ export function ResultsPanel({ result, validationIssues }: Props) {
     <div className="space-y-4">
       {/* Empty state — show what's still needed */}
       {!result && !validationIssues && (
-        <RequirementsChecklist />
+        <>
+          <RequirementsChecklist />
+          <PumpSystemSchematic result={null} />
+        </>
       )}
 
       {/* Validation issues — cross-field rules failed */}
       {!result && validationIssues && validationIssues.length > 0 && (
-        <ValidationIssuesCard issues={validationIssues} />
+        <>
+          <ValidationIssuesCard issues={validationIssues} />
+          <PumpSystemSchematic result={null} />
+        </>
       )}
 
       {result && (
@@ -35,6 +42,7 @@ export function ResultsPanel({ result, validationIssues }: Props) {
           <SectionCard title="Results Summary">
             <SummaryResult result={result} />
           </SectionCard>
+          <PumpSystemSchematic result={result} />
           <PressureResult result={result} />
           <PowerResult result={result} />
           <OptionalResults result={result} />

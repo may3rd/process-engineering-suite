@@ -19,7 +19,7 @@ export function ShutoffSection() {
   const method = watch('shutoffMethod')
 
   return (
-    <SectionCard title="Shut-off Pressure & Power Estimate">
+    <SectionCard title="Shut-off Pressure & Power Estimate" collapsible defaultOpen={false}>
       <Collapsible open={showShutoff}>
         <CollapsibleTrigger asChild>
           <label className="flex items-center justify-between cursor-pointer">

@@ -1,12 +1,35 @@
 'use client'
 
+import { useFormContext } from 'react-hook-form'
 import { SectionCard } from '@/app/calculator/components/SectionCard'
 import { FieldRow } from '@/app/calculator/components/FieldRow'
 import { UomInput } from '@/app/calculator/components/UomInput'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { EquipmentType } from '@/types'
+import type { CalculationInput } from '@/types'
 
 export function SuctionSection() {
+  const { watch, setValue } = useFormContext<CalculationInput>()
+  const sourceType = watch('suctionSourceType') ?? EquipmentType.VESSEL
+
   return (
-    <SectionCard title="Suction Conditions">
+    <SectionCard title="Suction Conditions" collapsible defaultOpen={false}>
+      <FieldRow label="Source Equipment Type" htmlFor="suctionSourceType">
+        <Select
+          value={sourceType}
+          onValueChange={(v) => setValue('suctionSourceType', v as EquipmentType, { shouldDirty: true })}
+        >
+          <SelectTrigger id="suctionSourceType">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {Object.values(EquipmentType).map((et) => (
+              <SelectItem key={et} value={et}>{et}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </FieldRow>
+
       <FieldRow label="Source Vessel Pressure" htmlFor="suctionSourcePressure">
         <UomInput name="suctionSourcePressure" category="pressure" id="suctionSourcePressure" placeholder="e.g. 101.325" />
       </FieldRow>

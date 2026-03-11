@@ -10,7 +10,7 @@ export function MotorSection() {
   const { register, formState: { errors } } = useFormContext<CalculationInput>()
 
   return (
-    <SectionCard title="Motor & Efficiency">
+    <SectionCard title="Motor & Efficiency" collapsible defaultOpen={false}>
       <FieldRow
         label="Pump Hydraulic Efficiency"
         htmlFor="efficiency"

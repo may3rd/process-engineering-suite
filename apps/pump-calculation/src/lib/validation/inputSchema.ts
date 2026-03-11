@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { PumpType, PdSubtype, ShutoffMethod, ValveType } from '@/types'
+import { PumpType, PdSubtype, ShutoffMethod, ValveType, EquipmentType } from '@/types'
 
 /** NaN-tolerant optional positive number */
 const nanOptionalPositive = z.number().positive().optional().or(z.nan().transform(() => undefined))
@@ -86,6 +86,10 @@ export const calculationInputSchema = z.object({
   knownShutoffHead: nanOptionalPositive,
   shutoffCurveFactor: z.number().min(1).max(2).optional().or(z.nan().transform(() => undefined)),
   shutoffRatio: z.number().min(1).max(2).optional().or(z.nan().transform(() => undefined)),
+
+  // Visual-only — schematic equipment types
+  suctionSourceType: z.nativeEnum(EquipmentType).default(EquipmentType.VESSEL),
+  dischargeDestType: z.nativeEnum(EquipmentType).default(EquipmentType.VESSEL),
 }).superRefine((data, ctx) => {
   if (data.showOrifice) {
     if (!data.orificePipeId) {

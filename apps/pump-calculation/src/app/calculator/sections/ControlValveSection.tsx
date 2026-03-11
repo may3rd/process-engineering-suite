@@ -25,7 +25,7 @@ export function ControlValveSection() {
   const showCv = watch('showControlValve')
 
   return (
-    <SectionCard title="Control Valve Recommended ΔP">
+    <SectionCard title="Control Valve Recommended ΔP" collapsible defaultOpen={false}>
       <Collapsible open={showCv}>
         <CollapsibleTrigger asChild>
           <label className="flex items-center justify-between cursor-pointer">
