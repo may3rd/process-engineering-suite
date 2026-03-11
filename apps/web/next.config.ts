@@ -5,19 +5,22 @@ const isVercel = process.env.VERCEL === "1";
 const deployTarget = (process.env.DEPLOY_TARGET || (isVercel ? "vercel" : "local")).toLowerCase();
 
 const createProxyTarget = (
-  envKey: string,
+  envKeys: string | string[],
   productionFallback: string,
   localFallback: string,
 ) => {
-  const configured = process.env[envKey];
-  if (configured && configured.trim().length > 0) {
-    return stripTrailingSlash(configured.trim());
+  const keys = Array.isArray(envKeys) ? envKeys : [envKeys];
+  for (const key of keys) {
+    const configured = process.env[key];
+    if (configured && configured.trim().length > 0) {
+      return stripTrailingSlash(configured.trim());
+    }
   }
 
   if (deployTarget === "vercel") {
     const fallback = stripTrailingSlash(productionFallback);
     console.warn(
-      `[web] "${envKey}" not provided. Falling back to "${fallback}".`,
+      `[web] "${keys.join('" | "')}" not provided. Falling back to "${fallback}".`,
     );
     return fallback;
   }
@@ -32,12 +35,12 @@ const docsAppOrigin = createProxyTarget(
 );
 const networkEditorOrigin = createProxyTarget(
   "NETWORK_EDITOR_URL",
-  "https://process-engineering-suite-network-e.vercel.app",
+  "https://pes-network-editor.vercel.app",
   "http://localhost:3002",
 );
 const psvOrigin = createProxyTarget(
   "PSV_URL",
-  "https://process-engineering-suite-psv.vercel.app",
+  "https://pes-psv-suite.vercel.app",
   "http://localhost:3003",
 );
 const designAgentsOrigin = createProxyTarget(
@@ -47,17 +50,17 @@ const designAgentsOrigin = createProxyTarget(
 );
 const ventingOrigin = createProxyTarget(
   "VENTING_URL",
-  "https://process-engineering-suite-venting.vercel.app",
+  "https://pes-venting-calculation.vercel.app",
   "http://localhost:3005",
 );
 const vesselCalculationOrigin = createProxyTarget(
-  "VESSELS_CALCULATION_URL",
-  "https://process-engineering-suite-vessels-calculation.vercel.app",
+  ["VESSELS_CALCULATION_URL", "VESSEL_CALCULATION_URL", "VESSEL_URL"],
+  "https://pes-vessels-calculation.vercel.app",
   "http://localhost:3006",
 );
 const pumpOrigin = createProxyTarget(
   "PUMP_URL",
-  "https://process-engineering-suite-pump.vercel.app",
+  "https://pes-pump-calculation.vercel.app",
   "http://localhost:3007",
 );
 
