@@ -2,27 +2,27 @@
     "redirects": [
         {
             "source": "/network-editor",
-            "destination": "https://network-editor.vercel.app/network-editor",
+            "destination": "https://pes-network-editor.vercel.app/network-editor",
             "permanent": false
         },
         {
             "source": "/psv",
-            "destination": "https://psv.vercel.app/psv",
+            "destination": "https://pes-psv-suite.vercel.app/psv",
             "permanent": false
         },
         {
             "source": "/venting-calculation/calculator",
-            "destination": "https://venting-calculation.vercel.app/venting-calculation/calculator",
+            "destination": "https://pes-venting-calculation.vercel.app/venting-calculation/calculator",
             "permanent": false
         },
         {
-            "source": "/vessel/calculator",
-            "destination": "https://process-engineering-suite-vessel.vercel.app/vessel/calculator",
+            "source": "/vessels-calculation/calculator",
+            "destination": "https://pes-vessels-calculation.vercel.app/vessels-calculation/calculator",
             "permanent": false
         },
         {
             "source": "/pump-calculation/calculator",
-            "destination": "https://pump-calculation-ten.vercel.app/pump-calculation/calculator",
+            "destination": "https://pes-pump-calculation.vercel.app/pump-calculation/calculator",
             "permanent": false
         }
     ]

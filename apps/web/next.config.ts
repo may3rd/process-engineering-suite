@@ -50,9 +50,9 @@ const ventingOrigin = createProxyTarget(
   "https://process-engineering-suite-venting.vercel.app",
   "http://localhost:3005",
 );
-const vesselOrigin = createProxyTarget(
-  "VESSEL_URL",
-  "https://process-engineering-suite-vessel.vercel.app",
+const vesselCalculationOrigin = createProxyTarget(
+  "VESSELS_CALCULATION_URL",
+  "https://process-engineering-suite-vessels-calculation.vercel.app",
   "http://localhost:3006",
 );
 const pumpOrigin = createProxyTarget(
@@ -95,8 +95,8 @@ const nextConfig: NextConfig = {
         destination: `${ventingOrigin}/venting-calculation/:path*`,
       },
       {
-        source: "/vessel/:path*",
-        destination: `${vesselOrigin}/vessel/:path*`,
+        source: "/vessels-calculation/:path*",
+        destination: `${vesselCalculationOrigin}/vessels-calculation/:path*`,
       },
       {
         source: "/pump-calculation/:path*",

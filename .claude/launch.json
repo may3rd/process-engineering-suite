@@ -37,10 +37,10 @@
       "port": 3004
     },
     {
-      "name": "vessel",
+      "name": "vessels-calculation",
       "runtimeExecutable": "bun",
       "runtimeArgs": ["run", "dev"],
-      "cwd": "apps/vessel",
+      "cwd": "apps/vessels-calculation",
       "port": 3006
     },
     {
