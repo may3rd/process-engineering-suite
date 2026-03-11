@@ -197,7 +197,7 @@ const [revisionHistory, setRevisionHistory] = useState<RevisionRecord[]>([])
 
 **Edit Revisions dialog:** inline table editing with up/down/delete row buttons, Add Revision button (max 3), Save/Cancel footer.
 
-**Edit Metadata dialog:** 5 labeled `<Input>` fields, Clear + Save Metadata footer.
+**Edit Metadata dialog:** 5 labeled `<Input>` fields, Cancel + Save Metadata footer.
 
 **`normalizeRevisionHistory`:** trims whitespace, drops blank rows, slices to 3.
 
@@ -495,7 +495,70 @@ calculationResult !== null
 
 Container card: `border-primary/30 bg-primary/5`
 
-### 6.3 Detail result rows
+### 6.3 Schematic card (SVG with View larger)
+
+Every schematic `SectionCard` **must** include a "View larger" button in its `action` slot that opens the same SVG in a full-viewport dialog. Extract the SVG into a local `renderSvg(className)` function to avoid duplication.
+
+```tsx
+import { useState } from "react"
+import { Expand } from "lucide-react"
+import {
+  Dialog, DialogContent, DialogDescription,
+  DialogHeader, DialogTitle, DialogTrigger,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
+import { SectionCard } from "./SectionCard"
+
+export function MySchematic() {
+  const [isOpen, setIsOpen] = useState(false)
+
+  // ... compute SVG geometry from form values ...
+
+  const renderSvg = (svgClassName: string) => (
+    <svg viewBox="0 0 420 420" className={svgClassName} aria-hidden="true">
+      {/* SVG content — closes over all computed geometry variables */}
+    </svg>
+  )
+
+  return (
+    <SectionCard
+      title="System Schematic"
+      action={
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" aria-label="Open larger schematic">
+              <Expand />
+              View larger
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="grid h-[78vh] w-[88vw] max-w-[88vw] grid-rows-[auto_minmax(0,1fr)] overflow-hidden p-4 sm:h-[82vh] sm:w-[84vw] sm:max-w-[84vw] xl:w-[1240px] xl:max-w-[1240px]">
+            <DialogHeader>
+              <DialogTitle>Expanded System Schematic</DialogTitle>
+              <DialogDescription>Larger view of the live system schematic.</DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 overflow-auto rounded-xl border bg-card/40 p-3">
+              {renderSvg("h-auto w-full min-w-[480px] text-foreground")}
+            </div>
+          </DialogContent>
+        </Dialog>
+      }
+    >
+      <div className="flex flex-col items-center gap-3 py-2">
+        {renderSvg("w-full max-w-[340px] h-auto text-foreground")}
+      </div>
+    </SectionCard>
+  )
+}
+```
+
+**Rules:**
+- `useState(false)` for dialog must be placed **before** any early `return null` guards
+- Normal card SVG: `w-full max-w-[340px] h-auto text-foreground`
+- Dialog SVG: `h-auto w-full min-w-[480px] text-foreground` (no max-width so it fills the dialog)
+- Dialog size class: `h-[78vh] w-[88vw] max-w-[88vw] ... xl:w-[1240px] xl:max-w-[1240px]`
+- Button: `variant="outline" size="sm"` with `<Expand />` icon
+
+### 6.5 Detail result rows
 
 ```tsx
 // Divided rows pattern
@@ -522,7 +585,7 @@ Container card: `border-primary/30 bg-primary/5`
 - Total/design rows: `bg-muted/30 font-semibold`
 - Section sub-headers: `uppercase tracking-wide text-muted-foreground text-xs`
 
-### 6.4 Unit conversion in outputs
+### 6.6 Unit conversion in outputs
 
 ```tsx
 const { units } = useUomStore()

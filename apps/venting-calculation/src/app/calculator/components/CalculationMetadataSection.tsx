@@ -412,8 +412,8 @@ export function CalculationMetadataSection({
               </div>
 
               <DialogFooter className="gap-2">
-                <Button type="button" variant="ghost" onClick={() => setMetadataDraft(EMPTY_METADATA)}>
-                  Clear
+                <Button type="button" variant="ghost" onClick={() => setMetadataDialogOpen(false)}>
+                  Cancel
                 </Button>
                 <Button type="button" onClick={saveMetadata}>
                   Save Metadata

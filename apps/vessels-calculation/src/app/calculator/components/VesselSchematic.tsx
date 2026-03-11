@@ -1,6 +1,17 @@
 "use client"
 
+import { useState } from "react"
+import { Expand } from "lucide-react"
 import { useFormContext } from "react-hook-form"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 import { CalculationInput, EquipmentMode, VesselOrientation, HeadType } from "@/types"
 import { SectionCard } from "./SectionCard"
 import { autoHeadDepth } from "@/lib/calculations/vesselGeometry"
@@ -20,6 +31,8 @@ export function VesselSchematic() {
   const hll = watch("hll")
   const lll = watch("lll")
   const ofl = watch("ofl")
+
+  const [isOpen, setIsOpen] = useState(false)
 
   if (equipmentMode === EquipmentMode.TANK || !id || id <= 0 || !length || length <= 0) {
     return null
@@ -98,84 +111,111 @@ export function VesselSchematic() {
   const legX2 = isVertical ? x0 + vW : x0 + vW * 0.82
   const legTopY = isVertical ? lowerTangentY : bottomY
 
-  return (
-    <SectionCard title="Vessel Schematic">
-      <div className="flex flex-col items-center gap-4 py-2">
-        <svg
-          viewBox={`0 0 ${svgSize} ${svgSize}`}
-          className="w-full max-w-[340px] h-auto text-foreground"
-          aria-hidden="true"
-        >
-          <defs>
-            <clipPath id="vesselClip">
-              <path d={path} />
-            </clipPath>
-            <marker id="vesselArrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
-            </marker>
-          </defs>
+  const renderSvg = (svgClassName: string) => (
+    <svg
+      viewBox={`0 0 ${svgSize} ${svgSize}`}
+      className={svgClassName}
+      aria-hidden="true"
+    >
+      <defs>
+        <clipPath id="vesselClip">
+          <path d={path} />
+        </clipPath>
+        <marker id="vesselArrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
+        </marker>
+      </defs>
 
-          {ll !== undefined && ll > 0 && (
-            <rect
-              x="0"
-              y={getLevelY(ll)}
-              width={svgSize}
-              height={svgSize}
-              fill="rgba(56, 189, 248, 0.25)"
-              clipPath="url(#vesselClip)"
-            />
-          )}
+      {ll !== undefined && ll > 0 && (
+        <rect
+          x="0"
+          y={getLevelY(ll)}
+          width={svgSize}
+          height={svgSize}
+          fill="rgba(56, 189, 248, 0.25)"
+          clipPath="url(#vesselClip)"
+        />
+      )}
 
-          <path
-            d={path}
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="opacity-90"
-          />
+      <path
+        d={path}
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="opacity-90"
+      />
 
+      {showBoots && (
+        <>
+          <line x1={legX1} y1={legTopY} x2={legX1} y2={groundY} stroke="currentColor" strokeWidth="2" />
+          <line x1={legX2} y1={legTopY} x2={legX2} y2={groundY} stroke="currentColor" strokeWidth="2" />
+        </>
+      )}
+      <line
+        x1={x0 - vHD - 24}
+        y1={groundY}
+        x2={x0 + vW + vHD + 24}
+        y2={groundY}
+        stroke="currentColor"
+        strokeWidth="1.5"
+        strokeDasharray="4 3"
+        opacity="0.8"
+      />
+
+      <LevelLine y={getLevelY(ll)} label={`LL ${fmtM(ll)}`} color="#38bdf8" x0={x0} xW={vW} vHD={isVertical ? 0 : vHD} />
+      <LevelLine y={getLevelY(hll)} label={`HLL ${fmtM(hll)}`} color="#22c55e" x0={x0} xW={vW} vHD={isVertical ? 0 : vHD} dashed />
+      <LevelLine y={getLevelY(lll)} label={`LLL ${fmtM(lll)}`} color="#f59e0b" x0={x0} xW={vW} vHD={isVertical ? 0 : vHD} dashed />
+      <LevelLine y={getLevelY(ofl)} label={`OFL ${fmtM(ofl)}`} color="#ef4444" x0={x0} xW={vW} vHD={isVertical ? 0 : vHD} dashed />
+
+      {isVertical ? (
+        <>
+          <Annotation x1={x0 - 26} y1={y0} x2={x0 - 26} y2={y0 + vH} label={`T-T ${fmtM(length)}`} vertical />
+          <Annotation x1={x0} y1={y0 + vH + vHD + 18} x2={x0 + vW} y2={y0 + vH + vHD + 18} label={`D ${fmtM(id)}`} />
           {showBoots && (
-            <>
-              <line x1={legX1} y1={legTopY} x2={legX1} y2={groundY} stroke="currentColor" strokeWidth="2" />
-              <line x1={legX2} y1={legTopY} x2={legX2} y2={groundY} stroke="currentColor" strokeWidth="2" />
-            </>
+            <Annotation x1={x0 + vW + 24} y1={lowerTangentY} x2={x0 + vW + 24} y2={groundY} label={`Boot ${fmtM(bootHeight)}`} vertical />
           )}
-          <line
-            x1={x0 - vHD - 24}
-            y1={groundY}
-            x2={x0 + vW + vHD + 24}
-            y2={groundY}
-            stroke="currentColor"
-            strokeWidth="1.5"
-            strokeDasharray="4 3"
-            opacity="0.8"
-          />
-
-          <LevelLine y={getLevelY(ll)} label={`LL ${fmtM(ll)}`} color="#38bdf8" x0={x0} xW={vW} vHD={isVertical ? 0 : vHD} />
-          <LevelLine y={getLevelY(hll)} label={`HLL ${fmtM(hll)}`} color="#22c55e" x0={x0} xW={vW} vHD={isVertical ? 0 : vHD} dashed />
-          <LevelLine y={getLevelY(lll)} label={`LLL ${fmtM(lll)}`} color="#f59e0b" x0={x0} xW={vW} vHD={isVertical ? 0 : vHD} dashed />
-          <LevelLine y={getLevelY(ofl)} label={`OFL ${fmtM(ofl)}`} color="#ef4444" x0={x0} xW={vW} vHD={isVertical ? 0 : vHD} dashed />
-
-          {isVertical ? (
-            <>
-              <Annotation x1={x0 - 26} y1={y0} x2={x0 - 26} y2={y0 + vH} label={`T-T ${fmtM(length)}`} vertical />
-              <Annotation x1={x0} y1={y0 + vH + vHD + 18} x2={x0 + vW} y2={y0 + vH + vHD + 18} label={`D ${fmtM(id)}`} />
-              {showBoots && (
-                <Annotation x1={x0 + vW + 24} y1={lowerTangentY} x2={x0 + vW + 24} y2={groundY} label={`Boot ${fmtM(bootHeight)}`} vertical />
-              )}
-            </>
-          ) : (
-            <>
-              <Annotation x1={x0} y1={y0 - 20} x2={x0 + vW} y2={y0 - 20} label={`T-T ${fmtM(length)}`} />
-              <Annotation x1={x0 + vW + vHD + 20} y1={y0} x2={x0 + vW + vHD + 20} y2={y0 + vH} label={`D ${fmtM(id)}`} vertical />
-              {showBoots && (
-                <Annotation x1={x0 + vW + vHD + 36} y1={bottomY} x2={x0 + vW + vHD + 36} y2={groundY} label={`Boot ${fmtM(bootHeight)}`} vertical />
-              )}
-            </>
+        </>
+      ) : (
+        <>
+          <Annotation x1={x0} y1={y0 - 20} x2={x0 + vW} y2={y0 - 20} label={`T-T ${fmtM(length)}`} />
+          <Annotation x1={x0 + vW + vHD + 20} y1={y0} x2={x0 + vW + vHD + 20} y2={y0 + vH} label={`D ${fmtM(id)}`} vertical />
+          {showBoots && (
+            <Annotation x1={x0 + vW + vHD + 36} y1={bottomY} x2={x0 + vW + vHD + 36} y2={groundY} label={`Boot ${fmtM(bootHeight)}`} vertical />
           )}
-        </svg>
+        </>
+      )}
+    </svg>
+  )
+
+  return (
+    <SectionCard
+      title="Vessel Schematic"
+      action={
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" aria-label="Open larger schematic">
+              <Expand />
+              View larger
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="grid h-[78vh] w-[88vw] max-w-[88vw] grid-rows-[auto_minmax(0,1fr)] overflow-hidden p-4 sm:h-[82vh] sm:w-[84vw] sm:max-w-[84vw] xl:w-[1240px] xl:max-w-[1240px]">
+            <DialogHeader>
+              <DialogTitle>Expanded Vessel Schematic</DialogTitle>
+              <DialogDescription>
+                Larger view of the live vessel schematic.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 overflow-auto rounded-xl border bg-card/40 p-3">
+              {renderSvg("h-auto w-full min-w-[480px] text-foreground")}
+            </div>
+          </DialogContent>
+        </Dialog>
+      }
+    >
+      <div className="flex flex-col items-center gap-4 py-2">
+        {renderSvg("w-full max-w-[340px] h-auto text-foreground")}
 
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
           <div className="flex items-center gap-1.5">

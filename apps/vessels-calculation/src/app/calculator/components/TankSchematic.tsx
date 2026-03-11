@@ -1,6 +1,17 @@
 "use client"
 
+import { useState } from "react"
+import { Expand } from "lucide-react"
 import { useFormContext } from "react-hook-form"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Button } from "@/components/ui/button"
 import { SectionCard } from "./SectionCard"
 import { cn } from "@/lib/utils"
 import type { CalculationInput } from "@/types"
@@ -18,6 +29,8 @@ export function TankSchematic() {
   const hll = watch("hll")
   const lll = watch("lll")
   const ofl = watch("ofl")
+
+  const [isOpen, setIsOpen] = useState(false)
 
   if (!diameter || diameter <= 0 || !tankType) {
     return null
@@ -44,54 +57,81 @@ export function TankSchematic() {
       return cy + r - h * scale
     }
 
+    const renderSvg = (svgClassName: string) => (
+      <svg viewBox={`0 0 ${svgSize} ${svgSize}`} className={svgClassName} aria-hidden="true">
+        <defs>
+          <clipPath id="tankSphereClip">
+            <circle cx={cx} cy={cy} r={r} />
+          </clipPath>
+          <marker id="tankArrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
+          </marker>
+        </defs>
+        {ll != null && ll > 0 && (
+          <rect
+            x={0}
+            y={levelY(ll)}
+            width={svgSize}
+            height={svgSize}
+            fill="rgba(56, 189, 248, 0.25)"
+            clipPath="url(#tankSphereClip)"
+          />
+        )}
+        <circle cx={cx} cy={cy} r={r} fill="none" stroke="currentColor" strokeWidth="2" />
+        {showBoots && (
+          <>
+            <line x1={cx - r} y1={legYTop} x2={cx - r} y2={groundY} stroke="currentColor" strokeWidth="2" />
+            <line x1={cx + r} y1={legYTop} x2={cx + r} y2={groundY} stroke="currentColor" strokeWidth="2" />
+          </>
+        )}
+        <line
+          x1={cx - r - 28}
+          y1={groundY}
+          x2={cx + r + 28}
+          y2={groundY}
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeDasharray="4 3"
+          opacity="0.8"
+        />
+        <TankLevelLine y={levelY(ll)} label={`LL ${fmtM(ll)}`} color="#38bdf8" x0={cx - r} x1={cx + r} />
+        <TankLevelLine y={levelY(hll)} label={`HLL ${fmtM(hll)}`} color="#22c55e" x0={cx - r} x1={cx + r} dashed />
+        <TankLevelLine y={levelY(lll)} label={`LLL ${fmtM(lll)}`} color="#f59e0b" x0={cx - r} x1={cx + r} dashed />
+        <TankLevelLine y={levelY(ofl)} label={`OFL ${fmtM(ofl)}`} color="#ef4444" x0={cx - r} x1={cx + r} dashed />
+        <TankAnnotation x1={cx - r} y1={cy + r + 18} x2={cx + r} y2={cy + r + 18} label={`D ${fmtM(diameter)}`} />
+        {showBoots && (
+          <TankAnnotation x1={cx + r + 24} y1={cy} x2={cx + r + 24} y2={groundY} label={`Boot ${fmtM(bootHeight)}`} vertical />
+        )}
+      </svg>
+    )
+
     return (
-      <SectionCard title="Tank Schematic">
+      <SectionCard
+        title="Tank Schematic"
+        action={
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" aria-label="Open larger schematic">
+                <Expand />
+                View larger
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="grid h-[78vh] w-[88vw] max-w-[88vw] grid-rows-[auto_minmax(0,1fr)] overflow-hidden p-4 sm:h-[82vh] sm:w-[84vw] sm:max-w-[84vw] xl:w-[1240px] xl:max-w-[1240px]">
+              <DialogHeader>
+                <DialogTitle>Expanded Tank Schematic</DialogTitle>
+                <DialogDescription>
+                  Larger view of the live tank schematic.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex-1 overflow-auto rounded-xl border bg-card/40 p-3">
+                {renderSvg("h-auto w-full min-w-[400px] text-foreground")}
+              </div>
+            </DialogContent>
+          </Dialog>
+        }
+      >
         <div className="flex flex-col items-center gap-4 py-2">
-          <svg viewBox={`0 0 ${svgSize} ${svgSize}`} className="w-full max-w-[320px] h-auto text-foreground" aria-hidden="true">
-            <defs>
-              <clipPath id="tankSphereClip">
-                <circle cx={cx} cy={cy} r={r} />
-              </clipPath>
-              <marker id="tankArrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-                <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
-              </marker>
-            </defs>
-            {ll != null && ll > 0 && (
-              <rect
-                x={0}
-                y={levelY(ll)}
-                width={svgSize}
-                height={svgSize}
-                fill="rgba(56, 189, 248, 0.25)"
-                clipPath="url(#tankSphereClip)"
-              />
-            )}
-            <circle cx={cx} cy={cy} r={r} fill="none" stroke="currentColor" strokeWidth="2" />
-            {showBoots && (
-              <>
-                <line x1={cx - r} y1={legYTop} x2={cx - r} y2={groundY} stroke="currentColor" strokeWidth="2" />
-                <line x1={cx + r} y1={legYTop} x2={cx + r} y2={groundY} stroke="currentColor" strokeWidth="2" />
-              </>
-            )}
-            <line
-              x1={cx - r - 28}
-              y1={groundY}
-              x2={cx + r + 28}
-              y2={groundY}
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeDasharray="4 3"
-              opacity="0.8"
-            />
-            <TankLevelLine y={levelY(ll)} label={`LL ${fmtM(ll)}`} color="#38bdf8" x0={cx - r} x1={cx + r} />
-            <TankLevelLine y={levelY(hll)} label={`HLL ${fmtM(hll)}`} color="#22c55e" x0={cx - r} x1={cx + r} dashed />
-            <TankLevelLine y={levelY(lll)} label={`LLL ${fmtM(lll)}`} color="#f59e0b" x0={cx - r} x1={cx + r} dashed />
-            <TankLevelLine y={levelY(ofl)} label={`OFL ${fmtM(ofl)}`} color="#ef4444" x0={cx - r} x1={cx + r} dashed />
-            <TankAnnotation x1={cx - r} y1={cy + r + 18} x2={cx + r} y2={cy + r + 18} label={`D ${fmtM(diameter)}`} />
-            {showBoots && (
-              <TankAnnotation x1={cx + r + 24} y1={cy} x2={cx + r + 24} y2={groundY} label={`Boot ${fmtM(bootHeight)}`} vertical />
-            )}
-          </svg>
+          {renderSvg("w-full max-w-[320px] h-auto text-foreground")}
           <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 text-[10px] text-muted-foreground uppercase tracking-wider font-medium">
             <div className="flex items-center gap-1.5">
               <div className="w-3 h-3 bg-sky-400/25 border border-sky-400/50 rounded-sm" />
@@ -147,48 +187,75 @@ export function TankSchematic() {
     return y0 + bodyH - (clamped / Math.max(maxLevel, 1)) * (bodyH + roofH)
   }
 
+  const renderSvg = (svgClassName: string) => (
+    <svg viewBox={`0 0 ${svgSize} ${svgSize}`} className={svgClassName} aria-hidden="true">
+      <defs>
+        <clipPath id="tankTopRoofClip">
+          <path d={`${roofPath} L ${x0 + bodyW},${y0 + bodyH} L ${x0},${y0 + bodyH} Z`} />
+        </clipPath>
+        <marker id="tankArrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
+        </marker>
+      </defs>
+      {ll != null && ll > 0 && (
+        <rect
+          x={0}
+          y={levelY(ll)}
+          width={svgSize}
+          height={svgSize}
+          fill="rgba(56, 189, 248, 0.25)"
+          clipPath="url(#tankTopRoofClip)"
+        />
+      )}
+      <path d={roofPath} fill="none" stroke="currentColor" strokeWidth="2" />
+      <rect x={x0} y={y0} width={bodyW} height={bodyH} fill="none" stroke="currentColor" strokeWidth="2" />
+      <line x1={x0} y1={y0 + bodyH} x2={x0 + bodyW} y2={y0 + bodyH} stroke="currentColor" strokeWidth="2" />
+      <TankLevelLine y={levelY(ll)} label={`LL ${fmtM(ll)}`} color="#38bdf8" x0={x0} x1={x0 + bodyW} />
+      <TankLevelLine y={levelY(hll)} label={`HLL ${fmtM(hll)}`} color="#22c55e" x0={x0} x1={x0 + bodyW} dashed />
+      <TankLevelLine y={levelY(lll)} label={`LLL ${fmtM(lll)}`} color="#f59e0b" x0={x0} x1={x0 + bodyW} dashed />
+      <TankLevelLine y={levelY(ofl)} label={`OFL ${fmtM(ofl)}`} color="#ef4444" x0={x0} x1={x0 + bodyW} dashed />
+      <TankAnnotation x1={x0} y1={y0 + bodyH + 18} x2={x0 + bodyW} y2={y0 + bodyH + 18} label={`D ${fmtM(diameter)}`} />
+      <TankAnnotation x1={x0 - 20} y1={y0} x2={x0 - 20} y2={y0 + bodyH} label={`H ${fmtM(shellHeight)}`} vertical />
+      {roofH > 0 && (
+        <TankAnnotation
+          x1={x0 + bodyW + 20}
+          y1={y0 - roofH}
+          x2={x0 + bodyW + 20}
+          y2={y0}
+          label={`Roof ${fmtM(roofHeight)}`}
+          vertical
+        />
+      )}
+    </svg>
+  )
+
   return (
-    <SectionCard title="Tank Schematic">
+    <SectionCard
+      title="Tank Schematic"
+      action={
+        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+          <DialogTrigger asChild>
+            <Button variant="outline" size="sm" aria-label="Open larger schematic">
+              <Expand />
+              View larger
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="grid h-[78vh] w-[88vw] max-w-[88vw] grid-rows-[auto_minmax(0,1fr)] overflow-hidden p-4 sm:h-[82vh] sm:w-[84vw] sm:max-w-[84vw] xl:w-[1240px] xl:max-w-[1240px]">
+            <DialogHeader>
+              <DialogTitle>Expanded Tank Schematic</DialogTitle>
+              <DialogDescription>
+                Larger view of the live tank schematic.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex-1 overflow-auto rounded-xl border bg-card/40 p-3">
+              {renderSvg("h-auto w-full min-w-[480px] text-foreground")}
+            </div>
+          </DialogContent>
+        </Dialog>
+      }
+    >
       <div className="flex flex-col items-center gap-4 py-2">
-        <svg viewBox={`0 0 ${svgSize} ${svgSize}`} className="w-full max-w-[340px] h-auto text-foreground" aria-hidden="true">
-          <defs>
-            <clipPath id="tankTopRoofClip">
-              <path d={`${roofPath} L ${x0 + bodyW},${y0 + bodyH} L ${x0},${y0 + bodyH} Z`} />
-            </clipPath>
-            <marker id="tankArrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
-              <path d="M 0 0 L 10 5 L 0 10 z" fill="currentColor" />
-            </marker>
-          </defs>
-          {ll != null && ll > 0 && (
-            <rect
-              x={0}
-              y={levelY(ll)}
-              width={svgSize}
-              height={svgSize}
-              fill="rgba(56, 189, 248, 0.25)"
-              clipPath="url(#tankTopRoofClip)"
-            />
-          )}
-          <path d={roofPath} fill="none" stroke="currentColor" strokeWidth="2" />
-          <rect x={x0} y={y0} width={bodyW} height={bodyH} fill="none" stroke="currentColor" strokeWidth="2" />
-          <line x1={x0} y1={y0 + bodyH} x2={x0 + bodyW} y2={y0 + bodyH} stroke="currentColor" strokeWidth="2" />
-          <TankLevelLine y={levelY(ll)} label={`LL ${fmtM(ll)}`} color="#38bdf8" x0={x0} x1={x0 + bodyW} />
-          <TankLevelLine y={levelY(hll)} label={`HLL ${fmtM(hll)}`} color="#22c55e" x0={x0} x1={x0 + bodyW} dashed />
-          <TankLevelLine y={levelY(lll)} label={`LLL ${fmtM(lll)}`} color="#f59e0b" x0={x0} x1={x0 + bodyW} dashed />
-          <TankLevelLine y={levelY(ofl)} label={`OFL ${fmtM(ofl)}`} color="#ef4444" x0={x0} x1={x0 + bodyW} dashed />
-          <TankAnnotation x1={x0} y1={y0 + bodyH + 18} x2={x0 + bodyW} y2={y0 + bodyH + 18} label={`D ${fmtM(diameter)}`} />
-          <TankAnnotation x1={x0 - 20} y1={y0} x2={x0 - 20} y2={y0 + bodyH} label={`H ${fmtM(shellHeight)}`} vertical />
-          {roofH > 0 && (
-            <TankAnnotation
-              x1={x0 + bodyW + 20}
-              y1={y0 - roofH}
-              x2={x0 + bodyW + 20}
-              y2={y0}
-              label={`Roof ${fmtM(roofHeight)}`}
-              vertical
-            />
-          )}
-        </svg>
+        {renderSvg("w-full max-w-[340px] h-auto text-foreground")}
         <p className="text-[10px] uppercase tracking-wider text-muted-foreground">
           Top roof tank · {roofType ?? TankRoofType.FLAT}
         </p>

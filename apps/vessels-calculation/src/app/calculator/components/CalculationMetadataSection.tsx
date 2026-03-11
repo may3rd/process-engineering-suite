@@ -369,17 +369,9 @@ export function CalculationMetadataSection({
                 <Button
                   type="button"
                   variant="ghost"
-                  onClick={() =>
-                    setMetadataDraft({
-                      projectNumber: "",
-                      documentNumber: "",
-                      title: "",
-                      projectName: "",
-                      client: "",
-                    })
-                  }
+                  onClick={() => setMetadataDialogOpen(false)}
                 >
-                  Clear
+                  Cancel
                 </Button>
                 <Button type="button" onClick={saveMetadata}>
                   Save Metadata
