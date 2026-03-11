@@ -1,4 +1,4 @@
-# Vessel Application (`apps/vessel`)
+# Vessel Application (`apps/vessels-calculation`)
 
 Vessel is a dedicated Process Engineering Suite calculator for industrial vessel and tank volume/surface calculations.
 

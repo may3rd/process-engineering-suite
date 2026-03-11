@@ -56,7 +56,7 @@ Expected primary payload:
 - `properties.details.totalSurfaceArea`: number, m2, optional
 - `properties.details.volume`: number, m3, optional
 
-Common extension written by `apps/vessel` when syncing back to linked equipment:
+Common extension written by `apps/vessels-calculation` when syncing back to linked equipment:
 
 - `properties.details.insideDiameter`
 - `properties.details.shellLength`
@@ -266,7 +266,7 @@ These are saved-calculation records stored in `engineering_objects`, distinct fr
 
 ### `VESSEL_CALCULATION`
 
-Written by `apps/vessel`.
+Written by `apps/vessels-calculation`.
 
 Expected payload:
 

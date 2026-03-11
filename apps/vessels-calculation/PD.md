@@ -2,7 +2,7 @@
 
 ## 1) Product Goal
 
-Build `apps/vessel` as a vessel/tank calculator intended to replace spreadsheet workflows for:
+Build `apps/vessels-calculation` as a vessel/tank calculator intended to replace spreadsheet workflows for:
 
 - volume calculations
 - surface area calculations
@@ -12,7 +12,7 @@ Build `apps/vessel` as a vessel/tank calculator intended to replace spreadsheet 
 ## 2) Design and Architecture Constraint (Mandatory)
 
 - UI and frontend architecture must follow [`pes-web-dna.md`].
-- Vessel geometry formulas run in TypeScript in `apps/vessel`.
+- Vessel geometry formulas run in TypeScript in `apps/vessels-calculation`.
 - Unit conversion must use `convertUnit` from `@eng-suite/physics`.
 - No hardcoded conversion factors.
 

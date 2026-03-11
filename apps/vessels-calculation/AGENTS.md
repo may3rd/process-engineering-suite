@@ -1,15 +1,15 @@
-# AGENTS.md (apps/vessel)
+# AGENTS.md (apps/vessels-calculation)
 
-This file defines app-scoped rules for `apps/vessel`.
+This file defines app-scoped rules for `apps/vessels-calculation`.
 
 ## Scope
 
-- Applies to all files under `apps/vessel/**`.
+- Applies to all files under `apps/vessels-calculation/**`.
 - Goal: deliver a vessel/tank volume and surface calculator using the same web DNA as `apps/venting-calculation`.
 
 ## Rule 0 (must follow)
 
-- Volume and surface-area equations for vessel/tank geometry are allowed in TypeScript for `apps/vessel`.
+- Volume and surface-area equations for vessel/tank geometry are allowed in TypeScript for `apps/vessels-calculation`.
 - Keep formulas deterministic, explicit, and covered by regression tests.
 - No hardcoded conversion constants; all unit conversion must call `convertUnit` from `@eng-suite/physics`.
 
