@@ -15,7 +15,12 @@ import {
   OverpressureScenario as Scenario,
   SizingCase,
   Equipment,
+  EquipmentDetails,
   EquipmentLink,
+  VesselDetails,
+  ColumnDetails,
+  TankDetails,
+  PumpDetails,
   Attachment,
   Comment,
   TodoItem,
@@ -359,6 +364,208 @@ export class ApiClient {
     return type.toUpperCase();
   }
 
+  /**
+   * Map raw engineering_objects.properties.details (DB-aligned keys) to PSV typed interfaces.
+   * Reads new DB-aligned keys first, falls back to legacy short keys for existing data.
+   */
+  private mapDetails(type: string, d: Record<string, unknown>): Equipment["details"] {
+    const toNum = (v: unknown): number | undefined =>
+      typeof v === "number" && isFinite(v) ? v : undefined;
+
+    switch (type) {
+      case "vessel": {
+        return {
+          orientation: d.orientation as VesselDetails["orientation"],
+          innerDiameter: toNum(d.innerDiameterMm) ?? toNum(d.innerDiameter) ?? 0,
+          tangentToTangentLength:
+            toNum(d.tangentToTangentLengthMm) ?? toNum(d.tangentToTangentLength) ?? 0,
+          headType: d.headType as VesselDetails["headType"],
+          wallThickness: toNum(d.wallThicknessMm) ?? toNum(d.wallThickness),
+          insulated: Boolean(d.insulated),
+          insulationType: d.insulationType as VesselDetails["insulationType"],
+          insulationThickness:
+            toNum(d.insulationThicknessMm) ?? toNum(d.insulationThickness),
+          normalLiquidLevel:
+            toNum(d.normalLiquidLevelPct) ?? toNum(d.normalLiquidLevel),
+          lowLiquidLevel:
+            toNum(d.lowLiquidLevelPct) ?? toNum(d.lowLiquidLevel),
+          highLiquidLevel:
+            toNum(d.highLiquidLevelPct) ?? toNum(d.highLiquidLevel),
+          wettedArea: toNum(d.wettedAreaM2) ?? toNum(d.wettedArea),
+          totalSurfaceArea: toNum(d.totalSurfaceAreaM2) ?? toNum(d.totalSurfaceArea),
+          volume: toNum(d.volumeM3) ?? toNum(d.volume),
+        } as VesselDetails;
+      }
+
+      case "column": {
+        return {
+          innerDiameter: toNum(d.innerDiameterMm) ?? toNum(d.innerDiameter) ?? 0,
+          tangentToTangentHeight:
+            toNum(d.tangentToTangentHeightMm) ?? toNum(d.tangentToTangentHeight) ?? 0,
+          headType: d.headType as ColumnDetails["headType"],
+          wallThickness: toNum(d.wallThicknessMm) ?? toNum(d.wallThickness),
+          insulated: Boolean(d.insulated),
+          insulationType: d.insulationType as ColumnDetails["insulationType"],
+          insulationThickness:
+            toNum(d.insulationThicknessMm) ?? toNum(d.insulationThickness),
+          normalLiquidLevel:
+            toNum(d.normalLiquidLevelPct) ?? toNum(d.normalLiquidLevel),
+          lowLiquidLevel:
+            toNum(d.lowLiquidLevelPct) ?? toNum(d.lowLiquidLevel),
+          highLiquidLevel:
+            toNum(d.highLiquidLevelPct) ?? toNum(d.highLiquidLevel),
+          wettedArea: toNum(d.wettedAreaM2) ?? toNum(d.wettedArea),
+          totalSurfaceArea: toNum(d.totalSurfaceAreaM2) ?? toNum(d.totalSurfaceArea),
+          volume: toNum(d.volumeM3) ?? toNum(d.volume),
+        } as ColumnDetails;
+      }
+
+      case "tank": {
+        return {
+          tankType: (d.tankType as TankDetails["tankType"]) ?? "atmospheric",
+          orientation: (d.orientation as TankDetails["orientation"]) ?? "vertical",
+          innerDiameter: toNum(d.innerDiameterMm) ?? toNum(d.innerDiameter) ?? 0,
+          height: toNum(d.heightMm) ?? toNum(d.height) ?? 0,
+          roofType: d.roofType as TankDetails["roofType"],
+          wallThickness: toNum(d.wallThicknessMm) ?? toNum(d.wallThickness),
+          insulated: Boolean(d.insulated),
+          insulationType: d.insulationType as TankDetails["insulationType"],
+          insulationThickness:
+            toNum(d.insulationThicknessMm) ?? toNum(d.insulationThickness),
+          normalLiquidLevel:
+            toNum(d.normalLiquidLevelPct) ?? toNum(d.normalLiquidLevel),
+          lowLiquidLevel:
+            toNum(d.lowLiquidLevelPct) ?? toNum(d.lowLiquidLevel),
+          highLiquidLevel:
+            toNum(d.highLiquidLevelPct) ?? toNum(d.highLiquidLevel),
+          wettedArea: toNum(d.wettedAreaM2) ?? toNum(d.wettedArea),
+          volume: toNum(d.volumeM3) ?? toNum(d.volume),
+          heelVolume: toNum(d.heelVolumeM3) ?? toNum(d.heelVolume),
+        } as TankDetails;
+      }
+
+      case "pump": {
+        return {
+          pumpType: (d.pumpType as PumpDetails["pumpType"]) ?? "centrifugal",
+          ratedFlow: toNum(d.ratedFlowM3h) ?? toNum(d.ratedFlow) ?? 0,
+          ratedHead: toNum(d.ratedHeadM) ?? toNum(d.ratedHead) ?? 0,
+          maxDischargePressure:
+            toNum(d.maxDischargePressureBarg) ?? toNum(d.maxDischargePressure) ?? 0,
+          shutoffHead: toNum(d.shutoffHeadM) ?? toNum(d.shutoffHead),
+          npshRequired: toNum(d.npshRequiredM) ?? toNum(d.npshRequired),
+          efficiency: toNum(d.efficiencyPct) ?? toNum(d.efficiency),
+          motorPower: toNum(d.motorPowerKw) ?? toNum(d.motorPower),
+          maxViscosity: toNum(d.maxViscosityCp) ?? toNum(d.maxViscosity),
+          suctionPressure:
+            toNum(d.suctionPressureBarg) ?? toNum(d.suctionPressure),
+          dischargePressure:
+            toNum(d.dischargePressureBarg) ?? toNum(d.dischargePressure),
+          fluidTemperature:
+            toNum(d.fluidTemperatureC) ?? toNum(d.fluidTemperature),
+          fluidDensity: toNum(d.fluidDensityKgm3) ?? toNum(d.fluidDensity),
+        } as PumpDetails;
+      }
+
+      default:
+        return d as Equipment["details"]; // heat_exchanger, compressor, piping, etc.
+    }
+  }
+
+  /**
+   * Translate PSV's typed details (short names) to DB-aligned keys for writing to engineering_objects.
+   * Inverse of mapDetails().
+   */
+  private translateDetailsToDb(
+    type: string,
+    d: EquipmentDetails | undefined,
+  ): Record<string, unknown> {
+    if (!d) return {};
+
+    switch (type) {
+      case "vessel": {
+        const v = d as VesselDetails;
+        return {
+          orientation: v.orientation,
+          innerDiameterMm: v.innerDiameter,
+          tangentToTangentLengthMm: v.tangentToTangentLength,
+          headType: v.headType,
+          wallThicknessMm: v.wallThickness,
+          insulated: v.insulated,
+          insulationType: v.insulationType,
+          insulationThicknessMm: v.insulationThickness,
+          normalLiquidLevelPct: v.normalLiquidLevel,
+          lowLiquidLevelPct: v.lowLiquidLevel,
+          highLiquidLevelPct: v.highLiquidLevel,
+          wettedAreaM2: v.wettedArea,
+          totalSurfaceAreaM2: v.totalSurfaceArea,
+          volumeM3: v.volume,
+        };
+      }
+
+      case "column": {
+        const c = d as ColumnDetails;
+        return {
+          innerDiameterMm: c.innerDiameter,
+          tangentToTangentHeightMm: c.tangentToTangentHeight,
+          headType: c.headType,
+          wallThicknessMm: c.wallThickness,
+          insulated: c.insulated,
+          insulationType: c.insulationType,
+          insulationThicknessMm: c.insulationThickness,
+          normalLiquidLevelPct: c.normalLiquidLevel,
+          lowLiquidLevelPct: c.lowLiquidLevel,
+          highLiquidLevelPct: c.highLiquidLevel,
+          wettedAreaM2: c.wettedArea,
+          totalSurfaceAreaM2: c.totalSurfaceArea,
+          volumeM3: c.volume,
+        };
+      }
+
+      case "tank": {
+        const t = d as TankDetails;
+        return {
+          tankType: t.tankType,
+          orientation: t.orientation,
+          innerDiameterMm: t.innerDiameter,
+          heightMm: t.height,
+          roofType: t.roofType,
+          wallThicknessMm: t.wallThickness,
+          insulated: t.insulated,
+          insulationType: t.insulationType,
+          insulationThicknessMm: t.insulationThickness,
+          normalLiquidLevelPct: t.normalLiquidLevel,
+          lowLiquidLevelPct: t.lowLiquidLevel,
+          highLiquidLevelPct: t.highLiquidLevel,
+          wettedAreaM2: t.wettedArea,
+          volumeM3: t.volume,
+          heelVolumeM3: t.heelVolume,
+        };
+      }
+
+      case "pump": {
+        const p = d as PumpDetails;
+        return {
+          pumpType: p.pumpType,
+          ratedFlowM3h: p.ratedFlow,
+          ratedHeadM: p.ratedHead,
+          maxDischargePressureBarg: p.maxDischargePressure,
+          shutoffHeadM: p.shutoffHead,
+          npshRequiredM: p.npshRequired,
+          efficiencyPct: p.efficiency,
+          motorPowerKw: p.motorPower,
+          maxViscosityCp: p.maxViscosity,
+          suctionPressureBarg: p.suctionPressure,
+          dischargePressureBarg: p.dischargePressure,
+          fluidTemperatureC: p.fluidTemperature,
+          fluidDensityKgm3: p.fluidDensity,
+        };
+      }
+
+      default:
+        return d as Record<string, unknown>;
+    }
+  }
+
   private buildEngineeringObjectPayload(
     equipment: Omit<Equipment, "id" | "createdAt" | "updatedAt">,
     existingProperties?: Record<string, unknown>,
@@ -382,7 +589,9 @@ export class ApiClient {
       status: equipment.status,
       properties: {
         ...(existingProperties ?? {}),
-        details: equipment.details ?? (existingProperties?.details as Record<string, unknown> | undefined) ?? {},
+        details: this.translateDetailsToDb(equipment.type, equipment.details)
+          ?? (existingProperties?.details as Record<string, unknown> | undefined)
+          ?? {},
         design_parameters: {
           ...(
             existingProperties?.design_parameters as Record<string, unknown> | undefined
@@ -443,7 +652,9 @@ export class ApiClient {
           : "C",
       ownerId: raw.owner_id ?? "",
       status: raw.status === "inactive" ? "inactive" : "active",
-      details: details as Equipment["details"],
+      details: details
+        ? this.mapDetails(type, details as Record<string, unknown>)
+        : undefined,
       createdAt: raw.created_at ?? new Date().toISOString(),
       updatedAt: raw.updated_at ?? new Date().toISOString(),
     };
