@@ -12,12 +12,14 @@ export function TopToolbar() {
   const isDark = mode === "dark" || theme.palette.mode === "dark"
 
   return (
-    <TopFloatingToolbar
-      title="Vessel Calculator"
-      subtitle="Volume & Surface Area · Pressure Vessels & Tanks"
-      icon={<CalculateIcon fontSize="medium" />}
-      onToggleTheme={toggleColorMode}
-      isDarkMode={isDark}
-    />
+    <div className="print:hidden">
+      <TopFloatingToolbar
+        title="Vessel Calculator"
+        subtitle="Volume & Surface Area · Pressure Vessels & Tanks"
+        icon={<CalculateIcon fontSize="medium" />}
+        onToggleTheme={toggleColorMode}
+        isDarkMode={isDark}
+      />
+    </div>
   )
 }

@@ -17,9 +17,10 @@ import { EquipmentMode, HeadType, TankType, TankRoofType } from "@/types"
 
 interface Props {
   calculationResult: CalculationResult | null
+  schematicShowExpandAction?: boolean
 }
 
-export function ResultsPanel({ calculationResult }: Props) {
+export function ResultsPanel({ calculationResult, schematicShowExpandAction = true }: Props) {
   const { watch } = useFormContext<CalculationInput>()
   const equipmentMode = watch("equipmentMode") ?? EquipmentMode.VESSEL
   const tankType = watch("tankType")
@@ -35,7 +36,10 @@ export function ResultsPanel({ calculationResult }: Props) {
   return (
     <div className="space-y-4">
       <SummaryResult result={calculationResult} equipmentMode={equipmentMode} tankType={tankType} />
-      {equipmentMode === EquipmentMode.TANK ? <TankSchematic /> : <VesselSchematic />}
+      {equipmentMode === EquipmentMode.TANK
+        ? <TankSchematic showExpandAction={schematicShowExpandAction} />
+        : <VesselSchematic showExpandAction={schematicShowExpandAction} />
+      }
       <VolumeResult result={calculationResult} equipmentMode={equipmentMode} tankType={tankType} />
       <SurfaceAreaResult result={calculationResult} equipmentMode={equipmentMode} tankType={tankType} />
       <MassTimingResult result={calculationResult} />

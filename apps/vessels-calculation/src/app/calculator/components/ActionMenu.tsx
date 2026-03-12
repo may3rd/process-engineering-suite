@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react';
 import { Menu, RotateCcw, FileDown, Loader2, LinkIcon, Upload, Check } from 'lucide-react';
 import { useFormContext } from 'react-hook-form';
-import { pdf } from '@react-pdf/renderer';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -15,10 +14,14 @@ import {
 import { SaveCalculationButton } from './SaveCalculationButton';
 import { LoadCalculationButton } from './LoadCalculationButton';
 import { EquipmentLinkButton } from './EquipmentLinkButton';
-import { VesselReport } from '../pdf/VesselReport';
 import { useUomStore } from '@/lib/store/uomStore';
 import type { VesselUomCategory } from '@/lib/uom';
 import { apiClient } from '@/lib/apiClient';
+import {
+  buildPrintReportHref,
+  createPrintReportStorageKey,
+  writePrintReportPayload,
+} from '@/lib/printReport';
 import {
   EquipmentMode,
 } from '@/types';
@@ -66,21 +69,15 @@ export function ActionMenu({
     setPdfLoading(true);
     try {
       const input = getValues();
-      const blob = await pdf(
-        <VesselReport
-          input={input}
-          result={calculationResult}
-          metadata={calculationMetadata}
-          revisions={revisionHistory}
-          units={units as Record<VesselUomCategory, string>}
-        />,
-      ).toBlob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `vessel-${(input.tag || 'calc').replace(/[^a-zA-Z0-9-_]/g, '_')}.pdf`;
-      a.click();
-      URL.revokeObjectURL(url);
+      const key = createPrintReportStorageKey();
+      writePrintReportPayload(window.localStorage, key, {
+        input,
+        result: calculationResult,
+        metadata: calculationMetadata,
+        revisions: revisionHistory,
+        units: units as Record<VesselUomCategory, string>,
+      });
+      window.open(buildPrintReportHref(key), '_blank', 'noopener,noreferrer');
     } finally {
       setPdfLoading(false);
     }

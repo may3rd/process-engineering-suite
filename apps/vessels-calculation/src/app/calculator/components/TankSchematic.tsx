@@ -17,7 +17,11 @@ import { cn } from "@/lib/utils"
 import type { CalculationInput } from "@/types"
 import { TankRoofType, TankType } from "@/types"
 
-export function TankSchematic() {
+interface TankSchematicProps {
+  showExpandAction?: boolean
+}
+
+export function TankSchematic({ showExpandAction = true }: TankSchematicProps) {
   const { watch } = useFormContext<CalculationInput>()
   const diameter = watch("insideDiameter")
   const tankType = watch("tankType")
@@ -117,7 +121,7 @@ export function TankSchematic() {
     return (
       <SectionCard
         title="Tank Schematic"
-        action={
+        action={showExpandAction ? (
           <Dialog open={isOpen} onOpenChange={setIsOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" size="sm" aria-label="Open larger schematic">
@@ -137,7 +141,7 @@ export function TankSchematic() {
               </div>
             </DialogContent>
           </Dialog>
-        }
+        ) : undefined}
       >
         <div className="flex flex-col items-center gap-4 py-2">
           {renderSvg("w-full max-w-[440px] h-auto text-foreground")}
@@ -255,7 +259,7 @@ export function TankSchematic() {
   return (
     <SectionCard
       title="Tank Schematic"
-      action={
+      action={showExpandAction ? (
         <Dialog open={isOpen} onOpenChange={setIsOpen}>
           <DialogTrigger asChild>
             <Button variant="outline" size="sm" aria-label="Open larger schematic">
@@ -272,10 +276,10 @@ export function TankSchematic() {
             </DialogHeader>
             <div className="flex-1 overflow-auto rounded-xl border bg-card/40 p-3">
               {renderSvg("h-auto w-full min-w-[680px] text-foreground")}
-            </div>
-          </DialogContent>
-        </Dialog>
-      }
+              </div>
+            </DialogContent>
+          </Dialog>
+      ) : undefined}
     >
       <div className="flex flex-col items-center gap-4 py-2">
         {renderSvg("w-full max-w-[460px] h-auto text-foreground")}
