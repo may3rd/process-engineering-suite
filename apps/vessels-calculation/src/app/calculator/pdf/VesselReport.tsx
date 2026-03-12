@@ -11,10 +11,27 @@ import {
   View,
   Text,
   StyleSheet,
+  Svg,
+  Path,
+  Rect,
+  Line,
+  Circle,
+  G,
 } from '@react-pdf/renderer'
 import { convertUnit } from '@eng-suite/physics'
 import { BASE_UNITS, UOM_LABEL, type VesselUomCategory } from '@/lib/uom'
-import type { CalculationInput, CalculationResult, CalculationMetadata, RevisionRecord } from '@/types'
+import { autoHeadDepth } from '@/lib/calculations/vesselGeometry'
+import {
+  EquipmentMode,
+  HeadType,
+  TankRoofType,
+  TankType,
+  VesselOrientation,
+  type CalculationInput,
+  type CalculationResult,
+  type CalculationMetadata,
+  type RevisionRecord,
+} from '@/types'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -116,6 +133,25 @@ const S = StyleSheet.create({
   },
   revCell: { flex: 1, fontSize: 7 },
   revHeaderCell: { flex: 1, fontSize: 6.5, fontFamily: 'Helvetica-Bold', color: '#374151' },
+  schematicWrap: {
+    borderWidth: 0.5,
+    borderColor: '#d1d5db',
+    padding: 8,
+    marginTop: 2,
+    alignItems: 'center',
+    minHeight: 190,
+  },
+  schematicSvg: {
+    width: '100%',
+    height: 170,
+  },
+  schematicCaption: {
+    marginTop: 4,
+    fontSize: 6.5,
+    color: '#6b7280',
+    textTransform: 'uppercase',
+    letterSpacing: 0.4,
+  },
 })
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -132,6 +168,10 @@ function fmt(
 
 function unitLabel(unit: string): string {
   return UOM_LABEL[unit] ?? unit
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.max(min, Math.min(max, value))
 }
 
 // ─── Sub-components ──────────────────────────────────────────────────────────
@@ -167,6 +207,283 @@ function TableRow({
       </Text>
       <Text style={[bold ? S.cellBold : S.cellText, S.colValue]}>{value}</Text>
       <Text style={[S.cellMuted, S.colUnit]}>{unit}</Text>
+    </View>
+  )
+}
+
+function SchematicFigure({ input }: { input: CalculationInput }) {
+  const equipmentMode = input.equipmentMode ?? EquipmentMode.VESSEL
+  const width = 420
+  const height = 220
+  const pad = 26
+  const stroke = '#111827'
+  const guide = '#9ca3af'
+  const fill = '#bfdbfe'
+
+  if (equipmentMode === EquipmentMode.TANK) {
+    if (input.tankType === TankType.SPHERICAL) {
+      const d = Math.max(input.insideDiameter, 1)
+      const rMm = d / 2
+      const clMm = input.bottomHeight && input.bottomHeight > 0 ? input.bottomHeight : d * 0.25
+      const scale = Math.min((width - pad * 2) / d, (height - pad * 2) / (rMm + clMm))
+      const r = rMm * scale
+      const cx = width / 2
+      const cy = pad + r
+      const groundY = cy + clMm * scale
+      const liquidY = input.liquidLevel != null ? clamp(cy + r - input.liquidLevel * scale, cy - r, cy + r) : undefined
+
+      return (
+        <View style={S.schematicWrap}>
+          <Svg width={width} height={height} style={S.schematicSvg}>
+            {liquidY != null && (
+              <>
+                <Rect x={cx - r} y={liquidY} width={r * 2} height={cy + r - liquidY} fill={fill} />
+                <Circle cx={cx} cy={cy} r={r} stroke={stroke} strokeWidth={2} fill="none" />
+              </>
+            )}
+            <Circle cx={cx} cy={cy} r={r} stroke={stroke} strokeWidth={2} fill="none" />
+            <Line x1={cx - r} y1={cy} x2={cx - r} y2={groundY} stroke={stroke} strokeWidth={2} />
+            <Line x1={cx + r} y1={cy} x2={cx + r} y2={groundY} stroke={stroke} strokeWidth={2} />
+            <Line x1={cx - r - 28} y1={groundY} x2={cx + r + 28} y2={groundY} stroke={stroke} strokeWidth={1} strokeDasharray="5 4" />
+          </Svg>
+          <Text style={S.schematicCaption}>Spherical Tank Schematic</Text>
+        </View>
+      )
+    }
+
+    const d = Math.max(input.insideDiameter, 1)
+    const shellH = Math.max(input.shellLength ?? 1, 1)
+    const roofH = input.tankRoofType && input.tankRoofType !== TankRoofType.FLAT ? Math.max(input.roofHeight ?? 0, 0) : 0
+    const scale = Math.min((width - pad * 2) / d, (height - pad * 2) / Math.max(shellH + roofH, 1))
+    const bodyW = d * scale
+    const bodyH = shellH * scale
+    const roof = roofH * scale
+    const x0 = (width - bodyW) / 2
+    const y0 = (height - (bodyH + roof)) / 2 + roof
+    const liquidY = input.liquidLevel != null
+      ? clamp(y0 + bodyH - (input.liquidLevel / Math.max(shellH + roofH, 1)) * (bodyH + roof), y0 - roof, y0 + bodyH)
+      : undefined
+    const roofPath = input.tankRoofType === TankRoofType.CONE
+      ? `M ${x0},${y0} L ${x0 + bodyW / 2},${y0 - roof} L ${x0 + bodyW},${y0}`
+      : input.tankRoofType === TankRoofType.DOME
+        ? `M ${x0},${y0} Q ${x0 + bodyW / 2},${y0 - roof * 1.4} ${x0 + bodyW},${y0}`
+        : `M ${x0},${y0} L ${x0 + bodyW},${y0}`
+
+    return (
+      <View style={S.schematicWrap}>
+        <Svg width={width} height={height} style={S.schematicSvg}>
+          {liquidY != null && (
+            <Rect x={x0} y={liquidY} width={bodyW} height={y0 + bodyH - liquidY} fill={fill} />
+          )}
+          <Path d={roofPath} stroke={stroke} strokeWidth={2} fill="none" />
+          <Rect x={x0} y={y0} width={bodyW} height={bodyH} stroke={stroke} strokeWidth={2} fill="none" />
+        </Svg>
+        <Text style={S.schematicCaption}>Tank Schematic</Text>
+      </View>
+    )
+  }
+
+  const d        = Math.max(input.insideDiameter, 1)
+  const length   = Math.max(input.shellLength ?? 1, 1)
+  const headType = input.headType ?? HeadType.ELLIPSOIDAL_2_1
+  const isVertical = (input.orientation ?? VesselOrientation.VERTICAL) === VesselOrientation.VERTICAL
+
+  // Head depth — use autoHeadDepth for accuracy (same as DOM component)
+  const headDepth = input.headDepth ?? (autoHeadDepth(headType, d) ?? d / 4)
+
+  const bootID    = input.bootInsideDiameter ?? 0
+  const bootCylH  = input.bootHeight ?? 0
+  const legHeight = input.bottomHeight ?? 0
+  const hasBoot   = bootID > 0 && bootCylH > 0
+
+  // Boot head depth — same logic as DOM VesselSchematic
+  const bootHeadDepth = hasBoot
+    ? headType === HeadType.CONICAL
+      ? bootID * (headDepth / Math.max(d, 1))
+      : (autoHeadDepth(headType, bootID) ?? 0)
+    : 0
+
+  // Cap drawn length at 4×D for very tall vertical vessels
+  const drawnLength = isVertical && d > 0 && length / d > 4 ? 4 * d : length
+  const isTruncated = drawnLength < length
+
+  const totalW = isVertical ? d : length + 2 * headDepth
+  const totalH = isVertical
+    ? drawnLength + headDepth + Math.max(headDepth + (hasBoot ? bootCylH + bootHeadDepth : 0), legHeight)
+    : d + Math.max(legHeight, bootCylH + bootHeadDepth)
+
+  const scale          = Math.min((width - pad * 2) / Math.max(totalW, 1), (height - pad * 2) / Math.max(totalH, 1))
+  const vW             = (isVertical ? d : length) * scale
+  const vH             = (isVertical ? drawnLength : d) * scale
+  const vHD            = headDepth * scale
+  const leg            = Math.max(0, legHeight) * scale
+  const bootCylScaledW = hasBoot ? Math.max(8, Math.min(bootID * scale, vW * 0.5)) : 0
+  const bootCylScaledH = hasBoot ? bootCylH * scale : 0
+  const bootVHD        = bootHeadDepth * scale
+
+  // Centre the drawing inside the viewport (mirrors DOM component)
+  const fullW = isVertical ? vW : vW + 2 * vHD
+  const fullH = isVertical
+    ? vH + vHD + Math.max(hasBoot ? vHD + bootCylScaledH + bootVHD : vHD, leg)
+    : vH + Math.max(leg, bootCylScaledH + bootVHD)
+  const x0 = isVertical ? (width - fullW) / 2 : (width - fullW) / 2 + vHD
+  const y0 = isVertical ? (height - fullH) / 2 + vHD : (height - fullH) / 2
+
+  const liquidY = input.liquidLevel != null
+    ? isVertical
+      ? y0 + vH + vHD - input.liquidLevel * scale
+      : y0 + vH - input.liquidLevel * scale
+    : undefined
+
+  // ── Vessel shell + heads ──
+  let vesselPath = ''
+  if (isVertical) {
+    vesselPath = `M ${x0},${y0} L ${x0+vW},${y0} L ${x0+vW},${y0+vH} L ${x0},${y0+vH} Z`
+    if (headType === HeadType.HEMISPHERICAL) {
+      vesselPath += ` M ${x0+vW},${y0} A ${vW/2},${vW/2} 0 0 0 ${x0},${y0}`
+      vesselPath += ` M ${x0},${y0+vH} A ${vW/2},${vW/2} 0 0 0 ${x0+vW},${y0+vH}`
+    } else if (headType === HeadType.CONICAL) {
+      vesselPath += ` M ${x0+vW},${y0} L ${x0+vW/2},${y0-vHD} L ${x0},${y0}`
+      vesselPath += ` M ${x0},${y0+vH} L ${x0+vW/2},${y0+vH+vHD} L ${x0+vW},${y0+vH}`
+    } else {
+      vesselPath += ` M ${x0+vW},${y0} A ${vW/2},${vHD} 0 0 0 ${x0},${y0}`
+      vesselPath += ` M ${x0},${y0+vH} A ${vW/2},${vHD} 0 0 0 ${x0+vW},${y0+vH}`
+    }
+  } else {
+    vesselPath = `M ${x0},${y0} L ${x0+vW},${y0} L ${x0+vW},${y0+vH} L ${x0},${y0+vH} Z`
+    if (headType === HeadType.HEMISPHERICAL) {
+      vesselPath += ` M ${x0},${y0+vH} A ${vH/2},${vH/2} 0 0 1 ${x0},${y0}`
+      vesselPath += ` M ${x0+vW},${y0} A ${vH/2},${vH/2} 0 0 1 ${x0+vW},${y0+vH}`
+    } else if (headType === HeadType.CONICAL) {
+      vesselPath += ` M ${x0},${y0+vH} L ${x0-vHD},${y0+vH/2} L ${x0},${y0}`
+      vesselPath += ` M ${x0+vW},${y0} L ${x0+vW+vHD},${y0+vH/2} L ${x0+vW},${y0+vH}`
+    } else {
+      vesselPath += ` M ${x0},${y0+vH} A ${vHD},${vH/2} 0 0 1 ${x0},${y0}`
+      vesselPath += ` M ${x0+vW},${y0} A ${vHD},${vH/2} 0 0 1 ${x0+vW},${y0+vH}`
+    }
+  }
+
+  // ── Vertical boot path ──
+  const bootTopY   = y0 + vH + vHD
+  const bootX      = x0 + vW / 2 - bootCylScaledW / 2
+  const bootBotY   = bootTopY + bootCylScaledH
+  const bootApexY  = bootBotY + bootVHD
+  const vBootPath = !hasBoot ? '' : (() => {
+    let p = `M ${bootX},${bootTopY} L ${bootX},${bootBotY}`
+    if (headType === HeadType.HEMISPHERICAL)
+      p += ` A ${bootCylScaledW/2},${bootCylScaledW/2} 0 0 0 ${bootX+bootCylScaledW},${bootBotY}`
+    else if (headType === HeadType.CONICAL) {
+      p += ` L ${bootX+bootCylScaledW/2},${bootApexY}`
+      p += ` L ${bootX+bootCylScaledW},${bootBotY}`
+    } else
+      p += ` A ${bootCylScaledW/2},${bootVHD} 0 0 0 ${bootX+bootCylScaledW},${bootBotY}`
+    p += ` L ${bootX+bootCylScaledW},${bootTopY}`
+    return p
+  })()
+
+  // ── Horizontal boot path ──
+  const hBootX        = x0 + vW * 0.15 - bootCylScaledW / 2 - 10
+  const hBootTopY     = y0 + vH
+  const hBootBodyBotY = hBootTopY + bootCylScaledH
+  const hBootBotY     = hBootBodyBotY + bootVHD
+  const hBootPath = !hasBoot ? '' : (() => {
+    let p = `M ${hBootX},${hBootTopY} L ${hBootX},${hBootBodyBotY}`
+    if (headType === HeadType.HEMISPHERICAL)
+      p += ` A ${bootCylScaledW/2},${bootCylScaledW/2} 0 0 0 ${hBootX+bootCylScaledW},${hBootBodyBotY}`
+    else if (headType === HeadType.CONICAL) {
+      p += ` L ${hBootX+bootCylScaledW/2},${hBootBodyBotY+bootVHD}`
+      p += ` L ${hBootX+bootCylScaledW},${hBootBodyBotY}`
+    } else
+      p += ` A ${bootCylScaledW/2},${bootVHD} 0 0 0 ${hBootX+bootCylScaledW},${hBootBodyBotY}`
+    p += ` L ${hBootX+bootCylScaledW},${hBootTopY}`
+    return p
+  })()
+
+  // ── Caption text ──
+  const fmtM = (v: number) => `${(v / 1000).toFixed(2)}m`
+  const captionParts: string[] = [
+    `T-T: ${fmtM(length)}`,
+    `D: ${fmtM(d)}`,
+    ...(isTruncated ? ['(truncated in drawing)'] : []),
+    ...(leg > 0 ? [`Btm: ${fmtM(legHeight)}`] : []),
+    ...(hasBoot ? [`BH: ${fmtM(bootCylH)}  BD: ${fmtM(bootID)}`] : []),
+  ]
+
+  return (
+    <View style={S.schematicWrap}>
+      <Svg width={width} height={height} style={S.schematicSvg}>
+        {/* Liquid fill — unclipped rect (no clipPath in @react-pdf) */}
+        {liquidY != null && (
+          <Rect x={x0} y={liquidY} width={vW} height={y0 + vH - liquidY} fill={fill} />
+        )}
+
+        {/* Vessel shell + heads */}
+        <Path d={vesselPath} stroke={stroke} strokeWidth={2} fill="none" />
+
+        {/* Break mark for truncated tall vertical vessels */}
+        {isVertical && isTruncated && (() => {
+          const a = 5, gap = 8
+          const cx = x0 + vW / 2
+          const yb = y0 + vH * 0.5
+          const y1L = yb - a - gap / 2;  const y1R = yb + a - gap / 2
+          const y2L = yb - a + gap / 2;  const y2R = yb + a + gap / 2
+          const zTop = y1L - 1;          const zBot = y2R + 1
+          return (
+            <G>
+              <Rect x={x0 - 1} y={zTop} width={vW + 2} height={zBot - zTop} fill="white" />
+              {/* Left wall split */}
+              <Line x1={x0} y1={zTop} x2={x0} y2={y1L} stroke={stroke} strokeWidth={2} />
+              <Line x1={x0} y1={y2L} x2={x0} y2={zBot} stroke={stroke} strokeWidth={2} />
+              {/* Right wall split */}
+              <Line x1={x0 + vW} y1={zTop} x2={x0 + vW} y2={y1R} stroke={stroke} strokeWidth={2} />
+              <Line x1={x0 + vW} y1={y2R} x2={x0 + vW} y2={zBot} stroke={stroke} strokeWidth={2} />
+              {/* Zigzag break line 1 — use L not H (H unsupported in @react-pdf) */}
+              <Path d={`M ${x0},${y1L} L ${cx - a},${y1L} L ${cx + a},${y1R} L ${x0 + vW},${y1R}`}
+                    stroke={stroke} strokeWidth={1.5} fill="none" />
+              {/* Zigzag break line 2 */}
+              <Path d={`M ${x0},${y2L} L ${cx - a},${y2L} L ${cx + a},${y2R} L ${x0 + vW},${y2R}`}
+                    stroke={stroke} strokeWidth={1.5} fill="none" />
+            </G>
+          )
+        })()}
+
+        {/* Vertical legs */}
+        {isVertical && leg > 0 && (
+          <G>
+            <Line x1={x0}      y1={y0 + vH} x2={x0}      y2={y0 + vH + leg} stroke={stroke} strokeWidth={2} />
+            <Line x1={x0 + vW} y1={y0 + vH} x2={x0 + vW} y2={y0 + vH + leg} stroke={stroke} strokeWidth={2} />
+            <Line x1={x0 - vHD - 24} y1={y0 + vH + leg} x2={x0 + vW + vHD + 24} y2={y0 + vH + leg}
+                  stroke={stroke} strokeWidth={1} strokeDasharray="5 4" />
+          </G>
+        )}
+
+        {/* Horizontal legs */}
+        {!isVertical && leg > 0 && (
+          <G>
+            <Line x1={x0 + vW * 0.18} y1={y0 + vH} x2={x0 + vW * 0.18} y2={y0 + vH + leg} stroke={stroke} strokeWidth={2} />
+            <Line x1={x0 + vW * 0.82} y1={y0 + vH} x2={x0 + vW * 0.82} y2={y0 + vH + leg} stroke={stroke} strokeWidth={2} />
+            <Line x1={x0 - vHD - 24} y1={y0 + vH + leg} x2={x0 + vW + vHD + 24} y2={y0 + vH + leg}
+                  stroke={stroke} strokeWidth={1} strokeDasharray="5 4" />
+          </G>
+        )}
+
+        {/* Ground line (when no legs) */}
+        {leg === 0 && (
+          <Line x1={x0 - vHD - 24} y1={y0 + vH} x2={x0 + vW + vHD + 24} y2={y0 + vH}
+                stroke={guide} strokeWidth={1} strokeDasharray="5 4" />
+        )}
+
+        {/* Vertical boot */}
+        {isVertical && hasBoot && (
+          <Path d={vBootPath} stroke={stroke} strokeWidth={2} fill="none" />
+        )}
+
+        {/* Horizontal boot */}
+        {!isVertical && hasBoot && (
+          <Path d={hBootPath} stroke={stroke} strokeWidth={2} fill="none" />
+        )}
+      </Svg>
+      <Text style={S.schematicCaption}>{captionParts.join('  •  ')}</Text>
     </View>
   )
 }
@@ -309,6 +626,31 @@ export function VesselReport({ input, result, metadata, revisions, units }: Vess
           } />
         </View>
 
+      </Page>
+
+      <Page size="A4" style={S.page}>
+        <View style={S.headerRow}>
+          <View>
+            <Text style={S.appTitle}>Vessel Calculator</Text>
+            <Text style={S.appSubtitle}>Process Engineering Suite · Schematic</Text>
+          </View>
+          <View>
+            <Text style={S.tagLabel}>Equipment Tag</Text>
+            <Text style={S.tagText}>{input.tag}</Text>
+          </View>
+        </View>
+
+        <View style={S.divider} />
+
+        <Text style={S.sectionTitle}>Schematic</Text>
+        <SchematicFigure input={input} />
+
+        <View style={S.footer} fixed>
+          <Text style={S.footerText}>Process Engineering Suite · Vessel Calculator</Text>
+          <Text style={S.footerText} render={({ pageNumber, totalPages }) =>
+            `Page ${pageNumber} of ${totalPages}`
+          } />
+        </View>
       </Page>
     </Document>
   )
