@@ -237,6 +237,7 @@ function computeTankResult(input: CalculationInput): CalculationResult {
     volumes: {
       headVolume,
       shellVolume: shellVol,
+      bootVolume: 0,
       totalVolume: totalVol,
       tangentVolume: tangentVol,
       effectiveVolume: oflVol,
@@ -247,8 +248,10 @@ function computeTankResult(input: CalculationInput): CalculationResult {
     surfaceAreas: {
       headSurfaceArea,
       shellSurfaceArea: shellSA,
+      bootSurfaceArea: 0,
       totalSurfaceArea: totalSA,
       wettedSurfaceArea: wettedSA,
+      bootWettedArea: 0,
     },
     masses: {
       massEmpty,
@@ -405,6 +408,22 @@ function computeProcessVesselResult(input: CalculationInput): CalculationResult 
     wettedSA = Math.max(0, Math.min(wettedSA, totalSA))
   }
 
+  // ── Boot calculations ─────────────────────────────────────────────────────
+  const bootID = input.bootInsideDiameter
+  const bootH = input.bootHeight
+  const hasBoot =
+    bootID != null && isFinite(bootID) && bootID > 0 &&
+    bootH != null && isFinite(bootH) && bootH > 0
+  const bootVol = hasBoot ? (Math.PI * bootID! * bootID! * bootH!) / 4e9 : 0
+  const bootSideArea = hasBoot ? (Math.PI * bootID! * bootH!) / 1e6 : 0
+  const bootCapArea = hasBoot ? (Math.PI * bootID! * bootID!) / 4e6 : 0
+  const bootTotalSA = bootSideArea + bootCapArea
+  // Boot sump is below the vessel bottom — always fully wetted when any liquid is present
+  const bootWettedArea =
+    hasBoot && liquidLevel != null && isFinite(liquidLevel)
+      ? bootTotalSA
+      : 0
+
   let massEmpty: number | null = null
   if (wallThickness != null && isFinite(wallThickness) && wallThickness > 0) {
     const od = insideDiameter + 2 * wallThickness
@@ -443,7 +462,8 @@ function computeProcessVesselResult(input: CalculationInput): CalculationResult 
     volumes: {
       headVolume: headVol2x,
       shellVolume: shellVol,
-      totalVolume: totalVol,
+      bootVolume: bootVol,
+      totalVolume: totalVol + bootVol,
       tangentVolume: shellVol,
       effectiveVolume: oflVol,
       workingVolume: workingVol,
@@ -453,8 +473,10 @@ function computeProcessVesselResult(input: CalculationInput): CalculationResult 
     surfaceAreas: {
       headSurfaceArea: headSA2x,
       shellSurfaceArea: shellSA,
-      totalSurfaceArea: totalSA,
+      bootSurfaceArea: bootTotalSA,
+      totalSurfaceArea: totalSA + bootTotalSA,
       wettedSurfaceArea: wettedSA,
+      bootWettedArea,
     },
     masses: {
       massEmpty,

@@ -41,6 +41,7 @@ const MOCK_RESULT: CalculationResult = {
   volumes: {
     headVolume: 0.131,
     shellVolume: 1.571,
+    bootVolume: 0,
     totalVolume: 1.833,
     tangentVolume: 1.571,
     effectiveVolume: 1.833,
@@ -51,8 +52,10 @@ const MOCK_RESULT: CalculationResult = {
   surfaceAreas: {
     headSurfaceArea: 1.571,
     shellSurfaceArea: 6.283,
+    bootSurfaceArea: 0,
     totalSurfaceArea: 7.854,
     wettedSurfaceArea: 3.8,
+    bootWettedArea: 0,
   },
   masses: {
     massEmpty: null,

@@ -36,12 +36,17 @@ export function SurfaceAreaResult({ result, equipmentMode, tankType }: Props) {
         { label: "Total Tank Surface Area", value: fmt(result.surfaceAreas.totalSurfaceArea), isTotal: true },
         { label: "Wetted Surface Area (at LL)", value: fmt(result.surfaceAreas.wettedSurfaceArea) },
       ]
-      : [
-        { label: "Head Surface Area (2 heads)", value: fmt(result.surfaceAreas.headSurfaceArea) },
-        { label: "Shell Surface Area", value: fmt(result.surfaceAreas.shellSurfaceArea) },
-        { label: "Total Surface Area", value: fmt(result.surfaceAreas.totalSurfaceArea), isTotal: true },
-        { label: "Wetted Surface Area (at LL)", value: fmt(result.surfaceAreas.wettedSurfaceArea) },
-      ]
+      : (() => {
+        const hasBootSA = result.surfaceAreas.bootSurfaceArea > 0
+        return [
+          { label: "Head Surface Area (2 heads)", value: fmt(result.surfaceAreas.headSurfaceArea) },
+          { label: "Shell Surface Area", value: fmt(result.surfaceAreas.shellSurfaceArea) },
+          ...(hasBootSA ? [{ label: "Boot Surface Area", value: fmt(result.surfaceAreas.bootSurfaceArea), isSub: true }] : []),
+          { label: hasBootSA ? "Total Surface Area (incl. Boot)" : "Total Surface Area", value: fmt(result.surfaceAreas.totalSurfaceArea), isTotal: true },
+          { label: "Wetted Surface Area (at LL)", value: fmt(result.surfaceAreas.wettedSurfaceArea) },
+          ...(hasBootSA ? [{ label: "Boot Wetted Area (at LL)", value: fmt(result.surfaceAreas.bootWettedArea), isSub: true }] : []),
+        ]
+      })()
 
   return (
     <Card className="shadow-sm">
@@ -58,7 +63,7 @@ export function SurfaceAreaResult({ result, equipmentMode, tankType }: Props) {
             <div
               key={row.label}
               className={`flex justify-between items-center px-3 py-1.5 ${
-                row.isTotal ? "bg-muted/30 font-semibold" : ""
+                row.isTotal ? "bg-muted/30 font-semibold" : "isSub" in row && row.isSub ? "pl-6 text-muted-foreground" : ""
               }`}
             >
               <span>{row.label}</span>

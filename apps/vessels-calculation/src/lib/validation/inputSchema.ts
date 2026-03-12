@@ -34,6 +34,8 @@ export const calculationInputSchema = z.object({
   materialDensity: nanOptionalPositive,
   headDepth: nanOptionalPositive,
   roofHeight: nanOptionalPositive,
+  bottomHeight: nanOptionalNonNeg,
+  bootInsideDiameter: nanOptionalPositive,
   bootHeight: nanOptionalNonNeg,
 
   // Levels — base unit: mm

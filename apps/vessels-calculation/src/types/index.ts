@@ -86,7 +86,9 @@ export interface CalculationInput {
   materialDensity?: number     // kg/m3 (base unit), overrides selected material default if provided
   headDepth?: number          // mm (auto-calculated from headType unless overridden)
   roofHeight?: number         // mm (for cone/dome roof tank)
-  bootHeight?: number         // mm (support elevation reference by equipment/orientation)
+  bottomHeight?: number         // mm (support elevation reference by equipment/orientation)
+  bootInsideDiameter?: number   // mm (inside diameter of the boot)
+  bootHeight?: number         // mm (height of the boot)
 
   // Levels — all in mm
   liquidLevel?: number
@@ -107,7 +109,8 @@ export interface CalculationInput {
 export interface VolumeResult {
   headVolume: number          // m3 — volume of both heads combined
   shellVolume: number         // m3 — cylindrical shell only
-  totalVolume: number         // m3 — full vessel (shell + heads)
+  bootVolume: number          // m3 — volume of the boot
+  totalVolume: number         // m3 — full vessel (shell + heads + boot)
   tangentVolume: number       // m3 — volume within tangent lines (shell only)
   effectiveVolume: number     // m3 — usable volume (below OFL or total if no OFL)
   workingVolume: number       // m3 — between LLL and HLL (or 0 if levels not set)
@@ -118,8 +121,10 @@ export interface VolumeResult {
 export interface SurfaceAreaResult {
   headSurfaceArea: number     // m2 — both heads combined
   shellSurfaceArea: number    // m2 — cylindrical shell
-  totalSurfaceArea: number    // m2 — shell + heads
+  bootSurfaceArea: number     // m2 — surface area of the boot
+  totalSurfaceArea: number    // m2 — shell + heads + boot
   wettedSurfaceArea: number   // m2 — area in contact with liquid (at liquid level)
+  bootWettedArea: number      // m2 — area of the boot in contact with liquid (at liquid level)
 }
 
 export interface MassResult {

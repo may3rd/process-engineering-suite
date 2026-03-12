@@ -46,16 +46,20 @@ export function VolumeResult({ result, equipmentMode, tankType }: Props) {
         { label: "Overflow Volume (above OFL)", value: fmt(result.volumes.overflowVolume), isSub: false },
         { label: "Partial Volume (at LL)", value: fmt(result.volumes.partialVolume), isSub: false },
       ]
-      : [
-        { label: "Head Volume (2 heads)", value: fmt(result.volumes.headVolume), isSub: false },
-        { label: "Shell Volume", value: fmt(result.volumes.shellVolume), isSub: false },
-        { label: "Total Volume", value: fmt(result.volumes.totalVolume), isSub: false, isTotal: true },
-        { label: "Tangent Volume (shell only)", value: fmt(result.volumes.tangentVolume), isSub: true },
-        { label: "Effective Volume (up to OFL)", value: fmt(result.volumes.effectiveVolume), isSub: false },
-        { label: "Working Volume (LLL–HLL)", value: fmt(result.volumes.workingVolume), isSub: false },
-        { label: "Overflow Volume (above OFL)", value: fmt(result.volumes.overflowVolume), isSub: false },
-        { label: "Partial Volume (at LL)", value: fmt(result.volumes.partialVolume), isSub: false },
-      ]
+      : (() => {
+        const hasBootVol = result.volumes.bootVolume > 0
+        return [
+          { label: "Head Volume (2 heads)", value: fmt(result.volumes.headVolume), isSub: false },
+          { label: "Shell Volume", value: fmt(result.volumes.shellVolume), isSub: false },
+          ...(hasBootVol ? [{ label: "Boot Volume", value: fmt(result.volumes.bootVolume), isSub: true }] : []),
+          { label: hasBootVol ? "Total Volume (incl. Boot)" : "Total Volume", value: fmt(result.volumes.totalVolume), isSub: false, isTotal: true },
+          { label: "Tangent Volume (shell only)", value: fmt(result.volumes.tangentVolume), isSub: true },
+          { label: "Effective Volume (up to OFL)", value: fmt(result.volumes.effectiveVolume), isSub: false },
+          { label: "Working Volume (LLL–HLL)", value: fmt(result.volumes.workingVolume), isSub: false },
+          { label: "Overflow Volume (above OFL)", value: fmt(result.volumes.overflowVolume), isSub: false },
+          { label: "Partial Volume (at LL)", value: fmt(result.volumes.partialVolume), isSub: false },
+        ]
+      })()
 
   return (
     <Card className="shadow-sm">

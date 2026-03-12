@@ -33,22 +33,25 @@ export function GeometrySection() {
     tankType === TankType.TOP_ROOF &&
     tankRoofType != null &&
     tankRoofType !== TankRoofType.FLAT
-  const showBootHeightField =
+  const showBottomHeightField =
     equipmentMode === EquipmentMode.VESSEL ||
     (equipmentMode === EquipmentMode.TANK && tankType === TankType.SPHERICAL)
 
-  const bootHeightHint =
+  const bottomHeightHint =
     equipmentMode === EquipmentMode.TANK
       ? "Ground to tank centerline"
       : watch("orientation") === VesselOrientation.VERTICAL
         ? "Ground to lower tangent line"
         : "Ground to vessel bottom"
 
+  const showBootSection = equipmentMode === EquipmentMode.VESSEL
+
   const headDepthHint = equipmentMode === EquipmentMode.VESSEL && !showHeadDepthField && autoDepth != null && isFinite(autoDepth)
     ? `Auto: ${autoDepth.toFixed(1)} mm`
     : undefined
 
   return (
+    <>
     <SectionCard title="Geometry">
       <FieldRow
         label="Inside Diameter"
@@ -141,16 +144,38 @@ export function GeometrySection() {
         </FieldRow>
       )}
 
-      {showBootHeightField && (
+      {showBottomHeightField && (
         <FieldRow
-          label="Boot Height"
-          htmlFor="bootHeight"
-          hint={bootHeightHint}
-          error={errors.bootHeight?.message}
+          label={equipmentMode === EquipmentMode.TANK ? "Center Line Level" : "Bottom Height"}
+          htmlFor="bottomHeight"
+          hint={bottomHeightHint}
+          error={errors.bottomHeight?.message}
         >
-          <UomInput name="bootHeight" category="length" id="bootHeight" placeholder="e.g. 2000" />
+          <UomInput name="bottomHeight" category="length" id="bottomHeight" placeholder="e.g. 2000" />
         </FieldRow>
       )}
     </SectionCard>
+
+    {showBootSection && (
+      <SectionCard title="Boot">
+        <FieldRow
+          label="Boot Diameter"
+          htmlFor="bootInsideDiameter"
+          hint="Inside diameter of boot sump"
+          error={errors.bootInsideDiameter?.message}
+        >
+          <UomInput name="bootInsideDiameter" category="length" id="bootInsideDiameter" placeholder="e.g. 200" />
+        </FieldRow>
+        <FieldRow
+          label="Boot Height"
+          htmlFor="bootHeight"
+          hint="Height of boot cylinder"
+          error={errors.bootHeight?.message}
+        >
+          <UomInput name="bootHeight" category="length" id="bootHeight" placeholder="e.g. 400" />
+        </FieldRow>
+      </SectionCard>
+    )}
+    </>
   )
 }
