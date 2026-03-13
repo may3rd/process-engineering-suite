@@ -73,6 +73,7 @@ const PAYLOAD: VesselPrintReportPayload = {
       surgeTime: 0.5,
       inventory: 0.8,
     },
+    vortexSubmergence: null,
     headDepthUsed: 375,
     calculatedAt: '2026-03-12T00:00:00.000Z',
   },

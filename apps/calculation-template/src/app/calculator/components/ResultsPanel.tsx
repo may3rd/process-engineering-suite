@@ -109,9 +109,9 @@ export function ValidationIssuesCard({ issues }: { issues: ValidationIssue[] }) 
             <AlertCircle className="h-4 w-4 text-orange-400 shrink-0 mt-0.5" />
             <div>
               <p className="text-xs font-medium leading-tight">{issue.message}</p>
-              {issue.path && (
+              {issue.field && (
                 <p className="text-xs text-muted-foreground/70 leading-tight mt-0.5">
-                  Field: {issue.path}
+                  Field: {issue.field}
                 </p>
               )}
             </div>

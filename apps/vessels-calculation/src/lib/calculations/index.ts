@@ -108,6 +108,29 @@ function tankTopRoofPartialRoofWettedArea(
   return (2 * Math.PI * R * x) / 1e6
 }
 
+function tankVortexSubmergenceMm(
+  flowrateM3H: number | undefined,
+  outletFittingDiameterMm: number | undefined,
+): number | null {
+  if (
+    flowrateM3H == null ||
+    !isFinite(flowrateM3H) ||
+    flowrateM3H <= 0 ||
+    outletFittingDiameterMm == null ||
+    !isFinite(outletFittingDiameterMm) ||
+    outletFittingDiameterMm <= 0
+  ) {
+    return null
+  }
+
+  const diameterM = outletFittingDiameterMm / 1000
+  const areaM2 = Math.PI * diameterM * diameterM / 4
+  const velocityMs = flowrateM3H / areaM2 / 3600
+  const submergenceM = diameterM * (1 + (2.3 * velocityMs) / Math.sqrt(9.81 * diameterM))
+
+  return submergenceM * 1000
+}
+
 function computeTankResult(input: CalculationInput): CalculationResult {
   const tankType = input.tankType ?? TankType.TOP_ROOF
   const D = input.insideDiameter
@@ -122,6 +145,7 @@ function computeTankResult(input: CalculationInput): CalculationResult {
   const ofl = input.ofl
   const density = input.density
   const flowrate = input.flowrate
+  const outletFittingDiameter = input.outletFittingDiameter
   const materialDensityKgM3 = getMaterialDensityKgM3(input.material, input.materialDensity)
 
   let headVolume = 0
@@ -233,6 +257,8 @@ function computeTankResult(input: CalculationInput): CalculationResult {
     }
   }
 
+  const vortexSubmergence = tankVortexSubmergenceMm(flowrate, outletFittingDiameter)
+
   return {
     volumes: {
       headVolume,
@@ -262,6 +288,7 @@ function computeTankResult(input: CalculationInput): CalculationResult {
       surgeTime,
       inventory,
     },
+    vortexSubmergence,
     headDepthUsed,
     calculatedAt: new Date().toISOString(),
   }
@@ -487,6 +514,7 @@ function computeProcessVesselResult(input: CalculationInput): CalculationResult 
       surgeTime,
       inventory,
     },
+    vortexSubmergence: null,
     headDepthUsed,
     calculatedAt: new Date().toISOString(),
   }

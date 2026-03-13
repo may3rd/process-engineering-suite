@@ -1,14 +1,19 @@
 "use client"
 
 import { useState } from "react"
+import { useFormContext } from "react-hook-form"
 import { ChevronRight } from "lucide-react"
 import { SectionCard } from "../components/SectionCard"
 import { FieldRow } from "../components/FieldRow"
 import { UomInput } from "../components/UomInput"
 import { cn } from "@/lib/utils"
+import type { CalculationInput } from "@/types"
+import { EquipmentMode } from "@/types"
 
 export function FluidSection() {
+  const { watch } = useFormContext<CalculationInput>()
   const [open, setOpen] = useState(false)
+  const equipmentMode = watch("equipmentMode") ?? EquipmentMode.VESSEL
 
   return (
     <SectionCard title="Fluid Properties">
@@ -43,6 +48,21 @@ export function FluidSection() {
           >
             <UomInput name="flowrate" category="volumeFlow" id="flowrate" placeholder="e.g. 50" />
           </FieldRow>
+
+          {equipmentMode === EquipmentMode.TANK && (
+            <FieldRow
+              label="Outlet Fitting Diameter"
+              htmlFor="outletFittingDiameter"
+              hint="Used for vortex submergence calculation"
+            >
+              <UomInput
+                name="outletFittingDiameter"
+                category="length"
+                id="outletFittingDiameter"
+                placeholder="e.g. 100"
+              />
+            </FieldRow>
+          )}
         </div>
       )}
     </SectionCard>

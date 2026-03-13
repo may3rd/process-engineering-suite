@@ -55,6 +55,7 @@ function makePayload(): VesselPrintReportPayload {
         surgeTime: null,
         inventory: null,
       },
+      vortexSubmergence: null,
       headDepthUsed: 375,
       calculatedAt: '2026-03-12T00:00:00.000Z',
     },

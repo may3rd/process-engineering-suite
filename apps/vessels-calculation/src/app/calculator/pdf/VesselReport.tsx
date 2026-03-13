@@ -556,8 +556,8 @@ function PdfTankAnnotation({ annotation, color }: { annotation: TankSchematicAnn
 
 function SchematicFigure({
   input,
-  svgW = 520,
-  svgH = 420,
+  svgW = 420,
+  svgH = 340,
 }: {
   input: CalculationInput
   svgW?: number
@@ -584,8 +584,8 @@ function SchematicFigure({
       <>
         <Svg
           viewBox={`0 0 ${model.width} ${model.height}`}
-          width={isSphericalTank ? 440 : 420}
-          height={isSphericalTank ? 300 : 340}
+          width={svgW}
+          height={svgH}
         >
           <Defs>
             <ClipPath id={model.clipPath.id}>
@@ -683,7 +683,7 @@ function SchematicFigure({
 
   return (
     <>
-      <Svg viewBox={`0 0 ${model.width} ${model.height}`} width={420} height={340}>
+      <Svg viewBox={`0 0 ${model.width} ${model.height}`} width={svgW} height={svgH}>
         <Defs>
           <ClipPath id={model.clipPaths.vesselId}>
             <Path d={model.vesselPath} />
@@ -788,6 +788,14 @@ export function VesselReport({ input, result, metadata, revisions, units }: Vess
     ? fmt(V.partialVolume, BASE_UNITS.volume, vol)
     : fmt(V.effectiveVolume, BASE_UNITS.volume, vol)
   const flowUnitLabel   = ul('m3/h')
+  const showVortex    = mode === EquipmentMode.TANK && result.vortexSubmergence != null
+  const sketchWidth   = mode === EquipmentMode.TANK ? 360 : 420
+  const sketchHeight  = mode === EquipmentMode.TANK
+    ? (showVortex ? 220 : 250)
+    : 300
+  const sketchSectionHeight = mode === EquipmentMode.TANK
+    ? (showVortex ? 270 : 300)
+    : 270
 
   // Section visibility
   const showSurge     = input.flowrate != null && T.surgeTime != null
@@ -934,16 +942,24 @@ export function VesselReport({ input, result, metadata, revisions, units }: Vess
                 </View>
               )}
 
+              {showVortex && (
+                <View style={divider}>
+                  <SecHeader prefix="×" title="VORTEX LEVEL" />
+                  <DR label="Outlet Fitting Diameter" value={fmt(input.outletFittingDiameter, 'mm', len)} unit={ul(len)} />
+                  <DR label="Submergence"             value={fmt(result.vortexSubmergence, 'mm', len)}     unit={ul(len)} />
+                </View>
+              )}
+
             </View>
           </View>
 
           {/* ── SKETCH ───────────────────────────────────────────────────── */}
-          <View style={{ flex: 1, borderTopWidth: HB, borderTopColor: BLACK, padding: '4 6 4 6' }}>
+          <View style={{ flex: 1, minHeight: sketchSectionHeight, borderTopWidth: HB, borderTopColor: BLACK, padding: '4 6 4 6' }}>
             <View style={S.secHeader}>
               <Text style={S.secHeaderText}>SKETCH</Text>
             </View>
-            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
-              <SchematicFigure input={input} />
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 6, paddingBottom: 2 }}>
+              <SchematicFigure input={input} svgW={sketchWidth} svgH={sketchHeight} />
             </View>
           </View>
 

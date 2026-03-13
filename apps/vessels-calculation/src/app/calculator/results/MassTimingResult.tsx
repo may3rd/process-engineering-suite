@@ -15,10 +15,17 @@ export function MassTimingResult({ result }: Props) {
   const { units } = useUomStore()
   const massUnit = units.mass ?? BASE_UNITS.mass
   const massLabel = UOM_LABEL[massUnit] ?? massUnit
+  const lengthUnit = units.length ?? BASE_UNITS.length
+  const lengthLabel = UOM_LABEL[lengthUnit] ?? lengthUnit
 
   const fmtMass = (v: number | null) => {
     if (v == null) return "—"
     return convertUnit(v, BASE_UNITS.mass, massUnit).toFixed(1)
+  }
+
+  const fmtLength = (v: number | null) => {
+    if (v == null) return "—"
+    return convertUnit(v, BASE_UNITS.length, lengthUnit).toFixed(1)
   }
 
   const fmtTime = (v: number | null) => {
@@ -67,6 +74,14 @@ export function MassTimingResult({ result }: Props) {
             <span>Inventory time (LL/OFL volume)</span>
             <span className="font-mono tabular-nums">{fmtTime(result.timing.inventory)}</span>
           </div>
+          {result.vortexSubmergence != null && (
+            <div className="flex justify-between items-center px-3 py-1.5">
+              <span>Vortex submergence</span>
+              <span className="font-mono tabular-nums">
+                {fmtLength(result.vortexSubmergence)} <span className="text-muted-foreground">{lengthLabel}</span>
+              </span>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

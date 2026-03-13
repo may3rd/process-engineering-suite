@@ -66,6 +66,7 @@ const MOCK_RESULT: CalculationResult = {
     surgeTime: 0.05,
     inventory: 0.05,
   },
+  vortexSubmergence: null,
   headDepthUsed: 250,
   calculatedAt: '2025-01-01T00:00:00.000Z',
 }

@@ -40,6 +40,7 @@ const createDefaultValues = (): Partial<CalculationInput> => ({
   headDepth: undefined,
   roofHeight: undefined,
   bootHeight: undefined,
+  outletFittingDiameter: undefined,
   liquidLevel: undefined,
   hll: undefined,
   lll: undefined,

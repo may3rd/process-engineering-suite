@@ -89,6 +89,7 @@ export interface CalculationInput {
   bottomHeight?: number         // mm (support elevation reference by equipment/orientation)
   bootInsideDiameter?: number   // mm (inside diameter of the boot)
   bootHeight?: number         // mm (height of the boot)
+  outletFittingDiameter?: number // mm (tank outlet fitting diameter for vortex submergence)
 
   // Levels — all in mm
   liquidLevel?: number
@@ -143,6 +144,7 @@ export interface CalculationResult {
   surfaceAreas: SurfaceAreaResult
   masses: MassResult
   timing: TimingResult
+  vortexSubmergence: number | null // mm — required liquid submergence above outlet fitting
   headDepthUsed: number       // mm — actual head depth used in calculation
   calculatedAt: string        // ISO timestamp
 }

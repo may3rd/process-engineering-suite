@@ -692,6 +692,71 @@ const [open, setOpen] = useState(false)
 <DialogContent className="sm:max-w-2xl"> // wide (metadata, revisions)
 ```
 
+### 8.3 PDF export pattern
+
+Calculator apps should ship PDF export as a first-class top-bar action, using `@react-pdf/renderer` and a dedicated report component under `src/app/calculator/pdf/`.
+
+**Preferred architecture:**
+- Trigger export from `ActionMenu`
+- Dynamically import both `@react-pdf/renderer` and the report component inside the click handler
+- Build the PDF from current form values plus calculation metadata and revision history
+- Download the Blob directly with `URL.createObjectURL`, not via a print-popup route
+
+```tsx
+const handleExportPdf = async () => {
+  if (!calculationResult) return
+
+  setPdfLoading(true)
+  try {
+    const [{ pdf }, { CalculationReport }] = await Promise.all([
+      import('@react-pdf/renderer'),
+      import('../pdf/CalculationReport'),
+    ])
+
+    const input = getValues()
+    const blob = await pdf(
+      <CalculationReport
+        input={input}
+        result={calculationResult}
+        metadata={calculationMetadata}
+        revisions={revisionHistory}
+        units={units}
+      />,
+    ).toBlob()
+
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `calculation-${(input.tag?.trim() || 'report').replace(/[^a-zA-Z0-9-_]/g, '_')}.pdf`
+    a.click()
+    URL.revokeObjectURL(url)
+  } finally {
+    setPdfLoading(false)
+  }
+}
+```
+
+**Report file placement:**
+```text
+src/app/calculator/
+  components/ActionMenu.tsx
+  pdf/CalculationReport.tsx
+```
+
+**Report design rules:**
+- Use a dedicated `CalculationReport` React PDF document, not DOM-to-image capture
+- Keep PDF layout deterministic and page-size aware from the start
+- Put title block, metadata, result sections, and sketch/schematic in explicit containers
+- If the app renders a live SVG schematic, share the geometry/model layer between web and PDF renderers instead of maintaining two separate calculations
+- Keep title/revision blocks anchored at the page bottom; center sketches inside the remaining space
+- Prefer one-page output for normal calculator cases, but design overflow behavior intentionally
+
+**Testing expectations:**
+- Mock `@react-pdf/renderer` in `ActionMenu` tests
+- Assert blob download behavior, not popup-window behavior
+- Add targeted report layout tests for any print/PDF helper views
+- Add regression tests for shared schematic models when dimensions or annotation placement matter
+
 ---
 
 ## 9. Styling Reference

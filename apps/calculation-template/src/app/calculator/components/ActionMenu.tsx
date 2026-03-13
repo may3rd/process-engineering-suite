@@ -7,6 +7,8 @@ import {
   FolderOpen,
   Save,
   RotateCcw,
+  FileDown,
+  Loader2,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -33,7 +35,43 @@ interface ActionMenuProps {
 
 export function ActionMenu({
   onClear,
+  calculationMetadata,
+  revisionHistory,
+  calculationResult,
 }: ActionMenuProps) {
+  const { getValues } = useFormContext<CalculationInput>()
+  const [pdfLoading, setPdfLoading] = useState(false)
+
+  const handleExportPdf = async () => {
+    if (!calculationResult) return
+
+    setPdfLoading(true)
+    try {
+      const [{ pdf }, { CalculationReport }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("../pdf/CalculationReport"),
+      ])
+
+      const input = getValues()
+      const blob = await pdf(
+        <CalculationReport
+          input={input}
+          result={calculationResult}
+          metadata={calculationMetadata}
+          revisions={revisionHistory}
+        />,
+      ).toBlob()
+
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `calculation-${(input.tag?.trim() || "report").replace(/[^a-zA-Z0-9-_]/g, "_")}.pdf`
+      a.click()
+      URL.revokeObjectURL(url)
+    } finally {
+      setPdfLoading(false)
+    }
+  }
 
   return (
     <>
@@ -60,6 +98,14 @@ export function ActionMenu({
           <DropdownMenuSeparator />
 
           {/* Utility group */}
+          <DropdownMenuItem onClick={handleExportPdf} disabled={!calculationResult || pdfLoading}>
+            {pdfLoading
+              ? <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              : <FileDown className="h-4 w-4 mr-2" />
+            }
+            {pdfLoading ? "Generating PDF..." : "Export PDF..."}
+          </DropdownMenuItem>
+
           <DropdownMenuItem onSelect={onClear}>
             <RotateCcw className="h-4 w-4 mr-2" />
             Clear

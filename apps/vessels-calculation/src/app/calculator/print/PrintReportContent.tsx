@@ -152,7 +152,7 @@ export function PrintReportContent({ payload }: PrintReportContentProps) {
 
             <SectionCard title="Timing Results" className="print:break-inside-avoid">
               <div className="grid gap-2 md:grid-cols-2 print:grid-cols-2 print:gap-1">
-                {buildTimingMetrics(payload.result).map((item) => (
+                {buildTimingMetrics(payload.result, payload.units.length).map((item) => (
                   <MetricCard key={item.label} item={item} />
                 ))}
               </div>
@@ -220,10 +220,14 @@ function buildLevelItems(payload: VesselPrintReportPayload): LabeledValue[] {
 
 function buildProcessItems(payload: VesselPrintReportPayload): LabeledValue[] {
   const input = payload.input
+  const equipmentMode = input.equipmentMode ?? EquipmentMode.VESSEL
 
   return [
     { label: 'Liquid Density', value: formatUnitValue(input.density, 'density', payload.units.density) },
     { label: 'Flowrate', value: formatUnitValue(input.flowrate, 'volumeFlow', payload.units.volumeFlow) },
+    ...(equipmentMode === EquipmentMode.TANK
+      ? [{ label: 'Outlet Fitting Diameter', value: formatUnitValue(input.outletFittingDiameter, 'length', payload.units.length) }]
+      : []),
     { label: 'Material Density', value: formatUnitValue(input.materialDensity, 'density', payload.units.density) },
     { label: 'Calculated At', value: formatTimestamp(payload.result.calculatedAt) },
   ]
@@ -323,10 +327,16 @@ function buildMassMetrics(result: CalculationResult): MetricItem[] {
   ]
 }
 
-function buildTimingMetrics(result: CalculationResult): MetricItem[] {
+function buildTimingMetrics(result: CalculationResult, lengthUnit: string): MetricItem[] {
   return [
     { label: 'Surge Time (LLL → HLL)', value: formatTime(result.timing.surgeTime), emphasize: true },
     { label: 'Inventory Time', value: formatTime(result.timing.inventory) },
+    ...(result.vortexSubmergence != null
+      ? [{
+          label: 'Vortex Submergence',
+          value: `${formatDecimal(convertUnit(result.vortexSubmergence, BASE_UNITS.length, lengthUnit))} ${unitLabel(lengthUnit)}`,
+        }]
+      : []),
   ]
 }
 

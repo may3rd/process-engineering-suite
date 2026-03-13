@@ -37,6 +37,7 @@ export const calculationInputSchema = z.object({
   bottomHeight: nanOptionalNonNeg,
   bootInsideDiameter: nanOptionalPositive,
   bootHeight: nanOptionalNonNeg,
+  outletFittingDiameter: nanOptionalPositive,
 
   // Levels — base unit: mm
   liquidLevel: nanOptionalNonNeg,

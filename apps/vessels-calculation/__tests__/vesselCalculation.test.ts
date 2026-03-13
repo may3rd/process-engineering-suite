@@ -235,6 +235,40 @@ describe('computeVesselResult — timing', () => {
   })
 })
 
+describe('computeVesselResult — tank vortex submergence', () => {
+  it('matches the Excel submergence formula for tanks', () => {
+    const r = computeVesselResult(baseInput({
+      equipmentMode: EquipmentMode.TANK,
+      tankType: TankType.TOP_ROOF,
+      tankRoofType: TankRoofType.FLAT,
+      insideDiameter: 5500,
+      shellLength: 3000,
+      flowrate: 30,
+      outletFittingDiameter: 101.6,
+    }))
+
+    const diameterM = 0.1016
+    const areaM2 = Math.PI * diameterM * diameterM / 4
+    const expectedM =
+      diameterM * (1 + (2.3 * (30 / areaM2 / 3600)) / Math.sqrt(9.81 * diameterM))
+
+    expect(r.vortexSubmergence).toBeCloseTo(expectedM * 1000, 8)
+  })
+
+  it('returns null when outlet fitting diameter is missing', () => {
+    const r = computeVesselResult(baseInput({
+      equipmentMode: EquipmentMode.TANK,
+      tankType: TankType.TOP_ROOF,
+      tankRoofType: TankRoofType.FLAT,
+      insideDiameter: 5500,
+      shellLength: 3000,
+      flowrate: 30,
+    }))
+
+    expect(r.vortexSubmergence).toBeNull()
+  })
+})
+
 // ─── Head type variants ───────────────────────────────────────────────────────
 
 describe('computeVesselResult — head types', () => {

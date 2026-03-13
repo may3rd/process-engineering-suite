@@ -143,6 +143,8 @@ export function ActionMenu({
           heightMm: values.shellLength ?? null,
           tankType: values.tankType ?? null,
           roofType: values.tankRoofType ?? null,
+          outletFittingDiameterMm: values.outletFittingDiameter ?? null,
+          vortexSubmergenceMm: calculationResult?.vortexSubmergence ?? null,
         }),
         // Shared computed columns
         wettedAreaM2: calculationResult?.surfaceAreas.wettedSurfaceArea ?? null,

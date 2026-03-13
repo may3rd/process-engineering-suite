@@ -4,7 +4,7 @@ Vessel is a dedicated Process Engineering Suite calculator for industrial vessel
 
 ## Design Baseline
 
-UI/UX and frontend architecture must follow Root `pes-web-dna.md` and `apps/calculator-template`.
+UI/UX and frontend architecture must follow Root `pes-web-dna.md` and `apps/calculation-template`.
 
 ## Required Stack
 

@@ -25,6 +25,14 @@ From repo root: `bun turbo run dev --filter=venting-calculation`
 - **React PDF** — PDF report generation
 - **Vitest + Testing Library** — tests in `__tests__/`
 
+## PDF export scaffold
+
+- `src/app/calculator/components/ActionMenu.tsx` includes the top-bar export entry point
+- `src/app/calculator/pdf/CalculationReport.tsx` is the starter React PDF document
+- Export should use dynamic imports of `@react-pdf/renderer` and the report component
+- New calculator apps should replace the generic report sections with app-specific metadata, results, and schematic content
+- If the app has a live SVG schematic, keep the geometry/model layer shared between web and PDF renderers
+
 ## Structure
 
 ```
