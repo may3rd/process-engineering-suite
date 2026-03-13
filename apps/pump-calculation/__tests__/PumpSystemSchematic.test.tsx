@@ -110,7 +110,7 @@ describe('PumpSystemSchematic', () => {
 
     const dischargePolyline = container.querySelector('[data-testid="discharge-line"]')
 
-    expect(dischargePolyline).toHaveAttribute('points', '438,220 556.5,220 556.5,150 675,150')
+    expect(dischargePolyline).toHaveAttribute('points', '432,220 553.5,220 553.5,150 675,150')
     expect(dischargePolyline).toHaveAttribute('stroke', 'currentColor')
     expect(dischargePolyline).toHaveAttribute('stroke-opacity', '0.92')
   })
@@ -127,8 +127,8 @@ describe('PumpSystemSchematic', () => {
     const suctionPolyline = container.querySelector('[data-testid="suction-line"]')
     const dischargePolyline = container.querySelector('[data-testid="discharge-line"]')
 
-    expect(suctionPolyline).toHaveAttribute('points', '90,150 112,150 112,220 362,220')
-    expect(dischargePolyline).toHaveAttribute('points', '438,220 688,220 688,150 710,150')
+    expect(suctionPolyline).toHaveAttribute('points', '90,150 190,150 190,220 368,220')
+    expect(dischargePolyline).toHaveAttribute('points', '432,220 610,220 610,150 710,150')
   })
 
   it('opens a popup dialog for a larger schematic view', async () => {

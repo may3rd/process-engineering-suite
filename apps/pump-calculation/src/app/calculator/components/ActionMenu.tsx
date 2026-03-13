@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react'
 import { useFormContext } from 'react-hook-form'
 import { Menu, RotateCcw, FileDown, Loader2, LinkIcon, Upload, Check } from 'lucide-react'
-import { pdf } from '@react-pdf/renderer'
 import { Button } from '@/components/ui/button'
 import {
   DropdownMenu,
@@ -15,7 +14,6 @@ import {
 import { SaveCalculationButton } from './SaveCalculationButton'
 import { LoadCalculationButton } from './LoadCalculationButton'
 import { EquipmentLinkButton } from './EquipmentLinkButton'
-import { PumpReport } from '@/app/calculator/pdf/PumpReport'
 import { apiClient } from '@/lib/apiClient'
 import type { CalculationInput, CalculationMetadata, RevisionRecord, PumpCalculationResult } from '@/types'
 
@@ -54,6 +52,10 @@ export function ActionMenu({
     if (!calculationResult) return
     setPdfLoading(true)
     try {
+      const [{ pdf }, { PumpReport }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('@/app/calculator/pdf/PumpReport'),
+      ])
       const input = getValues()
       const blob = await pdf(
         <PumpReport
@@ -66,9 +68,9 @@ export function ActionMenu({
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')
       a.href = url
-      const tag = (input.tag || 'calc').replace(/[^a-zA-Z0-9-_]/g, '_')
-      const date = new Date().toISOString().slice(0, 10)
-      a.download = `CA-PR-1050.0301_PumpCalc_${tag}_${date}.pdf`
+      const doc = (calculationMetadata.documentNumber || input.tag || 'pump-calc')
+        .replace(/[^a-zA-Z0-9-_]/g, '_')
+      a.download = `${doc}.pdf`
       a.click()
       URL.revokeObjectURL(url)
     } finally {
