@@ -1,8 +1,12 @@
 import React from 'react'
 import { describe, expect, it, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { FormProvider, useForm } from 'react-hook-form'
+
+const pdfMock = vi.fn(() => ({
+  toBlob: vi.fn(async () => new Blob(['pdf'], { type: 'application/pdf' })),
+}))
 
 vi.mock('@/lib/store/uomStore', () => ({
   useUomStore: () => ({
@@ -40,9 +44,21 @@ vi.mock('@/app/calculator/components/EquipmentLinkButton', () => ({
 }))
 
 vi.mock('@react-pdf/renderer', () => ({
-  pdf: vi.fn(() => ({
-    toBlob: vi.fn(async () => new Blob(['pdf'], { type: 'application/pdf' })),
-  })),
+  pdf: pdfMock,
+  StyleSheet: { create: (styles: unknown) => styles },
+  Document: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  Page: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  View: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  Text: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  Svg: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  Path: () => null,
+  Rect: () => null,
+  Line: () => null,
+  Circle: () => null,
+  Polygon: () => null,
+  G: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  Defs: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
+  ClipPath: ({ children }: { children?: React.ReactNode }) => <>{children}</>,
 }))
 
 import { ActionMenu } from '@/app/calculator/components/ActionMenu'
@@ -128,6 +144,8 @@ function renderActionMenu() {
 
 describe('ActionMenu export', () => {
   beforeEach(() => {
+    pdfMock.mockClear()
+
     const storage = {
       getItem: vi.fn(),
       setItem: vi.fn(),
@@ -141,23 +159,34 @@ describe('ActionMenu export', () => {
       value: storage,
       configurable: true,
     })
+
+    Object.defineProperty(URL, 'createObjectURL', {
+      value: vi.fn(() => 'blob:mock'),
+      configurable: true,
+    })
+
+    Object.defineProperty(URL, 'revokeObjectURL', {
+      value: vi.fn(),
+      configurable: true,
+    })
   })
 
   beforeEach(() => {
     vi.restoreAllMocks()
   })
 
-  it('stores the print payload and opens the print route', async () => {
+  it('downloads the generated PDF blob', async () => {
     const user = userEvent.setup()
-    const openSpy = vi.spyOn(window, 'open').mockReturnValue(null)
-    const setItemSpy = vi.spyOn(window.localStorage, 'setItem')
+    const clickSpy = vi.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation(() => {})
 
     renderActionMenu()
 
     await user.click(screen.getByRole('button', { name: /actions/i }))
     await user.click(screen.getByText(/Export PDF/i))
 
-    expect(setItemSpy).toHaveBeenCalled()
-    expect(openSpy).toHaveBeenCalledWith(expect.stringContaining('/calculator/print?key='), '_blank', 'noopener,noreferrer')
+    await waitFor(() => expect(pdfMock).toHaveBeenCalledTimes(1))
+    expect(URL.createObjectURL).toHaveBeenCalledTimes(1)
+    expect(clickSpy).toHaveBeenCalledTimes(1)
+    expect(URL.revokeObjectURL).toHaveBeenCalledWith('blob:mock')
   })
 })

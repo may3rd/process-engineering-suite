@@ -335,6 +335,7 @@ export function buildVesselSchematicModel({
       })
     }
   } else {
+    const horizontalLeftDimX = x0 - vHD - 36
     const horizontalRightDimX = x0 + vW + vHD + 36
     const horizontalBootHeightDimX = hBootX - 26
     const horizontalBootDiameterDimY = hBootBotY + 18
@@ -342,12 +343,12 @@ export function buildVesselSchematicModel({
     guideLines.push(
       { key: 'tt-left-guide', x1: x0, y1: y0 + 2, x2: x0, y2: y0 - 24 },
       { key: 'tt-right-guide', x1: x0 + vW, y1: y0 + 2, x2: x0 + vW, y2: y0 - 24 },
-      { key: 'd-top-guide', x1: x0 + vW, y1: y0, x2: horizontalRightDimX + 4, y2: y0 },
-      { key: 'd-bottom-guide', x1: x0 + vW, y1: y0 + vH, x2: horizontalRightDimX + 4, y2: y0 + vH },
+      { key: 'd-top-guide', x1: x0, y1: y0, x2: horizontalLeftDimX - 4, y2: y0 },
+      { key: 'd-bottom-guide', x1: x0, y1: y0 + vH, x2: horizontalLeftDimX - 4, y2: y0 + vH },
     )
     annotations.push(
       { key: 'tt', label: `T-T ${fmtM(length)}`, x1: x0, y1: y0 - 20, x2: x0 + vW, y2: y0 - 20 },
-      { key: 'diameter', label: `D ${fmtM(id)}`, x1: horizontalRightDimX, y1: y0, x2: horizontalRightDimX, y2: y0 + vH, vertical: true, labelSide: 'start' },
+      { key: 'diameter', label: `D ${fmtM(id)}`, x1: horizontalLeftDimX, y1: y0, x2: horizontalLeftDimX, y2: y0 + vH, vertical: true, labelSide: 'start' },
     )
     if (showLegs) {
       const legX2 = x0 + vW * 0.82

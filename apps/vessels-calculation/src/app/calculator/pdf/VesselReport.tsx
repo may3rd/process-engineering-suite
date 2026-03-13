@@ -1,8 +1,6 @@
 /**
  * VesselReport — @react-pdf/renderer document.
- *
- * Separate render tree from the DOM. Uses @react-pdf/renderer primitives only.
- * All unit conversion is done at render time using convertUnit from @eng-suite/physics.
+ * Replicates CA-PR-1050.0101 single-page engineering calculation form.
  */
 
 import {
@@ -16,24 +14,36 @@ import {
   Rect,
   Line,
   Circle,
+  Polygon,
   G,
   Defs,
   ClipPath,
 } from '@react-pdf/renderer'
 import { convertUnit } from '@eng-suite/physics'
 import { BASE_UNITS, UOM_LABEL, type VesselUomCategory } from '@/lib/uom'
-import { buildVesselSchematicModel, type VesselSchematicAnnotation, type VesselSchematicLevel } from '@/lib/schematics/vesselSchematicModel'
+import {
+  buildTankSchematicModel,
+  type TankSchematicAnnotation,
+  type TankSchematicLevel,
+} from '@/lib/schematics/tankSchematicModel'
+import {
+  buildVesselSchematicModel,
+  type VesselSchematicAnnotation,
+  type VesselSchematicLevel,
+} from '@/lib/schematics/vesselSchematicModel'
 import {
   EquipmentMode,
+  HeadType,
   TankRoofType,
   TankType,
+  VesselOrientation,
   type CalculationInput,
   type CalculationResult,
   type CalculationMetadata,
   type RevisionRecord,
 } from '@/types'
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+// ─── Public interface ────────────────────────────────────────────────────────
 
 export interface VesselReportProps {
   input: CalculationInput
@@ -43,186 +53,129 @@ export interface VesselReportProps {
   units: Record<VesselUomCategory, string>
 }
 
+// ─── Design tokens ───────────────────────────────────────────────────────────
+
+const NAVY     = '#1f3864'
+const VALUE_BG = '#dbeafe'
+const WHITE    = '#ffffff'
+const BLACK    = '#000000'
+const GUIDE    = '#374151'
+const MUTED    = '#6b7280'
+const BW       = 0.5   // light row border
+const HB       = 1     // heavy section border
+
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
 const S = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
-    fontSize: 8,
-    padding: 36,
-    color: '#111827',
-    lineHeight: 1.4,
+    fontSize: 7,
+    padding: 16,
+    paddingBottom: 26,
+    color: BLACK,
+    lineHeight: 1.3,
   },
-  // Header
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 10 },
-  appTitle: { fontSize: 14, fontFamily: 'Helvetica-Bold', color: '#1d4ed8' },
-  appSubtitle: { fontSize: 8, color: '#6b7280', marginTop: 2 },
-  tagText: { fontSize: 20, fontFamily: 'Helvetica-Bold', textAlign: 'right' },
-  tagLabel: { fontSize: 7, color: '#6b7280', textAlign: 'right' },
-  // Metadata grid
-  metaGrid: { flexDirection: 'row', flexWrap: 'wrap', marginBottom: 12, gap: 4 },
-  metaCell: { width: '33%', paddingRight: 8 },
-  metaLabel: { fontSize: 6.5, color: '#6b7280', textTransform: 'uppercase', letterSpacing: 0.4 },
-  metaValue: { fontSize: 8 },
-  // Section
-  sectionTitle: {
-    fontSize: 9,
+  outerBorder: {
+    borderWidth: HB,
+    borderColor: BLACK,
+    flex: 1,
+    flexDirection: 'column',
+  },
+  // ── Section header
+  secHeader: {
+    backgroundColor: NAVY,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
+  secHeaderText: {
+    color: WHITE,
+    fontSize: 7,
     fontFamily: 'Helvetica-Bold',
-    backgroundColor: '#1d4ed8',
-    color: '#ffffff',
-    padding: '3 6',
-    marginBottom: 0,
-    marginTop: 10,
   },
-  // Table
-  tableHeader: {
+  // ── Data row
+  row: {
     flexDirection: 'row',
-    backgroundColor: '#eff6ff',
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#bfdbfe',
-    padding: '3 6',
-  },
-  tableRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 0.5,
+    borderBottomWidth: BW,
     borderBottomColor: '#e5e7eb',
-    padding: '2.5 6',
-  },
-  tableRowBold: {
-    flexDirection: 'row',
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#bfdbfe',
-    padding: '2.5 6',
-    backgroundColor: '#f0f9ff',
-  },
-  colLabel: { flex: 3 },
-  colValue: { flex: 2, textAlign: 'right', fontFamily: 'Helvetica-Bold' },
-  colUnit: { flex: 1.5, textAlign: 'right', color: '#6b7280' },
-  headerText: { fontSize: 7, color: '#374151', fontFamily: 'Helvetica-Bold' },
-  cellText: { fontSize: 7.5 },
-  cellBold: { fontSize: 7.5, fontFamily: 'Helvetica-Bold' },
-  cellMuted: { fontSize: 7, color: '#6b7280' },
-  // Divider
-  divider: { borderBottomWidth: 0.5, borderBottomColor: '#d1d5db', marginVertical: 6 },
-  // Footer
-  footer: {
-    position: 'absolute',
-    bottom: 24,
-    left: 36,
-    right: 36,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    borderTopWidth: 0.5,
-    borderTopColor: '#d1d5db',
-    paddingTop: 4,
-  },
-  footerText: { fontSize: 6.5, color: '#9ca3af' },
-  // Revision table
-  revHeader: {
-    flexDirection: 'row',
-    backgroundColor: '#f3f4f6',
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#d1d5db',
-    padding: '3 4',
-  },
-  revRow: {
-    flexDirection: 'row',
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#e5e7eb',
-    padding: '2.5 4',
-  },
-  revCell: { flex: 1, fontSize: 7 },
-  revHeaderCell: { flex: 1, fontSize: 6.5, fontFamily: 'Helvetica-Bold', color: '#374151' },
-  schematicWrap: {
-    borderWidth: 0.5,
-    borderColor: '#d1d5db',
-    padding: 8,
-    marginTop: 2,
+    minHeight: 12,
     alignItems: 'center',
-    minHeight: 400,
+    paddingHorizontal: 4,
+    paddingVertical: 1,
   },
-  schematicSvg: {
-    alignSelf: 'center',
+  rowLabel: {
+    flex: 3.5,
+    fontSize: 7,
+    color: GUIDE,
   },
-  schematicCaption: {
-    marginTop: 4,
-    fontSize: 6.5,
-    color: '#6b7280',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
+  rowValueBox: {
+    flex: 2,
+    borderWidth: BW,
+    borderColor: '#93c5fd',
+    minHeight: 9,
+    paddingHorizontal: 2,
+    justifyContent: 'center',
   },
-  schematicLegend: {
-    marginTop: 8,
+  rowValueText: {
+    fontSize: 7,
+    fontFamily: 'Helvetica-Bold',
+    textAlign: 'right',
+  },
+  rowUnit: {
+    flex: 1.2,
+    fontSize: 7,
+    color: MUTED,
+    textAlign: 'right',
+    paddingLeft: 2,
+  },
+  // ── Title block revision cells
+  revHead: {
+    flex: 1,
+    fontSize: 6,
+    fontFamily: 'Helvetica-Bold',
+    color: GUIDE,
+    textAlign: 'center',
+    paddingVertical: 2,
+    paddingHorizontal: 2,
+    borderRightWidth: BW,
+    borderRightColor: BLACK,
+    backgroundColor: '#f3f4f6',
+  },
+  revCell: {
+    flex: 1,
+    fontSize: 6,
+    textAlign: 'center',
+    paddingVertical: 2,
+    paddingHorizontal: 2,
+    borderRightWidth: BW,
+    borderRightColor: BLACK,
+  },
+  // ── Legend
+  legendRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'center',
-    columnGap: 16,
-    rowGap: 6,
+    marginTop: 4,
+    columnGap: 12,
+    rowGap: 3,
   },
-  legendItem: {
+  legendItem: { flexDirection: 'row', alignItems: 'center' },
+  legendLabel: { fontSize: 6.5, color: MUTED, marginLeft: 3 },
+  // ── Footer
+  footer: {
+    position: 'absolute',
+    bottom: 6,
+    left: 16,
+    right: 16,
     flexDirection: 'row',
-    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderTopWidth: BW,
+    borderTopColor: '#d1d5db',
+    paddingTop: 3,
   },
-  legendLabel: {
-    fontSize: 7,
-    color: '#6b7280',
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    marginLeft: 4,
-  },
-  legendSwatchLiquid: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    backgroundColor: '#bfdbfe',
-    borderWidth: 1,
-    borderColor: '#38bdf8',
-  },
-  legendSwatchOutline: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    borderWidth: 1,
-    borderColor: '#6b7280',
-  },
-  legendSwatchBoot: {
-    width: 10,
-    height: 10,
-    borderRadius: 5,
-    borderWidth: 2,
-    borderColor: '#6b7280',
-  },
-  legendLine: {
-    width: 16,
-    height: 0,
-    borderTopWidth: 1,
-    borderTopColor: '#6b7280',
-    borderStyle: 'dashed',
-  },
-  legendLineHll: {
-    width: 16,
-    height: 0,
-    borderTopWidth: 1,
-    borderTopColor: '#22c55e',
-    borderStyle: 'dashed',
-  },
-  legendLineLll: {
-    width: 16,
-    height: 0,
-    borderTopWidth: 1,
-    borderTopColor: '#f59e0b',
-    borderStyle: 'dashed',
-  },
-  legendLineOfl: {
-    width: 16,
-    height: 0,
-    borderTopWidth: 1,
-    borderTopColor: '#ef4444',
-    borderStyle: 'dashed',
-  },
+  footerText: { fontSize: 6, color: MUTED },
 })
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function fmt(
   value: number | null | undefined,
@@ -231,256 +184,283 @@ function fmt(
   decimals = 4,
 ): string {
   if (value == null || !isFinite(value)) return '—'
-  return convertUnit(value, baseUnit, displayUnit).toFixed(decimals)
+  const converted = convertUnit(value, baseUnit, displayUnit)
+  if (!isFinite(converted)) return '—'
+  return converted.toFixed(decimals)
 }
 
-function unitLabel(unit: string): string {
+function ul(unit: string): string {
   return UOM_LABEL[unit] ?? unit
 }
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.max(min, Math.min(max, value))
+function clamp(v: number, lo: number, hi: number) {
+  return Math.max(lo, Math.min(hi, v))
 }
 
-// ─── Sub-components ──────────────────────────────────────────────────────────
+// ─── Primitive components ────────────────────────────────────────────────────
 
-function MetaField({ label, value }: { label: string; value: string }) {
+function SecHeader({ prefix, title }: { prefix: string; title: string }) {
   return (
-    <View style={S.metaCell}>
-      <Text style={S.metaLabel}>{label}</Text>
-      <Text style={S.metaValue}>{value || '—'}</Text>
+    <View style={S.secHeader}>
+      <Text style={S.secHeaderText}>{prefix}  {title}</Text>
     </View>
   )
 }
 
-function TableRow({
+/** Standard label | value box | unit row */
+function DR({
   label,
   value,
   unit,
-  bold,
-  indent,
+  hi,       // highlight value box even when empty (enum fields)
+  ind,      // indent label
 }: {
   label: string
-  value: string
-  unit: string
-  bold?: boolean
-  indent?: boolean
+  value?: string | null
+  unit?: string
+  hi?: boolean
+  ind?: boolean
 }) {
-  const rowStyle = bold ? S.tableRowBold : S.tableRow
-  const labelStyle = [S.cellText, indent ? { paddingLeft: 10 } : {}] as const
+  const filled = (value != null && value !== '' && value !== '—') || hi
   return (
-    <View style={rowStyle}>
-      <Text style={[...(indent ? [S.cellText, { paddingLeft: 8 }] : [S.cellText]), S.colLabel]}>
-        {label}
-      </Text>
-      <Text style={[bold ? S.cellBold : S.cellText, S.colValue]}>{value}</Text>
-      <Text style={[S.cellMuted, S.colUnit]}>{unit}</Text>
+    <View style={S.row}>
+      <Text style={ind ? [S.rowLabel, { paddingLeft: 10 }] : S.rowLabel}>{label}</Text>
+      <View style={[S.rowValueBox, { backgroundColor: filled ? VALUE_BG : WHITE }]}>
+        <Text style={S.rowValueText}>{value ?? ''}</Text>
+      </View>
+      <Text style={S.rowUnit}>{unit ?? ''}</Text>
     </View>
   )
 }
 
-function SchematicFigure({ input }: { input: CalculationInput }) {
-  const equipmentMode = input.equipmentMode ?? EquipmentMode.VESSEL
-  const width = 420
-  const height = 220
-  const pad = 26
-  const stroke = '#111827'
-  const guide = '#6b7280'
-  const fill = '#bfdbfe'
-
-  if (equipmentMode === EquipmentMode.TANK) {
-    if (input.tankType === TankType.SPHERICAL) {
-      const d = Math.max(input.insideDiameter, 1)
-      const rMm = d / 2
-      const clMm = input.bottomHeight && input.bottomHeight > 0 ? input.bottomHeight : d * 0.25
-      const scale = Math.min((width - pad * 2) / d, (height - pad * 2) / (rMm + clMm))
-      const r = rMm * scale
-      const cx = width / 2
-      const cy = pad + r
-      const groundY = cy + clMm * scale
-      const liquidY = input.liquidLevel != null ? clamp(cy + r - input.liquidLevel * scale, cy - r, cy + r) : undefined
-
-      return (
-        <View style={S.schematicWrap}>
-          <Svg viewBox={`0 0 ${width} ${height}`} width={460} height={372} style={S.schematicSvg}>
-            {liquidY != null && (
-              <>
-                <Rect x={cx - r} y={liquidY} width={r * 2} height={cy + r - liquidY} fill={fill} />
-                <Circle cx={cx} cy={cy} r={r} stroke={stroke} strokeWidth={2} fill="none" />
-              </>
-            )}
-            <Circle cx={cx} cy={cy} r={r} stroke={stroke} strokeWidth={2} fill="none" />
-            <Line x1={cx - r} y1={cy} x2={cx - r} y2={groundY} stroke={stroke} strokeWidth={2} />
-            <Line x1={cx + r} y1={cy} x2={cx + r} y2={groundY} stroke={stroke} strokeWidth={2} />
-            <Line x1={cx - r - 28} y1={groundY} x2={cx + r + 28} y2={groundY} stroke={stroke} strokeWidth={1} strokeDasharray="5 4" />
-          </Svg>
-          <Text style={S.schematicCaption}>Spherical Tank Schematic</Text>
-        </View>
-      )
-    }
-
-    const d = Math.max(input.insideDiameter, 1)
-    const shellH = Math.max(input.shellLength ?? 1, 1)
-    const roofH = input.tankRoofType && input.tankRoofType !== TankRoofType.FLAT ? Math.max(input.roofHeight ?? 0, 0) : 0
-    const scale = Math.min((width - pad * 2) / d, (height - pad * 2) / Math.max(shellH + roofH, 1))
-    const bodyW = d * scale
-    const bodyH = shellH * scale
-    const roof = roofH * scale
-    const x0 = (width - bodyW) / 2
-    const y0 = (height - (bodyH + roof)) / 2 + roof
-    const liquidY = input.liquidLevel != null
-      ? clamp(y0 + bodyH - (input.liquidLevel / Math.max(shellH + roofH, 1)) * (bodyH + roof), y0 - roof, y0 + bodyH)
-      : undefined
-    const roofPath = input.tankRoofType === TankRoofType.CONE
-      ? `M ${x0},${y0} L ${x0 + bodyW / 2},${y0 - roof} L ${x0 + bodyW},${y0}`
-      : input.tankRoofType === TankRoofType.DOME
-        ? `M ${x0},${y0} Q ${x0 + bodyW / 2},${y0 - roof * 1.4} ${x0 + bodyW},${y0}`
-        : `M ${x0},${y0} L ${x0 + bodyW},${y0}`
-
-    return (
-      <View style={S.schematicWrap}>
-        <Svg viewBox={`0 0 ${width} ${height}`} width={460} height={372} style={S.schematicSvg}>
-          {liquidY != null && (
-            <Rect x={x0} y={liquidY} width={bodyW} height={y0 + bodyH - liquidY} fill={fill} />
-          )}
-          <Path d={roofPath} stroke={stroke} strokeWidth={2} fill="none" />
-          <Rect x={x0} y={y0} width={bodyW} height={bodyH} stroke={stroke} strokeWidth={2} fill="none" />
-        </Svg>
-        <Text style={S.schematicCaption}>Tank Schematic</Text>
+/** Special two-value row: Partial Volume at level */
+function PartialVolumeRow({
+  level, lUnit, volume, vUnit,
+}: {
+  level?: string | null; lUnit: string; volume?: string | null; vUnit: string
+}) {
+  return (
+    <View style={S.row}>
+      <Text style={[S.rowLabel, { flex: 2.2 }]}>Partial Volume at level</Text>
+      <View style={[S.rowValueBox, { flex: 1.3, backgroundColor: level && level !== '—' ? VALUE_BG : WHITE }]}>
+        <Text style={S.rowValueText}>{level ?? ''}</Text>
       </View>
-    )
-  }
+      <Text style={[S.rowUnit, { flex: 0.7 }]}>{lUnit}</Text>
+      <View style={[S.rowValueBox, { flex: 1.5, backgroundColor: volume && volume !== '—' ? VALUE_BG : WHITE }]}>
+        <Text style={S.rowValueText}>{volume ?? ''}</Text>
+      </View>
+      <Text style={[S.rowUnit, { flex: 0.7 }]}>{vUnit}</Text>
+    </View>
+  )
+}
 
-  const model = buildVesselSchematicModel({
-    input,
-    width: 520,
-    height: 420,
-    padding: 48,
-  })
+// ─── Title block ─────────────────────────────────────────────────────────────
 
-  if (!model) {
-    return null
+function TitleBlock({
+  metadata,
+  revisions,
+}: {
+  metadata: CalculationMetadata
+  revisions: RevisionRecord[]
+}) {
+  const rows: (RevisionRecord | null)[] = [
+    ...revisions.slice(0, 3),
+    ...Array(Math.max(0, 3 - revisions.length)).fill(null),
+  ]
+  const trS = {
+    flexDirection: 'row' as const,
+    borderBottomWidth: BW,
+    borderBottomColor: BLACK,
+    minHeight: 14,
+    alignItems: 'center' as const,
   }
+  const tlS = {
+    width: 48,
+    fontSize: 7,
+    fontFamily: 'Helvetica-Bold' as const,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRightWidth: BW,
+    borderRightColor: BLACK,
+    color: GUIDE,
+  }
+  const tvS = { flex: 1, fontSize: 7, paddingHorizontal: 4, paddingVertical: 2 }
 
   return (
-    <View style={S.schematicWrap}>
-      <Svg viewBox={`0 0 ${model.width} ${model.height}`} width={460} height={372} style={S.schematicSvg}>
-        <Defs>
-          <ClipPath id={model.clipPaths.vesselId}>
-            <Path d={model.vesselPath} />
-          </ClipPath>
-          {model.bootPath && model.clipPaths.bootId && (
-            <ClipPath id={model.clipPaths.bootId}>
-              <Path d={model.bootPath} />
-            </ClipPath>
-          )}
-        </Defs>
+    <View style={{ borderTopWidth: HB, borderTopColor: BLACK }}>
 
-        {model.fills.vessel && (
-          <Rect
-            x={model.fills.vessel.x}
-            y={model.fills.vessel.y}
-            width={model.fills.vessel.width}
-            height={model.fills.vessel.height}
-            fill={fill}
-            clipPath={`url(#${model.clipPaths.vesselId})`}
-          />
-        )}
-
-        {model.breakMarker && (
-          <G>
-            <Rect
-              x={model.breakMarker.background.x}
-              y={model.breakMarker.background.y}
-              width={model.breakMarker.background.width}
-              height={model.breakMarker.background.height}
-              fill="#ffffff"
-            />
-            {model.breakMarker.wallSegments.map((segment) => (
-              <Line
-                key={segment.key}
-                x1={segment.x1}
-                y1={segment.y1}
-                x2={segment.x2}
-                y2={segment.y2}
-                stroke={stroke}
-                strokeWidth={2}
-              />
-            ))}
-            {model.breakMarker.zigzags.map((segment) => (
-              <Path key={segment.key} d={segment.d} stroke={stroke} strokeWidth={1.5} fill="none" />
-            ))}
-          </G>
-        )}
-
-        {model.fills.boot && model.clipPaths.bootId && (
-          <Rect
-            x={model.fills.boot.x}
-            y={model.fills.boot.y}
-            width={model.fills.boot.width}
-            height={model.fills.boot.height}
-            fill={fill}
-            clipPath={`url(#${model.clipPaths.bootId})`}
-          />
-        )}
-
-        {model.outlines.map((outline) => (
-          <Path key={outline.key} d={outline.d} stroke={stroke} strokeWidth={2} fill="none" />
-        ))}
-
-        {model.legs.map((legLine) => (
-          <Line
-            key={legLine.key}
-            x1={legLine.x1}
-            y1={legLine.y1}
-            x2={legLine.x2}
-            y2={legLine.y2}
-            stroke={stroke}
-            strokeWidth={2}
-          />
-        ))}
-
-        <Line
-          x1={model.groundLine.x1}
-          y1={model.groundLine.y1}
-          x2={model.groundLine.x2}
-          y2={model.groundLine.y2}
-          stroke={stroke}
-          strokeWidth={1.5}
-          strokeDasharray="4 3"
-          opacity={0.8}
-        />
-
-        {model.levels.map((level) => (
-          <PdfLevelLine key={level.key} level={level} />
-        ))}
-
-        {model.guideLines.map((guideLine) => (
-          <Line
-            key={guideLine.key}
-            x1={guideLine.x1}
-            y1={guideLine.y1}
-            x2={guideLine.x2}
-            y2={guideLine.y2}
-            stroke={guide}
-            strokeWidth={0.75}
-          />
-        ))}
-
-        {model.annotations.map((annotation) => (
-          <PdfAnnotation key={annotation.key} annotation={annotation} color={guide} />
-        ))}
-      </Svg>
-      <View style={S.schematicLegend}>
-        <LegendItem swatchStyle={S.legendSwatchLiquid} label="Liquid" />
-        {model.showLegs && <LegendItem swatchStyle={S.legendSwatchOutline} label="Legs" />}
-        {model.hasBoot && <LegendItem swatchStyle={S.legendSwatchBoot} label="Boot" />}
-        <LegendItem swatchStyle={S.legendLine} label="Ground" />
-        {model.legend.showHll && <LegendItem swatchStyle={S.legendLineHll} label="HLL" />}
-        {model.legend.showLll && <LegendItem swatchStyle={S.legendLineLll} label="LLL" />}
-        {model.legend.showOfl && <LegendItem swatchStyle={S.legendLineOfl} label="OFL" />}
+      {/* Row 1: TITLE/PROJECT/CLIENT (left) | revision columns (right) */}
+      <View style={{ flexDirection: 'row', borderBottomWidth: HB, borderBottomColor: BLACK }}>
+        <View style={{ flex: 3, borderRightWidth: HB, borderRightColor: BLACK }}>
+          <View style={trS}>
+            <Text style={tlS}>TITLE</Text>
+            <Text style={tvS}>{metadata.title || ''}</Text>
+          </View>
+          <View style={trS}>
+            <Text style={tlS}>PROJECT</Text>
+            <Text style={tvS}>{metadata.projectName || ''}</Text>
+          </View>
+          <View style={{ ...trS, borderBottomWidth: 0 }}>
+            <Text style={tlS}>CLIENT</Text>
+            <Text style={tvS}>{metadata.client || ''}</Text>
+          </View>
+        </View>
+        <View style={{ flex: 2 }}>
+          <View style={{ flexDirection: 'row', borderBottomWidth: BW, borderBottomColor: BLACK }}>
+            <Text style={S.revHead}>REV.</Text>
+            <Text style={S.revHead}>BY / DATE</Text>
+            <Text style={S.revHead}>CHKD / DATE</Text>
+            <Text style={[S.revHead, { borderRightWidth: 0 }]}>APPD / DATE</Text>
+          </View>
+          {rows.map((rev, i) => (
+            <View
+              key={i}
+              style={{
+                flexDirection: 'row',
+                borderBottomWidth: i < rows.length - 1 ? BW : 0,
+                borderBottomColor: '#e5e7eb',
+                flex: 1,
+                minHeight: 13,
+              }}
+            >
+              <Text style={S.revCell}>{rev?.rev ?? ''}</Text>
+              <Text style={S.revCell}>{rev ? [rev.by, rev.byDate].filter(Boolean).join('  ') : ''}</Text>
+              <Text style={S.revCell}>{rev ? [rev.checkedBy, rev.checkedDate].filter(Boolean).join('  ') : ''}</Text>
+              <Text style={[S.revCell, { borderRightWidth: 0 }]}>{rev ? [rev.approvedBy, rev.approvedDate].filter(Boolean).join('  ') : ''}</Text>
+            </View>
+          ))}
+        </View>
       </View>
+
+      {/* Row 2: logo + company | project / doc / page / of */}
+      <View style={{ flexDirection: 'row' }}>
+        <View style={{ flex: 3, flexDirection: 'row', borderRightWidth: HB, borderRightColor: BLACK }}>
+          <View style={{ width: 44, alignItems: 'center', justifyContent: 'center', borderRightWidth: BW, borderRightColor: BLACK, backgroundColor: '#e5e7eb', padding: 4 }}>
+            <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', color: GUIDE, textAlign: 'center' }}>GCME</Text>
+          </View>
+          <View style={{ flex: 1, paddingHorizontal: 6, paddingVertical: 4, justifyContent: 'center' }}>
+            <Text style={{ fontSize: 6.5, fontFamily: 'Helvetica-Bold' }}>GC MAINTENANCE &amp; ENGINEERING COMPANY LIMITED</Text>
+          </View>
+        </View>
+        <View style={{ flex: 2, flexDirection: 'row' }}>
+          <View style={{ flex: 1, paddingHorizontal: 3, paddingVertical: 2, borderRightWidth: BW, borderRightColor: BLACK }}>
+            <Text style={{ fontSize: 5, color: MUTED, fontFamily: 'Helvetica-Bold' }}>PROJECT NO.</Text>
+            <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold' }}>{metadata.projectNumber || ''}</Text>
+          </View>
+          <View style={{ flex: 1.5, paddingHorizontal: 3, paddingVertical: 2, borderRightWidth: BW, borderRightColor: BLACK }}>
+            <Text style={{ fontSize: 5, color: MUTED, fontFamily: 'Helvetica-Bold' }}>DOCUMENT NO.</Text>
+            <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold' }}>{metadata.documentNumber || ''}</Text>
+          </View>
+          <View style={{ flex: 0.7, paddingHorizontal: 3, paddingVertical: 2, borderRightWidth: BW, borderRightColor: BLACK }}>
+            <Text style={{ fontSize: 5, color: MUTED, fontFamily: 'Helvetica-Bold' }}>PAGE NO.</Text>
+            <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold' }} render={({ pageNumber }) => String(pageNumber)} />
+          </View>
+          <View style={{ flex: 0.7, paddingHorizontal: 3, paddingVertical: 2 }}>
+            <Text style={{ fontSize: 5, color: MUTED, fontFamily: 'Helvetica-Bold' }}>OF</Text>
+            <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold' }} render={({ totalPages }) => String(totalPages)} />
+          </View>
+        </View>
+      </View>
+
     </View>
+  )
+}
+
+// ─── Schematic legend swatches ────────────────────────────────────────────────
+
+function LegendSwatch({ color, border, label }: { color: string; border: string; label: string }) {
+  return (
+    <View style={S.legendItem}>
+      <View
+        style={{
+          width: 10,
+          height: 10,
+          backgroundColor: color,
+          borderWidth: 1,
+          borderColor: border,
+          borderRadius: 999,
+        }}
+      />
+      <Text style={S.legendLabel}>{label.toUpperCase()}</Text>
+    </View>
+  )
+}
+function LegendOutline({ label, thick }: { label: string; thick?: boolean }) {
+  return (
+    <View style={S.legendItem}>
+      <View
+        style={{
+          width: 10,
+          height: 10,
+          borderWidth: thick ? 2 : 1,
+          borderColor: '#6b7280',
+          borderRadius: 999,
+        }}
+      />
+      <Text style={S.legendLabel}>{label.toUpperCase()}</Text>
+    </View>
+  )
+}
+function LegendDash({ color, label }: { color: string; label: string }) {
+  return (
+    <View style={S.legendItem}>
+      <View style={{ width: 14, height: 0, borderTopWidth: 1.5, borderTopColor: color, borderStyle: 'dashed' }} />
+      <Text style={S.legendLabel}>{label.toUpperCase()}</Text>
+    </View>
+  )
+}
+
+// ─── PDF level / annotation renderers ────────────────────────────────────────
+
+function PdfArrowheads({
+  x1,
+  y1,
+  x2,
+  y2,
+  color,
+  size = 4,
+}: {
+  x1: number
+  y1: number
+  x2: number
+  y2: number
+  color: string
+  size?: number
+}) {
+  const dx = x2 - x1
+  const dy = y2 - y1
+  const length = Math.hypot(dx, dy)
+
+  if (!length) return null
+
+  const ux = dx / length
+  const uy = dy / length
+  const px = -uy
+  const py = ux
+  const halfWidth = size * 0.6
+
+  const startBaseX = x1 + ux * size
+  const startBaseY = y1 + uy * size
+  const endBaseX = x2 - ux * size
+  const endBaseY = y2 - uy * size
+
+  const startPoints = [
+    `${x1},${y1}`,
+    `${startBaseX + px * halfWidth},${startBaseY + py * halfWidth}`,
+    `${startBaseX - px * halfWidth},${startBaseY - py * halfWidth}`,
+  ].join(' ')
+
+  const endPoints = [
+    `${x2},${y2}`,
+    `${endBaseX + px * halfWidth},${endBaseY + py * halfWidth}`,
+    `${endBaseX - px * halfWidth},${endBaseY - py * halfWidth}`,
+  ].join(' ')
+
+  return (
+    <>
+      <Polygon points={startPoints} fill={color} />
+      <Polygon points={endPoints} fill={color} />
+    </>
   )
 }
 
@@ -488,50 +468,29 @@ function PdfLevelLine({ level }: { level: VesselSchematicLevel }) {
   return (
     <G>
       <Line
-        x1={level.lineX1}
-        y1={level.y}
-        x2={level.lineX2}
-        y2={level.y}
+        x1={level.lineX1} y1={level.y}
+        x2={level.lineX2} y2={level.y}
         stroke={level.color}
         strokeWidth={1.5}
         strokeDasharray={level.dashed ? '4 2' : undefined}
       />
-      <Text
-        x={level.textX}
-        y={level.textY}
-        fill={level.color}
-        style={{ fontSize: 11 }}
-      >
+      <Text x={level.textX} y={level.textY} fill={level.color} style={{ fontSize: 11, fontFamily: 'Helvetica-Bold' }}>
         {level.label}
       </Text>
     </G>
   )
 }
 
-function PdfAnnotation({
-  annotation,
-  color,
-}: {
-  annotation: VesselSchematicAnnotation
-  color: string
-}) {
+function PdfAnnotation({ annotation, color }: { annotation: VesselSchematicAnnotation; color: string }) {
   const cx = (annotation.x1 + annotation.x2) / 2
   const cy = (annotation.y1 + annotation.y2) / 2
-  const verticalTextOffset = 8
   const textX = annotation.vertical
-    ? cx + (annotation.labelSide === 'start' ? -verticalTextOffset : verticalTextOffset)
+    ? cx + (annotation.labelSide === 'start' ? -8 : 8)
     : cx
-
   return (
     <G>
-      <Line
-        x1={annotation.x1}
-        y1={annotation.y1}
-        x2={annotation.x2}
-        y2={annotation.y2}
-        stroke={color}
-        strokeWidth={1}
-      />
+      <Line x1={annotation.x1} y1={annotation.y1} x2={annotation.x2} y2={annotation.y2} stroke={color} strokeWidth={1} />
+      <PdfArrowheads x1={annotation.x1} y1={annotation.y1} x2={annotation.x2} y2={annotation.y2} color={color} />
       <Text
         x={textX}
         y={annotation.vertical ? cy + 3 : cy - 6}
@@ -545,162 +504,458 @@ function PdfAnnotation({
   )
 }
 
-function LegendItem({
-  swatchStyle,
-  label,
-}: {
-  swatchStyle: Record<string, string | number>
-  label: string
-}) {
+function PdfTankLevelLine({ level }: { level: TankSchematicLevel }) {
   return (
-    <View style={S.legendItem}>
-      <View style={swatchStyle} />
-      <Text style={S.legendLabel}>{label}</Text>
-    </View>
+    <G>
+      <Line
+        x1={level.x0 - 12}
+        y1={level.y}
+        x2={level.x1 + 12}
+        y2={level.y}
+        stroke={level.color}
+        strokeWidth={1.5}
+        strokeDasharray={level.dashed ? '4 2' : undefined}
+      />
+      <Text
+        x={level.x1 + level.labelOffset}
+        y={level.y + 4}
+        fill={level.color}
+        style={{ fontSize: 11, fontFamily: 'Helvetica-Bold' }}
+      >
+        {level.label}
+      </Text>
+    </G>
   )
 }
 
-// ─── Document ─────────────────────────────────────────────────────────────────
-
-export function VesselReport({ input, result, metadata, revisions, units }: VesselReportProps) {
-  const vol = units.volume
-  const area = units.area
-  const mass = units.mass
-  const len = units.length
-
-  const { volumes: V, surfaceAreas: SA, masses: M, timing: T, headDepthUsed } = result
+function PdfTankAnnotation({ annotation, color }: { annotation: TankSchematicAnnotation; color: string }) {
+  const cx = (annotation.x1 + annotation.x2) / 2
+  const cy = (annotation.y1 + annotation.y2) / 2
+  const textX = annotation.vertical
+    ? cx + (annotation.labelSide === 'start' ? -8 : 8)
+    : cx
 
   return (
-    <Document title={`Vessel Calculation — ${input.tag}`} author="Process Engineering Suite">
-      <Page size="A4" style={S.page}>
+    <G>
+      <Line x1={annotation.x1} y1={annotation.y1} x2={annotation.x2} y2={annotation.y2} stroke={color} strokeWidth={1} />
+      <PdfArrowheads x1={annotation.x1} y1={annotation.y1} x2={annotation.x2} y2={annotation.y2} color={color} />
+      <Text
+        x={textX}
+        y={annotation.vertical ? cy + 3 : cy - 6}
+        textAnchor={annotation.vertical ? (annotation.labelSide === 'start' ? 'end' : 'start') : 'middle'}
+        fill={color}
+        style={{ fontSize: 10 }}
+      >
+        {annotation.label}
+      </Text>
+    </G>
+  )
+}
 
-        {/* ── Header ─────────────────────────────────────────────────────── */}
-        <View style={S.headerRow}>
-          <View>
-            <Text style={S.appTitle}>Vessel Calculator</Text>
-            <Text style={S.appSubtitle}>Process Engineering Suite · Volume &amp; Surface Area</Text>
+// ─── Schematic figure ─────────────────────────────────────────────────────────
+
+function SchematicFigure({
+  input,
+  svgW = 520,
+  svgH = 420,
+}: {
+  input: CalculationInput
+  svgW?: number
+  svgH?: number
+}) {
+  const mode   = input.equipmentMode ?? EquipmentMode.VESSEL
+  const stroke = '#111827'
+  const guide  = '#6b7280'
+  const fill   = '#bfdbfe'
+  const isTank = mode === EquipmentMode.TANK
+  const isSphericalTank = isTank && input.tankType === TankType.SPHERICAL
+
+  if (isTank) {
+    const model = buildTankSchematicModel({
+      input,
+      width: isSphericalTank ? 620 : 600,
+      height: isSphericalTank ? 380 : 420,
+      padding: isSphericalTank ? 40 : 48,
+    })
+
+    if (!model) return null
+
+    return (
+      <>
+        <Svg
+          viewBox={`0 0 ${model.width} ${model.height}`}
+          width={isSphericalTank ? 440 : 420}
+          height={isSphericalTank ? 300 : 340}
+        >
+          <Defs>
+            <ClipPath id={model.clipPath.id}>
+              {model.clipPath.path && <Path d={model.clipPath.path} />}
+              {model.clipPath.circle && (
+                <Circle
+                  cx={model.clipPath.circle.cx}
+                  cy={model.clipPath.circle.cy}
+                  r={model.clipPath.circle.r}
+                />
+              )}
+            </ClipPath>
+          </Defs>
+
+          {model.liquidFill && (
+            <Rect
+              x={model.liquidFill.x}
+              y={model.liquidFill.y}
+              width={model.liquidFill.width}
+              height={model.liquidFill.height}
+              fill={fill}
+              clipPath={`url(#${model.clipPath.id})`}
+            />
+          )}
+
+          {model.outlines.paths.map((outline) => (
+            <Path key={outline.key} d={outline.d} stroke={stroke} strokeWidth={2} fill="none" />
+          ))}
+          {model.outlines.rects.map((outline) => (
+            <Rect
+              key={outline.key}
+              x={outline.x}
+              y={outline.y}
+              width={outline.width}
+              height={outline.height}
+              stroke={stroke}
+              strokeWidth={2}
+              fill="none"
+            />
+          ))}
+          {model.outlines.circles.map((outline) => (
+            <Circle key={outline.key} cx={outline.cx} cy={outline.cy} r={outline.r} stroke={stroke} strokeWidth={2} fill="none" />
+          ))}
+          {model.outlines.lines.map((outline) => (
+            <Line
+              key={outline.key}
+              x1={outline.x1}
+              y1={outline.y1}
+              x2={outline.x2}
+              y2={outline.y2}
+              stroke={stroke}
+              strokeWidth={outline.strokeWidth ?? 2}
+              strokeDasharray={outline.dashed}
+              opacity={outline.opacity}
+            />
+          ))}
+          {model.levels.map((level) => <PdfTankLevelLine key={level.key} level={level} />)}
+          {model.guideLines.map((guideLine) => (
+            <Line
+              key={guideLine.key}
+              x1={guideLine.x1}
+              y1={guideLine.y1}
+              x2={guideLine.x2}
+              y2={guideLine.y2}
+              stroke={guide}
+              strokeWidth={guideLine.strokeWidth ?? 0.75}
+              opacity={guideLine.opacity ?? 0.7}
+            />
+          ))}
+          {model.annotations.map((annotation) => (
+            <PdfTankAnnotation key={annotation.key} annotation={annotation} color={guide} />
+          ))}
+        </Svg>
+        {model.legend.showLiquid && (
+          <View style={S.legendRow}>
+            <LegendSwatch color="#bfdbfe" border="#38bdf8" label="Liquid" />
+            {model.legend.showLegs && <LegendOutline label="Legs" />}
+            {model.legend.showGround && <LegendDash color={stroke} label="Ground" />}
           </View>
-          <View>
-            <Text style={S.tagLabel}>Equipment Tag</Text>
-            <Text style={S.tagText}>{input.tag}</Text>
-          </View>
-        </View>
+        )}
+        <Text style={[S.footerText, { textAlign: 'center', marginTop: 4, textTransform: 'uppercase' }]}>
+          {model.subtitle}
+        </Text>
+      </>
+    )
+  }
 
-        <View style={S.divider} />
+  const model = buildVesselSchematicModel({
+    input,
+    width: 520,
+    height: 420,
+    padding: 48,
+  })
+  if (!model) return null
 
-        {/* ── Metadata ───────────────────────────────────────────────────── */}
-        <View style={S.metaGrid}>
-          <MetaField label="Description" value={input.description ?? ''} />
-          <MetaField label="Project Number" value={metadata.projectNumber} />
-          <MetaField label="Document Number" value={metadata.documentNumber} />
-          <MetaField label="Title" value={metadata.title} />
-          <MetaField label="Project Name" value={metadata.projectName} />
-          <MetaField label="Client" value={metadata.client} />
-          <MetaField label="Orientation" value={input.orientation ?? ''} />
-          <MetaField label="Head Type" value={input.headType ?? ''} />
-          <MetaField label="Calculated At" value={new Date(result.calculatedAt).toLocaleString()} />
-        </View>
+  return (
+    <>
+      <Svg viewBox={`0 0 ${model.width} ${model.height}`} width={420} height={340}>
+        <Defs>
+          <ClipPath id={model.clipPaths.vesselId}>
+            <Path d={model.vesselPath} />
+          </ClipPath>
+          {model.bootPath && model.clipPaths.bootId && (
+            <ClipPath id={model.clipPaths.bootId}>
+              <Path d={model.bootPath} />
+            </ClipPath>
+          )}
+        </Defs>
 
-        {/* ── Geometry inputs ────────────────────────────────────────────── */}
-        <Text style={S.sectionTitle}>Geometry Inputs</Text>
-        <View style={S.tableHeader}>
-          <Text style={[S.headerText, S.colLabel]}>Parameter</Text>
-          <Text style={[S.headerText, S.colValue]}>Value</Text>
-          <Text style={[S.headerText, S.colUnit]}>Unit</Text>
-        </View>
-        <TableRow label="Inside Diameter" value={fmt(input.insideDiameter, 'mm', len)} unit={unitLabel(len)} />
-        <TableRow label="Shell Length (TL–TL)" value={fmt(input.shellLength, 'mm', len)} unit={unitLabel(len)} />
-        <TableRow label="Head Depth (used)" value={fmt(headDepthUsed, 'mm', len)} unit={unitLabel(len)} />
-        <TableRow label="Boot Height" value={fmt(input.bootHeight, 'mm', len)} unit={unitLabel(len)} />
-        <TableRow label="Wall Thickness" value={fmt(input.wallThickness, 'mm', len)} unit={unitLabel(len)} />
-        <TableRow label="Vessel Material" value={input.material ?? "—"} unit="" />
-        <TableRow label="Material Density" value={fmt(input.materialDensity, BASE_UNITS.density, units.density)} unit={unitLabel(units.density)} />
-
-        {/* ── Level inputs ───────────────────────────────────────────────── */}
-        <Text style={S.sectionTitle}>Level Inputs</Text>
-        <View style={S.tableHeader}>
-          <Text style={[S.headerText, S.colLabel]}>Level</Text>
-          <Text style={[S.headerText, S.colValue]}>Value</Text>
-          <Text style={[S.headerText, S.colUnit]}>Unit</Text>
-        </View>
-        <TableRow label="Liquid Level (LL)" value={fmt(input.liquidLevel, 'mm', len)} unit={unitLabel(len)} />
-        <TableRow label="High Liquid Level (HLL)" value={fmt(input.hll, 'mm', len)} unit={unitLabel(len)} />
-        <TableRow label="Low Liquid Level (LLL)" value={fmt(input.lll, 'mm', len)} unit={unitLabel(len)} />
-        <TableRow label="Overflow Level (OFL)" value={fmt(input.ofl, 'mm', len)} unit={unitLabel(len)} />
-
-        {/* ── Volumes ────────────────────────────────────────────────────── */}
-        <Text style={S.sectionTitle}>Volume Results</Text>
-        <View style={S.tableHeader}>
-          <Text style={[S.headerText, S.colLabel]}>Volume</Text>
-          <Text style={[S.headerText, S.colValue]}>{unitLabel(vol)}</Text>
-          <Text style={[S.headerText, S.colUnit]} />
-        </View>
-        <TableRow label="Head Volume (both)" value={fmt(V.headVolume, BASE_UNITS.volume, vol)} unit={unitLabel(vol)} />
-        <TableRow label="Shell Volume" value={fmt(V.shellVolume, BASE_UNITS.volume, vol)} unit={unitLabel(vol)} />
-        <TableRow label="Total Volume" value={fmt(V.totalVolume, BASE_UNITS.volume, vol)} unit={unitLabel(vol)} bold />
-        <TableRow label="Tangent Volume" value={fmt(V.tangentVolume, BASE_UNITS.volume, vol)} unit={unitLabel(vol)} indent />
-        <TableRow label="Effective Volume" value={fmt(V.effectiveVolume, BASE_UNITS.volume, vol)} unit={unitLabel(vol)} />
-        <TableRow label="Working Volume" value={fmt(V.workingVolume, BASE_UNITS.volume, vol)} unit={unitLabel(vol)} />
-        <TableRow label="Overflow Volume" value={fmt(V.overflowVolume, BASE_UNITS.volume, vol)} unit={unitLabel(vol)} />
-        <TableRow label="Partial Volume (at LL)" value={fmt(V.partialVolume, BASE_UNITS.volume, vol)} unit={unitLabel(vol)} />
-
-        {/* ── Surface areas ──────────────────────────────────────────────── */}
-        <Text style={S.sectionTitle}>Surface Area Results</Text>
-        <View style={S.tableHeader}>
-          <Text style={[S.headerText, S.colLabel]}>Surface Area</Text>
-          <Text style={[S.headerText, S.colValue]}>{unitLabel(area)}</Text>
-          <Text style={[S.headerText, S.colUnit]} />
-        </View>
-        <TableRow label="Head Surface Area (both)" value={fmt(SA.headSurfaceArea, BASE_UNITS.area, area)} unit={unitLabel(area)} />
-        <TableRow label="Shell Surface Area" value={fmt(SA.shellSurfaceArea, BASE_UNITS.area, area)} unit={unitLabel(area)} />
-        <TableRow label="Total Surface Area" value={fmt(SA.totalSurfaceArea, BASE_UNITS.area, area)} unit={unitLabel(area)} bold />
-        <TableRow label="Wetted Surface Area (at LL)" value={fmt(SA.wettedSurfaceArea, BASE_UNITS.area, area)} unit={unitLabel(area)} />
-
-        {/* ── Mass & Timing ──────────────────────────────────────────────── */}
-        <Text style={S.sectionTitle}>Mass &amp; Timing Results</Text>
-        <View style={S.tableHeader}>
-          <Text style={[S.headerText, S.colLabel]}>Parameter</Text>
-          <Text style={[S.headerText, S.colValue]}>Value</Text>
-          <Text style={[S.headerText, S.colUnit]}>Unit</Text>
-        </View>
-        <TableRow label="Empty Vessel Mass" value={fmt(M.massEmpty, BASE_UNITS.mass, mass)} unit={unitLabel(mass)} />
-        <TableRow label="Liquid Mass (at LL)" value={fmt(M.massLiquid, BASE_UNITS.mass, mass)} unit={unitLabel(mass)} />
-        <TableRow label="Full Liquid Mass" value={fmt(M.massFull, BASE_UNITS.mass, mass)} unit={unitLabel(mass)} bold />
-        <TableRow label="Surge Time (LLL→HLL)" value={T.surgeTime != null ? (T.surgeTime * 60).toFixed(2) : '—'} unit="min" />
-        <TableRow label="Inventory Time (LL/OFL volume)" value={T.inventory != null ? (T.inventory * 60).toFixed(2) : '—'} unit="min" />
-
-        {/* ── Revision table ─────────────────────────────────────────────── */}
-        {revisions.length > 0 && (
-          <>
-            <Text style={[S.sectionTitle, { marginTop: 14 }]}>Revision History</Text>
-            <View style={S.revHeader}>
-              {['Rev', 'By', 'Date', 'Checked By', 'Approved By'].map((h) => (
-                <Text key={h} style={S.revHeaderCell}>{h}</Text>
-              ))}
-            </View>
-            {revisions.map((rev, i) => (
-              <View key={i} style={S.revRow}>
-                <Text style={S.revCell}>{rev.rev}</Text>
-                <Text style={S.revCell}>{rev.by}</Text>
-                <Text style={S.revCell}>{rev.byDate ?? '—'}</Text>
-                <Text style={S.revCell}>{rev.checkedBy}</Text>
-                <Text style={S.revCell}>{rev.approvedBy}</Text>
-              </View>
-            ))}
-          </>
+        {model.fills.vessel && (
+          <Rect
+            x={model.fills.vessel.x} y={model.fills.vessel.y}
+            width={model.fills.vessel.width} height={model.fills.vessel.height}
+            fill={fill} clipPath={`url(#${model.clipPaths.vesselId})`}
+          />
         )}
 
-        <View wrap={false}>
-          <Text style={S.sectionTitle}>Schematic</Text>
-          <SchematicFigure input={input} />
+        {model.breakMarker && (
+          <G>
+            <Rect
+              x={model.breakMarker.background.x} y={model.breakMarker.background.y}
+              width={model.breakMarker.background.width} height={model.breakMarker.background.height}
+              fill={WHITE}
+            />
+            {model.breakMarker.wallSegments.map((s) => (
+              <Line key={s.key} x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2} stroke={stroke} strokeWidth={2} />
+            ))}
+            {model.breakMarker.zigzags.map((s) => (
+              <Path key={s.key} d={s.d} stroke={stroke} strokeWidth={1.5} fill="none" />
+            ))}
+          </G>
+        )}
+
+        {model.fills.boot && model.clipPaths.bootId && (
+          <Rect
+            x={model.fills.boot.x} y={model.fills.boot.y}
+            width={model.fills.boot.width} height={model.fills.boot.height}
+            fill={fill} clipPath={`url(#${model.clipPaths.bootId})`}
+          />
+        )}
+
+        {model.outlines.map((o) => (
+          <Path key={o.key} d={o.d} stroke={stroke} strokeWidth={2} fill="none" />
+        ))}
+        {model.legs.map((leg) => (
+          <Line key={leg.key} x1={leg.x1} y1={leg.y1} x2={leg.x2} y2={leg.y2} stroke={stroke} strokeWidth={2} />
+        ))}
+        <Line
+          x1={model.groundLine.x1} y1={model.groundLine.y1}
+          x2={model.groundLine.x2} y2={model.groundLine.y2}
+          stroke={stroke} strokeWidth={1.5} strokeDasharray="4 3" opacity={0.8}
+        />
+        {model.levels.map((lv) => <PdfLevelLine key={lv.key} level={lv} />)}
+        {model.guideLines.map((gl) => (
+          <Line key={gl.key} x1={gl.x1} y1={gl.y1} x2={gl.x2} y2={gl.y2} stroke={guide} strokeWidth={0.75} />
+        ))}
+        {model.annotations.map((ann) => (
+          <PdfAnnotation key={ann.key} annotation={ann} color={guide} />
+        ))}
+      </Svg>
+
+      <View style={S.legendRow}>
+        <LegendSwatch color="#bfdbfe" border="#38bdf8" label="Liquid" />
+        {model.showLegs && <LegendOutline label="Legs" />}
+        {model.hasBoot   && <LegendOutline label="Boot" thick />}
+        <LegendDash color={stroke} label="Ground" />
+        {model.legend.showHll && <LegendDash color="#22c55e" label="HLL" />}
+        {model.legend.showLll && <LegendDash color="#f59e0b" label="LLL" />}
+        {model.legend.showOfl && <LegendDash color="#ef4444" label="OFL" />}
+      </View>
+    </>
+  )
+}
+
+// ─── Main document ────────────────────────────────────────────────────────────
+
+export function VesselReport({ input, result, metadata, revisions, units }: VesselReportProps) {
+  const vol  = units.volume
+  const area = units.area
+  const mass = units.mass
+  const len  = units.length
+
+  const { volumes: V, surfaceAreas: SA, masses: M, timing: T, headDepthUsed } = result
+  const mode       = input.equipmentMode ?? EquipmentMode.VESSEL
+  const isVertical = input.orientation === VesselOrientation.VERTICAL
+  const isConical  = input.headType === HeadType.CONICAL
+
+  // Derived values (base units = mm / m³ / kg / m² / m³/h)
+  const insideRadius    = input.insideDiameter / 2
+  const outsideDiameter = input.insideDiameter + 2 * (input.wallThickness ?? 0)
+  const outsideRadius   = outsideDiameter / 2
+  const overallHeight   = 2 * headDepthUsed + (input.shellLength ?? 0)
+  const efficiencyPct   = V.totalVolume > 0
+    ? (V.workingVolume / V.totalVolume * 100).toFixed(2)
+    : '—'
+  const surgeMinutes    = T.surgeTime != null ? (T.surgeTime * 60).toFixed(2) : '—'
+  const inventoryHours  = T.inventory != null ? T.inventory.toFixed(2) : '—'
+  const typeLabel       = `${input.orientation ?? ''} ${mode}`.trim().toUpperCase()
+  const inventoryVol    = V.partialVolume != null
+    ? fmt(V.partialVolume, BASE_UNITS.volume, vol)
+    : fmt(V.effectiveVolume, BASE_UNITS.volume, vol)
+  const flowUnitLabel   = ul('m3/h')
+
+  // Section visibility
+  const showSurge     = input.flowrate != null && T.surgeTime != null
+  const showInventory = input.flowrate != null && T.inventory != null
+
+  // Shared section divider style
+  const divider = { borderTopWidth: HB, borderTopColor: BLACK }
+
+  return (
+    <Document title={`Vessel Calculation — ${input.tag}`} author="GC ME Process Engineering Suite">
+      <Page size="A4" style={S.page}>
+        <View style={S.outerBorder}>
+
+          {/* ── Page header ──────────────────────────────────────────────── */}
+          <View style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            borderBottomWidth: HB,
+            borderBottomColor: BLACK,
+            paddingVertical: 4,
+            paddingHorizontal: 8,
+            minHeight: 22,
+          }}>
+            <View style={{ flex: 1 }} />
+            <Text style={{ fontSize: 10, fontFamily: 'Helvetica-Bold' }}>
+              SURFACE AREA AND VOLUME CALCULATION
+            </Text>
+            <View style={{ flex: 1, alignItems: 'flex-end' }}>
+              <Text style={{ fontSize: 6.5, fontFamily: 'Helvetica-Bold', color: MUTED }}>
+                MESUR&amp;VOL
+              </Text>
+            </View>
+          </View>
+
+          {/* ── Type row (spans left column only) ───────────────────────── */}
+          <View style={{ flexDirection: 'row', borderBottomWidth: HB, borderBottomColor: BLACK }}>
+            <View style={{ flex: 45, flexDirection: 'row', borderRightWidth: HB, borderRightColor: BLACK }}>
+              <Text style={{
+                width: 40, fontSize: 7, fontFamily: 'Helvetica-Bold',
+                paddingHorizontal: 4, paddingVertical: 2,
+                borderRightWidth: BW, borderRightColor: BLACK,
+              }}>
+                Type
+              </Text>
+              <Text style={{
+                flex: 1, fontSize: 7, fontFamily: 'Helvetica-Bold',
+                backgroundColor: VALUE_BG, textAlign: 'center',
+                paddingHorizontal: 4, paddingVertical: 2,
+              }}>
+                {typeLabel}
+              </Text>
+            </View>
+            <View style={{ flex: 55 }} />
+          </View>
+
+          {/* ── Two-column data body ─────────────────────────────────────── */}
+          <View style={{ flexDirection: 'row' }}>
+
+            {/* ════ LEFT COLUMN ════════════════════════════════════════════ */}
+            <View style={{ flex: 45, borderRightWidth: HB, borderRightColor: BLACK }}>
+
+              {/* I. VESSEL DETAILS */}
+              <SecHeader prefix="I." title="VESSEL DETAILS" />
+              <DR label="Inside Diameter"           value={fmt(input.insideDiameter, 'mm', len)} unit={ul(len)} />
+              <DR label="Inside Radius"             value={fmt(insideRadius, 'mm', len)}          unit={ul(len)} />
+              <DR label="Wall Thickness"            value={fmt(input.wallThickness, 'mm', len)}   unit={ul(len)} />
+              <DR label="Shell Tan-Tan"             value={fmt(input.shellLength, 'mm', len)}     unit={ul(len)} />
+              <DR label="Outside Diameter"          value={fmt(outsideDiameter, 'mm', len)}       unit={ul(len)} />
+              <DR label="Outside Radius"            value={fmt(outsideRadius, 'mm', len)}         unit={ul(len)} />
+              <DR label="Head type"                 value={input.headType ?? '—'}                  unit=""        hi />
+              <DR label="Head Depth"                value={fmt(headDepthUsed, 'mm', len)}         unit={ul(len)} />
+              {isConical && (
+                <DR label="For Conical Enter Manually" value={fmt(input.headDepth, 'mm', len)} unit={ul(len)} ind />
+              )}
+              <DR label="High Liquid Level"         value={fmt(input.hll, 'mm', len)}             unit={ul(len)} />
+              <DR label="Low Liquid Level"          value={fmt(input.lll, 'mm', len)}             unit={ul(len)} />
+              <DR label="Overfill liquid level"     value={fmt(input.ofl, 'mm', len)}             unit={ul(len)} />
+              {isVertical && (
+                <DR label="Overall Height of Tank"  value={fmt(overallHeight, 'mm', len)}         unit={ul(len)} />
+              )}
+              <DR label="Liquid level from Bottom of Tank" value={fmt(input.liquidLevel, 'mm', len)} unit={ul(len)} />
+
+              {/* × VOLUME */}
+              <View style={divider}>
+                <SecHeader prefix="×" title="VOLUME" />
+                <DR label="Volume of Both Heads"  value={fmt(V.headVolume,      BASE_UNITS.volume, vol)} unit={ul(vol)} />
+                <DR label="Shell Volume"          value={fmt(V.shellVolume,     BASE_UNITS.volume, vol)} unit={ul(vol)} />
+                <DR label="Total Volume"          value={fmt(V.totalVolume,     BASE_UNITS.volume, vol)} unit={ul(vol)} />
+                <DR label="Effective Volume"      value={fmt(V.effectiveVolume, BASE_UNITS.volume, vol)} unit={ul(vol)} />
+                <DR label="Efficiency Volume"     value={efficiencyPct}                                   unit="%"       />
+                <DR label="Tangent Volume"        value={fmt(V.tangentVolume,   BASE_UNITS.volume, vol)} unit={ul(vol)} />
+                <DR label="Working Volume"        value={fmt(V.workingVolume,   BASE_UNITS.volume, vol)} unit={ul(vol)} />
+                <DR label="Overflow Volume"       value={fmt(V.overflowVolume,  BASE_UNITS.volume, vol)} unit={ul(vol)} />
+                <PartialVolumeRow
+                  level={fmt(input.liquidLevel, 'mm', len)}
+                  lUnit={ul(len)}
+                  volume={V.partialVolume != null ? fmt(V.partialVolume, BASE_UNITS.volume, vol) : null}
+                  vUnit={ul(vol)}
+                />
+              </View>
+
+            </View>
+
+            {/* ════ RIGHT COLUMN ═══════════════════════════════════════════ */}
+            <View style={{ flex: 55 }}>
+
+              {/* II. VESSEL MASS */}
+              <SecHeader prefix="II." title="VESSEL MASS" />
+              <DR label="Vessel Material"              value={input.material ?? '—'}                                              unit="" hi />
+              <DR label="Vessel Material Density"      value={fmt(input.materialDensity, BASE_UNITS.density, units.density)}     unit={ul(units.density)} />
+              <DR label="For Other Enter Manually"     value={null}                                                               unit={ul(units.density)} ind />
+              <DR label="Empty Vessel Mass"            value={M.massEmpty  != null ? fmt(M.massEmpty,  BASE_UNITS.mass, mass) : '—'} unit={ul(mass)} />
+              <DR label="Liquid Density"               value={fmt(input.density, BASE_UNITS.density, units.density)}             unit={ul(units.density)} />
+              <DR label="Liquid Mass"                  value={M.massLiquid != null ? fmt(M.massLiquid, BASE_UNITS.mass, mass) : '—'} unit={ul(mass)} />
+              <DR label="Liquid Full Vessel Mass"      value={M.massFull   != null ? fmt(M.massFull,   BASE_UNITS.mass, mass) : '—'} unit={ul(mass)} />
+
+              {/* × SURFACE AREA */}
+              <View style={divider}>
+                <SecHeader prefix="×" title="SURFACE AREA" />
+                <DR label="Surface Area of Both Heads" value={fmt(SA.headSurfaceArea,   BASE_UNITS.area, area)} unit={ul(area)} />
+                <DR label="Shell Surface Area"         value={fmt(SA.shellSurfaceArea,  BASE_UNITS.area, area)} unit={ul(area)} />
+                <DR label="Total Surface Area"         value={fmt(SA.totalSurfaceArea,  BASE_UNITS.area, area)} unit={ul(area)} />
+                <DR label="Wetted Surface Area"        value={fmt(SA.wettedSurfaceArea, BASE_UNITS.area, area)} unit={ul(area)} />
+              </View>
+
+              {/* × SURGE TIME — conditional */}
+              {showSurge && (
+                <View style={divider}>
+                  <SecHeader prefix="×" title="SURGE TIME" />
+                  <DR label="Flow Out"            value={fmt(input.flowrate, 'm3/h', 'm3/h')} unit={flowUnitLabel} />
+                  <DR label="Surge Time"          value={surgeMinutes}                         unit="min"          />
+                  <DR label="Service"             value={input.description ?? '—'}             unit=""             hi />
+                  <DR label="Surge Time Criteria" value={null}                                 unit=""             />
+                </View>
+              )}
+
+              {/* × INVENTORY TIME — conditional */}
+              {showInventory && (
+                <View style={divider}>
+                  <SecHeader prefix="×" title="INVENTORY TIME" />
+                  <DR label="Flow Rate"      value={fmt(input.flowrate, 'm3/h', 'm3/h')} unit={flowUnitLabel}  />
+                  <DR label="Volume"         value={inventoryVol}                         unit={ul(vol)}        />
+                  <DR label="Inventory Time" value={inventoryHours}                       unit="h"              />
+                </View>
+              )}
+
+            </View>
+          </View>
+
+          {/* ── SKETCH ───────────────────────────────────────────────────── */}
+          <View style={{ flex: 1, borderTopWidth: HB, borderTopColor: BLACK, padding: '4 6 4 6' }}>
+            <View style={S.secHeader}>
+              <Text style={S.secHeaderText}>SKETCH</Text>
+            </View>
+            <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+              <SchematicFigure input={input} />
+            </View>
+          </View>
+
+          {/* ── Title block ───────────────────────────────────────────────── */}
+          <TitleBlock metadata={metadata} revisions={revisions} />
+
         </View>
 
-        {/* ── Footer ─────────────────────────────────────────────────────── */}
+        {/* Footer (fixed — repeats if multi-page) */}
         <View style={S.footer} fixed>
-          <Text style={S.footerText}>Process Engineering Suite · Vessel Calculator</Text>
-          <Text style={S.footerText} render={({ pageNumber, totalPages }) =>
-            `Page ${pageNumber} of ${totalPages}`
-          } />
+          <Text style={S.footerText}>GC MAINTENANCE &amp; ENGINEERING COMPANY LIMITED</Text>
+          <Text style={S.footerText} render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
         </View>
 
       </Page>

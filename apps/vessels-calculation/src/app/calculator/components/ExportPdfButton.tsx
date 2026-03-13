@@ -3,8 +3,6 @@
 import { useState } from "react"
 import { FileDown, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { pdf } from "@react-pdf/renderer"
-import { VesselReport } from "../pdf/VesselReport"
 import { useUomStore } from "@/lib/store/uomStore"
 import type { CalculationInput, CalculationResult, CalculationMetadata, RevisionRecord } from "@/types"
 import type { VesselUomCategory } from "@/lib/uom"
@@ -26,6 +24,10 @@ export function ExportPdfButton({ input, result, metadata, revisions }: Props) {
     if (!input || !result) return
     setLoading(true)
     try {
+      const [{ pdf }, { VesselReport }] = await Promise.all([
+        import("@react-pdf/renderer"),
+        import("../pdf/VesselReport"),
+      ])
       const blob = await pdf(
         <VesselReport
           input={input}
@@ -39,7 +41,7 @@ export function ExportPdfButton({ input, result, metadata, revisions }: Props) {
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = `vessel-${input.tag.replace(/[^a-zA-Z0-9-_]/g, "_")}-calc.pdf`
+      a.download = `vessel-${(input.tag?.trim() || "report").replace(/[^a-zA-Z0-9-_]/g, "_")}-calc.pdf`
       a.click()
       URL.revokeObjectURL(url)
     } finally {

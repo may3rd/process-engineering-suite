@@ -18,11 +18,6 @@ import { useUomStore } from '@/lib/store/uomStore';
 import type { VesselUomCategory } from '@/lib/uom';
 import { apiClient } from '@/lib/apiClient';
 import {
-  buildPrintReportHref,
-  createPrintReportStorageKey,
-  writePrintReportPayload,
-} from '@/lib/printReport';
-import {
   EquipmentMode,
 } from '@/types';
 import type {
@@ -68,16 +63,26 @@ export function ActionMenu({
     if (!calculationResult) return;
     setPdfLoading(true);
     try {
+      const [{ pdf }, { VesselReport }] = await Promise.all([
+        import('@react-pdf/renderer'),
+        import('../pdf/VesselReport'),
+      ]);
       const input = getValues();
-      const key = createPrintReportStorageKey();
-      writePrintReportPayload(window.localStorage, key, {
-        input,
-        result: calculationResult,
-        metadata: calculationMetadata,
-        revisions: revisionHistory,
-        units: units as Record<VesselUomCategory, string>,
-      });
-      window.open(buildPrintReportHref(key), '_blank', 'noopener,noreferrer');
+      const blob = await pdf(
+        <VesselReport
+          input={input}
+          result={calculationResult}
+          metadata={calculationMetadata}
+          revisions={revisionHistory}
+          units={units as Record<VesselUomCategory, string>}
+        />,
+      ).toBlob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `vessel-${(input.tag?.trim() || 'report').replace(/[^a-zA-Z0-9-_]/g, '_')}-calc.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
     } finally {
       setPdfLoading(false);
     }

@@ -62,7 +62,10 @@ export function PrintReportContent({ payload }: PrintReportContentProps) {
             </div>
           </header>
 
-          <section className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-700 sm:grid-cols-2 lg:grid-cols-3 print:gap-1 print:p-2 print:text-[11px]">
+          <section
+            data-testid="print-top-grid"
+            className="grid gap-2 rounded-xl border border-slate-200 bg-slate-50/60 p-4 text-sm text-slate-700 sm:grid-cols-2 lg:grid-cols-3 print:gap-1 print:p-2 print:text-[11px]"
+          >
             <MetaItem label="Description" value={payload.input.description} />
             <MetaItem label="Project Number" value={payload.metadata.projectNumber} />
             <MetaItem label="Document Number" value={payload.metadata.documentNumber} />

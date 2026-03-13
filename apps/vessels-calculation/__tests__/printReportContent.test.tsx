@@ -101,7 +101,7 @@ describe('PrintReportContent', () => {
     expect(screen.getByTestId('print-report-sheet').className).toContain('max-w-[794px]')
     expect(screen.getByTestId('print-report-sheet').className).toContain('print:py-2')
     expect(screen.getByTestId('print-report-stack').className).toContain('print:space-y-3')
-    expect(screen.getByTestId('print-top-grid').className).toContain('print:grid-cols-[1.15fr_0.85fr]')
+    expect(screen.getByTestId('print-top-grid').className).toContain('lg:grid-cols-3')
     expect(screen.getByTestId('print-schematic-section').className).toContain('print:scale-[0.8]')
     expect(screen.getByText('Inputs')).toBeTruthy()
     expect(screen.getByText('Inside Diameter')).toBeTruthy()

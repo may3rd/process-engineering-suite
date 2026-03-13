@@ -67,4 +67,30 @@ describe('buildVesselSchematicModel', () => {
       'BD: 0.90m',
     ])
   })
+
+  it('places the horizontal vessel diameter dimension on the left side', () => {
+    const model = buildVesselSchematicModel({
+      input: {
+        ...INPUT,
+        orientation: VesselOrientation.HORIZONTAL,
+        shellLength: 3000,
+        bootInsideDiameter: undefined,
+        bootHeight: undefined,
+      },
+      width: 520,
+      height: 420,
+      padding: 48,
+    })
+
+    expect(model).not.toBeNull()
+
+    const diameter = model?.annotations.find((annotation) => annotation.key === 'diameter')
+    const tt = model?.annotations.find((annotation) => annotation.key === 'tt')
+
+    expect(diameter?.vertical).toBe(true)
+    expect(diameter?.x1).toBeLessThan(tt?.x1 ?? Number.POSITIVE_INFINITY)
+    expect(model?.guideLines.find((guideLine) => guideLine.key === 'd-top-guide')?.x2).toBeLessThan(
+      model?.guideLines.find((guideLine) => guideLine.key === 'tt-left-guide')?.x1 ?? Number.POSITIVE_INFINITY,
+    )
+  })
 })
