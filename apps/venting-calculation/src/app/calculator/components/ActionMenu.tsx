@@ -87,12 +87,17 @@ export function ActionMenu({
       ])
       const input = getValues()
       const blob = await pdf(
-        <CalculationReport input={input} result={calculationResult} />
+        <CalculationReport
+          input={input}
+          result={calculationResult}
+          metadata={calculationMetadata}
+          revisions={revisionHistory}
+        />
       ).toBlob()
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = `venting-calc-${input.tankNumber || "report"}.pdf`
+      a.download = `${(calculationMetadata.documentNumber || input.tankNumber || "venting-calc").replace(/[^a-zA-Z0-9-_]/g, "_")}.pdf`
       a.click()
       URL.revokeObjectURL(url)
     } catch (err) {

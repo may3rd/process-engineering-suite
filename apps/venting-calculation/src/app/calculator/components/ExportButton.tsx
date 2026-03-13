@@ -4,7 +4,7 @@ import { useState } from "react"
 import { useFormContext } from "react-hook-form"
 import { Button } from "@/components/ui/button"
 import { Download, Loader2 } from "lucide-react"
-import type { CalculationInput } from "@/types"
+import type { CalculationInput, CalculationMetadata, RevisionRecord } from "@/types"
 
 /**
  * ExportButton — generates a PDF from the current calculation result and
@@ -12,7 +12,15 @@ import type { CalculationInput } from "@/types"
  *
  * Uses a dynamic import of @react-pdf/renderer to avoid SSR issues.
  */
-export function ExportButton({ calculationResult }: { calculationResult: import("@/types").CalculationResult | null }) {
+export function ExportButton({
+  calculationResult,
+  calculationMetadata,
+  revisionHistory,
+}: {
+  calculationResult: import("@/types").CalculationResult | null
+  calculationMetadata: CalculationMetadata
+  revisionHistory: RevisionRecord[]
+}) {
   const { getValues } = useFormContext<CalculationInput>()
   const [generating, setGenerating] = useState(false)
 
@@ -29,14 +37,19 @@ export function ExportButton({ calculationResult }: { calculationResult: import(
 
       const input = getValues()
       const blob = await pdf(
-        <CalculationReport input={input} result={calculationResult} />
+        <CalculationReport
+          input={input}
+          result={calculationResult}
+          metadata={calculationMetadata}
+          revisions={revisionHistory}
+        />
       ).toBlob()
 
       // Trigger download
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = `venting-calc-${input.tankNumber || "report"}.pdf`
+      a.download = `${(calculationMetadata.documentNumber || input.tankNumber || "venting-calc").replace(/[^a-zA-Z0-9-_]/g, "_")}.pdf`
       a.click()
       URL.revokeObjectURL(url)
     } catch (err) {

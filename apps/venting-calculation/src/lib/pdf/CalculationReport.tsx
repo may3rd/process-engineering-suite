@@ -1,301 +1,644 @@
-/**
- * CalculationReport — React-PDF document for the venting calculation report.
- *
- * Sections:
- *   Header  — Tank No., description, standard, date
- *   Section I  — Input parameters
- *   Section II — Calculation intermediates
- *   Summary   — Design flowrates table
- */
 import {
   Document,
   Page,
+  StyleSheet,
   Text,
   View,
-  StyleSheet,
-} from "@react-pdf/renderer"
-import type { CalculationInput, CalculationResult } from "@/types"
+} from '@react-pdf/renderer'
+import type {
+  CalculationInput,
+  CalculationMetadata,
+  CalculationResult,
+  OutgoingStream,
+  RevisionRecord,
+  Stream,
+} from '@/types'
 
-// ─── Styles ───────────────────────────────────────────────────────────────────
+const NAVY = '#1f3864'
+const BLUE = '#dbeafe'
+const LIGHT = '#eef6fb'
+const WHITE = '#ffffff'
+const BLACK = '#000000'
+const GUIDE = '#4b5563'
+const MUTED = '#6b7280'
+const BW = 0.5
+const HB = 1
 
-const BLUE   = "#1d4ed8"
-const GRAY_L = "#f3f4f6"
-const GRAY_B = "#9ca3af"
-const BLACK  = "#111827"
-
-const s = StyleSheet.create({
+const S = StyleSheet.create({
   page: {
-    fontFamily:  "Helvetica",
-    fontSize:    9,
-    color:       BLACK,
-    paddingTop:  36,
-    paddingBottom: 48,
-    paddingHorizontal: 40,
+    fontFamily: 'Helvetica',
+    fontSize: 6.2,
+    padding: 12,
+    paddingBottom: 20,
+    color: BLACK,
+    lineHeight: 1.2,
   },
-  // Header
-  headerBox: {
-    borderBottom: `2pt solid ${BLUE}`,
-    marginBottom: 12,
-    paddingBottom: 8,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-end",
+  outerBorder: {
+    flex: 1,
+    borderWidth: HB,
+    borderColor: NAVY,
+    flexDirection: 'column',
   },
-  headerTitle: { fontSize: 14, fontFamily: "Helvetica-Bold", color: BLUE },
-  headerSub:   { fontSize: 8, color: GRAY_B, marginTop: 2 },
-  headerRight: { fontSize: 8, color: GRAY_B, textAlign: "right" },
-  // Section headings
-  sectionTitle: {
-    fontSize:    10,
-    fontFamily:  "Helvetica-Bold",
-    color:       BLUE,
-    marginTop:   14,
-    marginBottom: 5,
-    borderBottom: `0.5pt solid ${BLUE}`,
-    paddingBottom: 2,
+  topHeader: {
+    minHeight: 18,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomWidth: HB,
+    borderBottomColor: BLACK,
+    position: 'relative',
   },
-  // Key-value rows
-  kvRow: {
-    flexDirection:   "row",
-    borderBottom:    `0.3pt solid ${GRAY_L}`,
-    paddingVertical: 2.5,
+  topHeaderTitle: {
+    fontSize: 8.5,
+    fontFamily: 'Helvetica-Bold',
+    textAlign: 'center',
   },
-  kvLabel:  { width: "55%", color: GRAY_B },
-  kvValue:  { width: "30%", textAlign: "right" },
-  kvUnit:   { width: "15%", color: GRAY_B, paddingLeft: 4 },
-  // Table
-  tableHeader: {
-    flexDirection: "row",
+  topHeaderCode: {
+    position: 'absolute',
+    right: 6,
+    top: 4,
+    fontSize: 5,
+    color: MUTED,
+    fontFamily: 'Helvetica-Bold',
+  },
+  idRow: {
+    flexDirection: 'row',
+    borderBottomWidth: HB,
+    borderBottomColor: BLACK,
+    minHeight: 18,
+  },
+  idCell: {
+    flexDirection: 'row',
+    flex: 1,
+    borderRightWidth: BW,
+    borderRightColor: BLACK,
+  },
+  idLabel: {
+    width: 52,
+    paddingHorizontal: 4,
+    paddingVertical: 3,
+    fontSize: 5.7,
+    fontFamily: 'Helvetica-Bold',
+    color: GUIDE,
+  },
+  idValueWrap: {
+    flex: 1,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  },
+  idValueBox: {
+    minHeight: 10,
     backgroundColor: BLUE,
-    paddingVertical: 3,
-    paddingHorizontal: 4,
-    marginTop: 4,
+    justifyContent: 'center',
+    paddingHorizontal: 3,
   },
-  tableHeaderCell: { color: "#fff", fontFamily: "Helvetica-Bold" },
-  tableRow: {
-    flexDirection: "row",
-    paddingVertical: 3,
-    paddingHorizontal: 4,
-    borderBottom: `0.3pt solid ${GRAY_L}`,
+  idValueText: {
+    fontSize: 6.2,
+    fontFamily: 'Helvetica-Bold',
   },
-  tableRowAlt: { backgroundColor: GRAY_L },
-  tableCell: {},
-  // Warning
-  warning: {
-    backgroundColor: "#fef9c3",
-    borderLeft: `3pt solid #eab308`,
+  clearCell: {
+    width: 58,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 4,
     paddingVertical: 3,
-    paddingHorizontal: 6,
+  },
+  clearText: {
+    fontSize: 5.5,
+    color: GUIDE,
+  },
+  section: {
+    margin: 4,
+    borderWidth: BW,
+    borderColor: BLACK,
+  },
+  sectionHeader: {
+    backgroundColor: NAVY,
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
+  sectionHeaderText: {
+    color: WHITE,
+    fontSize: 6.5,
+    fontFamily: 'Helvetica-Bold',
+  },
+  sectionBody: {
+    padding: 5,
+  },
+  twoCol: {
+    flexDirection: 'row',
+    columnGap: 10,
+  },
+  col: {
+    flex: 1,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 9,
+    paddingVertical: 1,
+  },
+  rowLabel: {
+    flex: 2.4,
+    fontSize: 5.8,
+    color: GUIDE,
+  },
+  rowValueBox: {
+    flex: 1.15,
+    minHeight: 8,
+    borderWidth: BW,
+    borderColor: '#93c5fd',
+    backgroundColor: BLUE,
+    justifyContent: 'center',
+    paddingHorizontal: 2,
+  },
+  rowValueText: {
+    fontSize: 5.8,
+    fontFamily: 'Helvetica-Bold',
+    textAlign: 'right',
+  },
+  rowUnit: {
+    width: 28,
+    paddingLeft: 3,
+    fontSize: 5.5,
+    color: MUTED,
+  },
+  streamWrap: {
     marginTop: 6,
-    fontSize: 8,
-    color: "#713f12",
   },
-  // Summary banner
-  summaryBox: {
-    flexDirection: "row",
-    backgroundColor: BLUE,
-    borderRadius: 3,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    marginTop: 12,
-    justifyContent: "space-around",
+  streamHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 3,
   },
-  summaryItem: { alignItems: "center" },
-  summaryLabel: { color: "#bfdbfe", fontSize: 7 },
-  summaryValue: { color: "#fff", fontSize: 13, fontFamily: "Helvetica-Bold" },
-  summaryUnit:  { color: "#bfdbfe", fontSize: 7, marginTop: 1 },
-  // Footer
-  footer: {
-    position: "absolute",
-    bottom: 18,
-    left: 40,
-    right: 40,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    fontSize: 7,
-    color: GRAY_B,
-    borderTop: `0.3pt solid ${GRAY_L}`,
-    paddingTop: 4,
+  streamHeaderText: {
+    fontSize: 5.8,
+    fontFamily: 'Helvetica-Bold',
+    color: GUIDE,
+  },
+  streamTable: {
+    borderWidth: BW,
+    borderColor: BLACK,
+  },
+  streamTableHead: {
+    flexDirection: 'row',
+    borderBottomWidth: BW,
+    borderBottomColor: BLACK,
+    backgroundColor: LIGHT,
+    minHeight: 11,
+    alignItems: 'center',
+  },
+  streamHeadCell: {
+    fontSize: 5.6,
+    fontFamily: 'Helvetica-Bold',
+    color: GUIDE,
+    paddingHorizontal: 3,
+  },
+  streamRow: {
+    flexDirection: 'row',
+    minHeight: 10,
+    borderBottomWidth: BW,
+    borderBottomColor: '#d1d5db',
+    alignItems: 'center',
+  },
+  streamCell: {
+    fontSize: 5.5,
+    paddingHorizontal: 3,
+  },
+  calcGrid: {
+    flexDirection: 'row',
+    columnGap: 10,
+  },
+  calcBlock: {
+    flex: 1,
+  },
+  calcSubTitle: {
+    fontSize: 5.9,
+    fontFamily: 'Helvetica-Bold',
+    color: GUIDE,
+    marginBottom: 3,
+  },
+  noteArea: {
+    flex: 1,
+    minHeight: 80,
+    borderTopWidth: HB,
+    borderTopColor: BLACK,
+    backgroundColor: '#d7edf6',
+    padding: 5,
+  },
+  noteLabel: {
+    fontSize: 5.8,
+    fontFamily: 'Helvetica-Bold',
+    color: GUIDE,
   },
 })
 
-// ─── Helper components ────────────────────────────────────────────────────────
+function fmt(value: number | null | undefined, decimals = 2): string {
+  if (value == null || !Number.isFinite(value)) return '—'
+  return value.toFixed(decimals)
+}
 
-function KV({ label, value, unit }: { label: string; value: string | number; unit?: string }) {
+function str(value: string | null | undefined): string {
+  return value?.trim() || '—'
+}
+
+function streamRows(streams: Stream[] | OutgoingStream[]): Array<Stream | OutgoingStream | null> {
+  return [
+    ...streams.slice(0, 10),
+    ...Array(Math.max(0, 10 - streams.length)).fill(null),
+  ]
+}
+
+function joinPersonDate(person: string | undefined, date: string | undefined): string {
+  return [person?.trim(), date?.trim()].filter(Boolean).join('  ')
+}
+
+function DataRow({
+  label,
+  value,
+  unit,
+}: {
+  label: string
+  value?: string | null
+  unit?: string
+}) {
   return (
-    <View style={s.kvRow}>
-      <Text style={s.kvLabel}>{label}</Text>
-      <Text style={s.kvValue}>{typeof value === "number" ? value.toLocaleString(undefined, { maximumFractionDigits: 4 }) : value}</Text>
-      {unit && <Text style={s.kvUnit}>{unit}</Text>}
+    <View style={S.row}>
+      <Text style={S.rowLabel}>{label}</Text>
+      <View style={S.rowValueBox}>
+        <Text style={S.rowValueText}>{value ?? '—'}</Text>
+      </View>
+      <Text style={S.rowUnit}>{unit ?? ''}</Text>
     </View>
   )
 }
 
-function SectionTitle({ children }: { children: string }) {
-  return <Text style={s.sectionTitle}>{children}</Text>
-}
-
-// ─── Document ─────────────────────────────────────────────────────────────────
-
-interface ReportProps {
-  input:  CalculationInput
-  result: CalculationResult
-}
-
-export function CalculationReport({ input, result }: ReportProps) {
-  const { derived, normalVenting, emergencyVenting, drainInbreathing, summary, warnings } = result
-  const now = new Date(result.calculatedAt).toLocaleString()
-
-  const incomingTotal  = input.incomingStreams.reduce((s, r) => s + r.flowrate, 0)
-  const outgoingTotal  = input.outgoingStreams.reduce((s, r) => s + r.flowrate, 0)
+function StreamTable({
+  title,
+  streams,
+  total,
+}: {
+  title: string
+  streams: Stream[] | OutgoingStream[]
+  total: number
+}) {
+  const rows = streamRows(streams)
 
   return (
-    <Document
-      title={`Venting Calc — ${input.tankNumber}`}
-      author="Tank Venting Calculator"
-      subject="API 2000 Venting Calculation Report"
-    >
-      <Page size="A4" style={s.page}>
-
-        {/* ── Header ─────────────────────────────────────────────────────── */}
-        <View style={s.headerBox}>
-          <View>
-            <Text style={s.headerTitle}>Tank Venting Calculation</Text>
-            <Text style={s.headerSub}>
-              API 2000 {result.apiEdition} Edition — Atmospheric & Low Pressure Storage Tanks
-            </Text>
+    <View style={[S.calcBlock, S.streamWrap]}>
+      <View style={S.streamHeaderRow}>
+        <Text style={S.streamHeaderText}>{title}</Text>
+      </View>
+      <View style={S.streamTable}>
+        <View style={S.streamTableHead}>
+          <Text style={[S.streamHeadCell, { width: 20 }]} />
+          <Text style={[S.streamHeadCell, { flex: 1.2 }]}>Stream No.</Text>
+          <Text style={[S.streamHeadCell, { flex: 1.1, textAlign: 'right' }]}>Flowrate (m3/h)</Text>
+        </View>
+        {rows.map((row, index) => (
+          <View
+            key={`${title}-${index}`}
+            style={index === rows.length - 1 ? [S.streamRow, { borderBottomWidth: 0 }] : S.streamRow}
+          >
+            <Text style={[S.streamCell, { width: 20 }]}>{index + 1}.</Text>
+            <Text style={[S.streamCell, { flex: 1.2 }]}>{row?.streamNo || row?.description || ''}</Text>
+            <Text style={[S.streamCell, { flex: 1.1, textAlign: 'right' }]}>{row ? fmt(row.flowrate, 1) : ''}</Text>
           </View>
-          <View style={{ alignItems: "flex-end" }}>
-            <Text style={s.headerRight}>Tank No.: {input.tankNumber}</Text>
-            {input.description && <Text style={s.headerRight}>{input.description}</Text>}
-            <Text style={s.headerRight}>Date: {now}</Text>
+        ))}
+        <View style={[S.streamTableHead, { borderBottomWidth: 0 }]}>
+          <Text style={[S.streamHeadCell, { width: 20 }]} />
+          <Text style={[S.streamHeadCell, { flex: 1.2 }]}>TOTAL</Text>
+          <Text style={[S.streamHeadCell, { flex: 1.1, textAlign: 'right' }]}>{fmt(total, 1)}</Text>
+        </View>
+      </View>
+    </View>
+  )
+}
+
+function TitleBlock({
+  metadata,
+  revisions,
+}: {
+  metadata: CalculationMetadata
+  revisions: RevisionRecord[]
+}) {
+  const rows: (RevisionRecord | null)[] = [
+    ...revisions.slice(0, 3),
+    ...Array(Math.max(0, 3 - revisions.length)).fill(null),
+  ]
+
+  const trS = {
+    flexDirection: 'row' as const,
+    borderBottomWidth: BW,
+    borderBottomColor: BLACK,
+    minHeight: 14,
+  }
+  const tlCellS = {
+    width: 48,
+    justifyContent: 'center' as const,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    borderRightWidth: BW,
+    borderRightColor: BLACK,
+  }
+  const tlTextS = {
+    fontSize: 7,
+    fontFamily: 'Helvetica-Bold' as const,
+    color: GUIDE,
+  }
+  const tvCellS = {
+    flex: 1,
+    justifyContent: 'center' as const,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  }
+  const tvTextS = { fontSize: 7 }
+  const revHeaderRowS = {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    borderBottomWidth: BW,
+    borderBottomColor: BLACK,
+    minHeight: 12,
+  }
+  const revDataRowS = {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    minHeight: 10,
+  }
+  const revHeaderCellS = {
+    flex: 1,
+    minHeight: 12,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingHorizontal: 2,
+    paddingVertical: 2,
+    borderRightWidth: BW,
+    borderRightColor: BLACK,
+    backgroundColor: '#f3f4f6',
+  }
+  const revDataCellS = {
+    flex: 1,
+    minHeight: 10,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingHorizontal: 2,
+    paddingVertical: 2,
+    borderRightWidth: BW,
+    borderRightColor: BLACK,
+  }
+
+  return (
+    <View style={{ borderTopWidth: HB, borderTopColor: BLACK }}>
+      <View style={{ flexDirection: 'row', borderBottomWidth: HB, borderBottomColor: BLACK }}>
+        <View style={{ flex: 3, borderRightWidth: HB, borderRightColor: BLACK }}>
+          <View style={trS}>
+            <View style={tlCellS}>
+              <Text style={tlTextS}>TITLE</Text>
+            </View>
+            <View style={tvCellS}>
+              <Text style={tvTextS}>{metadata.title || ''}</Text>
+            </View>
+          </View>
+          <View style={trS}>
+            <View style={tlCellS}>
+              <Text style={tlTextS}>PROJECT</Text>
+            </View>
+            <View style={tvCellS}>
+              <Text style={tvTextS}>{metadata.projectName || ''}</Text>
+            </View>
+          </View>
+          <View style={{ ...trS, borderBottomWidth: 0 }}>
+            <View style={tlCellS}>
+              <Text style={tlTextS}>CLIENT</Text>
+            </View>
+            <View style={tvCellS}>
+              <Text style={tvTextS}>{metadata.client || ''}</Text>
+            </View>
           </View>
         </View>
-
-        {/* ── Warnings ───────────────────────────────────────────────────── */}
-        {warnings.capacityExceedsTable && (
-          <View style={s.warning}>
-            <Text>⚠  Tank capacity exceeds 30,000 m³ — outside normal vent table range.</Text>
+        <View style={{ flex: 2 }}>
+          <View style={revHeaderRowS}>
+            <View style={revHeaderCellS}>
+              <Text style={{ fontSize: 6, fontFamily: 'Helvetica-Bold', color: GUIDE, textAlign: 'center' }}>REV.</Text>
+            </View>
+            <View style={revHeaderCellS}>
+              <Text style={{ fontSize: 6, fontFamily: 'Helvetica-Bold', color: GUIDE, textAlign: 'center' }}>BY / DATE</Text>
+            </View>
+            <View style={revHeaderCellS}>
+              <Text style={{ fontSize: 6, fontFamily: 'Helvetica-Bold', color: GUIDE, textAlign: 'center' }}>CHKD / DATE</Text>
+            </View>
+            <View style={{ ...revHeaderCellS, borderRightWidth: 0 }}>
+              <Text style={{ fontSize: 6, fontFamily: 'Helvetica-Bold', color: GUIDE, textAlign: 'center' }}>APPD / DATE</Text>
+            </View>
           </View>
-        )}
-        {warnings.undergroundTank && (
-          <View style={s.warning}>
-            <Text>ℹ  Underground tank — environmental factor F = 0.</Text>
+          {rows.map((rev, index) => (
+            <View
+              key={index}
+              style={{
+                ...revDataRowS,
+                borderBottomWidth: index < rows.length - 1 ? BW : 0,
+                borderBottomColor: '#e5e7eb',
+              }}
+            >
+              <View style={revDataCellS}>
+                <Text style={{ fontSize: 6, textAlign: 'center' }}>{rev?.rev ?? ''}</Text>
+              </View>
+              <View style={revDataCellS}>
+                <Text style={{ fontSize: 6, textAlign: 'center' }}>{rev ? joinPersonDate(rev.by, rev.byDate) : ''}</Text>
+              </View>
+              <View style={revDataCellS}>
+                <Text style={{ fontSize: 6, textAlign: 'center' }}>{rev ? joinPersonDate(rev.checkedBy, rev.checkedDate) : ''}</Text>
+              </View>
+              <View style={{ ...revDataCellS, borderRightWidth: 0 }}>
+                <Text style={{ fontSize: 6, textAlign: 'center' }}>{rev ? joinPersonDate(rev.approvedBy, rev.approvedDate) : ''}</Text>
+              </View>
+            </View>
+          ))}
+        </View>
+      </View>
+
+      <View style={{ flexDirection: 'row' }}>
+        <View style={{ flex: 3, flexDirection: 'row', borderRightWidth: HB, borderRightColor: BLACK }}>
+          <View style={{ width: 44, alignItems: 'center', justifyContent: 'center', borderRightWidth: BW, borderRightColor: BLACK, backgroundColor: '#e5e7eb', padding: 4 }}>
+            <Text style={{ fontSize: 8, fontFamily: 'Helvetica-Bold', color: GUIDE, textAlign: 'center' }}>GCME</Text>
           </View>
-        )}
-        {warnings.hexaneDefaults && (
-          <View style={s.warning}>
-            <Text>ℹ  Hexane defaults used for latent heat / relieving temperature / molecular mass.</Text>
-          </View>
-        )}
-        {warnings.volatileLiquid && (
-          <View style={s.warning}>
-            <Text>⚠  Volatile liquid (TVP ≥ 5 kPa or FP {"<"} 38 °C) — see API 2000 §3.3.2.1 and Annex A for additional vaporization allowances.</Text>
-          </View>
-        )}
-
-        {/* ── Section I: Inputs ──────────────────────────────────────────── */}
-        <SectionTitle>Section I — Input Parameters</SectionTitle>
-
-        <KV label="Tank Number"            value={input.tankNumber} />
-        {input.description && <KV label="Description" value={input.description} />}
-        <KV label="API Edition"            value={result.apiEdition} />
-        <KV label="Tank Diameter (D)"      value={input.diameter}       unit="mm" />
-        <KV label="Tank Height (H, TL-TL)" value={input.height}         unit="mm" />
-        <KV label="Site Latitude"          value={input.latitude}       unit="°" />
-        <KV label="Design Pressure"        value={input.designPressure} unit="kPag" />
-        <KV label="Tank Configuration"     value={input.tankConfiguration} />
-
-        {(input.insulationThickness || input.insulationConductivity) && (
-          <>
-            {input.insulationThickness   && <KV label="Insulation Thickness"     value={input.insulationThickness}   unit="mm" />}
-            {input.insulationConductivity && <KV label="Insulation Conductivity"  value={input.insulationConductivity} unit="W/m·K" />}
-            {input.insideHeatTransferCoeff && <KV label="Inside HTC (U_i)"        value={input.insideHeatTransferCoeff} unit="W/m²·K" />}
-            {input.insulatedSurfaceArea   && <KV label="Insulated Surface Area"   value={input.insulatedSurfaceArea}   unit="m²" />}
-          </>
-        )}
-
-        <KV label="Average Storage Temperature" value={input.avgStorageTemp}    unit="°C" />
-        <KV label="Vapour Pressure"             value={input.vapourPressure ?? "—"}    unit="kPa" />
-        <KV label={`${input.flashBoilingPointType === "FP" ? "Flash Point" : "Boiling Point"}`}
-            value={input.flashBoilingPoint ?? "—"} unit="°C" />
-        <KV label="Latent Heat (L)"             value={input.latentHeat         ?? `${334.9} (Hexane default)`} unit="kJ/kg" />
-        <KV label="Relieving Temperature (T_r)" value={input.relievingTemperature ?? `${15.6} (Hexane default)`}  unit="°C" />
-        <KV label="Molecular Mass (M)"          value={input.molecularMass      ?? `${86.17} (Hexane default)`} unit="g/mol" />
-        <KV label="Total Incoming Streams"      value={incomingTotal.toFixed(3)} unit="m³/h" />
-        <KV label="Total Outgoing Streams"      value={outgoingTotal.toFixed(3)} unit="m³/h" />
-        {input.drainLineSize        && <KV label="Drain Line Size"          value={input.drainLineSize}        unit="mm" />}
-        {input.maxHeightAboveDrain  && <KV label="Max Height Above Drain"   value={input.maxHeightAboveDrain}  unit="mm" />}
-
-        {/* ── Section II: Calculations ────────────────────────────────────── */}
-        <SectionTitle>Section II — Calculation Results</SectionTitle>
-
-        <KV label="Max Tank Volume (V)"       value={derived.maxTankVolume.toFixed(2)}       unit="m³" />
-        <KV label="Shell Surface Area"        value={derived.shellSurfaceArea.toFixed(2)}    unit="m²" />
-        <KV label="Cone Roof Area"            value={derived.coneRoofArea.toFixed(2)}        unit="m²" />
-        <KV label="Total Surface Area"        value={derived.totalSurfaceArea.toFixed(2)}    unit="m²" />
-        <KV label="Wetted Area (ATWS)"        value={derived.wettedArea.toFixed(2)}          unit="m²" />
-        <KV label="Reduction Factor (R)"      value={derived.reductionFactor.toFixed(6)}     />
-
-        {/* Normal venting */}
-        <Text style={{ marginTop: 8, marginBottom: 3, fontFamily: "Helvetica-Bold", fontSize: 9 }}>
-          Normal Venting
-        </Text>
-        <KV label="Process Outbreathing"      value={normalVenting.outbreathing.processFlowrate.toFixed(2)} unit="Nm³/h" />
-        <KV label="Thermal Outbreathing"      value={normalVenting.outbreathing.thermalOutbreathing.toFixed(2)} unit="Nm³/h" />
-        {(result.apiEdition === "6TH" || result.apiEdition === "7TH") && (
-          <KV label="  Y-factor"              value={normalVenting.outbreathing.yFactor} />
-        )}
-        <KV label="Total Outbreathing"        value={normalVenting.outbreathing.total.toFixed(2)} unit="Nm³/h" />
-        <KV label="Process Inbreathing"       value={normalVenting.inbreathing.processFlowrate.toFixed(2)} unit="Nm³/h" />
-        <KV label="Thermal Inbreathing"       value={normalVenting.inbreathing.thermalInbreathing.toFixed(2)} unit="Nm³/h" />
-        {(result.apiEdition === "6TH" || result.apiEdition === "7TH") && (
-          <KV label="  C-factor"              value={normalVenting.inbreathing.cFactor} />
-        )}
-        <KV label="Total Inbreathing"         value={normalVenting.inbreathing.total.toFixed(2)} unit="Nm³/h" />
-        {drainInbreathing !== undefined && (
-          <KV label="Drain System Inbreathing" value={drainInbreathing.toFixed(2)} unit="Nm³/h" />
-        )}
-
-        {/* Emergency venting */}
-        <Text style={{ marginTop: 8, marginBottom: 3, fontFamily: "Helvetica-Bold", fontSize: 9 }}>
-          Emergency Venting (Fire Exposure)
-        </Text>
-        <KV label="Heat Input Coefficient (a)" value={emergencyVenting.coefficients.a.toLocaleString()} />
-        <KV label="Heat Input Exponent (n)"    value={emergencyVenting.coefficients.n} />
-        <KV label="Heat Input Q = a × ATWS^n"  value={emergencyVenting.heatInput.toFixed(0)} unit="W" />
-        <KV label="Environmental Factor (F)"   value={emergencyVenting.environmentalFactor.toFixed(4)} />
-        <KV label="Reference Fluid"            value={emergencyVenting.referenceFluid} />
-        <KV label="Emergency Vent Required"    value={emergencyVenting.emergencyVentRequired.toFixed(2)} unit="Nm³/h" />
-
-        {/* ── Summary Banner ──────────────────────────────────────────────── */}
-        <View style={s.summaryBox}>
-          <View style={s.summaryItem}>
-            <Text style={s.summaryLabel}>Design Outbreathing</Text>
-            <Text style={s.summaryValue}>{summary.designOutbreathing.toFixed(1)}</Text>
-            <Text style={s.summaryUnit}>Nm³/h</Text>
-          </View>
-          <View style={s.summaryItem}>
-            <Text style={s.summaryLabel}>Design Inbreathing</Text>
-            <Text style={s.summaryValue}>{summary.designInbreathing.toFixed(1)}</Text>
-            <Text style={s.summaryUnit}>Nm³/h</Text>
-          </View>
-          <View style={s.summaryItem}>
-            <Text style={s.summaryLabel}>Emergency Venting</Text>
-            <Text style={s.summaryValue}>{summary.emergencyVenting.toFixed(1)}</Text>
-            <Text style={s.summaryUnit}>Nm³/h</Text>
+          <View style={{ flex: 1, paddingHorizontal: 6, paddingVertical: 4, justifyContent: 'center' }}>
+            <Text style={{ fontSize: 6.5, fontFamily: 'Helvetica-Bold' }}>GC MAINTENANCE &amp; ENGINEERING COMPANY LIMITED</Text>
           </View>
         </View>
-        <Text style={{ fontSize: 7, color: "#6b7280", textAlign: "center", marginTop: 4 }}>
-          All flowrates expressed at standard reference conditions: 0 °C / 101.325 kPa (metric API 2000 practice).
-        </Text>
-
-        {/* ── Footer ─────────────────────────────────────────────────────── */}
-        <View style={s.footer} fixed>
-          <Text>Tank Venting Calculator — API 2000</Text>
-          <Text render={({ pageNumber, totalPages }) => `Page ${pageNumber} of ${totalPages}`} />
+        <View style={{ flex: 2, flexDirection: 'row' }}>
+          <View style={{ flex: 1, paddingHorizontal: 3, paddingVertical: 2, borderRightWidth: BW, borderRightColor: BLACK }}>
+            <Text style={{ fontSize: 5, color: MUTED, fontFamily: 'Helvetica-Bold' }}>PROJECT NO.</Text>
+            <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold' }}>{metadata.projectNumber || ''}</Text>
+          </View>
+          <View style={{ flex: 1.5, paddingHorizontal: 3, paddingVertical: 2, borderRightWidth: BW, borderRightColor: BLACK }}>
+            <Text style={{ fontSize: 5, color: MUTED, fontFamily: 'Helvetica-Bold' }}>DOCUMENT NO.</Text>
+            <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold' }}>{metadata.documentNumber || ''}</Text>
+          </View>
+          <View style={{ flex: 0.7, paddingHorizontal: 3, paddingVertical: 2, borderRightWidth: BW, borderRightColor: BLACK }}>
+            <Text style={{ fontSize: 5, color: MUTED, fontFamily: 'Helvetica-Bold' }}>PAGE NO.</Text>
+            <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold' }} render={({ pageNumber }) => String(pageNumber)} />
+          </View>
+          <View style={{ flex: 0.7, paddingHorizontal: 3, paddingVertical: 2 }}>
+            <Text style={{ fontSize: 5, color: MUTED, fontFamily: 'Helvetica-Bold' }}>OF</Text>
+            <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold' }} render={({ totalPages }) => String(totalPages)} />
+          </View>
         </View>
+      </View>
 
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', backgroundColor: NAVY, paddingHorizontal: 4, paddingVertical: 2 }}>
+        <Text style={{ fontSize: 5.5, color: WHITE }}>CAL-PR-1050.0201</Text>
+        <Text style={{ fontSize: 5.5, color: WHITE }}>VALIDATION REPORT</Text>
+      </View>
+    </View>
+  )
+}
+
+interface ReportProps {
+  input: CalculationInput
+  result: CalculationResult
+  metadata: CalculationMetadata
+  revisions: RevisionRecord[]
+}
+
+export function CalculationReport({
+  input,
+  result,
+  metadata,
+  revisions,
+}: ReportProps) {
+  const { derived, normalVenting, emergencyVenting, drainInbreathing, warnings } = result
+  const incomingTotal = input.incomingStreams.reduce((sum, stream) => sum + stream.flowrate, 0)
+  const outgoingTotal = input.outgoingStreams.reduce((sum, stream) => sum + stream.flowrate, 0)
+  const noteLines = [
+    warnings.capacityExceedsTable ? 'Tank capacity exceeds 30,000 m3; outside normal vent table range.' : null,
+    warnings.undergroundTank ? 'Underground tank: environmental factor F = 0.' : null,
+    warnings.hexaneDefaults ? 'Hexane defaults used where fluid data is incomplete.' : null,
+    warnings.volatileLiquid ? 'Volatile liquid warning per selected API edition.' : null,
+  ].filter(Boolean)
+
+  return (
+    <Document title={`Venting Calculation - ${input.tankNumber || 'report'}`}>
+      <Page size="A4" style={S.page}>
+        <View style={S.outerBorder}>
+          <View style={S.topHeader}>
+            <Text style={S.topHeaderTitle}>ATMOSPHERIC AND LOW PRESSURE STORAGE TANK VENTING CALCULATION</Text>
+            <Text style={S.topHeaderCode}>VENTING</Text>
+          </View>
+
+          <View style={S.idRow}>
+            <View style={S.idCell}>
+              <Text style={S.idLabel}>TANK NO.</Text>
+              <View style={S.idValueWrap}>
+                <View style={S.idValueBox}>
+                  <Text style={S.idValueText}>{str(input.tankNumber)}</Text>
+                </View>
+              </View>
+            </View>
+            <View style={S.idCell}>
+              <Text style={S.idLabel}>DESCRIPTION.</Text>
+              <View style={S.idValueWrap}>
+                <View style={S.idValueBox}>
+                  <Text style={S.idValueText}>{str(input.description)}</Text>
+                </View>
+              </View>
+            </View>
+            <View style={S.clearCell}>
+              <Text style={S.clearText}>Clear Data</Text>
+            </View>
+          </View>
+
+          <View style={S.section}>
+            <View style={S.sectionHeader}>
+              <Text style={S.sectionHeaderText}>I. INPUT</Text>
+            </View>
+            <View style={S.sectionBody}>
+              <View style={S.twoCol}>
+                <View style={S.col}>
+                  <DataRow label="Tank Diameter" value={fmt(input.diameter, 0)} unit="mm" />
+                  <DataRow label="Tank Height (T.T.-T.L.)" value={fmt(input.height, 0)} unit="mm" />
+                  <DataRow label="Max. Tank Volume" value={fmt(derived.maxTankVolume, 1)} unit="m3" />
+                  <DataRow label="Surface Area" value={fmt(derived.totalSurfaceArea, 1)} unit="m2" />
+                  <DataRow label="Wetted Area for Emergency case" value={fmt(derived.wettedArea, 1)} unit="m2" />
+                  <DataRow label="Tank Location (latitude)" value={fmt(input.latitude, 1)} unit="°" />
+                  <DataRow label="Design Pressure" value={fmt(input.designPressure, 1)} unit="kPag" />
+                </View>
+                <View style={S.col}>
+                  <DataRow label="Avg. Storage Temperature" value={fmt(input.avgStorageTemp, 1)} unit="°C" />
+                  <DataRow label="Vapour Pressure" value={fmt(input.vapourPressure, 1)} unit="kPa" />
+                  <DataRow label="Flash Point or Boiling Point" value={fmt(input.flashBoilingPoint, 1)} unit="°C" />
+                  <DataRow label="Latent Heat" value={fmt(input.latentHeat, 1)} unit="kJ/kg" />
+                  <DataRow label="Relieving Temperature" value={fmt(input.relievingTemperature, 1)} unit="°C" />
+                  <DataRow label="Molecular mass of vapor" value={fmt(input.molecularMass, 2)} unit="g/mol" />
+                  <DataRow label="Drain line size" value={fmt(input.drainLineSize, 0)} unit="mm" />
+                  <DataRow label="Maximum height above the drain line" value={fmt(input.maxHeightAboveDrain, 0)} unit="mm" />
+                </View>
+              </View>
+
+              <View style={{ marginTop: 6 }}>
+                <DataRow label="Tank Design / Configuration" value={str(input.tankConfiguration)} />
+              </View>
+
+              <View style={S.calcGrid}>
+                <StreamTable title="Incoming Streams" streams={input.incomingStreams} total={incomingTotal} />
+                <StreamTable title="Outgoing Streams" streams={input.outgoingStreams} total={outgoingTotal} />
+              </View>
+            </View>
+          </View>
+
+          <View style={S.section}>
+            <View style={S.sectionHeader}>
+              <Text style={S.sectionHeaderText}>II. CALCULATION</Text>
+            </View>
+            <View style={S.sectionBody}>
+              <View style={S.calcGrid}>
+                <View style={S.calcBlock}>
+                  <Text style={S.calcSubTitle}>NORMAL VENTING</Text>
+                  <DataRow label="Calculation Method" value={`API 2000 ${result.apiEdition} EDITION`} />
+
+                  <Text style={[S.calcSubTitle, { marginTop: 5 }]}>OUT-BREATHING</Text>
+                  <DataRow label="Out-breathing Vol. Flowrate" value={fmt(normalVenting.outbreathing.processFlowrate, 1)} unit="Nm3/h" />
+                  <DataRow label="Thermal out-breathing" value={fmt(normalVenting.outbreathing.thermalOutbreathing, 1)} unit="Nm3/h" />
+                  <DataRow label="Y-factor" value={fmt(normalVenting.outbreathing.yFactor, 3)} />
+                  <DataRow label="Reduction factor" value={fmt(normalVenting.outbreathing.reductionFactor, 3)} />
+                  <DataRow label="Total normal out-breathing" value={fmt(normalVenting.outbreathing.total, 1)} unit="Nm3/h" />
+                </View>
+
+                <View style={S.calcBlock}>
+                  <Text style={[S.calcSubTitle, { marginTop: 16 }]}>IN-BREATHING</Text>
+                  <DataRow label="In-breathing Vol. Flowrate" value={fmt(normalVenting.inbreathing.processFlowrate, 1)} unit="Nm3/h" />
+                  <DataRow label="Thermal in-breathing" value={fmt(normalVenting.inbreathing.thermalInbreathing, 1)} unit="Nm3/h" />
+                  <DataRow label="C-factor" value={fmt(normalVenting.inbreathing.cFactor, 3)} />
+                  <DataRow label="Reduction factor" value={fmt(normalVenting.inbreathing.reductionFactor, 3)} />
+                  <DataRow label="Total normal in-breathing" value={fmt(normalVenting.inbreathing.total, 1)} unit="Nm3/h" />
+                </View>
+              </View>
+
+              <View style={[S.calcGrid, { marginTop: 6 }]}>
+                <View style={S.calcBlock}>
+                  <Text style={S.calcSubTitle}>EMERGENCY VENTING</Text>
+                  <DataRow label="Heat input from Fire Exposure, Q" value={fmt(emergencyVenting.heatInput, 0)} unit="W" />
+                  <DataRow label="Environmental factor, F" value={fmt(emergencyVenting.environmentalFactor, 3)} />
+                  <DataRow label="Emergency Venting required for Fire Exposure" value={fmt(emergencyVenting.emergencyVentRequired, 1)} unit="Nm3/h of Air" />
+                </View>
+                <View style={S.calcBlock}>
+                  <Text style={S.calcSubTitle}>DRAIN SYSTEM</Text>
+                  <DataRow label="Inbreathing requirement due to draining" value={fmt(drainInbreathing, 1)} unit="Nm3/h" />
+                </View>
+              </View>
+            </View>
+          </View>
+
+          <View style={S.noteArea}>
+            <Text style={S.noteLabel}>NOTE'S:</Text>
+            {noteLines.map((line, index) => (
+              <Text key={index} style={{ marginTop: 4, fontSize: 6, color: GUIDE }}>
+                {line}
+              </Text>
+            ))}
+          </View>
+
+          <TitleBlock metadata={metadata} revisions={revisions} />
+        </View>
       </Page>
     </Document>
   )
