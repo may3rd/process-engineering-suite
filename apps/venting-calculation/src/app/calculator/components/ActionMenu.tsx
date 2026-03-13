@@ -41,6 +41,22 @@ interface ActionMenuProps {
   derivedGeometry: DerivedGeometry | null
 }
 
+function latestRevisionValue(revisions: RevisionRecord[]): string | null {
+  const dated = revisions
+    .map((item) => {
+      const rev = item.rev?.trim()
+      const rawDate = item.byDate?.trim() || item.checkedDate?.trim() || item.approvedDate?.trim() || ""
+      const dateValue = rawDate ? Date.parse(rawDate) : Number.NaN
+      return { rev, dateValue }
+    })
+    .filter((item) => item.rev && Number.isFinite(item.dateValue))
+    .sort((a, b) => b.dateValue - a.dateValue)
+
+  if (dated.length > 0) return dated[0].rev ?? null
+
+  return revisions.find((item) => item.rev?.trim())?.rev?.trim() ?? null
+}
+
 function fromKPag(value: number, unit: string | null | undefined): number | null {
   const targetUnit = unit ?? "barg"
   const converted = convertUnit(value, "kPag", targetUnit)
@@ -97,7 +113,11 @@ export function ActionMenu({
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = `${(calculationMetadata.documentNumber || input.tankNumber || "venting-calc").replace(/[^a-zA-Z0-9-_]/g, "_")}.pdf`
+      const fileBase = (calculationMetadata.documentNumber || input.tankNumber || "venting-calc")
+        .replace(/[^a-zA-Z0-9-_]/g, "_")
+      const latestRev = latestRevisionValue(revisionHistory)
+      const revSuffix = latestRev ? `_Rev.${latestRev.replace(/[^a-zA-Z0-9-_]/g, "_")}` : ""
+      a.download = `${fileBase}${revSuffix}.pdf`
       a.click()
       URL.revokeObjectURL(url)
     } catch (err) {

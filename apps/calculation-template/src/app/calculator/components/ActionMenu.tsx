@@ -33,6 +33,22 @@ interface ActionMenuProps {
   derivedGeometry: DerivedGeometry | null
 }
 
+function latestRevisionValue(revisions: RevisionRecord[]): string | null {
+  const dated = revisions
+    .map((item) => {
+      const rev = item.rev?.trim()
+      const rawDate = item.byDate?.trim() || item.checkedDate?.trim() || item.approvedDate?.trim() || ""
+      const dateValue = rawDate ? Date.parse(rawDate) : Number.NaN
+      return { rev, dateValue }
+    })
+    .filter((item) => item.rev && Number.isFinite(item.dateValue))
+    .sort((a, b) => b.dateValue - a.dateValue)
+
+  if (dated.length > 0) return dated[0].rev ?? null
+
+  return revisions.find((item) => item.rev?.trim())?.rev?.trim() ?? null
+}
+
 export function ActionMenu({
   onClear,
   calculationMetadata,
@@ -65,7 +81,14 @@ export function ActionMenu({
       const url = URL.createObjectURL(blob)
       const a = document.createElement("a")
       a.href = url
-      a.download = `calculation-${(input.tag?.trim() || "report").replace(/[^a-zA-Z0-9-_]/g, "_")}.pdf`
+      const fileBase = (
+        calculationMetadata.documentNumber?.trim() ||
+        input.tag?.trim() ||
+        "report"
+      ).replace(/[^a-zA-Z0-9-_]/g, "_")
+      const latestRev = latestRevisionValue(revisionHistory)
+      const revSuffix = latestRev ? `_Rev.${latestRev.replace(/[^a-zA-Z0-9-_]/g, "_")}` : ""
+      a.download = `${fileBase}${revSuffix}.pdf`
       a.click()
       URL.revokeObjectURL(url)
     } finally {

@@ -7,6 +7,22 @@ import { useUomStore } from "@/lib/store/uomStore"
 import type { CalculationInput, CalculationResult, CalculationMetadata, RevisionRecord } from "@/types"
 import type { VesselUomCategory } from "@/lib/uom"
 
+function latestRevisionValue(revisions: RevisionRecord[]): string | null {
+  const dated = revisions
+    .map((item) => {
+      const rev = item.rev?.trim()
+      const rawDate = item.byDate?.trim() || item.checkedDate?.trim() || item.approvedDate?.trim() || ""
+      const dateValue = rawDate ? Date.parse(rawDate) : Number.NaN
+      return { rev, dateValue }
+    })
+    .filter((item) => item.rev && Number.isFinite(item.dateValue))
+    .sort((a, b) => b.dateValue - a.dateValue)
+
+  if (dated.length > 0) return dated[0].rev ?? null
+
+  return revisions.find((item) => item.rev?.trim())?.rev?.trim() ?? null
+}
+
 interface Props {
   input: CalculationInput | null
   result: CalculationResult | null
@@ -46,7 +62,9 @@ export function ExportPdfButton({ input, result, metadata, revisions }: Props) {
         input.tag?.trim() ||
         "report"
       ).replace(/[^a-zA-Z0-9-_]/g, "_")
-      a.download = `${fileBase}.pdf`
+      const latestRev = latestRevisionValue(revisions)
+      const revSuffix = latestRev ? `_Rev.${latestRev.replace(/[^a-zA-Z0-9-_]/g, "_")}` : ""
+      a.download = `${fileBase}${revSuffix}.pdf`
       a.click()
       URL.revokeObjectURL(url)
     } finally {
