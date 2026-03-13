@@ -750,6 +750,26 @@ src/app/calculator/
 - If the app renders a live SVG schematic, share the geometry/model layer between web and PDF renderers instead of maintaining two separate calculations
 - Keep title/revision blocks anchored at the page bottom; center sketches inside the remaining space
 - Prefer one-page output for normal calculator cases, but design overflow behavior intentionally
+- Standardize the left-side GCME disclaimer strip with these settings:
+
+```ts
+disclaimerWrap: {
+  position: 'absolute',
+  left: 7,
+  top: 62,
+  bottom: 74,
+  width: 12,
+  alignItems: 'center',
+  justifyContent: 'center',
+},
+disclaimerText: {
+  width: 800,
+  fontSize: 5.6,
+  color: '#dc2626',
+  textAlign: 'center',
+  transform: 'rotate(-90deg)',
+},
+```
 
 **Testing expectations:**
 - Mock `@react-pdf/renderer` in `ActionMenu` tests

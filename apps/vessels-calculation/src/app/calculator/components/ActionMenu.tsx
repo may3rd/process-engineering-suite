@@ -80,7 +80,12 @@ export function ActionMenu({
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `vessel-${(input.tag?.trim() || 'report').replace(/[^a-zA-Z0-9-_]/g, '_')}-calc.pdf`;
+      const fileBase = (
+        calculationMetadata.documentNumber?.trim() ||
+        input.tag?.trim() ||
+        'report'
+      ).replace(/[^a-zA-Z0-9-_]/g, '_');
+      a.download = `${fileBase}.pdf`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {

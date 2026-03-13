@@ -63,6 +63,8 @@ const GUIDE    = '#374151'
 const MUTED    = '#6b7280'
 const BW       = 0.5   // light row border
 const HB       = 1     // heavy section border
+const DISCLAIMER =
+  'This document is confidential proprietary and/or legally privileged, intended to be used within GCME Co.,Ltd. Unintended recipients are not allowed to distribute, copy, modify, retransmit, disseminate or use this document and/or information.'
 
 // ─── Styles ──────────────────────────────────────────────────────────────────
 
@@ -70,12 +72,24 @@ const S = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
     fontSize: 7,
-    padding: 16,
-    paddingBottom: 26,
+    padding: 0,
     color: BLACK,
     lineHeight: 1.3,
   },
+  pageOuterFrame: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderWidth: 8,
+    borderColor: NAVY,
+  },
   outerBorder: {
+    marginTop: 8,
+    marginRight: 8,
+    marginBottom: 8,
+    marginLeft: 18,
     borderWidth: HB,
     borderColor: BLACK,
     flex: 1,
@@ -173,6 +187,22 @@ const S = StyleSheet.create({
     paddingTop: 3,
   },
   footerText: { fontSize: 6, color: MUTED },
+  disclaimerWrap: {
+    position: 'absolute',
+    left: 7,
+    top: 62,
+    bottom: 74,
+    width: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disclaimerText: {
+    width: 800,
+    fontSize: 5.6,
+    color: '#dc2626',
+    textAlign: 'center',
+    transform: 'rotate(-90deg)',
+  },
 })
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -427,6 +457,11 @@ function TitleBlock({
             <Text style={{ fontSize: 7, fontFamily: 'Helvetica-Bold' }} render={({ totalPages }) => String(totalPages)} />
           </View>
         </View>
+      </View>
+
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', backgroundColor: NAVY, paddingHorizontal: 4, paddingVertical: 2 }}>
+        <Text style={{ fontSize: 5.5, color: WHITE }}>CA-PR-1050-0101</Text>
+        <Text style={{ fontSize: 5.5, color: WHITE }}>VALIDATION REPORT : RPT-PR-1050-0101</Text>
       </View>
 
     </View>
@@ -874,6 +909,10 @@ export function VesselReport({ input, result, metadata, revisions, units }: Vess
   return (
     <Document title={`Vessel Calculation — ${input.tag}`} author="GC ME Process Engineering Suite">
       <Page size="A4" style={S.page}>
+        <View style={S.pageOuterFrame} fixed />
+        <View style={S.disclaimerWrap} fixed>
+          <Text style={S.disclaimerText}>{DISCLAIMER}</Text>
+        </View>
         <View style={S.outerBorder}>
 
           {/* ── Page header ──────────────────────────────────────────────── */}

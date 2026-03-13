@@ -32,20 +32,34 @@ const RED = '#dc2626'
 const BW = 0.5
 const HB = 1
 const G = 9.80665
+const DISCLAIMER =
+  'This document is confidential proprietary and/or legally privileged, intended to be used within GCME Co.,Ltd. Unintended recipients are not allowed to distribute, copy, modify, retransmit, disseminate or use this document and/or information.'
 
 const S = StyleSheet.create({
   page: {
     fontFamily: 'Helvetica',
     fontSize: 6.5,
-    padding: 12,
-    paddingBottom: 20,
+    padding: 0,
     color: BLACK,
     lineHeight: 1.2,
   },
+  pageOuterFrame: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderWidth: 8,
+    borderColor: NAVY,
+  },
   outerBorder: {
     flex: 1,
+    marginTop: 8,
+    marginRight: 8,
+    marginBottom: 8,
+    marginLeft: 18,
     borderWidth: HB,
-    borderColor: NAVY,
+    borderColor: BLACK,
     flexDirection: 'column',
   },
   topHeader: {
@@ -204,6 +218,22 @@ const S = StyleSheet.create({
     fontSize: 5.5,
     color: MUTED,
     marginLeft: 3,
+  },
+  disclaimerWrap: {
+    position: 'absolute',
+    left: 7,
+    top: 62,
+    bottom: 74,
+    width: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  disclaimerText: {
+    width: 800,
+    fontSize: 5.6,
+    color: '#dc2626',
+    textAlign: 'center',
+    transform: 'rotate(-90deg)',
   },
 })
 
@@ -999,6 +1029,10 @@ export function PumpReport({ input, result, metadata, revisions }: Props) {
   return (
     <Document title={`Pump Calculation - ${input.tag || 'report'}`}>
       <Page size="A4" style={S.page}>
+        <View style={S.pageOuterFrame} fixed />
+        <View style={S.disclaimerWrap} fixed>
+          <Text style={S.disclaimerText}>{DISCLAIMER}</Text>
+        </View>
         <View style={S.outerBorder}>
           <View style={S.topHeader}>
             <Text style={S.topHeaderTitle}>PUMP</Text>
