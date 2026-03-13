@@ -108,6 +108,16 @@ export function CalculationMetadataSection({
     })
   }
 
+  const updateRevision = <K extends keyof RevisionRecord>(
+    index: number,
+    key: K,
+    value: RevisionRecord[K],
+  ) => {
+    setRevisionsDraft((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [key]: value } : item)),
+    )
+  }
+
   return (
     <SectionCard
       title="Calculation Metadata"
@@ -130,173 +140,87 @@ export function CalculationMetadataSection({
               </DialogHeader>
 
               <div className="space-y-2">
-                <div className="overflow-x-auto rounded-md border">
-                  <table className="w-full text-xs">
-                    <thead>
-                      <tr className="border-b text-left text-muted-foreground">
-                        <th className="p-2 w-16">Rev</th>
-                        <th className="p-2 w-24">By</th>
-                        <th className="p-2 w-28">Date</th>
-                        <th className="p-2 w-24">Checked</th>
-                        <th className="p-2 w-28">Date</th>
-                        <th className="p-2 w-24">Approved</th>
-                        <th className="p-2 w-28">Date</th>
-                        <th className="p-2 w-20" />
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {revisionsDraft.length === 0 ? (
-                        <tr>
-                          <td className="p-3 text-muted-foreground" colSpan={8}>
-                            No revision records yet.
-                          </td>
-                        </tr>
-                      ) : (
-                        revisionsDraft.map((row, index) => (
-                          <tr key={`rev-row-${index}`} className="border-b last:border-b-0">
-                            <td className="p-2">
-                              <Input
-                                value={row.rev}
-                                placeholder="O1"
-                                className="w-full"
-                                onChange={(e) =>
-                                  setRevisionsDraft((prev) =>
-                                    prev.map((item, i) =>
-                                      i === index ? { ...item, rev: e.target.value } : item,
-                                    )
-                                  )
-                                }
-                              />
-                            </td>
-                            <td className="p-2">
-                              <Input
-                                value={row.by}
-                                placeholder="Originator"
-                                className="w-full"
-                                onChange={(e) =>
-                                  setRevisionsDraft((prev) =>
-                                    prev.map((item, i) =>
-                                      i === index ? { ...item, by: e.target.value } : item,
-                                    )
-                                  )
-                                }
-                              />
-                            </td>
-                            <td className="p-2">
-                              <Input
-                                type="date"
-                                value={row.byDate ?? ""}
-                                className="w-full"
-                                onChange={(e) =>
-                                  setRevisionsDraft((prev) =>
-                                    prev.map((item, i) =>
-                                      i === index ? { ...item, byDate: e.target.value } : item,
-                                    )
-                                  )
-                                }
-                              />
-                            </td>
-                            <td className="p-2">
-                              <Input
-                                value={row.checkedBy}
-                                placeholder="Checker"
-                                className="w-full"
-                                onChange={(e) =>
-                                  setRevisionsDraft((prev) =>
-                                    prev.map((item, i) =>
-                                      i === index ? { ...item, checkedBy: e.target.value } : item,
-                                    )
-                                  )
-                                }
-                              />
-                            </td>
-                            <td className="p-2">
-                              <Input
-                                type="date"
-                                value={row.checkedDate ?? ""}
-                                className="w-full"
-                                onChange={(e) =>
-                                  setRevisionsDraft((prev) =>
-                                    prev.map((item, i) =>
-                                      i === index
-                                        ? { ...item, checkedDate: e.target.value }
-                                        : item,
-                                    )
-                                  )
-                                }
-                              />
-                            </td>
-                            <td className="p-2">
-                              <Input
-                                value={row.approvedBy}
-                                placeholder="Approver"
-                                className="w-full"
-                                onChange={(e) =>
-                                  setRevisionsDraft((prev) =>
-                                    prev.map((item, i) =>
-                                      i === index ? { ...item, approvedBy: e.target.value } : item,
-                                    )
-                                  )
-                                }
-                              />
-                            </td>
-                            <td className="p-2">
-                              <Input
-                                type="date"
-                                value={row.approvedDate ?? ""}
-                                className="w-full"
-                                onChange={(e) =>
-                                  setRevisionsDraft((prev) =>
-                                    prev.map((item, i) =>
-                                      i === index
-                                        ? { ...item, approvedDate: e.target.value }
-                                        : item,
-                                    )
-                                  )
-                                }
-                              />
-                            </td>
-                            <td className="p-2">
-                              <div className="flex items-center justify-center gap-1">
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => moveRevisionRow(index, "up")}
-                                  disabled={index === 0}
-                                  aria-label="Move revision up"
-                                >
-                                  <ArrowUp className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() => moveRevisionRow(index, "down")}
-                                  disabled={index === revisionsDraft.length - 1}
-                                  aria-label="Move revision down"
-                                >
-                                  <ArrowDown className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  onClick={() =>
-                                    setRevisionsDraft((prev) => prev.filter((_, i) => i !== index))
-                                  }
-                                  aria-label="Delete revision"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                {revisionsDraft.length === 0 ? (
+                  <div className="rounded-md border p-3 text-sm text-muted-foreground">
+                    No revision records yet.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {revisionsDraft.map((row, index) => (
+                      <div key={`rev-row-${index}`} className="rounded-md border p-3">
+                        <div className="grid gap-3 lg:grid-cols-[96px_minmax(0,1fr)_132px]">
+                          <div className="space-y-1.5">
+                            <Label htmlFor={`revision-rev-${index}`}>Rev</Label>
+                            <Input
+                              id={`revision-rev-${index}`}
+                              value={row.rev}
+                              placeholder="O1"
+                              onChange={(e) => updateRevision(index, "rev", e.target.value)}
+                            />
+                          </div>
+
+                          <div className="grid gap-3 md:grid-cols-3">
+                            {([
+                              ["By", "by", "byDate", "Originator"],
+                              ["Checked", "checkedBy", "checkedDate", "Checker"],
+                              ["Approved", "approvedBy", "approvedDate", "Approver"],
+                            ] as const).map(([label, nameKey, dateKey, placeholder]) => (
+                              <div key={`${label}-${index}`} className="space-y-2 rounded-md border p-3">
+                                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                  {label}
+                                </p>
+                                <Input
+                                  value={row[nameKey]}
+                                  placeholder={placeholder}
+                                  onChange={(e) => updateRevision(index, nameKey, e.target.value)}
+                                />
+                                <Input
+                                  type="date"
+                                  value={row[dateKey] ?? ""}
+                                  onChange={(e) => updateRevision(index, dateKey, e.target.value)}
+                                />
                               </div>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
+                            ))}
+                          </div>
+
+                          <div className="flex items-start justify-end gap-1 lg:pt-6">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => moveRevisionRow(index, "up")}
+                              disabled={index === 0}
+                              aria-label="Move revision up"
+                            >
+                              <ArrowUp className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => moveRevisionRow(index, "down")}
+                              disabled={index === revisionsDraft.length - 1}
+                              aria-label="Move revision down"
+                            >
+                              <ArrowDown className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="icon"
+                              onClick={() =>
+                                setRevisionsDraft((prev) => prev.filter((_, i) => i !== index))
+                              }
+                              aria-label="Delete revision"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
                 <Button
                   type="button"
                   variant="outline"

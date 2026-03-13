@@ -272,19 +272,60 @@ function TitleBlock({
     borderBottomWidth: BW,
     borderBottomColor: BLACK,
     minHeight: 14,
-    alignItems: 'center' as const,
   }
-  const tlS = {
+  const tlCellS = {
     width: 48,
-    fontSize: 7,
-    fontFamily: 'Helvetica-Bold' as const,
+    justifyContent: 'center' as const,
     paddingHorizontal: 4,
     paddingVertical: 2,
     borderRightWidth: BW,
     borderRightColor: BLACK,
+  }
+  const tlTextS = {
+    fontSize: 7,
+    fontFamily: 'Helvetica-Bold' as const,
     color: GUIDE,
   }
-  const tvS = { flex: 1, fontSize: 7, paddingHorizontal: 4, paddingVertical: 2 }
+  const tvCellS = {
+    flex: 1,
+    justifyContent: 'center' as const,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+  }
+  const tvTextS = { fontSize: 7 }
+  const revHeaderRowS = {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    borderBottomWidth: BW,
+    borderBottomColor: BLACK,
+    minHeight: 12,
+  }
+  const revDataRowS = {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    minHeight: 10,
+  }
+  const revHeaderCellS = {
+    flex: 1,
+    minHeight: 12,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingHorizontal: 2,
+    paddingVertical: 2,
+    borderRightWidth: BW,
+    borderRightColor: BLACK,
+    backgroundColor: '#f3f4f6',
+  }
+  const revDataCellS = {
+    flex: 1,
+    minHeight: 10,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    paddingHorizontal: 2,
+    paddingVertical: 2,
+    borderRightWidth: BW,
+    borderRightColor: BLACK,
+  }
 
   return (
     <View style={{ borderTopWidth: HB, borderTopColor: BLACK }}>
@@ -293,40 +334,66 @@ function TitleBlock({
       <View style={{ flexDirection: 'row', borderBottomWidth: HB, borderBottomColor: BLACK }}>
         <View style={{ flex: 3, borderRightWidth: HB, borderRightColor: BLACK }}>
           <View style={trS}>
-            <Text style={tlS}>TITLE</Text>
-            <Text style={tvS}>{metadata.title || ''}</Text>
+            <View style={tlCellS}>
+              <Text style={tlTextS}>TITLE</Text>
+            </View>
+            <View style={tvCellS}>
+              <Text style={tvTextS}>{metadata.title || ''}</Text>
+            </View>
           </View>
           <View style={trS}>
-            <Text style={tlS}>PROJECT</Text>
-            <Text style={tvS}>{metadata.projectName || ''}</Text>
+            <View style={tlCellS}>
+              <Text style={tlTextS}>PROJECT</Text>
+            </View>
+            <View style={tvCellS}>
+              <Text style={tvTextS}>{metadata.projectName || ''}</Text>
+            </View>
           </View>
           <View style={{ ...trS, borderBottomWidth: 0 }}>
-            <Text style={tlS}>CLIENT</Text>
-            <Text style={tvS}>{metadata.client || ''}</Text>
+            <View style={tlCellS}>
+              <Text style={tlTextS}>CLIENT</Text>
+            </View>
+            <View style={tvCellS}>
+              <Text style={tvTextS}>{metadata.client || ''}</Text>
+            </View>
           </View>
         </View>
         <View style={{ flex: 2 }}>
-          <View style={{ flexDirection: 'row', borderBottomWidth: BW, borderBottomColor: BLACK }}>
-            <Text style={S.revHead}>REV.</Text>
-            <Text style={S.revHead}>BY / DATE</Text>
-            <Text style={S.revHead}>CHKD / DATE</Text>
-            <Text style={[S.revHead, { borderRightWidth: 0 }]}>APPD / DATE</Text>
+          <View style={revHeaderRowS}>
+            <View style={revHeaderCellS}>
+              <Text style={{ fontSize: 6, fontFamily: 'Helvetica-Bold', color: GUIDE, textAlign: 'center' }}>REV.</Text>
+            </View>
+            <View style={revHeaderCellS}>
+              <Text style={{ fontSize: 6, fontFamily: 'Helvetica-Bold', color: GUIDE, textAlign: 'center' }}>BY / DATE</Text>
+            </View>
+            <View style={revHeaderCellS}>
+              <Text style={{ fontSize: 6, fontFamily: 'Helvetica-Bold', color: GUIDE, textAlign: 'center' }}>CHKD / DATE</Text>
+            </View>
+            <View style={{ ...revHeaderCellS, borderRightWidth: 0 }}>
+              <Text style={{ fontSize: 6, fontFamily: 'Helvetica-Bold', color: GUIDE, textAlign: 'center' }}>APPD / DATE</Text>
+            </View>
           </View>
           {rows.map((rev, i) => (
             <View
               key={i}
               style={{
-                flexDirection: 'row',
+                ...revDataRowS,
                 borderBottomWidth: i < rows.length - 1 ? BW : 0,
                 borderBottomColor: '#e5e7eb',
-                flex: 1,
-                minHeight: 13,
               }}
             >
-              <Text style={S.revCell}>{rev?.rev ?? ''}</Text>
-              <Text style={S.revCell}>{rev ? [rev.by, rev.byDate].filter(Boolean).join('  ') : ''}</Text>
-              <Text style={S.revCell}>{rev ? [rev.checkedBy, rev.checkedDate].filter(Boolean).join('  ') : ''}</Text>
-              <Text style={[S.revCell, { borderRightWidth: 0 }]}>{rev ? [rev.approvedBy, rev.approvedDate].filter(Boolean).join('  ') : ''}</Text>
+              <View style={revDataCellS}>
+                <Text style={{ fontSize: 6, textAlign: 'center' }}>{rev?.rev ?? ''}</Text>
+              </View>
+              <View style={revDataCellS}>
+                <Text style={{ fontSize: 6, textAlign: 'center' }}>{rev ? [rev.by, rev.byDate].filter(Boolean).join('  ') : ''}</Text>
+              </View>
+              <View style={revDataCellS}>
+                <Text style={{ fontSize: 6, textAlign: 'center' }}>{rev ? [rev.checkedBy, rev.checkedDate].filter(Boolean).join('  ') : ''}</Text>
+              </View>
+              <View style={{ ...revDataCellS, borderRightWidth: 0 }}>
+                <Text style={{ fontSize: 6, textAlign: 'center' }}>{rev ? [rev.approvedBy, rev.approvedDate].filter(Boolean).join('  ') : ''}</Text>
+              </View>
             </View>
           ))}
         </View>
