@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { type ChangeEvent, useRef, useState } from "react"
 import { useFormContext } from "react-hook-form"
 import {
   Menu,
@@ -18,6 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { buildCalculationFileEnvelope, downloadCalculationFile, readCalculationFile } from "@/lib/calculationFile"
 import type { CalculationInput, CalculationMetadata, RevisionRecord, CalculationResult, DerivedGeometry } from "@/types"
 
 interface ActionMenuProps {
@@ -50,13 +51,16 @@ function latestRevisionValue(revisions: RevisionRecord[]): string | null {
 }
 
 export function ActionMenu({
+  onCalculationLoaded,
   onClear,
   calculationMetadata,
   revisionHistory,
   calculationResult,
 }: ActionMenuProps) {
-  const { getValues } = useFormContext<CalculationInput>()
+  const { getValues, reset } = useFormContext<CalculationInput>()
   const [pdfLoading, setPdfLoading] = useState(false)
+  const [fileError, setFileError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const handleExportPdf = async () => {
     if (!calculationResult) return
@@ -96,8 +100,52 @@ export function ActionMenu({
     }
   }
 
+  const handleSaveToFile = () => {
+    const input = getValues()
+    const fileBase = (
+      calculationMetadata.documentNumber?.trim() ||
+      input.tag?.trim() ||
+      "report"
+    ).replace(/[^a-zA-Z0-9-_]/g, "_")
+    const latestRev = latestRevisionValue(revisionHistory)
+    const revSuffix = latestRev ? `_Rev.${latestRev.replace(/[^a-zA-Z0-9-_]/g, "_")}` : ""
+    const envelope = buildCalculationFileEnvelope({
+      name: fileBase,
+      inputs: input as unknown as Record<string, unknown>,
+      metadata: calculationMetadata,
+      revisionHistory,
+    })
+    downloadCalculationFile(envelope, `${fileBase}${revSuffix}`)
+  }
+
+  const handleFilePick = () => {
+    setFileError(null)
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ""
+    if (!file) return
+
+    try {
+      const payload = await readCalculationFile(file)
+      reset(payload.inputs as unknown as CalculationInput, { keepDefaultValues: false })
+      onCalculationLoaded(payload.metadata, payload.revisionHistory)
+    } catch (err) {
+      setFileError(err instanceof Error ? err.message : "Could not load file.")
+    }
+  }
+
   return (
     <>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="application/json,.json"
+        className="hidden"
+        onChange={(event) => { void handleFileChange(event) }}
+      />
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button type="button" variant="outline" size="sm" className="gap-2">
@@ -108,14 +156,14 @@ export function ActionMenu({
 
         <DropdownMenuContent align="end" className="w-52">
           {/* File group */}
-          <DropdownMenuItem disabled>
+          <DropdownMenuItem onSelect={handleFilePick}>
             <FolderOpen className="h-4 w-4 mr-2" />
-            Load...
+            Load from File...
           </DropdownMenuItem>
 
-          <DropdownMenuItem disabled>
+          <DropdownMenuItem onSelect={handleSaveToFile}>
             <Save className="h-4 w-4 mr-2" />
-            Save...
+            Save to File...
           </DropdownMenuItem>
 
           <DropdownMenuSeparator />
@@ -135,6 +183,8 @@ export function ActionMenu({
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      {fileError && <p className="text-xs text-destructive">{fileError}</p>}
     </>
   )
 }

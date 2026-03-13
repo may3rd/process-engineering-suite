@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { type ChangeEvent, useRef, useState } from "react"
 import { useFormContext } from "react-hook-form"
 import { FolderOpen, Loader2, RefreshCw, Link2, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useSavedCalculations } from "@/lib/hooks/useSavedCalculations"
+import { readCalculationFile } from "@/lib/calculationFile"
 import { TankConfiguration } from "@/types"
 import type { CalculationInput, CalculationMetadata, RevisionRecord, ApiEdition, FlashBoilingPointType } from "@/types"
 
@@ -158,6 +159,8 @@ export function LoadCalculationButton({ onTankLinked, onCalculationLoaded, contr
   const { fetchList, remove, savedItems, isLoading, isDeleting, error } = useSavedCalculations()
   const [internalOpen, setInternalOpen] = useState(false)
   const [search, setSearch] = useState("")
+  const [fileError, setFileError] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement | null>(null)
   const isControlled = controlledOpen !== undefined
   const open = isControlled ? controlledOpen : internalOpen
   const setOpen = isControlled ? (v: boolean) => onControlledOpenChange?.(v) : setInternalOpen
@@ -167,6 +170,7 @@ export function LoadCalculationButton({ onTankLinked, onCalculationLoaded, contr
     if (willOpen) {
       await fetchList()
       setSearch("")
+      setFileError(null)
     }
   }
 
@@ -194,12 +198,43 @@ export function LoadCalculationButton({ onTankLinked, onCalculationLoaded, contr
     setOpen(false)
   }
 
+  const handleFilePick = () => {
+    setFileError(null)
+    fileInputRef.current?.click()
+  }
+
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    event.target.value = ""
+    if (!file) return
+
+    try {
+      const payload = await readCalculationFile(file)
+      const defaults = formState.defaultValues as CalculationInput
+      const normalizedInputs = normalizeLoadedInput(payload.inputs, defaults)
+      reset(defaults, { keepDefaultValues: true })
+      clearErrors()
+      reset(normalizedInputs, { keepDefaultValues: true })
+      if (onTankLinked) {
+        onTankLinked(null, null)
+      }
+      if (onCalculationLoaded) {
+        onCalculationLoaded(payload.metadata, payload.revisionHistory)
+      }
+      setOpen(false)
+    } catch (err) {
+      setFileError(err instanceof Error ? err.message : "Could not load file.")
+    }
+  }
+
   const handleDelete = async (item: (typeof savedItems)[number]) => {
     const confirmed = window.confirm(`Delete "${item.name}"? This can be restored from API if supported.`)
     if (!confirmed) return
     try {
       await remove(item.id)
-    } catch {}
+    } catch {
+      // Error state is already handled by the hook.
+    }
   }
 
   const formatDate = (iso?: string | null) => {
@@ -270,6 +305,22 @@ export function LoadCalculationButton({ onTankLinked, onCalculationLoaded, contr
           />
           <Button
             type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleFilePick}
+            className="gap-1 text-xs"
+          >
+            Load from File
+          </Button>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="application/json,.json"
+            className="hidden"
+            onChange={(event) => { void handleFileChange(event) }}
+          />
+          <Button
+            type="button"
             variant="ghost"
             size="sm"
             onClick={fetchList}
@@ -281,8 +332,8 @@ export function LoadCalculationButton({ onTankLinked, onCalculationLoaded, contr
           </Button>
         </div>
 
-        {error && (
-          <p className="text-xs text-destructive mb-2">{error}</p>
+        {(error || fileError) && (
+          <p className="text-xs text-destructive mb-2">{fileError ?? error}</p>
         )}
 
         <ScrollArea className="h-72 rounded-md border">

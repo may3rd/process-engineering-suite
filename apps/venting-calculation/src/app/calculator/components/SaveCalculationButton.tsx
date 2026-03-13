@@ -16,6 +16,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useSavedCalculations } from "@/lib/hooks/useSavedCalculations"
+import { buildCalculationFileEnvelope, downloadCalculationFile } from "@/lib/calculationFile"
 import type { CalculationInput, CalculationMetadata, RevisionRecord } from "@/types"
 
 interface Props {
@@ -106,6 +107,20 @@ export function SaveCalculationButton({
     }
   }
 
+  const handleSaveToFile = () => {
+    const inputs = getValues() as unknown as Record<string, unknown>
+    const fileName = name.trim() || getValues("tankNumber") || calculationMetadata.documentNumber || "calculation"
+    const envelope = buildCalculationFileEnvelope({
+      name: fileName,
+      inputs,
+      metadata: calculationMetadata,
+      revisionHistory,
+    })
+    downloadCalculationFile(envelope, fileName.replace(/[^a-zA-Z0-9-_]/g, "_"))
+    setOpen(false)
+    resetDialogState()
+  }
+
   return (
     <Dialog
       open={open}
@@ -156,6 +171,14 @@ export function SaveCalculationButton({
           {saveError && <p className="text-xs text-destructive">{saveError}</p>}
         </div>
         <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleSaveToFile}
+            disabled={isSaving || saved}
+          >
+            Save to File
+          </Button>
           {duplicateId && (
             <>
               <Button

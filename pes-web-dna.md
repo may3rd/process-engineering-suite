@@ -692,7 +692,47 @@ const [open, setOpen] = useState(false)
 <DialogContent className="sm:max-w-2xl"> // wide (metadata, revisions)
 ```
 
-### 8.3 PDF export pattern
+### 8.3 File save/load pattern
+
+Calculator apps may use the database as the primary save/load store, but should also support file-based export/import of calculation state.
+
+**Scope of file-based save/load:**
+- Restore only:
+  - `inputs`
+  - `metadata`
+  - `revisionHistory`
+- Do **not** restore equipment links from file imports
+- Do **not** trust imported `results`; recompute results from restored inputs
+
+**Preferred file envelope:**
+```ts
+{
+  kind: 'pes-calculation-file',
+  schemaVersion: 1,
+  app: 'vessels-calculation' | 'pump-calculation' | 'venting-calculation' | 'calculation-template',
+  savedAt: string,
+  name: string,
+  inputs: Record<string, unknown>,
+  metadata: CalculationMetadata,
+  revisionHistory: RevisionRecord[],
+}
+```
+
+**Rules:**
+- Add `Save to File` as a secondary action in the save flow
+- Add `Load from File` in the load dialog
+- Validate `kind`, `schemaVersion`, and `app` before import
+- Route imported payloads through the same normalization/reset path used by DB-backed load
+- Show a clear error when the file belongs to a different app or is malformed
+
+**Testing expectations:**
+- Add helper-level tests for:
+  - valid envelope round-trip
+  - wrong-app rejection
+  - malformed JSON rejection
+- Keep app suites green after wiring file import/export into dialogs
+
+### 8.4 PDF export pattern
 
 Calculator apps should ship PDF export as a first-class top-bar action, using `@react-pdf/renderer` and a dedicated report component under `src/app/calculator/pdf/`.
 

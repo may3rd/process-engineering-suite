@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { type ChangeEvent, useMemo, useRef, useState } from 'react';
 import { useFormContext } from 'react-hook-form';
 import { Loader2, RefreshCw, Trash2, RotateCcw, Link2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -14,6 +14,7 @@ import {
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSavedCalculations } from '@/lib/hooks/useSavedCalculations';
+import { readCalculationFile } from '@/lib/calculationFile';
 import type { CalculationInput, CalculationMetadata, RevisionRecord } from '@/types';
 import {
   EquipmentMode,
@@ -104,6 +105,8 @@ export function LoadCalculationButton({
 
   const [search, setSearch] = useState('');
   const [showDeleted, setShowDeleted] = useState(false);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const loadItems = async (nextShowDeleted = showDeleted) => {
     await fetchList({ includeInactive: nextShowDeleted, q: search.trim() || undefined });
@@ -116,6 +119,7 @@ export function LoadCalculationButton({
     } else {
       setSearch('');
       setShowDeleted(false);
+      setFileError(null);
     }
   };
 
@@ -146,6 +150,30 @@ export function LoadCalculationButton({
     }
 
     setOpen(false);
+  };
+
+  const handleFilePick = () => {
+    setFileError(null);
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+
+    try {
+      const payload = await readCalculationFile(file);
+      const normalized = normalizeInput(payload.inputs);
+      reset(normalized as CalculationInput, { keepDefaultValues: false });
+      onCalculationLoaded(payload.metadata, payload.revisionHistory);
+      if (onEquipmentLinked) {
+        onEquipmentLinked(null, null);
+      }
+      setOpen(false);
+    } catch (err) {
+      setFileError(err instanceof Error ? err.message : 'Could not load file.');
+    }
   };
 
   const handleDelete = async (tag: string) => {
@@ -190,22 +218,40 @@ export function LoadCalculationButton({
         </div>
 
         <div className="flex justify-between items-center mb-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              const next = !showDeleted;
-              setShowDeleted(next);
-              void loadItems(next);
-            }}
-            className="text-xs"
-          >
-            {showDeleted ? 'Hide deleted' : 'Show deleted'}
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleFilePick}
+              className="text-xs"
+            >
+              Load from File
+            </Button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(event) => { void handleFileChange(event); }}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const next = !showDeleted;
+                setShowDeleted(next);
+                void loadItems(next);
+              }}
+              className="text-xs"
+            >
+              {showDeleted ? 'Hide deleted' : 'Show deleted'}
+            </Button>
+          </div>
         </div>
 
-        {error && <p className="text-xs text-destructive mb-2">{error}</p>}
+        {(error || fileError) && <p className="text-xs text-destructive mb-2">{fileError ?? error}</p>}
 
         <ScrollArea className="h-72 rounded-md border">
           {isLoading ? (
