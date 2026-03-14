@@ -25,6 +25,8 @@ from .project_note import ProjectNote
 from .revision_history import RevisionHistory
 from .audit_log import AuditLog
 from .engineering_object import EngineeringObject
+from .calculation import Calculation
+from .calculation_version import CalculationVersion
 from .venting_calculation import VentingCalculation
 from .network_design import NetworkDesign
 from .design_agent_session import DesignAgentSession
@@ -65,6 +67,8 @@ __all__ = [
     "AuditLog",
     # Core engineering objects
     "EngineeringObject",
+    "Calculation",
+    "CalculationVersion",
     # New app-specific resources
     "VentingCalculation",
     "NetworkDesign",

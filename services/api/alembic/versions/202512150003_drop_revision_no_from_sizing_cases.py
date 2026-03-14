@@ -19,12 +19,12 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Drop the revision_no column - model now uses current_revision_id (FK to revision_history)
-    op.drop_column('sizing_cases', 'revision_no')
+    op.execute('ALTER TABLE sizing_cases DROP COLUMN IF EXISTS revision_no')
 
 
 def downgrade() -> None:
-    # Re-add the revision_no column
-    op.add_column('sizing_cases', sa.Column('revision_no', sa.Integer(), nullable=False, server_default='1'))
-    # Remove the server default after adding
+    op.execute(
+        "ALTER TABLE sizing_cases "
+        "ADD COLUMN IF NOT EXISTS revision_no INTEGER NOT NULL DEFAULT 1"
+    )
     op.alter_column('sizing_cases', 'revision_no', server_default=None)

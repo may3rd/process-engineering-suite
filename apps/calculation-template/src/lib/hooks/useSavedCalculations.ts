@@ -4,7 +4,7 @@ import { useCallback, useState } from "react"
 import { apiClient } from "@/lib/apiClient"
 import type { CalculationMetadata, RevisionRecord } from "@/types"
 
-export const CALCULATION_OBJECT_TYPE = "CALCULATION_TEMPLATE"
+export const CALCULATION_APP = "calculation-template"
 
 export interface SavedCalculationItem {
   id: string
@@ -16,6 +16,8 @@ export interface SavedCalculationItem {
   equipmentId?: string | null
   calculationMetadata?: CalculationMetadata
   revisionHistory?: RevisionRecord[]
+  latestVersionId?: string | null
+  latestVersionNo?: number
   status?: string | null
   isActive: boolean
   createdAt?: string
@@ -23,6 +25,7 @@ export interface SavedCalculationItem {
 }
 
 interface SavePayload {
+  calculationId?: string
   tag?: string
   name: string
   description?: string
@@ -33,7 +36,7 @@ interface SavePayload {
   revisionHistory?: RevisionRecord[]
 }
 
-function createObjectTag(): string {
+function createCalculationTag(): string {
   if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
     return `CALC-${crypto.randomUUID().replace(/-/g, "").slice(0, 12).toUpperCase()}`
   }
@@ -41,37 +44,42 @@ function createObjectTag(): string {
 }
 
 function parseSavedItem(raw: {
-  tag: string
-  object_type: string
-  properties: Record<string, unknown>
+  id: string
+  tag?: string | null
+  name: string
+  description: string
+  inputs: Record<string, unknown>
+  results?: Record<string, unknown> | null
+  linkedEquipmentId?: string | null
+  metadata?: Record<string, unknown>
+  revisionHistory?: Array<Record<string, unknown>>
+  latestVersionId?: string | null
+  latestVersionNo?: number
   status?: string | null
-  created_at?: string | null
-  updated_at?: string | null
+  isActive: boolean
+  createdAt?: string | null
+  updatedAt?: string | null
 }): SavedCalculationItem {
-  const props = raw.properties ?? {}
-  const meta = (props.meta ?? {}) as Record<string, unknown>
-  const name = String(meta.name ?? raw.tag)
-  const description = String(meta.description ?? "")
-  const isActive = meta.isActive !== false
-
   return {
-    id: raw.tag,
-    tag: raw.tag,
-    name,
-    description,
-    inputs: (props.inputs ?? {}) as Record<string, unknown>,
-    results: (props.result ?? undefined) as Record<string, unknown> | undefined,
-    equipmentId: (props.linkedEquipmentId ?? null) as string | null,
-    calculationMetadata: props.calculationMetadata as CalculationMetadata | undefined,
-    revisionHistory: props.revisionHistory as RevisionRecord[] | undefined,
+    id: raw.id,
+    tag: raw.tag ?? "",
+    name: raw.name,
+    description: raw.description,
+    inputs: raw.inputs ?? {},
+    results: raw.results ?? undefined,
+    equipmentId: raw.linkedEquipmentId ?? null,
+    calculationMetadata: raw.metadata as CalculationMetadata | undefined,
+    revisionHistory: raw.revisionHistory as RevisionRecord[] | undefined,
+    latestVersionId: raw.latestVersionId ?? null,
+    latestVersionNo: raw.latestVersionNo,
     status: raw.status ?? null,
-    isActive,
-    createdAt: (raw.created_at ?? (meta.createdAt as string | undefined) ?? undefined) ?? undefined,
-    updatedAt: (raw.updated_at ?? (meta.updatedAt as string | undefined) ?? undefined) ?? undefined,
+    isActive: raw.isActive,
+    createdAt: raw.createdAt ?? undefined,
+    updatedAt: raw.updatedAt ?? undefined,
   }
 }
 
-export function useSavedCalculations(objectType: string = CALCULATION_OBJECT_TYPE) {
+export function useSavedCalculations() {
   const [isSaving, setIsSaving] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -80,6 +88,7 @@ export function useSavedCalculations(objectType: string = CALCULATION_OBJECT_TYP
   const [error, setError] = useState<string | null>(null)
 
   const save = useCallback(async ({
+    calculationId,
     tag,
     name,
     description,
@@ -92,28 +101,22 @@ export function useSavedCalculations(objectType: string = CALCULATION_OBJECT_TYP
     setIsSaving(true)
     setError(null)
     try {
-      const targetTag = tag?.trim() ? tag.trim().toUpperCase() : createObjectTag()
-      const now = new Date().toISOString()
       const payload = {
-        object_type: objectType,
-        status: "In-Design",
-        properties: {
-          inputs,
-          result: results ?? null,
-          linkedEquipmentId: equipmentId ?? null,
-          calculationMetadata: calculationMetadata ?? undefined,
-          revisionHistory: revisionHistory ?? [],
-          meta: {
-            app: "calculation-template",
-            name: name.trim(),
-            description: description?.trim() ?? "",
-            isActive: true,
-            deletedAt: null,
-            updatedAt: now,
-          },
-        },
+        app: CALCULATION_APP,
+        name: name.trim(),
+        description: description?.trim() ?? "",
+        status: "draft",
+        tag: tag?.trim() ? tag.trim().toUpperCase() : createCalculationTag(),
+        inputs,
+        results: results ?? null,
+        metadata: (calculationMetadata ?? {}) as unknown as Record<string, unknown>,
+        revisionHistory: (revisionHistory ?? []) as unknown as Array<Record<string, unknown>>,
+        linkedEquipmentId: equipmentId ?? null,
+        linkedEquipmentTag: null,
       }
-      const item = await apiClient.engineeringObjects.upsert(targetTag, payload)
+      const item = calculationId
+        ? await apiClient.calculations.saveVersion(calculationId, payload)
+        : await apiClient.calculations.create(payload)
       return parseSavedItem(item)
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Save failed"
@@ -122,29 +125,14 @@ export function useSavedCalculations(objectType: string = CALCULATION_OBJECT_TYP
     } finally {
       setIsSaving(false)
     }
-  }, [objectType])
+  }, [])
 
-  const softDelete = useCallback(async (tag: string) => {
+  const softDelete = useCallback(async (calculationId: string) => {
     setIsDeleting(true)
     setError(null)
     try {
-      const item = await apiClient.engineeringObjects.get(tag)
-      const props = (item.properties ?? {}) as Record<string, unknown>
-      const meta = (props.meta ?? {}) as Record<string, unknown>
-      await apiClient.engineeringObjects.upsert(tag, {
-        object_type: item.object_type,
-        status: item.status ?? "In-Design",
-        properties: {
-          ...props,
-          meta: {
-            ...meta,
-            isActive: false,
-            deletedAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-        },
-      })
-      setSavedItems((prev) => prev.map((entry) => (entry.tag === tag ? { ...entry, isActive: false } : entry)))
+      await apiClient.calculations.softDelete(calculationId)
+      setSavedItems((prev) => prev.map((entry) => (entry.id === calculationId ? { ...entry, isActive: false } : entry)))
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Delete failed"
       setError(msg)
@@ -154,28 +142,19 @@ export function useSavedCalculations(objectType: string = CALCULATION_OBJECT_TYP
     }
   }, [])
 
-  const restore = useCallback(async (tag: string) => {
+  const restore = useCallback(async (calculationId: string) => {
     setIsRestoring(true)
     setError(null)
     try {
-      const item = await apiClient.engineeringObjects.get(tag)
-      const props = (item.properties ?? {}) as Record<string, unknown>
-      const meta = (props.meta ?? {}) as Record<string, unknown>
-      const restored = await apiClient.engineeringObjects.upsert(tag, {
-        object_type: item.object_type,
-        status: item.status ?? "In-Design",
-        properties: {
-          ...props,
-          meta: {
-            ...meta,
-            isActive: true,
-            deletedAt: null,
-            updatedAt: new Date().toISOString(),
-          },
-        },
+      const current = await apiClient.calculations.get(calculationId)
+      if (!current.latestVersionId) {
+        throw new Error("Calculation is missing a latest version")
+      }
+      const restored = await apiClient.calculations.restoreVersion(calculationId, {
+        versionId: current.latestVersionId,
       })
       const parsed = parseSavedItem(restored)
-      setSavedItems((prev) => prev.map((entry) => (entry.tag === tag ? parsed : entry)))
+      setSavedItems((prev) => prev.map((entry) => (entry.id === calculationId ? parsed : entry)))
       return parsed
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Restore failed"
@@ -190,12 +169,23 @@ export function useSavedCalculations(objectType: string = CALCULATION_OBJECT_TYP
     setIsLoading(true)
     setError(null)
     try {
-      const items = await apiClient.engineeringObjects.list({
-        objectType,
+      const items = await apiClient.calculations.list({
+        app: CALCULATION_APP,
         includeInactive: params?.includeInactive ?? false,
-        q: params?.q,
       })
-      const parsed = items.map(parseSavedItem)
+      const query = params?.q?.trim().toLowerCase()
+      const parsed = items
+        .map(parseSavedItem)
+        .filter((item) => {
+          if (!query) return true
+          const inputTag = String(item.inputs.tag ?? "").toLowerCase()
+          return (
+            item.name.toLowerCase().includes(query) ||
+            item.description.toLowerCase().includes(query) ||
+            item.tag.toLowerCase().includes(query) ||
+            inputTag.includes(query)
+          )
+        })
       setSavedItems(parsed)
       return parsed
     } catch (err) {
@@ -205,7 +195,7 @@ export function useSavedCalculations(objectType: string = CALCULATION_OBJECT_TYP
     } finally {
       setIsLoading(false)
     }
-  }, [objectType])
+  }, [])
 
   return {
     save,

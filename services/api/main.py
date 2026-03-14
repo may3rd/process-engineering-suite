@@ -64,6 +64,7 @@ from services.api.app.routers import (
     audit_router,
     design_agents_router,
     vessels_router,
+    calculations_router,
     venting_router,
     network_router,
     engineering_objects_router,
@@ -77,7 +78,9 @@ app.include_router(auth_router)
 app.include_router(revisions_router)
 app.include_router(audit_router)
 app.include_router(design_agents_router)
-app.include_router(vessels_router)
+if vessels_router is not None:
+    app.include_router(vessels_router)
+app.include_router(calculations_router)
 app.include_router(venting_router)
 app.include_router(network_router)
 app.include_router(engineering_objects_router)

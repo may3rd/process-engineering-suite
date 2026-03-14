@@ -63,6 +63,8 @@ class MockService(DataAccessLayer):
             self._data = {
                 "users": [],
                 "credentials": [],
+                "calculations": [],
+                "calculationVersions": [],
                 "customers": [],
                 "plants": [],
                 "units": [],
@@ -78,6 +80,213 @@ class MockService(DataAccessLayer):
                 "notes": [],
                 "todos": [],
             }
+
+    # --- Calculations ---
+
+    async def get_calculations(
+        self,
+        include_inactive: bool = False,
+        app: Optional[str] = None,
+    ) -> List[dict]:
+        calculations = list(self._data.get("calculations", []))
+        if not include_inactive:
+            calculations = [item for item in calculations if item.get("isActive", True)]
+        if app:
+            calculations = [item for item in calculations if item.get("app") == app]
+        calculations.sort(key=lambda item: item.get("updatedAt") or "", reverse=True)
+        return calculations
+
+    async def get_calculation_by_id(self, calculation_id: str) -> Optional[dict]:
+        for calculation in self._data.get("calculations", []):
+            if calculation.get("id") == calculation_id:
+                return calculation
+        return None
+
+    async def create_calculation(self, data: dict) -> dict:
+        now = datetime.utcnow().isoformat()
+        calculation_id = str(uuid4())
+        version_id = str(uuid4())
+        calculation = {
+            "id": calculation_id,
+            "app": data.get("app"),
+            "areaId": data.get("areaId"),
+            "ownerId": data.get("ownerId"),
+            "name": data.get("name"),
+            "description": data.get("description") or "",
+            "status": data.get("status") or "draft",
+            "tag": data.get("tag"),
+            "isActive": True,
+            "linkedEquipmentId": data.get("linkedEquipmentId"),
+            "linkedEquipmentTag": data.get("linkedEquipmentTag"),
+            "latestVersionNo": 1,
+            "latestVersionId": version_id,
+            "inputs": data.get("inputs") or {},
+            "results": data.get("results"),
+            "metadata": data.get("metadata") or {},
+            "revisionHistory": data.get("revisionHistory") or [],
+            "createdAt": now,
+            "updatedAt": now,
+            "deletedAt": None,
+        }
+        version = {
+            "id": version_id,
+            "calculationId": calculation_id,
+            "versionNo": 1,
+            "versionKind": "save",
+            "inputs": calculation["inputs"],
+            "results": calculation["results"],
+            "metadata": calculation["metadata"],
+            "revisionHistory": calculation["revisionHistory"],
+            "linkedEquipmentId": calculation["linkedEquipmentId"],
+            "linkedEquipmentTag": calculation["linkedEquipmentTag"],
+            "sourceVersionId": None,
+            "changeNote": data.get("changeNote"),
+            "createdAt": now,
+        }
+        self._data.setdefault("calculations", []).append(calculation)
+        self._data.setdefault("calculationVersions", []).append(version)
+        return calculation
+
+    async def update_calculation(self, calculation_id: str, data: dict) -> dict:
+        calculations = self._data.get("calculations", [])
+        for index, calculation in enumerate(calculations):
+            if calculation.get("id") != calculation_id:
+                continue
+            now = datetime.utcnow().isoformat()
+            next_version_no = int(calculation.get("latestVersionNo") or 0) + 1
+            version_id = str(uuid4())
+            updated = {
+                **calculation,
+                "name": data.get("name", calculation.get("name")),
+                "description": data.get("description", calculation.get("description") or ""),
+                "status": data.get("status", calculation.get("status") or "draft"),
+                "tag": data.get("tag", calculation.get("tag")),
+                "linkedEquipmentId": data.get(
+                    "linkedEquipmentId", calculation.get("linkedEquipmentId")
+                ),
+                "linkedEquipmentTag": data.get(
+                    "linkedEquipmentTag", calculation.get("linkedEquipmentTag")
+                ),
+                "latestVersionNo": next_version_no,
+                "latestVersionId": version_id,
+                "inputs": data.get("inputs", calculation.get("inputs") or {}),
+                "results": data.get("results", calculation.get("results")),
+                "metadata": data.get("metadata", calculation.get("metadata") or {}),
+                "revisionHistory": data.get(
+                    "revisionHistory", calculation.get("revisionHistory") or []
+                ),
+                "updatedAt": now,
+            }
+            calculations[index] = updated
+            self._data.setdefault("calculationVersions", []).append(
+                {
+                    "id": version_id,
+                    "calculationId": calculation_id,
+                    "versionNo": next_version_no,
+                    "versionKind": "save",
+                    "inputs": updated["inputs"],
+                    "results": updated["results"],
+                    "metadata": updated["metadata"],
+                    "revisionHistory": updated["revisionHistory"],
+                    "linkedEquipmentId": updated["linkedEquipmentId"],
+                    "linkedEquipmentTag": updated["linkedEquipmentTag"],
+                    "sourceVersionId": None,
+                    "changeNote": data.get("changeNote"),
+                    "createdAt": now,
+                }
+            )
+            return updated
+        raise ValueError(f"Calculation not found: {calculation_id}")
+
+    async def delete_calculation(self, calculation_id: str) -> bool:
+        calculations = self._data.get("calculations", [])
+        for index, calculation in enumerate(calculations):
+            if calculation.get("id") == calculation_id:
+                calculations[index] = {
+                    **calculation,
+                    "isActive": False,
+                    "deletedAt": datetime.utcnow().isoformat(),
+                    "updatedAt": datetime.utcnow().isoformat(),
+                }
+                return True
+        return False
+
+    async def get_calculation_versions(self, calculation_id: str) -> List[dict]:
+        versions = [
+            item
+            for item in self._data.get("calculationVersions", [])
+            if item.get("calculationId") == calculation_id
+        ]
+        versions.sort(key=lambda item: item.get("versionNo") or 0, reverse=True)
+        return versions
+
+    async def get_calculation_version_by_id(
+        self,
+        calculation_id: str,
+        version_id: str,
+    ) -> Optional[dict]:
+        for version in self._data.get("calculationVersions", []):
+            if (
+                version.get("calculationId") == calculation_id
+                and version.get("id") == version_id
+            ):
+                return version
+        return None
+
+    async def restore_calculation(
+        self,
+        calculation_id: str,
+        version_id: str,
+        change_note: Optional[str] = None,
+    ) -> dict:
+        calculation = await self.get_calculation_by_id(calculation_id)
+        if not calculation:
+            raise ValueError("Calculation not found")
+        source_version = await self.get_calculation_version_by_id(calculation_id, version_id)
+        if not source_version:
+            raise ValueError("Calculation version not found")
+
+        now = datetime.utcnow().isoformat()
+        next_version_no = int(calculation.get("latestVersionNo") or 0) + 1
+        restored_version_id = str(uuid4())
+        restored = {
+            **calculation,
+            "latestVersionNo": next_version_no,
+            "latestVersionId": restored_version_id,
+            "isActive": True,
+            "deletedAt": None,
+            "inputs": source_version.get("inputs") or {},
+            "results": source_version.get("results"),
+            "metadata": source_version.get("metadata") or {},
+            "revisionHistory": source_version.get("revisionHistory") or [],
+            "linkedEquipmentId": source_version.get("linkedEquipmentId"),
+            "linkedEquipmentTag": source_version.get("linkedEquipmentTag"),
+            "updatedAt": now,
+        }
+        calculations = self._data.get("calculations", [])
+        for index, item in enumerate(calculations):
+            if item.get("id") == calculation_id:
+                calculations[index] = restored
+                break
+
+        self._data.setdefault("calculationVersions", []).append(
+            {
+                "id": restored_version_id,
+                "calculationId": calculation_id,
+                "versionNo": next_version_no,
+                "versionKind": "restore",
+                "inputs": restored["inputs"],
+                "results": restored["results"],
+                "metadata": restored["metadata"],
+                "revisionHistory": restored["revisionHistory"],
+                "linkedEquipmentId": restored.get("linkedEquipmentId"),
+                "linkedEquipmentTag": restored.get("linkedEquipmentTag"),
+                "sourceVersionId": version_id,
+                "changeNote": change_note,
+                "createdAt": now,
+            }
+        )
+        return restored
     
     # --- Users & Auth ---
     
@@ -598,14 +807,19 @@ class MockService(DataAccessLayer):
         equipment_id: Optional[str] = None,
         include_deleted: bool = False,
     ) -> List[dict]:
-        calculations = self._data.get("ventingCalculations", [])
+        calculations = await self.get_calculations(
+            include_inactive=include_deleted,
+            app="venting-calculation",
+        )
         if area_id:
             calculations = [c for c in calculations if c.get("areaId") == area_id]
         if equipment_id:
-            calculations = [c for c in calculations if c.get("equipmentId") == equipment_id]
-        if not include_deleted:
-            calculations = [c for c in calculations if c.get("deletedAt") is None]
+            calculations = [
+                c for c in calculations if c.get("linkedEquipmentId") == equipment_id
+            ]
         for calculation in calculations:
+            calculation["calculationMetadata"] = calculation.get("metadata", {})
+            calculation["equipmentId"] = calculation.get("linkedEquipmentId")
             calculation["revisionHistory"] = _normalize_venting_revision_history(
                 calculation.get("revisionHistory", [])
             )
@@ -614,73 +828,101 @@ class MockService(DataAccessLayer):
     async def get_venting_calculation_by_id(
         self, calc_id: str, include_deleted: bool = False
     ) -> Optional[dict]:
-        for calculation in self._data.get("ventingCalculations", []):
-            if calculation.get("id") == calc_id:
-                if not include_deleted and calculation.get("deletedAt") is not None:
-                    return None
-                calculation["revisionHistory"] = _normalize_venting_revision_history(
-                    calculation.get("revisionHistory", [])
-                )
-                return calculation
-        return None
+        calculation = await self.get_calculation_by_id(calc_id)
+        if not calculation or calculation.get("app") != "venting-calculation":
+            return None
+        if not include_deleted and calculation.get("deletedAt") is not None:
+            return None
+        calculation["calculationMetadata"] = calculation.get("metadata", {})
+        calculation["equipmentId"] = calculation.get("linkedEquipmentId")
+        calculation["revisionHistory"] = _normalize_venting_revision_history(
+            calculation.get("revisionHistory", [])
+        )
+        return calculation
 
     async def create_venting_calculation(self, data: dict) -> dict:
-        calculation = {
-            **data,
-            "id": str(uuid4()),
-            "createdAt": datetime.utcnow().isoformat(),
-            "updatedAt": datetime.utcnow().isoformat(),
-            "deletedAt": None,
-            "calculationMetadata": data.get("calculationMetadata", {}),
-            "revisionHistory": _normalize_venting_revision_history(data.get("revisionHistory", [])),
-        }
-        self._data.setdefault("ventingCalculations", []).append(calculation)
+        inputs = dict(data.get("inputs") or {})
+        if "apiEdition" in data and "apiEdition" not in inputs:
+            inputs["apiEdition"] = data["apiEdition"]
+        calculation = await self.create_calculation(
+            {
+                "app": "venting-calculation",
+                "areaId": data.get("areaId"),
+                "ownerId": data.get("ownerId"),
+                "name": data.get("name"),
+                "description": data.get("description") or "",
+                "status": data.get("status") or "draft",
+                "tag": inputs.get("tankNumber") if isinstance(inputs.get("tankNumber"), str) else None,
+                "inputs": inputs,
+                "results": data.get("results"),
+                "metadata": data.get("calculationMetadata") or {},
+                "revisionHistory": _normalize_venting_revision_history(data.get("revisionHistory", [])),
+                "linkedEquipmentId": data.get("equipmentId"),
+                "linkedEquipmentTag": None,
+            }
+        )
+        calculation["calculationMetadata"] = calculation.get("metadata", {})
+        calculation["equipmentId"] = calculation.get("linkedEquipmentId")
         return calculation
 
     async def update_venting_calculation(self, calc_id: str, data: dict) -> dict:
-        calculations = self._data.get("ventingCalculations", [])
-        for i, calculation in enumerate(calculations):
-            if calculation.get("id") == calc_id:
-                updated = {
-                    **calculation,
-                    **data,
-                    "id": calc_id,
-                    "updatedAt": datetime.utcnow().isoformat(),
-                }
-                updated["revisionHistory"] = _normalize_venting_revision_history(
-                    updated.get("revisionHistory", [])
-                )
-                calculations[i] = updated
-                return updated
-        raise ValueError(f"Venting calculation not found: {calc_id}")
+        calculation = await self.get_calculation_by_id(calc_id)
+        if not calculation or calculation.get("app") != "venting-calculation":
+            raise ValueError(f"Venting calculation not found: {calc_id}")
+        next_inputs = dict(calculation.get("inputs") or {})
+        if "inputs" in data and isinstance(data["inputs"], dict):
+            next_inputs = data["inputs"]
+        if "apiEdition" in data:
+            next_inputs["apiEdition"] = data["apiEdition"]
+        updated = await self.update_calculation(
+            calc_id,
+            {
+                "name": data.get("name", calculation.get("name")),
+                "description": data.get("description", calculation.get("description") or ""),
+                "status": data.get("status", calculation.get("status") or "draft"),
+                "tag": next_inputs.get("tankNumber") if isinstance(next_inputs.get("tankNumber"), str) else calculation.get("tag"),
+                "inputs": next_inputs,
+                "results": data.get("results", calculation.get("results")),
+                "metadata": data.get("calculationMetadata", calculation.get("metadata") or {}),
+                "revisionHistory": _normalize_venting_revision_history(
+                    data.get("revisionHistory", calculation.get("revisionHistory") or [])
+                ),
+                "linkedEquipmentId": calculation.get("linkedEquipmentId"),
+                "linkedEquipmentTag": calculation.get("linkedEquipmentTag"),
+            },
+        )
+        if "isActive" in data and data["isActive"] is False:
+            await self.delete_calculation(calc_id)
+            refreshed = await self.get_calculation_by_id(calc_id)
+            if refreshed is not None:
+                updated = refreshed
+        updated["calculationMetadata"] = updated.get("metadata", {})
+        updated["equipmentId"] = updated.get("linkedEquipmentId")
+        updated["revisionHistory"] = _normalize_venting_revision_history(
+            updated.get("revisionHistory", [])
+        )
+        return updated
 
     async def delete_venting_calculation(self, calc_id: str) -> bool:
-        calculations = self._data.get("ventingCalculations", [])
-        for i, calculation in enumerate(calculations):
-            if calculation.get("id") == calc_id:
-                calculations[i] = {
-                    **calculation,
-                    "deletedAt": datetime.utcnow().isoformat(),
-                    "updatedAt": datetime.utcnow().isoformat(),
-                }
-                return True
-        return False
+        calculation = await self.get_calculation_by_id(calc_id)
+        if not calculation or calculation.get("app") != "venting-calculation":
+            return False
+        return await self.delete_calculation(calc_id)
 
     async def restore_venting_calculation(self, calc_id: str) -> dict:
-        calculations = self._data.get("ventingCalculations", [])
-        for i, calculation in enumerate(calculations):
-            if calculation.get("id") == calc_id:
-                updated = {
-                    **calculation,
-                    "deletedAt": None,
-                    "updatedAt": datetime.utcnow().isoformat(),
-                }
-                calculations[i] = updated
-                calculations[i]["revisionHistory"] = _normalize_venting_revision_history(
-                    calculations[i].get("revisionHistory", [])
-                )
-                return updated
-        raise ValueError(f"Venting calculation not found: {calc_id}")
+        calculation = await self.get_calculation_by_id(calc_id)
+        if not calculation or calculation.get("app") != "venting-calculation":
+            raise ValueError(f"Venting calculation not found: {calc_id}")
+        latest_version_id = calculation.get("latestVersionId")
+        if not latest_version_id:
+            raise ValueError("Venting calculation has no versions")
+        restored = await self.restore_calculation(calc_id, latest_version_id)
+        restored["calculationMetadata"] = restored.get("metadata", {})
+        restored["equipmentId"] = restored.get("linkedEquipmentId")
+        restored["revisionHistory"] = _normalize_venting_revision_history(
+            restored.get("revisionHistory", [])
+        )
+        return restored
 
     async def get_network_designs(self, area_id: Optional[str] = None) -> List[dict]:
         designs = self._data.get("networkDesigns", [])

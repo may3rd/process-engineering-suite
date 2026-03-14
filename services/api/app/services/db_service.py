@@ -1,11 +1,12 @@
 """Database implementation of DataAccessLayer using SQLAlchemy."""
 import logging
-from typing import List, Optional, Any, Type, TypeVar
-from datetime import datetime
+from datetime import UTC, datetime
+from typing import Any, List, Optional, Type, TypeVar
+from uuid import uuid4
 from dateutil import parser as dateutil_parser
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import case, delete, select, update
+from sqlalchemy import case, delete, desc, select, update
 from sqlalchemy.sql import nullslast
 from sqlalchemy.orm import selectinload
 
@@ -24,10 +25,11 @@ from ..models import (
     Comment,
     Todo,
     ProjectNote, RevisionHistory,
-    VentingCalculation,
     NetworkDesign,
     DesignAgentSession,
     EngineeringObject,
+    Calculation,
+    CalculationVersion,
 )
 from .dal import DataAccessLayer
 from .equipment_subtypes import build_details_from_subtype_row, build_subtype_row_values
@@ -35,6 +37,14 @@ from .equipment_subtypes import build_details_from_subtype_row, build_subtype_ro
 logger = logging.getLogger(__name__)
 
 T = TypeVar("T")
+
+
+class AttrDict(dict):
+    def __getattr__(self, key: str) -> Any:
+        try:
+            return self[key]
+        except KeyError as exc:
+            raise AttributeError(key) from exc
 
 class DatabaseService(DataAccessLayer):
     """PostgreSQL implementation of DataAccessLayer."""
@@ -126,6 +136,305 @@ class DatabaseService(DataAccessLayer):
             if details is not None:
                 item.details = details
 
+    def _snapshot_protective_system(self, instance: ProtectiveSystem) -> AttrDict:
+        return AttrDict(
+            {
+                'id': instance.id,
+                'area_id': instance.area_id,
+                'project_ids': [project.id for project in instance.projects],
+                'name': instance.name,
+                'tag': instance.tag,
+                'type': instance.type,
+                'design_code': instance.design_code,
+                'service_fluid': instance.service_fluid,
+                'fluid_phase': instance.fluid_phase,
+                'set_pressure': instance.set_pressure,
+                'mawp': instance.mawp,
+                'owner_id': instance.owner_id,
+                'status': instance.status,
+                'valve_type': instance.valve_type,
+                'tags': list(instance.tags or []),
+                'current_revision_id': instance.current_revision_id,
+                'inlet_network': instance.inlet_network,
+                'outlet_network': instance.outlet_network,
+                'is_active': instance.is_active,
+                'deleted_at': instance.deleted_at,
+                'version': instance.version,
+                'created_at': instance.created_at,
+                'updated_at': instance.updated_at,
+            }
+        )
+
+    def _normalize_calculation_revision_history(self, value: Any) -> list[dict]:
+        if not isinstance(value, list):
+            return []
+        normalized: list[dict] = []
+        for item in value:
+            if not isinstance(item, dict):
+                continue
+            normalized.append(
+                {
+                    'rev': str(item.get('rev') or ''),
+                    'by': str(item.get('by') or ''),
+                    'byDate': str(item.get('byDate') or ''),
+                    'checkedBy': str(item.get('checkedBy') or ''),
+                    'checkedDate': str(item.get('checkedDate') or ''),
+                    'approvedBy': str(item.get('approvedBy') or ''),
+                    'approvedDate': str(item.get('approvedDate') or ''),
+                }
+            )
+        return normalized
+
+    def _serialize_calculation(self, calculation: Calculation) -> dict[str, Any]:
+        return {
+            'id': calculation.id,
+            'app': calculation.app,
+            'areaId': calculation.area_id,
+            'ownerId': calculation.owner_id,
+            'name': calculation.name,
+            'description': calculation.description or '',
+            'status': calculation.status,
+            'tag': calculation.tag,
+            'isActive': calculation.is_active,
+            'linkedEquipmentId': calculation.linked_equipment_id,
+            'linkedEquipmentTag': calculation.linked_equipment_tag,
+            'latestVersionNo': calculation.latest_version_no,
+            'latestVersionId': calculation.latest_version_id,
+            'inputs': calculation.current_input_snapshot or {},
+            'results': calculation.current_result_snapshot,
+            'metadata': calculation.current_metadata or {},
+            'revisionHistory': calculation.current_revision_history or [],
+            'createdAt': calculation.created_at.isoformat() if calculation.created_at else None,
+            'updatedAt': calculation.updated_at.isoformat() if calculation.updated_at else None,
+            'deletedAt': calculation.deleted_at.isoformat() if calculation.deleted_at else None,
+        }
+
+    def _serialize_calculation_version(self, version: CalculationVersion) -> dict[str, Any]:
+        return {
+            'id': version.id,
+            'calculationId': version.calculation_id,
+            'versionNo': version.version_no,
+            'versionKind': version.version_kind,
+            'inputs': version.inputs or {},
+            'results': version.results,
+            'metadata': version.metadata_payload or {},
+            'revisionHistory': version.revision_history or [],
+            'linkedEquipmentId': version.linked_equipment_id,
+            'linkedEquipmentTag': version.linked_equipment_tag,
+            'sourceVersionId': version.source_version_id,
+            'changeNote': version.change_note,
+            'createdAt': version.created_at.isoformat() if version.created_at else None,
+        }
+
+    def _build_calculation_state(self, data: dict[str, Any], current: dict[str, Any] | None = None) -> dict[str, Any]:
+        base = current or {}
+        inputs = data['inputs'] if 'inputs' in data else base.get('inputs', {})
+        return {
+            'app': data.get('app', base.get('app')),
+            'area_id': data.get('areaId', base.get('areaId')),
+            'owner_id': data.get('ownerId', base.get('ownerId')),
+            'name': data.get('name', base.get('name')),
+            'description': data.get('description', base.get('description') or ''),
+            'status': data.get('status', base.get('status') or 'draft'),
+            'tag': data.get('tag') or (inputs.get('tag') if isinstance(inputs, dict) else None) or base.get('tag'),
+            'inputs': inputs or {},
+            'results': data['results'] if 'results' in data else base.get('results'),
+            'metadata': data.get('metadata', base.get('metadata') or {}),
+            'revisionHistory': self._normalize_calculation_revision_history(
+                data.get('revisionHistory', base.get('revisionHistory') or [])
+            ),
+            'linkedEquipmentId': data.get('linkedEquipmentId', base.get('linkedEquipmentId')),
+            'linkedEquipmentTag': data.get('linkedEquipmentTag', base.get('linkedEquipmentTag')),
+        }
+
+    async def _create_calculation_version(
+        self,
+        calculation_id: str,
+        version_no: int,
+        version_kind: str,
+        state: dict[str, Any],
+        source_version_id: str | None = None,
+        change_note: str | None = None,
+    ) -> CalculationVersion:
+        version = CalculationVersion(
+            calculation_id=calculation_id,
+            version_no=version_no,
+            version_kind=version_kind,
+            inputs=state['inputs'],
+            results=state['results'],
+            metadata_payload=state['metadata'],
+            revision_history=state['revisionHistory'],
+            linked_equipment_id=state['linkedEquipmentId'],
+            linked_equipment_tag=state['linkedEquipmentTag'],
+            source_version_id=source_version_id,
+            change_note=change_note,
+        )
+        self.session.add(version)
+        await self.session.flush()
+        return version
+
+    async def get_calculations(
+        self,
+        include_inactive: bool = False,
+        app: str | None = None,
+    ) -> list[dict[str, Any]]:
+        stmt = select(Calculation)
+        if not include_inactive:
+            stmt = stmt.where(Calculation.is_active.is_(True))
+        if app:
+            stmt = stmt.where(Calculation.app == app)
+        stmt = stmt.order_by(desc(Calculation.updated_at))
+        result = await self.session.execute(stmt)
+        return [self._serialize_calculation(item) for item in result.scalars().all()]
+
+    async def get_calculation_by_id(self, calculation_id: str) -> dict[str, Any] | None:
+        calculation = await self._get_by_id(Calculation, calculation_id)
+        if not calculation:
+            return None
+        return self._serialize_calculation(calculation)
+
+    async def create_calculation(self, data: dict[str, Any]) -> dict[str, Any]:
+        state = self._build_calculation_state(data)
+        calculation = Calculation(
+            app=state['app'],
+            area_id=state['area_id'],
+            owner_id=state['owner_id'],
+            name=state['name'],
+            description=state['description'],
+            status=state['status'],
+            tag=state['tag'],
+            is_active=True,
+            linked_equipment_id=state['linkedEquipmentId'],
+            linked_equipment_tag=state['linkedEquipmentTag'],
+            latest_version_no=1,
+            current_input_snapshot=state['inputs'],
+            current_result_snapshot=state['results'],
+            current_metadata=state['metadata'],
+            current_revision_history=state['revisionHistory'],
+        )
+        self.session.add(calculation)
+        await self.session.flush()
+        version = await self._create_calculation_version(calculation.id, 1, 'save', state)
+        calculation.latest_version_id = version.id
+        await self.session.commit()
+        await self.session.refresh(calculation)
+        return self._serialize_calculation(calculation)
+
+    async def update_calculation(self, calculation_id: str, data: dict[str, Any]) -> dict[str, Any]:
+        calculation = await self._get_by_id(Calculation, calculation_id)
+        if not calculation:
+            raise ValueError('Calculation not found')
+        current = self._serialize_calculation(calculation)
+        state = self._build_calculation_state(data, current)
+        next_version_no = calculation.latest_version_no + 1
+        version = await self._create_calculation_version(
+            calculation.id,
+            next_version_no,
+            'save',
+            state,
+            change_note=data.get('changeNote'),
+        )
+        calculation.name = state['name']
+        calculation.description = state['description']
+        calculation.status = state['status']
+        calculation.tag = state['tag']
+        calculation.linked_equipment_id = state['linkedEquipmentId']
+        calculation.linked_equipment_tag = state['linkedEquipmentTag']
+        calculation.latest_version_no = next_version_no
+        calculation.latest_version_id = version.id
+        calculation.current_input_snapshot = state['inputs']
+        calculation.current_result_snapshot = state['results']
+        calculation.current_metadata = state['metadata']
+        calculation.current_revision_history = state['revisionHistory']
+        await self.session.commit()
+        await self.session.refresh(calculation)
+        return self._serialize_calculation(calculation)
+
+    async def delete_calculation(self, calculation_id: str) -> bool:
+        calculation = await self._get_by_id(Calculation, calculation_id)
+        if not calculation:
+            return False
+        calculation.is_active = False
+        calculation.deleted_at = datetime.now(UTC)
+        await self.session.commit()
+        return True
+
+    async def get_calculation_versions(self, calculation_id: str) -> list[dict[str, Any]]:
+        stmt = (
+            select(CalculationVersion)
+            .where(CalculationVersion.calculation_id == calculation_id)
+            .order_by(desc(CalculationVersion.version_no))
+        )
+        result = await self.session.execute(stmt)
+        return [self._serialize_calculation_version(item) for item in result.scalars().all()]
+
+    async def get_calculation_version_by_id(
+        self,
+        calculation_id: str,
+        version_id: str,
+    ) -> dict[str, Any] | None:
+        stmt = select(CalculationVersion).where(
+            CalculationVersion.calculation_id == calculation_id,
+            CalculationVersion.id == version_id,
+        )
+        result = await self.session.execute(stmt)
+        version = result.scalar_one_or_none()
+        if not version:
+            return None
+        return self._serialize_calculation_version(version)
+
+    async def restore_calculation(
+        self,
+        calculation_id: str,
+        version_id: str,
+        change_note: str | None = None,
+    ) -> dict[str, Any]:
+        calculation = await self._get_by_id(Calculation, calculation_id)
+        if not calculation:
+            raise ValueError('Calculation not found')
+        stmt = select(CalculationVersion).where(
+            CalculationVersion.calculation_id == calculation_id,
+            CalculationVersion.id == version_id,
+        )
+        result = await self.session.execute(stmt)
+        source_version = result.scalar_one_or_none()
+        if not source_version:
+            raise ValueError('Calculation version not found')
+        state = {
+            'inputs': source_version.inputs or {},
+            'results': source_version.results,
+            'metadata': source_version.metadata_payload or {},
+            'revisionHistory': source_version.revision_history or [],
+            'linkedEquipmentId': source_version.linked_equipment_id,
+            'linkedEquipmentTag': source_version.linked_equipment_tag,
+            'name': calculation.name,
+            'description': calculation.description,
+            'status': calculation.status,
+            'tag': calculation.tag,
+        }
+        next_version_no = calculation.latest_version_no + 1
+        restored_version = await self._create_calculation_version(
+            calculation.id,
+            next_version_no,
+            'restore',
+            state,
+            source_version_id=source_version.id,
+            change_note=change_note,
+        )
+        calculation.latest_version_no = next_version_no
+        calculation.latest_version_id = restored_version.id
+        calculation.current_input_snapshot = state['inputs']
+        calculation.current_result_snapshot = state['results']
+        calculation.current_metadata = state['metadata']
+        calculation.current_revision_history = state['revisionHistory']
+        calculation.linked_equipment_id = state['linkedEquipmentId']
+        calculation.linked_equipment_tag = state['linkedEquipmentTag']
+        calculation.is_active = True
+        calculation.deleted_at = None
+        await self.session.commit()
+        await self.session.refresh(calculation)
+        return self._serialize_calculation(calculation)
+
     # --- Users & Auth ---
 
     async def get_users(self) -> List[dict]:
@@ -148,7 +457,7 @@ class DatabaseService(DataAccessLayer):
         return cred
 
     async def update_credential_login(self, credential_id: str, success: bool) -> None:
-        data = {"last_login": datetime.utcnow()} if success else {}
+        data = {"last_login": datetime.now(UTC)} if success else {}
         # We might track failed attempts too if model supports it
         if data:
             await self._update(Credential, credential_id, data)
@@ -290,7 +599,7 @@ class DatabaseService(DataAccessLayer):
         await self.session.refresh(instance)
         # Ensure projects relationship stays loaded
         await self.session.refresh(instance, attribute_names=['projects'])
-        return instance
+        return self._snapshot_protective_system(instance)
 
     async def update_protective_system(self, psv_id: str, data: dict) -> dict:
         # Convert camelCase keys to snake_case for ORM
@@ -359,7 +668,7 @@ class DatabaseService(DataAccessLayer):
         await self._update(
             ProtectiveSystem,
             psv_id,
-            {"is_active": False, "deleted_at": datetime.utcnow()},
+            {"is_active": False, "deleted_at": datetime.now(UTC)},
         )
         return True
 
@@ -506,7 +815,7 @@ class DatabaseService(DataAccessLayer):
         design_temp = design_parameters.get('designTemperature')
         design_temp_unit = design_parameters.get('designTempUnit', 'C')
 
-        return {
+        return AttrDict({
             'id': str(obj.uuid),
             'area_id': obj.area_id,
             'type': self._normalize_equipment_type(obj.object_type),
@@ -526,7 +835,7 @@ class DatabaseService(DataAccessLayer):
             'details': details,
             'created_at': obj.created_at,
             'updated_at': obj.updated_at,
-        }
+        })
 
     async def get_equipment(self, area_id: Optional[str] = None, type: Optional[str] = None) -> List[dict]:
         filters = [EngineeringObject.object_type.in_([v.upper() for v in self._equipment_object_types])]
@@ -602,13 +911,16 @@ class DatabaseService(DataAccessLayer):
     async def create_equipment(self, data: dict) -> dict:
         converted_data = self._convert_keys(data)
         equipment_type = self._normalize_equipment_type(str(converted_data.get('type') or 'other'))
+        details = converted_data.get('details') or {}
+        object_uuid = uuid4()
 
         design_parameters = self._merge_design_parameters({}, converted_data)
-        properties: dict[str, Any] = {'details': converted_data.get('details') or {}}
+        properties: dict[str, Any] = {'details': details}
         if design_parameters:
             properties['design_parameters'] = design_parameters
 
         obj = EngineeringObject(
+            uuid=object_uuid,
             tag=str(converted_data.get('tag', '')).upper(),
             object_type=equipment_type.upper(),
             area_id=converted_data.get('area_id'),
@@ -621,6 +933,39 @@ class DatabaseService(DataAccessLayer):
             properties=properties,
         )
         self.session.add(obj)
+        legacy_equipment = Equipment(
+            id=str(object_uuid),
+            area_id=converted_data.get('area_id'),
+            type=equipment_type,
+            tag=str(converted_data.get('tag', '')).upper(),
+            name=converted_data.get('name') or str(converted_data.get('tag', '')).upper(),
+            description=converted_data.get('description'),
+            design_pressure=design_parameters.get('designPressure'),
+            design_pressure_unit=(
+                design_parameters.get('designPressureUnit', 'barg')
+                if design_parameters.get('designPressure') is not None
+                else None
+            ),
+            mawp=design_parameters.get('mawp'),
+            mawp_unit=(
+                design_parameters.get('mawpUnit', 'barg')
+                if design_parameters.get('mawp') is not None
+                else None
+            ),
+            design_temp=design_parameters.get('designTemperature'),
+            design_temp_unit=(
+                design_parameters.get('designTempUnit', 'C')
+                if design_parameters.get('designTemperature') is not None
+                else None
+            ),
+            owner_id=converted_data.get('owner_id'),
+            is_active=converted_data.get('is_active', True),
+            status=converted_data.get('status', 'active'),
+            location_ref=converted_data.get('location_ref'),
+            details=details,
+        )
+        self.session.add(legacy_equipment)
+        await self._write_equipment_subtype_from_details(legacy_equipment.id, equipment_type, details)
         await self.session.commit()
         await self.session.refresh(obj)
         return self._to_equipment_response(obj)
@@ -657,7 +1002,7 @@ class DatabaseService(DataAccessLayer):
             obj.status = converted_data['status']
         if 'is_active' in converted_data:
             obj.is_active = bool(converted_data['is_active'])
-            obj.deleted_at = None if obj.is_active else datetime.utcnow()
+            obj.deleted_at = None if obj.is_active else datetime.now(UTC)
 
         properties = dict(obj.properties) if isinstance(obj.properties, dict) else {}
 
@@ -672,6 +1017,41 @@ class DatabaseService(DataAccessLayer):
             properties['design_parameters'] = design_parameters
 
         obj.properties = properties
+        legacy_equipment = await self._get_by_id(Equipment, equipment_id)
+        if legacy_equipment is not None:
+            legacy_equipment.type = self._normalize_equipment_type(obj.object_type)
+            legacy_equipment.tag = obj.tag
+            legacy_equipment.area_id = obj.area_id
+            legacy_equipment.owner_id = obj.owner_id
+            legacy_equipment.name = obj.name or obj.tag
+            legacy_equipment.description = obj.description
+            legacy_equipment.design_pressure = design_parameters.get('designPressure')
+            legacy_equipment.design_pressure_unit = (
+                design_parameters.get('designPressureUnit', 'barg')
+                if design_parameters.get('designPressure') is not None
+                else None
+            )
+            legacy_equipment.mawp = design_parameters.get('mawp')
+            legacy_equipment.mawp_unit = (
+                design_parameters.get('mawpUnit', 'barg')
+                if design_parameters.get('mawp') is not None
+                else None
+            )
+            legacy_equipment.design_temp = design_parameters.get('designTemperature')
+            legacy_equipment.design_temp_unit = (
+                design_parameters.get('designTempUnit', 'C')
+                if design_parameters.get('designTemperature') is not None
+                else None
+            )
+            legacy_equipment.status = obj.status or 'active'
+            legacy_equipment.is_active = bool(obj.is_active)
+            legacy_equipment.location_ref = obj.location_ref
+            legacy_equipment.details = properties.get('details') or {}
+            await self._write_equipment_subtype_from_details(
+                legacy_equipment.id,
+                legacy_equipment.type,
+                legacy_equipment.details,
+            )
 
         await self.session.commit()
         await self.session.refresh(obj)
@@ -1265,125 +1645,146 @@ class DatabaseService(DataAccessLayer):
         )
         return normalized[:3]
 
+    def _serialize_venting_calculation(self, calculation: dict[str, Any]) -> dict[str, Any]:
+        inputs = calculation.get("inputs")
+        metadata = calculation.get("metadata")
+        return {
+            "id": calculation["id"],
+            "area_id": calculation.get("areaId"),
+            "equipment_id": calculation.get("linkedEquipmentId"),
+            "owner_id": calculation.get("ownerId"),
+            "name": calculation["name"],
+            "description": calculation.get("description") or "",
+            "status": calculation.get("status") or "draft",
+            "inputs": inputs if isinstance(inputs, dict) else {},
+            "results": calculation.get("results"),
+            "calculation_metadata": metadata if isinstance(metadata, dict) else {},
+            "revision_history": self._normalize_venting_revision_history(
+                calculation.get("revisionHistory")
+            ),
+            "api_edition": (
+                inputs.get("apiEdition")
+                if isinstance(inputs, dict) and isinstance(inputs.get("apiEdition"), str)
+                else "7TH"
+            ),
+            "is_active": calculation.get("isActive", True),
+            "deleted_at": calculation.get("deletedAt"),
+            "created_at": calculation.get("createdAt"),
+            "updated_at": calculation.get("updatedAt"),
+        }
+
     async def get_venting_calculations(
         self,
         area_id: Optional[str] = None,
         equipment_id: Optional[str] = None,
         include_deleted: bool = False,
     ) -> List[dict]:
-        filters = []
+        calculations = await self.get_calculations(
+            include_inactive=include_deleted,
+            app="venting-calculation",
+        )
+        serialized = [self._serialize_venting_calculation(item) for item in calculations]
         if area_id:
-            filters.append(VentingCalculation.area_id == area_id)
+            serialized = [item for item in serialized if item["area_id"] == area_id]
         if equipment_id:
-            filters.append(VentingCalculation.equipment_id == equipment_id)
-        if not include_deleted:
-            filters.append(VentingCalculation.deleted_at.is_(None))
-        calculations = await self._get_all(VentingCalculation, *filters)
-        for calculation in calculations:
-            calculation.calculation_metadata = calculation.calculation_metadata or {}
-            calculation.inputs = calculation.inputs or {}
-            calculation.revision_history = self._normalize_venting_revision_history(
-                calculation.revision_history
-            )
-        return calculations
+            serialized = [item for item in serialized if item["equipment_id"] == equipment_id]
+        return serialized
 
     async def get_venting_calculation_by_id(self, calc_id: str) -> Optional[dict]:
-        calculation = await self._get_by_id(VentingCalculation, calc_id)
+        calculation = await self.get_calculation_by_id(calc_id)
         if not calculation:
             return None
-        calculation.calculation_metadata = calculation.calculation_metadata or {}
-        calculation.inputs = calculation.inputs or {}
-        calculation.revision_history = self._normalize_venting_revision_history(
-            calculation.revision_history
-        )
-        return calculation
+        if calculation.get("app") != "venting-calculation":
+            return None
+        return self._serialize_venting_calculation(calculation)
 
     async def create_venting_calculation(self, data: dict) -> dict:
-        # Map camelCase keys from Pydantic schema to snake_case ORM fields
-        mapped = {
-            "area_id": data.get("areaId"),
-            "equipment_id": data.get("equipmentId"),
-            "owner_id": data.get("ownerId"),
-            "name": data.get("name"),
-            "description": data.get("description"),
-            "status": data.get("status", "draft"),
-            "inputs": data.get("inputs", {}),
-            "results": data.get("results"),
-            "calculation_metadata": data.get("calculationMetadata") or {},
-            "revision_history": self._normalize_venting_revision_history(data.get("revisionHistory") or []),
-            "api_edition": data.get("apiEdition", "7TH"),
-        }
-        calculation = await self._create(
-            VentingCalculation,
+        inputs = dict(data.get("inputs") or {})
+        if "apiEdition" in data and "apiEdition" not in inputs:
+            inputs["apiEdition"] = data["apiEdition"]
+        calculation = await self.create_calculation(
             {
-                k: v
-                for k, v in mapped.items()
-                if v is not None
-                or k in (
-                    "inputs",
-                    "results",
-                    "area_id",
-                    "equipment_id",
-                    "description",
-                    "calculation_metadata",
-                    "revision_history",
-                )
-            },
+                "app": "venting-calculation",
+                "areaId": data.get("areaId"),
+                "ownerId": data.get("ownerId"),
+                "name": data.get("name"),
+                "description": data.get("description") or "",
+                "status": data.get("status", "draft"),
+                "tag": inputs.get("tankNumber") if isinstance(inputs.get("tankNumber"), str) else None,
+                "inputs": inputs,
+                "results": data.get("results"),
+                "metadata": data.get("calculationMetadata") or {},
+                "revisionHistory": self._normalize_venting_revision_history(
+                    data.get("revisionHistory") or []
+                ),
+                "linkedEquipmentId": data.get("equipmentId"),
+                "linkedEquipmentTag": None,
+            }
         )
-        return calculation
+        return self._serialize_venting_calculation(calculation)
 
     async def update_venting_calculation(self, calc_id: str, data: dict) -> dict:
-        mapped = {}
-        if "name" in data:
-            mapped["name"] = data["name"]
-        if "description" in data:
-            mapped["description"] = data["description"]
-        if "status" in data:
-            mapped["status"] = data["status"]
-        if "inputs" in data:
-            mapped["inputs"] = data["inputs"]
-        if "results" in data:
-            mapped["results"] = data["results"]
-        if "calculationMetadata" in data:
-            mapped["calculation_metadata"] = data["calculationMetadata"] or {}
-        if "revisionHistory" in data:
-            mapped["revision_history"] = self._normalize_venting_revision_history(
-                data["revisionHistory"]
-            )
+        current = await self.get_calculation_by_id(calc_id)
+        if not current or current.get("app") != "venting-calculation":
+            raise ValueError("Venting calculation not found")
+
+        next_inputs = dict(current.get("inputs") or {})
+        if "inputs" in data and isinstance(data["inputs"], dict):
+            next_inputs = data["inputs"]
         if "apiEdition" in data:
-            mapped["api_edition"] = data["apiEdition"]
-        if "isActive" in data:
-            mapped["is_active"] = data["isActive"]
-        return await self._update(VentingCalculation, calc_id, mapped)
+            next_inputs["apiEdition"] = data["apiEdition"]
+
+        tag = (
+            next_inputs.get("tankNumber")
+            if isinstance(next_inputs.get("tankNumber"), str)
+            else current.get("tag")
+        )
+
+        calculation = await self.update_calculation(
+            calc_id,
+            {
+                "name": data.get("name", current.get("name")),
+                "description": data.get("description", current.get("description") or ""),
+                "status": data.get("status", current.get("status") or "draft"),
+                "tag": tag,
+                "inputs": next_inputs,
+                "results": data["results"] if "results" in data else current.get("results"),
+                "metadata": (
+                    data.get("calculationMetadata")
+                    if "calculationMetadata" in data
+                    else current.get("metadata") or {}
+                ),
+                "revisionHistory": (
+                    self._normalize_venting_revision_history(data["revisionHistory"])
+                    if "revisionHistory" in data
+                    else current.get("revisionHistory") or []
+                ),
+                "linkedEquipmentId": current.get("linkedEquipmentId"),
+                "linkedEquipmentTag": current.get("linkedEquipmentTag"),
+            },
+        )
+        if "isActive" in data and data["isActive"] is False:
+            await self.delete_calculation(calc_id)
+            calculation = await self.get_calculation_by_id(calc_id)
+            if calculation is None:
+                raise ValueError("Venting calculation not found")
+        return self._serialize_venting_calculation(calculation)
 
     async def delete_venting_calculation(self, calc_id: str) -> bool:
-        instance = await self._get_by_id(VentingCalculation, calc_id)
-        if not instance:
+        calculation = await self.get_calculation_by_id(calc_id)
+        if not calculation or calculation.get("app") != "venting-calculation":
             return False
-        await self._update(
-            VentingCalculation,
-            calc_id,
-            {"is_active": False, "deleted_at": datetime.utcnow()},
-        )
-        return True
+        return await self.delete_calculation(calc_id)
 
     async def restore_venting_calculation(self, calc_id: str) -> dict:
-        instance = await self._get_by_id(VentingCalculation, calc_id)
-        if not instance:
+        calculation = await self.get_calculation_by_id(calc_id)
+        if not calculation or calculation.get("app") != "venting-calculation":
             raise ValueError("Venting calculation not found")
-        if instance.deleted_at is None:
-            instance.revision_history = self._normalize_venting_revision_history(
-                instance.revision_history
-            )
-            return instance
-        instance.deleted_at = None
-        instance.is_active = True
-        await self.session.commit()
-        await self.session.refresh(instance)
-        instance.revision_history = self._normalize_venting_revision_history(
-            instance.revision_history
-        )
-        return instance
+        latest_version_id = calculation.get("latestVersionId")
+        if not latest_version_id:
+            raise ValueError("Venting calculation has no versions")
+        restored = await self.restore_calculation(calc_id, latest_version_id)
+        return self._serialize_venting_calculation(restored)
 
     # --- Network Designs ---
 

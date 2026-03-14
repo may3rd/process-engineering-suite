@@ -37,6 +37,61 @@ class DataAccessLayer(ABC):
     async def update_credential_login(self, credential_id: str, success: bool) -> None:
         """Update credential after login attempt."""
         pass
+
+    # --- Calculations ---
+
+    @abstractmethod
+    async def get_calculations(
+        self,
+        include_inactive: bool = False,
+        app: Optional[str] = None,
+    ) -> List[dict]:
+        """Get saved calculations, optionally filtered by app."""
+        pass
+
+    @abstractmethod
+    async def get_calculation_by_id(self, calculation_id: str) -> Optional[dict]:
+        """Get a saved calculation by ID."""
+        pass
+
+    @abstractmethod
+    async def create_calculation(self, data: dict) -> dict:
+        """Create a saved calculation and its initial version."""
+        pass
+
+    @abstractmethod
+    async def update_calculation(self, calculation_id: str, data: dict) -> dict:
+        """Append a new version to an existing saved calculation."""
+        pass
+
+    @abstractmethod
+    async def delete_calculation(self, calculation_id: str) -> bool:
+        """Soft delete a saved calculation."""
+        pass
+
+    @abstractmethod
+    async def get_calculation_versions(self, calculation_id: str) -> List[dict]:
+        """Get the version history for a saved calculation."""
+        pass
+
+    @abstractmethod
+    async def get_calculation_version_by_id(
+        self,
+        calculation_id: str,
+        version_id: str,
+    ) -> Optional[dict]:
+        """Get a specific version for a calculation."""
+        pass
+
+    @abstractmethod
+    async def restore_calculation(
+        self,
+        calculation_id: str,
+        version_id: str,
+        change_note: Optional[str] = None,
+    ) -> dict:
+        """Restore a historical version by creating a new latest version."""
+        pass
     
     # --- Hierarchy ---
     

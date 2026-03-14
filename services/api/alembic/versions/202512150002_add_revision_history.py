@@ -20,58 +20,132 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    # Create revision_history table
-    op.create_table(
-        "revision_history",
-        sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
-        sa.Column("entity_type", sa.String(32), nullable=False),  # 'protective_system', 'scenario', 'sizing_case'
-        sa.Column("entity_id", postgresql.UUID(as_uuid=True), nullable=False),
-        
-        # Revision info
-        sa.Column("revision_code", sa.String(16), nullable=False),  # 'O1', 'A1', 'B1', etc.
-        sa.Column("sequence", sa.Integer(), nullable=False),  # For ordering: 1, 2, 3...
-        sa.Column("description", sa.Text(), nullable=True),  # Reason for revision
-        
-        # Lifecycle tracking
-        sa.Column("originated_by", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=True),
-        sa.Column("originated_at", sa.TIMESTAMP(timezone=True), nullable=True),
-        sa.Column("checked_by", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=True),
-        sa.Column("checked_at", sa.TIMESTAMP(timezone=True), nullable=True),
-        sa.Column("approved_by", postgresql.UUID(as_uuid=True), sa.ForeignKey("users.id"), nullable=True),
-        sa.Column("approved_at", sa.TIMESTAMP(timezone=True), nullable=True),
-        sa.Column("issued_at", sa.TIMESTAMP(timezone=True), nullable=True),
-        
-        # Snapshot of entity state at this revision
-        sa.Column("snapshot", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
-        sa.Column("is_active", sa.Boolean(), server_default=sa.text("true"), nullable=False),
-        
-        # Timestamps
-        sa.Column("created_at", sa.TIMESTAMP(timezone=True), server_default=sa.text("NOW()"), nullable=False),
-        
-        # Unique constraint
-        sa.UniqueConstraint("entity_type", "entity_id", "revision_code", name="uq_revision_entity_code"),
-    )
-    
-    # Create index for faster lookups
-    op.create_index("ix_revision_history_entity", "revision_history", ["entity_type", "entity_id"])
-    
-    # Drop old revision_no columns (integer)
-    op.drop_column("protective_systems", "revision_no")
-    op.drop_column("overpressure_scenarios", "revision_no")
-    
-    # Add current_revision_id FK to entities
-    op.add_column(
-        "protective_systems",
-        sa.Column("current_revision_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("revision_history.id"), nullable=True)
-    )
-    op.add_column(
-        "overpressure_scenarios",
-        sa.Column("current_revision_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("revision_history.id"), nullable=True)
-    )
-    op.add_column(
-        "sizing_cases",
-        sa.Column("current_revision_id", postgresql.UUID(as_uuid=True), sa.ForeignKey("revision_history.id"), nullable=True)
-    )
+    bind = op.get_bind()
+    inspector = sa.inspect(bind)
+
+    if not inspector.has_table("revision_history"):
+        op.create_table(
+            "revision_history",
+            sa.Column("id", postgresql.UUID(as_uuid=True), primary_key=True),
+            sa.Column("entity_type", sa.String(32), nullable=False),
+            sa.Column("entity_id", postgresql.UUID(as_uuid=True), nullable=False),
+            sa.Column("revision_code", sa.String(16), nullable=False),
+            sa.Column("sequence", sa.Integer(), nullable=False),
+            sa.Column("description", sa.Text(), nullable=True),
+            sa.Column(
+                "originated_by",
+                postgresql.UUID(as_uuid=True),
+                sa.ForeignKey("users.id"),
+                nullable=True,
+            ),
+            sa.Column("originated_at", sa.TIMESTAMP(timezone=True), nullable=True),
+            sa.Column(
+                "checked_by",
+                postgresql.UUID(as_uuid=True),
+                sa.ForeignKey("users.id"),
+                nullable=True,
+            ),
+            sa.Column("checked_at", sa.TIMESTAMP(timezone=True), nullable=True),
+            sa.Column(
+                "approved_by",
+                postgresql.UUID(as_uuid=True),
+                sa.ForeignKey("users.id"),
+                nullable=True,
+            ),
+            sa.Column("approved_at", sa.TIMESTAMP(timezone=True), nullable=True),
+            sa.Column("issued_at", sa.TIMESTAMP(timezone=True), nullable=True),
+            sa.Column("snapshot", postgresql.JSONB(astext_type=sa.Text()), nullable=False),
+            sa.Column(
+                "is_active",
+                sa.Boolean(),
+                server_default=sa.text("true"),
+                nullable=False,
+            ),
+            sa.Column(
+                "created_at",
+                sa.TIMESTAMP(timezone=True),
+                server_default=sa.text("NOW()"),
+                nullable=False,
+            ),
+            sa.UniqueConstraint(
+                "entity_type",
+                "entity_id",
+                "revision_code",
+                name="uq_revision_entity_code",
+            ),
+        )
+
+    revision_history_indexes = {
+        index["name"] for index in inspector.get_indexes("revision_history")
+    }
+    if "ix_revision_history_entity" not in revision_history_indexes:
+        op.create_index(
+            "ix_revision_history_entity",
+            "revision_history",
+            ["entity_type", "entity_id"],
+        )
+
+    protective_system_columns = {
+        column["name"] for column in inspector.get_columns("protective_systems")
+    }
+    if "revision_no" in protective_system_columns:
+        op.drop_column("protective_systems", "revision_no")
+    if "current_revision_id" not in protective_system_columns:
+        op.add_column(
+            "protective_systems",
+            sa.Column("current_revision_id", postgresql.UUID(as_uuid=True), nullable=True),
+        )
+
+    scenario_columns = {
+        column["name"] for column in inspector.get_columns("overpressure_scenarios")
+    }
+    if "revision_no" in scenario_columns:
+        op.drop_column("overpressure_scenarios", "revision_no")
+    if "current_revision_id" not in scenario_columns:
+        op.add_column(
+            "overpressure_scenarios",
+            sa.Column("current_revision_id", postgresql.UUID(as_uuid=True), nullable=True),
+        )
+
+    sizing_case_columns = {
+        column["name"] for column in inspector.get_columns("sizing_cases")
+    }
+    if "current_revision_id" not in sizing_case_columns:
+        op.add_column(
+            "sizing_cases",
+            sa.Column("current_revision_id", postgresql.UUID(as_uuid=True), nullable=True),
+        )
+
+    existing_foreign_keys = {
+        fk["name"]
+        for table_name in ("protective_systems", "overpressure_scenarios", "sizing_cases")
+        for fk in inspector.get_foreign_keys(table_name)
+        if fk.get("name")
+    }
+    if "fk_protective_systems_current_revision_id_revision_history" not in existing_foreign_keys:
+        op.create_foreign_key(
+            "fk_protective_systems_current_revision_id_revision_history",
+            "protective_systems",
+            "revision_history",
+            ["current_revision_id"],
+            ["id"],
+        )
+    if "fk_overpressure_scenarios_current_revision_id_revision_history" not in existing_foreign_keys:
+        op.create_foreign_key(
+            "fk_overpressure_scenarios_current_revision_id_revision_history",
+            "overpressure_scenarios",
+            "revision_history",
+            ["current_revision_id"],
+            ["id"],
+        )
+    if "fk_sizing_cases_current_revision_id_revision_history" not in existing_foreign_keys:
+        op.create_foreign_key(
+            "fk_sizing_cases_current_revision_id_revision_history",
+            "sizing_cases",
+            "revision_history",
+            ["current_revision_id"],
+            ["id"],
+        )
 
 
 def downgrade() -> None:

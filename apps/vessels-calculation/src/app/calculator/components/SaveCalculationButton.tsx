@@ -43,7 +43,7 @@ export function SaveCalculationButton({
   const [name, setName] = useState('');
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [duplicateTag, setDuplicateTag] = useState<string | null>(null);
+  const [duplicateId, setDuplicateId] = useState<string | null>(null);
 
   const open = controlledOpen ?? false;
   const setOpen = (v: boolean) => onControlledOpenChange?.(v);
@@ -52,7 +52,7 @@ export function SaveCalculationButton({
     setName('');
     setSaved(false);
     setError(null);
-    setDuplicateTag(null);
+    setDuplicateId(null);
   };
 
   const handleSave = async (forceOverwrite = false) => {
@@ -65,14 +65,15 @@ export function SaveCalculationButton({
         (item) => item.isActive && item.name.trim().toLowerCase() === name.trim().toLowerCase(),
       );
       if (existing && !forceOverwrite) {
-        setDuplicateTag(existing.tag);
+        setDuplicateId(existing.id);
         return;
       }
 
       const inputs = getValues() as unknown as Record<string, unknown>;
       const resultPayload = calculationResult ? (calculationResult as unknown as Record<string, unknown>) : null;
       await save({
-        tag: existing?.tag,
+        calculationId: forceOverwrite ? existing?.id : undefined,
+        tag: typeof inputs.tag === 'string' ? inputs.tag : undefined,
         name: name.trim(),
         description: typeof inputs.description === 'string' ? inputs.description : '',
         inputs,
@@ -142,7 +143,7 @@ export function SaveCalculationButton({
             onKeyDown={(e) => { if (e.key === 'Enter') void handleSave(); }}
             autoFocus
           />
-          {duplicateTag && (
+          {duplicateId && (
             <p className="text-xs text-amber-600">
               A calculation with this name already exists. Rename it or overwrite the existing case.
             </p>
@@ -158,7 +159,7 @@ export function SaveCalculationButton({
           >
             Save to File
           </Button>
-          {duplicateTag && (
+          {duplicateId && (
             <Button
               type="button"
               variant="destructive"

@@ -16,14 +16,6 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { useSavedCalculations } from '@/lib/hooks/useSavedCalculations';
 import { readCalculationFile } from '@/lib/calculationFile';
 import type { CalculationInput, CalculationMetadata, RevisionRecord } from '@/types';
-import {
-  EquipmentMode,
-  VesselOrientation,
-  HeadType,
-  TankType,
-  TankRoofType,
-  VesselMaterial,
-} from '@/types';
 
 const EMPTY_METADATA: CalculationMetadata = {
   projectNumber: '',
@@ -32,48 +24,6 @@ const EMPTY_METADATA: CalculationMetadata = {
   projectName: '',
   client: '',
 };
-
-function toNum(v: unknown): number | undefined {
-  const n = Number(v);
-  return isNaN(n) ? undefined : n;
-}
-
-function normalizeInput(raw: Record<string, unknown>): Partial<CalculationInput> {
-  return {
-    tag: (raw.tag as string) ?? '',
-    description: (raw.description as string) ?? '',
-    equipmentMode: Object.values(EquipmentMode).includes(raw.equipmentMode as EquipmentMode)
-      ? (raw.equipmentMode as EquipmentMode)
-      : EquipmentMode.VESSEL,
-    orientation: Object.values(VesselOrientation).includes(raw.orientation as VesselOrientation)
-      ? (raw.orientation as VesselOrientation)
-      : VesselOrientation.VERTICAL,
-    headType: Object.values(HeadType).includes(raw.headType as HeadType)
-      ? (raw.headType as HeadType)
-      : HeadType.ELLIPSOIDAL_2_1,
-    tankType: Object.values(TankType).includes(raw.tankType as TankType) ? (raw.tankType as TankType) : undefined,
-    tankRoofType: Object.values(TankRoofType).includes(raw.tankRoofType as TankRoofType)
-      ? (raw.tankRoofType as TankRoofType)
-      : undefined,
-    material: Object.values(VesselMaterial).includes(raw.material as VesselMaterial)
-      ? (raw.material as VesselMaterial)
-      : undefined,
-    insideDiameter: toNum(raw.insideDiameter),
-    shellLength: toNum(raw.shellLength),
-    wallThickness: toNum(raw.wallThickness),
-    materialDensity: toNum(raw.materialDensity),
-    headDepth: toNum(raw.headDepth),
-    roofHeight: toNum(raw.roofHeight),
-    bootHeight: toNum(raw.bootHeight),
-    liquidLevel: toNum(raw.liquidLevel),
-    hll: toNum(raw.hll),
-    lll: toNum(raw.lll),
-    ofl: toNum(raw.ofl),
-    density: toNum(raw.density),
-    flowrate: toNum(raw.flowrate),
-    metadata: raw.metadata as CalculationMetadata | undefined,
-  };
-}
 
 interface Props {
   controlledOpen?: boolean;
@@ -88,7 +38,7 @@ export function LoadCalculationButton({
   onCalculationLoaded,
   onEquipmentLinked,
 }: Props) {
-  const { reset } = useFormContext<CalculationInput>();
+  const { reset, formState } = useFormContext<CalculationInput>();
   const {
     fetchList,
     softDelete,
@@ -139,8 +89,7 @@ export function LoadCalculationButton({
   }, [savedItems, search, showDeleted]);
 
   const handleSelect = (item: (typeof filteredItems)[number]) => {
-    const normalized = normalizeInput(item.inputs);
-    reset(normalized as CalculationInput, { keepDefaultValues: false });
+    reset(item.inputs as unknown as CalculationInput, { keepDefaultValues: false });
 
     const metadata = item.calculationMetadata ?? EMPTY_METADATA;
     const revisions = item.revisionHistory ?? [];
@@ -164,8 +113,10 @@ export function LoadCalculationButton({
 
     try {
       const payload = await readCalculationFile(file);
-      const normalized = normalizeInput(payload.inputs);
-      reset(normalized as CalculationInput, { keepDefaultValues: false });
+      const defaults = (formState.defaultValues ?? {}) as Partial<CalculationInput>;
+      reset({ ...defaults, ...(payload.inputs as Partial<CalculationInput>) } as CalculationInput, {
+        keepDefaultValues: false,
+      });
       onCalculationLoaded(payload.metadata, payload.revisionHistory);
       if (onEquipmentLinked) {
         onEquipmentLinked(null, null);
@@ -176,14 +127,14 @@ export function LoadCalculationButton({
     }
   };
 
-  const handleDelete = async (tag: string) => {
+  const handleDelete = async (calculationId: string) => {
     if (!window.confirm('Soft delete this saved calculation?')) return;
-    await softDelete(tag);
+    await softDelete(calculationId);
     await loadItems(showDeleted);
   };
 
-  const handleRestore = async (tag: string) => {
-    await restore(tag);
+  const handleRestore = async (calculationId: string) => {
+    await restore(calculationId);
     await loadItems(showDeleted);
   };
 
@@ -300,7 +251,7 @@ export function LoadCalculationButton({
                         variant="ghost"
                         size="icon-sm"
                         className="mt-1 text-muted-foreground hover:text-destructive"
-                        onClick={() => { void handleDelete(item.tag); }}
+                        onClick={() => { void handleDelete(item.id); }}
                         disabled={isDeleting}
                         aria-label={`Delete ${item.name}`}
                       >
@@ -312,7 +263,7 @@ export function LoadCalculationButton({
                         variant="ghost"
                         size="icon-sm"
                         className="mt-1 text-muted-foreground hover:text-foreground"
-                        onClick={() => { void handleRestore(item.tag); }}
+                        onClick={() => { void handleRestore(item.id); }}
                         disabled={isRestoring}
                         aria-label={`Restore ${item.name}`}
                       >

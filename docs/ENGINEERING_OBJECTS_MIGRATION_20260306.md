@@ -1,7 +1,7 @@
 # Engineering Objects Unification (2026-03-06)
 
 ## Summary
-Database schema was updated to use `engineering_objects` as the unified object store for equipment-like entities (`tank`, `vessel`, `pump`, etc.) and calculator-linked objects.
+Database schema was updated to use `engineering_objects` as the unified object store for equipment-like entities (`tank`, `vessel`, `pump`, etc.) and calculator-linked objects. As of 2026-03-13, saved app calculations also use a shared hybrid persistence model built around `calculations` and `calculation_versions`.
 
 ## Why
 - Remove fragmentation across many equipment-specific tables.
@@ -16,6 +16,10 @@ Database schema was updated to use `engineering_objects` as the unified object s
 - `venting_calculations.equipment_id` -> `engineering_objects.uuid`
 4. Kept `/equipment` API contract for compatibility while persisting via `engineering_objects`.
 5. Made `properties.design_parameters` the canonical location for design pressure/temperature fields (migration phase 1).
+6. Added shared saved-calculation persistence with:
+- `calculations` for the current snapshot
+- `calculation_versions` for immutable audit and restore history
+- venting compatibility wrappers backed by the shared calculation store
 
 ## Migration Files
 - `202603060001_create_engineering_objects_table.py`
@@ -35,11 +39,14 @@ Database schema was updated to use `engineering_objects` as the unified object s
 ## Operational Notes
 - `equipment` table still exists during transition for backward compatibility.
 - New development should treat `engineering_objects` as source of truth.
+- New save/load work should treat `calculations` plus `calculation_versions` as the source of truth for persisted calculator state.
 - Shared client guidance:
   - prefer `apiClient.engineeringObjects`
+  - prefer `apiClient.calculations` for saved calculator state
   - `createApiClient()` no longer exposes `apiClient.equipment`
   - the legacy shared client wrapper for `/equipment` has been removed
   - use raw `/equipment` routes only for legacy compatibility or external transition work
+- For legacy venting integrations, `/venting` remains available but now maps into the shared calculations store.
 - Future cleanup phase can remove legacy equipment table dependencies after all modules are migrated.
 
 ## Validation Checklist

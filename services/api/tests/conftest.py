@@ -32,6 +32,8 @@ def migrated_db(test_database_url: str) -> Iterator[None]:
     api_root = _api_root()
     sys.path.insert(0, str(api_root))
     os.environ["DATABASE_URL"] = test_database_url
+    from app.config import get_settings
+    get_settings.cache_clear()
 
     config_path = api_root / "alembic.local.ini"
     config = Config(str(config_path))

@@ -2,10 +2,63 @@
 
 import { useState, useCallback } from "react"
 import { apiClient } from "@/lib/apiClient"
-import type { components } from "@eng-suite/types"
 import type { CalculationMetadata, RevisionRecord } from "@/types"
 
-type VentingCalculation = components["schemas"]["VentingCalculationResponse"]
+const VENTING_CALCULATION_APP = "venting-calculation"
+
+interface VentingCalculation {
+  id: string
+  app: string
+  name: string
+  description: string
+  status: string
+  isActive: boolean
+  inputs: Record<string, unknown>
+  results?: Record<string, unknown> | null
+  metadata?: CalculationMetadata
+  revisionHistory?: RevisionRecord[]
+  linkedEquipmentId?: string | null
+  linkedEquipmentTag?: string | null
+  equipmentId?: string | null
+  equipmentTag?: string | null
+  calculationMetadata?: CalculationMetadata
+  apiEdition?: string
+  latestVersionId?: string | null
+  latestVersionNo?: number
+  createdAt?: string | null
+  updatedAt?: string | null
+}
+
+function parseSavedItem(raw: {
+  id: string
+  app: string
+  name: string
+  description: string
+  status: string
+  isActive: boolean
+  inputs: Record<string, unknown>
+  results?: Record<string, unknown> | null
+  metadata?: Record<string, unknown>
+  revisionHistory?: Array<Record<string, unknown>>
+  linkedEquipmentId?: string | null
+  linkedEquipmentTag?: string | null
+  latestVersionId?: string | null
+  latestVersionNo?: number
+  createdAt?: string | null
+  updatedAt?: string | null
+}): VentingCalculation {
+  const { metadata: _metadata, linkedEquipmentId, linkedEquipmentTag, ...rest } = raw
+  return {
+    ...rest,
+    revisionHistory: (raw.revisionHistory as RevisionRecord[] | undefined) ?? undefined,
+    linkedEquipmentId,
+    linkedEquipmentTag,
+    equipmentId: linkedEquipmentId ?? null,
+    equipmentTag: linkedEquipmentTag ?? null,
+    calculationMetadata: (_metadata as CalculationMetadata | undefined) ?? undefined,
+    apiEdition: typeof raw.inputs.apiEdition === 'string' ? raw.inputs.apiEdition : '7TH',
+  }
+}
 
 /**
  * Hook for saving and loading venting calculations from the central API.
@@ -33,18 +86,20 @@ export function useSavedCalculations() {
       setIsSaving(true)
       setError(null)
       try {
-        const payload: Record<string, unknown> = {
+        const payload = {
+          app: VENTING_CALCULATION_APP,
           name,
+          description: typeof inputs.description === "string" ? inputs.description : "",
+          status: "draft",
+          tag: typeof inputs.tankNumber === "string" ? inputs.tankNumber : null,
           inputs,
-          results: results ?? undefined,
-          apiEdition: (inputs.apiEdition as string | undefined) ?? "7TH",
-          ...(equipmentId ? { equipmentId } : {}),
-          calculationMetadata: calculationMetadata ?? undefined,
-          revisionHistory: revisionHistory ?? [],
+          results: results ?? null,
+          metadata: (calculationMetadata ?? {}) as unknown as Record<string, unknown>,
+          revisionHistory: (revisionHistory ?? []) as unknown as Array<Record<string, unknown>>,
+          linkedEquipmentId: equipmentId ?? null,
+          linkedEquipmentTag: null,
         }
-        const created = await apiClient.venting.create(
-          payload as unknown as components["schemas"]["VentingCalculationCreate"]
-        )
+        const created = await apiClient.calculations.create(payload)
         return created
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Save failed"
@@ -69,19 +124,17 @@ export function useSavedCalculations() {
       setIsSaving(true)
       setError(null)
       try {
-        const payload: Record<string, unknown> = {
+        const payload = {
           name,
+          description: typeof inputs.description === "string" ? inputs.description : "",
+          status: "draft",
+          tag: typeof inputs.tankNumber === "string" ? inputs.tankNumber : null,
           inputs,
-          results: results ?? undefined,
-          apiEdition: (inputs.apiEdition as string | undefined) ?? "7TH",
-          calculationMetadata: calculationMetadata ?? undefined,
-          revisionHistory: revisionHistory ?? [],
-          isActive: true,
+          results: results ?? null,
+          metadata: (calculationMetadata ?? {}) as unknown as Record<string, unknown>,
+          revisionHistory: (revisionHistory ?? []) as unknown as Array<Record<string, unknown>>,
         }
-        const updated = await apiClient.venting.update(
-          id,
-          payload as unknown as components["schemas"]["VentingCalculationUpdate"]
-        )
+        const updated = await apiClient.calculations.saveVersion(id, payload)
         return updated
       } catch (err) {
         const msg = err instanceof Error ? err.message : "Overwrite failed"
@@ -99,7 +152,7 @@ export function useSavedCalculations() {
     setIsLoading(true)
     setError(null)
     try {
-      const items = await apiClient.venting.list()
+      const items = (await apiClient.calculations.list({ app: VENTING_CALCULATION_APP })).map(parseSavedItem)
       setSavedItems(items)
       return items
     } catch (err) {
@@ -115,7 +168,7 @@ export function useSavedCalculations() {
     setIsDeleting(true)
     setError(null)
     try {
-      await apiClient.venting.delete(id)
+      await apiClient.calculations.softDelete(id)
       setSavedItems((prev) => prev.filter((item) => item.id !== id))
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Delete failed"

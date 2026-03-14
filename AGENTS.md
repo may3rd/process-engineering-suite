@@ -230,6 +230,14 @@ Engineering Database
 | Calculation Engine | Python | All engineering equations, standards, checks | UI logic, auth |
 | Database | SQL / Object | Inputs, outputs, provenance, versions | Hidden logic |
 
+### Calculation Persistence Rule
+
+- All new calculator save/load work must use the shared calculation persistence model in `services/api`.
+- The current snapshot belongs in `calculations`.
+- Immutable audit and restore history belongs in `calculation_versions`.
+- New calculator apps must not introduce app-specific primary save/load tables or a parallel database persistence model without an explicit scoped exception documented in the nearest `AGENTS.md`.
+- File import/export is allowed as a transport, but it must map into the same canonical saved payload shape used by the shared calculations API.
+
 ---
 
 ## Execution Model (Authoritative)

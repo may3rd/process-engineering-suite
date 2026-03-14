@@ -109,11 +109,76 @@ Single source of truth for process equipment and calculator-linked objects.
 
 ---
 
+## Shared Calculation Persistence
+Saved app calculations now use a hybrid persistence model. The fast current snapshot lives in `calculations`, and immutable audit history lives in `calculation_versions`.
+
+### `calculations`
+Current, list-friendly record for each saved calculation.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid | PK |
+| app | varchar(100) | App discriminator, e.g. `pump-calculation`, `vessels-calculation`, `venting-calculation` |
+| area_id | uuid | FK → areas.id (SET NULL), nullable |
+| owner_id | uuid | FK → users.id (SET NULL), nullable |
+| name | varchar(255) | Human-readable calculation name |
+| description | text | Optional free-text |
+| status | varchar(50) | App or workflow status |
+| tag | varchar(255) | Optional business tag |
+| is_active | boolean | Soft-delete flag |
+| deleted_at | timestamptz | Soft-delete timestamp |
+| linked_equipment_id | uuid | FK → engineering_objects.uuid (SET NULL), nullable |
+| linked_equipment_tag | varchar(255) | Denormalized equipment tag for list views |
+| latest_version_no | integer | Current version sequence number |
+| latest_version_id | uuid | FK → calculation_versions.id, nullable |
+| current_input_snapshot | jsonb | Canonical saved input payload |
+| current_result_snapshot | jsonb | Latest calculated results payload |
+| current_metadata | jsonb | App-specific metadata |
+| current_revision_history | jsonb | Revision rows used by client UIs |
+| created_at | timestamptz | Auto |
+| updated_at | timestamptz | Auto |
+
+**Indexes:** `ix_calculations_app`, `ix_calculations_area_id`, `ix_calculations_owner_id`, `ix_calculations_linked_equipment_id`
+
+### `calculation_versions`
+Append-only version history for audit, compare, and restore.
+
+| Column | Type | Notes |
+|---|---|---|
+| id | uuid | PK |
+| calculation_id | uuid | FK → calculations.id (CASCADE) |
+| version_no | integer | Monotonic per-calculation version number |
+| version_kind | varchar(50) | `save`, `autosave`, `restore`, `import`, `migration` |
+| inputs | jsonb | Immutable input snapshot |
+| results | jsonb | Immutable results snapshot |
+| metadata | jsonb | Immutable metadata snapshot |
+| revision_history | jsonb | Immutable revision history snapshot |
+| linked_equipment_id | uuid | FK → engineering_objects.uuid (SET NULL), nullable |
+| linked_equipment_tag | varchar(255) | Equipment tag at save time |
+| source_version_id | uuid | Optional lineage pointer for restore/import |
+| change_note | text | Optional user/system note |
+| created_by | uuid | Reserved for future auth/audit use, nullable |
+| created_at | timestamptz | Auto |
+
+**Indexes:** `ix_calculation_versions_calculation_id`, unique `(calculation_id, version_no)`
+
+### Behavior
+- Every save creates a new row in `calculation_versions` and updates the cached current snapshot in `calculations`.
+- Restore does not mutate historical rows. It creates a new latest version derived from a selected old version.
+- Default lists only return active calculations. Soft-deleted calculations keep their version history.
+- Clients should save and load the full canonical payload instead of rebuilding forms from field-by-field mappings.
+
+### Compatibility
+- `apps/pump-calculation`, `apps/vessels-calculation`, `apps/venting-calculation`, and `apps/calculation-template` now use the shared `/calculations` API.
+- Legacy `/venting` endpoints remain available and are backed by the same `calculations` / `calculation_versions` storage.
+
+---
+
 ## App-Specific Resources
 These three tables were added (migration `202602250001`) to give the stateless frontend apps persistent storage via the same centralised API.
 
 ### `venting_calculations`
-Stores saved API 2000 tank venting calculations from `apps/venting-calculation` (port 3004).
+Legacy compatibility table for older API 2000 tank venting flows. New save/load behavior is backed by the shared calculation store above.
 
 | Column | Type | Notes |
 |---|---|---|
@@ -133,7 +198,7 @@ Stores saved API 2000 tank venting calculations from `apps/venting-calculation` 
 | updated_at | timestamptz | Auto |
 
 **Indexes:** `ix_venting_calculations_area_id`, `ix_venting_calculations_owner_id`
-**Soft-delete:** `DELETE /venting/{id}` sets `is_active=false` + `deleted_at`. Use `GET /venting?includeDeleted=true` to see soft-deleted records. `POST /venting/{id}/restore` reverses.
+**Compatibility status:** current API behavior for venting is implemented through the shared `calculations` service layer. Keep this table documented for migration/reference work only.
 
 ---
 

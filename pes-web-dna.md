@@ -2,6 +2,7 @@
 > Design & architecture reference for all `apps/` in the process-engineering-suite monorepo.
 > Derived from `apps/venting-calculation`. Follow these patterns when building new apps.
 > **Template:** Use `apps/calculation-template` as the foundation for all new calculator-style web apps.
+> **Persistence rule:** New calculator-style web apps must use the shared `/calculations` API backed by `calculations` and `calculation_versions` for database save/load.
 
 ---
 
@@ -694,7 +695,14 @@ const [open, setOpen] = useState(false)
 
 ### 8.3 File save/load pattern
 
-Calculator apps may use the database as the primary save/load store, but should also support file-based export/import of calculation state.
+Calculator apps must use the shared database save/load model as the primary persistence path, and may also support file-based export/import of calculation state.
+
+**Database save/load rule:**
+- Use the shared `/calculations` API as the primary save/load path
+- Treat `calculations` as the latest-state projection
+- Treat `calculation_versions` as immutable audit and restore history
+- Do not create a new app-specific primary save/load table or endpoint set for calculator persistence
+- Route file imports through the same canonical payload shape used by DB-backed save/load
 
 **Scope of file-based save/load:**
 - Restore only:

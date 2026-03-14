@@ -19,9 +19,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.add_column("users", sa.Column("initials", sa.String(length=16), nullable=True))
+    op.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS initials VARCHAR(16)")
 
 
 def downgrade() -> None:
-    op.drop_column("users", "initials")
-
+    op.execute("ALTER TABLE users DROP COLUMN IF EXISTS initials")

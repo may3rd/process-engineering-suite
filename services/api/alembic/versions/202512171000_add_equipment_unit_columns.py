@@ -21,13 +21,21 @@ depends_on = None
 
 
 def upgrade():
-    # Add unit preference columns to equipment table
-    op.add_column('equipment', sa.Column('design_pressure_unit', sa.String(20), nullable=True, server_default='barg'))
-    op.add_column('equipment', sa.Column('mawp_unit', sa.String(20), nullable=True, server_default='barg'))
-    op.add_column('equipment', sa.Column('design_temp_unit', sa.String(20), nullable=True, server_default='C'))
+    op.execute(
+        "ALTER TABLE equipment "
+        "ADD COLUMN IF NOT EXISTS design_pressure_unit VARCHAR(20) DEFAULT 'barg'"
+    )
+    op.execute(
+        "ALTER TABLE equipment "
+        "ADD COLUMN IF NOT EXISTS mawp_unit VARCHAR(20) DEFAULT 'barg'"
+    )
+    op.execute(
+        "ALTER TABLE equipment "
+        "ADD COLUMN IF NOT EXISTS design_temp_unit VARCHAR(20) DEFAULT 'C'"
+    )
 
 
 def downgrade():
-    op.drop_column('equipment', 'design_temp_unit')
-    op.drop_column('equipment', 'mawp_unit')
-    op.drop_column('equipment', 'design_pressure_unit')
+    op.execute('ALTER TABLE equipment DROP COLUMN IF EXISTS design_temp_unit')
+    op.execute('ALTER TABLE equipment DROP COLUMN IF EXISTS mawp_unit')
+    op.execute('ALTER TABLE equipment DROP COLUMN IF EXISTS design_pressure_unit')

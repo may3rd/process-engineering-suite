@@ -4,7 +4,7 @@ import { useCallback, useState } from 'react';
 import { apiClient } from '@/lib/apiClient';
 import type { CalculationMetadata, RevisionRecord } from '@/types';
 
-export const VESSEL_CALCULATION_OBJECT_TYPE = 'VESSEL_CALCULATION';
+const VESSEL_CALCULATION_APP = 'vessels-calculation';
 const LEGACY_STORAGE_KEY = 'vessel-calculations';
 const LEGACY_MIGRATION_FLAG_KEY = 'vessel-calculations-migrated-v1';
 
@@ -19,6 +19,8 @@ export interface VesselSavedCalculation {
   equipmentTag?: string | null;
   calculationMetadata?: CalculationMetadata;
   revisionHistory?: RevisionRecord[];
+  latestVersionId?: string | null;
+  latestVersionNo?: number;
   status?: string | null;
   isActive: boolean;
   createdAt?: string;
@@ -26,6 +28,7 @@ export interface VesselSavedCalculation {
 }
 
 interface SavePayload {
+  calculationId?: string;
   tag?: string;
   name: string;
   description?: string;
@@ -49,48 +52,41 @@ interface LegacySavedCalculation {
   savedAt?: string;
 }
 
-function createObjectTag(): string {
-  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
-    return `VCALC-${crypto.randomUUID().replace(/-/g, '').slice(0, 12).toUpperCase()}`;
-  }
-  return `VCALC-${Date.now().toString(36).toUpperCase()}`;
-}
-
 function parseSavedItem(raw: {
-  tag: string;
-  object_type: string;
-  properties: Record<string, unknown>;
+  id: string;
+  tag?: string | null;
+  name: string;
+  description: string;
+  inputs: Record<string, unknown>;
+  results?: Record<string, unknown> | null;
+  linkedEquipmentId?: string | null;
+  linkedEquipmentTag?: string | null;
+  metadata?: Record<string, unknown>;
+  revisionHistory?: Array<Record<string, unknown>>;
+  latestVersionId?: string | null;
+  latestVersionNo?: number;
   status?: string | null;
-  created_at?: string | null;
-  updated_at?: string | null;
+  isActive: boolean;
+  createdAt?: string | null;
+  updatedAt?: string | null;
 }): VesselSavedCalculation {
-  const props = raw.properties ?? {};
-  const meta = (props.meta ?? {}) as Record<string, unknown>;
-  const name = String(meta.name ?? raw.tag);
-  const description = String(meta.description ?? '');
-  const isActive = meta.isActive !== false;
-  const inputs = (props.inputs ?? {}) as Record<string, unknown>;
-  const results = (props.result ?? undefined) as Record<string, unknown> | undefined;
-  const equipmentId = (props.linkedEquipmentId ?? null) as string | null;
-  const equipmentTag = (props.linkedEquipmentTag ?? null) as string | null;
-  const calculationMetadata = props.calculationMetadata as CalculationMetadata | undefined;
-  const revisionHistory = props.revisionHistory as RevisionRecord[] | undefined;
-
   return {
-    id: raw.tag,
-    tag: raw.tag,
-    name,
-    description,
-    inputs,
-    results,
-    equipmentId,
-    equipmentTag,
-    calculationMetadata,
-    revisionHistory,
+    id: raw.id,
+    tag: raw.tag ?? '',
+    name: raw.name,
+    description: raw.description,
+    inputs: raw.inputs ?? {},
+    results: raw.results ?? undefined,
+    equipmentId: raw.linkedEquipmentId ?? null,
+    equipmentTag: raw.linkedEquipmentTag ?? null,
+    calculationMetadata: raw.metadata as CalculationMetadata | undefined,
+    revisionHistory: raw.revisionHistory as RevisionRecord[] | undefined,
+    latestVersionId: raw.latestVersionId ?? null,
+    latestVersionNo: raw.latestVersionNo,
     status: raw.status ?? null,
-    isActive,
-    createdAt: (raw.created_at ?? (meta.createdAt as string | undefined) ?? undefined) ?? undefined,
-    updatedAt: (raw.updated_at ?? (meta.updatedAt as string | undefined) ?? undefined) ?? undefined,
+    isActive: raw.isActive,
+    createdAt: raw.createdAt ?? undefined,
+    updatedAt: raw.updatedAt ?? undefined,
   };
 }
 
@@ -103,6 +99,7 @@ export function useSavedCalculations() {
   const [error, setError] = useState<string | null>(null);
 
   const save = useCallback(async ({
+    calculationId,
     tag,
     name,
     description,
@@ -112,37 +109,28 @@ export function useSavedCalculations() {
     equipmentTag,
     calculationMetadata,
     revisionHistory,
-    markMigrated,
-    createdAt,
+    markMigrated: _markMigrated,
+    createdAt: _createdAt,
   }: SavePayload) => {
     setIsSaving(true);
     setError(null);
     try {
-      const targetTag = (tag?.trim() ? tag.trim().toUpperCase() : createObjectTag());
-      const now = new Date().toISOString();
       const payload = {
-        object_type: VESSEL_CALCULATION_OBJECT_TYPE,
-        status: 'In-Design',
-        properties: {
-          inputs,
-          result: results ?? null,
-          linkedEquipmentId: equipmentId ?? null,
-          linkedEquipmentTag: equipmentTag ?? null,
-          calculationMetadata: calculationMetadata ?? undefined,
-          revisionHistory: revisionHistory ?? [],
-          meta: {
-            app: 'vessel',
-            name: name.trim(),
-            description: description?.trim() ?? '',
-            isActive: true,
-            deletedAt: null,
-            createdAt: createdAt ?? now,
-            updatedAt: now,
-            migratedFromLocalStorage: markMigrated ?? false,
-          },
-        },
+        app: VESSEL_CALCULATION_APP,
+        name: name.trim(),
+        description: description?.trim() ?? '',
+        status: 'draft',
+        tag: tag?.trim() || (typeof inputs.tag === 'string' ? inputs.tag : null),
+        inputs,
+        results: results ?? null,
+        metadata: (calculationMetadata ?? {}) as unknown as Record<string, unknown>,
+        revisionHistory: (revisionHistory ?? []) as unknown as Array<Record<string, unknown>>,
+        linkedEquipmentId: equipmentId ?? null,
+        linkedEquipmentTag: equipmentTag ?? null,
       };
-      const item = await apiClient.engineeringObjects.upsert(targetTag, payload);
+      const item = calculationId
+        ? await apiClient.calculations.saveVersion(calculationId, payload)
+        : await apiClient.calculations.create(payload);
       return parseSavedItem(item);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Save failed';
@@ -153,27 +141,12 @@ export function useSavedCalculations() {
     }
   }, []);
 
-  const softDelete = useCallback(async (tag: string) => {
+  const softDelete = useCallback(async (calculationId: string) => {
     setIsDeleting(true);
     setError(null);
     try {
-      const item = await apiClient.engineeringObjects.get(tag);
-      const props = (item.properties ?? {}) as Record<string, unknown>;
-      const meta = ((props.meta ?? {}) as Record<string, unknown>);
-      await apiClient.engineeringObjects.upsert(tag, {
-        object_type: item.object_type,
-        status: item.status ?? 'In-Design',
-        properties: {
-          ...props,
-          meta: {
-            ...meta,
-            isActive: false,
-            deletedAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-          },
-        },
-      });
-      setSavedItems((prev) => prev.map((entry) => entry.tag === tag ? { ...entry, isActive: false } : entry));
+      await apiClient.calculations.softDelete(calculationId);
+      setSavedItems((prev) => prev.map((entry) => entry.id === calculationId ? { ...entry, isActive: false } : entry));
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Delete failed';
       setError(msg);
@@ -183,28 +156,19 @@ export function useSavedCalculations() {
     }
   }, []);
 
-  const restore = useCallback(async (tag: string) => {
+  const restore = useCallback(async (calculationId: string) => {
     setIsRestoring(true);
     setError(null);
     try {
-      const item = await apiClient.engineeringObjects.get(tag);
-      const props = (item.properties ?? {}) as Record<string, unknown>;
-      const meta = ((props.meta ?? {}) as Record<string, unknown>);
-      const restored = await apiClient.engineeringObjects.upsert(tag, {
-        object_type: item.object_type,
-        status: item.status ?? 'In-Design',
-        properties: {
-          ...props,
-          meta: {
-            ...meta,
-            isActive: true,
-            deletedAt: null,
-            updatedAt: new Date().toISOString(),
-          },
-        },
+      const calculation = await apiClient.calculations.get(calculationId);
+      if (!calculation.latestVersionId) {
+        throw new Error('Calculation is missing a latest version');
+      }
+      const restored = await apiClient.calculations.restoreVersion(calculationId, {
+        versionId: calculation.latestVersionId,
       });
       const parsed = parseSavedItem(restored);
-      setSavedItems((prev) => prev.map((entry) => entry.tag === tag ? parsed : entry));
+      setSavedItems((prev) => prev.map((entry) => entry.id === calculationId ? parsed : entry));
       return parsed;
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Restore failed';
@@ -257,12 +221,23 @@ export function useSavedCalculations() {
     setError(null);
     try {
       await migrateLegacyLocalStorage();
-      const items = await apiClient.engineeringObjects.list({
-        objectType: VESSEL_CALCULATION_OBJECT_TYPE,
+      const items = await apiClient.calculations.list({
+        app: VESSEL_CALCULATION_APP,
         includeInactive: params?.includeInactive ?? false,
-        q: params?.q,
       });
-      const parsed = items.map(parseSavedItem);
+      const query = params?.q?.trim().toLowerCase();
+      const parsed = items
+        .map(parseSavedItem)
+        .filter((item) => {
+          if (!query) return true;
+          const tag = String(item.inputs.tag ?? '').toLowerCase();
+          return (
+            item.name.toLowerCase().includes(query) ||
+            item.description.toLowerCase().includes(query) ||
+            item.tag.toLowerCase().includes(query) ||
+            tag.includes(query)
+          );
+        });
       setSavedItems(parsed);
       return parsed;
     } catch (err) {

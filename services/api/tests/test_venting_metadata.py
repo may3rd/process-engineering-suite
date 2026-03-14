@@ -66,12 +66,12 @@ async def test_venting_calculation_metadata_and_revisions(db_session):
         }
     )
 
-    assert created.calculation_metadata["projectNumber"] == "PRJ-001"
-    assert len(created.revision_history) == 3
-    assert created.revision_history[0]["rev"] == "F2"
+    assert created["calculation_metadata"]["projectNumber"] == "PRJ-001"
+    assert len(created["revision_history"]) == 3
+    assert created["revision_history"][0]["rev"] == "F2"
 
     await dal.update_venting_calculation(
-        created.id,
+        created["id"],
         {
             "revisionHistory": [
                 {"rev": "O3", "by": "Eve", "byDate": "2026-02-05"},
@@ -80,7 +80,7 @@ async def test_venting_calculation_metadata_and_revisions(db_session):
         },
     )
 
-    hydrated = await dal.get_venting_calculation_by_id(created.id)
+    hydrated = await dal.get_venting_calculation_by_id(created["id"])
     assert hydrated is not None
-    assert len(hydrated.revision_history) == 2
-    assert hydrated.revision_history[0]["rev"] == "F3"
+    assert len(hydrated["revision_history"]) == 2
+    assert hydrated["revision_history"][0]["rev"] == "F3"

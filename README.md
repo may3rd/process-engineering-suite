@@ -2,6 +2,8 @@
 
 A monorepo for process engineering calculations and workflows.
 
+Recent backend change: saved calculations now use a hybrid persistence model with a fast current record plus immutable version history for audit and restore.
+
 ## Apps
 
 | App | Port | Description |
@@ -56,6 +58,22 @@ bun run check-types  # Type check
 bun run format       # Format code
 ```
 
+## Calculation Persistence
+
+- Saved calculations now persist through `services/api` in shared `/calculations` endpoints.
+- The current snapshot lives in the `calculations` table.
+- Immutable audit history lives in the `calculation_versions` table.
+- Restore creates a new latest version from a historical snapshot instead of mutating history.
+- `apps/pump-calculation`, `apps/vessels-calculation`, `apps/venting-calculation`, and `apps/calculation-template` now use this shared model.
+- Legacy venting endpoints remain available as compatibility wrappers backed by the shared calculation store.
+
+## API Verification
+
+```bash
+cd services/api
+TEST_DATABASE_URL='postgresql+asyncpg://postgres:change-me@127.0.0.1:5432/engsuite_test' PYTHONPATH=. .venv/bin/pytest tests/test_calculation_versioning.py tests/test_venting_metadata.py tests/test_engineering_objects_endpoints.py tests/test_engineering_object_design_parameters.py tests/test_equipment_venting_endpoints.py tests/test_equipment_subtypes.py tests/test_uniqueness_constraints.py tests/test_psv_soft_delete.py -v
+```
+
 ## Project Structure
 
 ```
@@ -89,6 +107,7 @@ docs/           # Architecture documentation
 - [DEVELOPING.md](DEVELOPING.md) - Setup guides
 - [docs/ENVIRONMENT_VARIABLES.md](docs/ENVIRONMENT_VARIABLES.md) - Environment variables
 - [docs/DATABASE_SCHEMA.md](docs/DATABASE_SCHEMA.md) - Database schema
+- [docs/ENGINEERING_OBJECTS_MIGRATION_20260306.md](docs/ENGINEERING_OBJECTS_MIGRATION_20260306.md) - Engineering object and equipment migration notes
 - [AGENTS.md](AGENTS.md) - Code conventions
 
 ## Tech Stack

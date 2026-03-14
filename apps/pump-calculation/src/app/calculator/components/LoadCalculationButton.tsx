@@ -16,54 +16,12 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 import { useSavedCalculations } from '@/lib/hooks/useSavedCalculations'
 import { readCalculationFile } from '@/lib/calculationFile'
 import type { CalculationInput, CalculationMetadata, RevisionRecord } from '@/types'
-import { PumpType } from '@/types'
-
 const EMPTY_METADATA: CalculationMetadata = {
   projectNumber: '',
   documentNumber: '',
   title: '',
   projectName: '',
   client: '',
-}
-
-function toNum(v: unknown): number | undefined {
-  const n = Number(v)
-  return isNaN(n) ? undefined : n
-}
-
-function normalizeInput(raw: Record<string, unknown>): Partial<CalculationInput> {
-  return {
-    tag: (raw.tag as string) ?? '',
-    description: (raw.description as string) ?? '',
-    fluidName: (raw.fluidName as string) ?? '',
-    flowDesign: toNum(raw.flowDesign),
-    temperature: toNum(raw.temperature) ?? 20,
-    sg: toNum(raw.sg),
-    vapourPressure: toNum(raw.vapourPressure) ?? 0,
-    viscosity: toNum(raw.viscosity) ?? 1,
-    suctionSourcePressure: toNum(raw.suctionSourcePressure) ?? 101.325,
-    suctionElevation: toNum(raw.suctionElevation) ?? 0,
-    suctionLineLoss: toNum(raw.suctionLineLoss) ?? 0,
-    suctionStrainerLoss: toNum(raw.suctionStrainerLoss) ?? 0,
-    suctionOtherLoss: toNum(raw.suctionOtherLoss) ?? 0,
-    dischargeDestPressure: toNum(raw.dischargeDestPressure) ?? 101.325,
-    dischargeElevation: toNum(raw.dischargeElevation) ?? 0,
-    dischargeEquipmentDp: toNum(raw.dischargeEquipmentDp) ?? 0,
-    dischargeLineLoss: toNum(raw.dischargeLineLoss) ?? 0,
-    dischargeFlowElementDp: toNum(raw.dischargeFlowElementDp) ?? 0,
-    dischargeDesignMargin: toNum(raw.dischargeDesignMargin) ?? 0,
-    pumpType: Object.values(PumpType).includes(raw.pumpType as PumpType)
-      ? (raw.pumpType as PumpType)
-      : PumpType.CENTRIFUGAL,
-    wearMarginPct: toNum(raw.wearMarginPct) ?? 5,
-    efficiency: toNum(raw.efficiency) ?? 75,
-    calculateAccelHead: Boolean(raw.calculateAccelHead),
-    showOrifice: Boolean(raw.showOrifice),
-    showControlValve: Boolean(raw.showControlValve),
-    showMinFlow: Boolean(raw.showMinFlow),
-    showShutoff: Boolean(raw.showShutoff),
-    metadata: raw.metadata as CalculationMetadata | undefined,
-  } as Partial<CalculationInput>
 }
 
 interface Props {
@@ -77,7 +35,7 @@ export function LoadCalculationButton({
   onControlledOpenChange,
   onCalculationLoaded,
 }: Props) {
-  const { reset } = useFormContext<CalculationInput>()
+  const { reset, formState } = useFormContext<CalculationInput>()
   const {
     fetchList,
     softDelete,
@@ -128,8 +86,7 @@ export function LoadCalculationButton({
   }, [savedItems, search, showDeleted])
 
   const handleSelect = (item: (typeof filteredItems)[number]) => {
-    const normalized = normalizeInput(item.inputs)
-    reset(normalized as CalculationInput, { keepDefaultValues: false })
+    reset(item.inputs as unknown as CalculationInput, { keepDefaultValues: false })
     const metadata = item.calculationMetadata ?? EMPTY_METADATA
     const revisions = item.revisionHistory ?? []
     onCalculationLoaded(metadata, revisions, item.equipmentId, item.equipmentTag)
@@ -148,8 +105,10 @@ export function LoadCalculationButton({
 
     try {
       const payload = await readCalculationFile(file)
-      const normalized = normalizeInput(payload.inputs)
-      reset(normalized as CalculationInput, { keepDefaultValues: false })
+      const defaults = (formState.defaultValues ?? {}) as Partial<CalculationInput>
+      reset({ ...defaults, ...(payload.inputs as Partial<CalculationInput>) } as CalculationInput, {
+        keepDefaultValues: false,
+      })
       onCalculationLoaded(payload.metadata, payload.revisionHistory, null, null)
       setOpen(false)
     } catch (err) {
@@ -157,14 +116,14 @@ export function LoadCalculationButton({
     }
   }
 
-  const handleDelete = async (tag: string) => {
+  const handleDelete = async (calculationId: string) => {
     if (!window.confirm('Soft delete this saved calculation?')) return
-    await softDelete(tag)
+    await softDelete(calculationId)
     await loadItems(showDeleted)
   }
 
-  const handleRestore = async (tag: string) => {
-    await restore(tag)
+  const handleRestore = async (calculationId: string) => {
+    await restore(calculationId)
     await loadItems(showDeleted)
   }
 
@@ -279,7 +238,7 @@ export function LoadCalculationButton({
                         variant="ghost"
                         size="icon"
                         className="mt-1 text-muted-foreground hover:text-destructive h-7 w-7"
-                        onClick={() => { void handleDelete(item.tag) }}
+                        onClick={() => { void handleDelete(item.id) }}
                         disabled={isDeleting}
                         aria-label={`Delete ${item.name}`}
                       >
@@ -291,7 +250,7 @@ export function LoadCalculationButton({
                         variant="ghost"
                         size="icon"
                         className="mt-1 text-muted-foreground hover:text-foreground h-7 w-7"
-                        onClick={() => { void handleRestore(item.tag) }}
+                        onClick={() => { void handleRestore(item.id) }}
                         disabled={isRestoring}
                         aria-label={`Restore ${item.name}`}
                       >

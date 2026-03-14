@@ -40,6 +40,13 @@ def _drop_fk_for_column(table_name: str, column_name: str) -> None:
 
 
 def upgrade() -> None:
+    op.execute(
+        'ALTER TABLE equipment ADD COLUMN IF NOT EXISTS design_pressure_unit VARCHAR(20)'
+    )
+    op.execute('ALTER TABLE equipment ADD COLUMN IF NOT EXISTS mawp_unit VARCHAR(20)')
+    op.execute(
+        'ALTER TABLE equipment ADD COLUMN IF NOT EXISTS design_temp_unit VARCHAR(20)'
+    )
     op.execute('ALTER TABLE engineering_objects ADD COLUMN IF NOT EXISTS area_id UUID')
     op.execute('ALTER TABLE engineering_objects ADD COLUMN IF NOT EXISTS owner_id UUID')
     op.execute('ALTER TABLE engineering_objects ADD COLUMN IF NOT EXISTS name VARCHAR(255)')
