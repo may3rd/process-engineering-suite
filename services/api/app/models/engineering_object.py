@@ -20,7 +20,7 @@ class EngineeringObject(Base, TimestampMixin):
 
     # I-DDC Identity
     uuid: Mapped[PyUUID] = mapped_column(
-        UUID(as_uuid=True),
+        UUID(as_uuid=False),
         primary_key=True,
         default=uuid4,
     )

@@ -27,7 +27,11 @@ class CalculationVersion(Base, UUIDPrimaryKeyMixin, TimestampMixin):
     revision_history: Mapped[list] = mapped_column(JSONB, nullable=False, default=list, server_default='[]')
     linked_equipment_id: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     linked_equipment_tag: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
-    source_version_id: Mapped[Optional[str]] = mapped_column(UUID(as_uuid=False), nullable=True)
+    source_version_id: Mapped[Optional[str]] = mapped_column(
+        UUID(as_uuid=False),
+        ForeignKey('calculation_versions.id', ondelete='SET NULL'),
+        nullable=True
+    )
     change_note: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     calculation = relationship('Calculation', back_populates='versions')
