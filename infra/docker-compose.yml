@@ -1,5 +1,5 @@
 services:
-  # All Web Apps (Ports 3000-3004)
+  # All Web Apps (Ports 3000-3008)
   apps:
     image: oven/bun:alpine
     working_dir: /app
@@ -7,18 +7,26 @@ services:
       - ..:/app
       - /app/node_modules
       - /app/apps/web/.next
+      - /app/apps/docs/.next
       - /app/apps/network-editor/.next
       - /app/apps/psv/.next
+      - /app/apps/design-agents/dist
       - /app/apps/venting-calculation/.next
+      - /app/apps/vessels-calculation/.next
+      - /app/apps/pump-calculation/.next
+      - /app/apps/heat-transfer-calculation/.next
     # Install dependencies if missing, then run all apps with turbo
     command: sh -c "bun install && bun run dev"
     ports:
       - "3000:3000" # Dashboard (web)
-      - "3001:3001" # Document Wiki (web)
+      - "3001:3001" # Docs
       - "3002:3002" # Network Editor
       - "3003:3003" # PSV
       - "3004:3004" # Design Agents
       - "3005:3005" # Venting Calculation
+      - "3006:3006" # Vessels Calculation
+      - "3007:3007" # Pump Calculation
+      - "3008:3008" # Heat Transfer Calculation
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost:8000
     depends_on:

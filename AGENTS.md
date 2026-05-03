@@ -176,11 +176,10 @@ pytest -k "pattern"       # Run tests matching pattern
 
 ## Repository Structure
 
-- `apps/`: Next.js applications (docs, network-editor, psv, venting-calculation, web)
-- `packages/`: Shared packages (api-client, api-std, engineering-units, eslint-config, physics-engine, tsconfig, types, typescript-config, ui, ui-kit, unit-converter)
-- `conductor/`: Development guidelines and track metadata
+- `apps/`: Frontend applications (web, docs, network-editor, psv, design-agents, venting-calculation, vessels-calculation, pump-calculation, heat-transfer-calculation, calculation-template)
+- `packages/`: Shared packages (api-client, api-std, engineering-units, eslint-config, physics-engine, tsconfig, types, typescript-config, ui, ui-kit, unit-converter, hydraulics, vessels-calc)
 - `infra/`: Docker and infrastructure configs
-- `services/`: Backend services (api, calc-engine, design-agents)
+- `services/`: Backend services (api, calc-engine)
 
 When making changes, always match the existing code style and patterns in the file you're editing. Run `bun run lint` (TypeScript) or `ruff check` (Python) before committing.
 
@@ -195,11 +194,11 @@ This file is **authoritative**. If any other document conflicts with it, **this 
 
 ## Rule Zero (Default Policy)
 
-> **Engineering equations should live in Python by default.**
+> **Most calculation logic is fine in TypeScript. Python is used only when explicitly chosen for a domain.**
 
-- TypeScript is primarily for **UI, orchestration, APIs, persistence, and visualization**
-- Python (`services/calc-engine`) remains the preferred location for shared, high-risk, or cross-domain engineering logic
-- Module-scoped exceptions are allowed when explicitly documented in the nearest scoped `AGENTS.md`, including:
+- TypeScript is the default for UI, calculations, orchestration, APIs, persistence, and visualization
+- Python (`services/calc-engine`) is used for domains where it is explicitly chosen — typically for heavy numerical work, existing Python codebases, or cross-domain shared logic
+- When a domain uses Python, the nearest scoped `AGENTS.md` must document:
   - scope and ownership
   - verification strategy
   - performance and traceability constraints
@@ -215,7 +214,7 @@ UI (TypeScript)
 API / Orchestrator (TypeScript)
   │   JSON / OpenAPI
   ▼
-Calculation Engine (Python)
+Calculation Engine (Python, optional)
   │
   ▼
 Engineering Database
@@ -223,11 +222,11 @@ Engineering Database
 
 ### Responsibilities by Layer
 
-| Layer | Language | Responsibilities | Explicitly Forbidden |
+| Layer | Language | Responsibilities | Notes |
 |---|---|---|---|
-| UI / Editors | TypeScript | Input forms, visualization, interaction | Undocumented engineering math without scoped exception and verification |
-| API / Orchestrator | TypeScript | Auth, RBAC, run lifecycle, persistence, reporting | Unverified equations and correction factors |
-| Calculation Engine | Python | All engineering equations, standards, checks | UI logic, auth |
+| UI / Editors | TypeScript | Input forms, visualization, interaction, calculation logic | Python used only when explicitly chosen for a domain |
+| API / Orchestrator | TypeScript | Auth, RBAC, run lifecycle, persistence, reporting | Delegates to Python when domain uses it |
+| Calculation Engine | Python | Domain-specific equations, standards, checks | Optional — used only for domains explicitly assigned to Python |
 | Database | SQL / Object | Inputs, outputs, provenance, versions | Hidden logic |
 
 ### Calculation Persistence Rule
@@ -240,9 +239,9 @@ Engineering Database
 
 ---
 
-## Execution Model (Authoritative)
+## Execution Model
 
-All engineering calculations use a **worker-based execution model** to ensure scalability and predictable performance.
+Python-backed calculations (hydraulics, vessels) use a **worker-based execution model** for scalability. TypeScript-side calculations (venting, pump, heat transfer) run synchronously or via API passthrough.
 
 ### Execution Principles
 
@@ -306,35 +305,51 @@ This is expected behavior.
 
 ```
 process-engineering-suite/
-├─ apps/                 # Frontend applications (Next.js)
-│  ├─ docs/              # Documentation site
-│  ├─ network-editor/    # Network topology editor
-│  ├─ psv/               # PSV workflow app
-│  ├─ venting-calculation/ # Tank venting calculator
-│  └─ web/               # Dashboard UI
+├─ apps/                 # Frontend applications (Next.js / Vite)
+│  ├─ web/               # Dashboard UI (port 3000)
+│  ├─ docs/              # Documentation site (port 3001)
+│  ├─ network-editor/    # Network topology editor (port 3002)
+│  ├─ psv/               # PSV sizing workflow (port 3003)
+│  ├─ design-agents/     # AI design agents (port 3004, Vite)
+│  ├─ venting-calculation/ # Tank venting calculator (port 3005)
+│  ├─ vessels-calculation/ # Vessel & tank sizing (port 3006)
+│  ├─ pump-calculation/  # Pump sizing calculator (port 3007)
+│  ├─ heat-transfer-calculation/ # Heat transfer in storage tank (port 3008)
+│  └─ calculation-template/ # Template for new calculator apps (port 3900)
 │
 ├─ services/             # Backend services (Python)
-│  ├─ api/               # FastAPI REST API
-│  ├─ calc-engine/       # Core engineering calculations (Python)
-│  │  ├─ hydraulics/      # Network hydraulics
-│  │  └─ pes_calc/        # PES calculation engine
-│  └─ design-agents/     # AI design agents
+│  ├─ api/               # FastAPI REST API (port 8000)
+│  └─ calc-engine/       # Core engineering calculations (Python)
+│     ├─ hydraulics/     # Full hydraulic network engine
+│     └─ pes_calc/       # Domain calculation modules
+│        ├─ vessels/     # ★ Vessel volume/surface area (20 modules)
+│        ├─ venting/     # Tank venting (stub)
+│        ├─ heat_transfer/ # Heat transfer (stub)
+│        ├─ rotating/    # Pump & rotating equipment (stub)
+│        ├─ valves/      # Control valve, PSV, orifice (stub)
+│        ├─ instrument/  # Instrument sizing (stub)
+│        ├─ hydraulics/  # Hydraulics integration (stub)
+│        ├─ core/        # Shared utilities
+│        └─ integrations/ # Cross-domain workflows
 │
 ├─ packages/             # Shared libraries
 │  ├─ api-client/        # API client SDKs
 │  ├─ api-std/           # API standards and shared contracts
 │  ├─ engineering-units/ # ★ Shared UoM constants + store factory (@eng-suite/engineering-units)
 │  ├─ eslint-config/     # ESLint shared configuration
-│  ├─ physics-engine/    # Shared physics helpers + convertUnit
+│  ├─ hydraulics/        # Hydraulic calculation utilities
+│  ├─ physics-engine/    # Shared physics helpers + convertUnit (@eng-suite/physics)
 │  ├─ tsconfig/          # Shared tsconfig presets
-│  ├─ types/             # Shared TypeScript types
+│  ├─ types/             # Shared TypeScript types (@eng-suite/types)
 │  ├─ typescript-config/ # TypeScript tooling defaults
-│  ├─ ui/                # Shared UI primitives
-│  ├─ ui-kit/            # Shared UI components
-│  └─ unit-converter/    # Unit conversion (Python)
+│  ├─ ui/                # Shared UI primitives (@repo/ui)
+│  ├─ ui-kit/            # Shared MUI components (@eng-suite/ui-kit)
+│  ├─ unit-converter/    # Unit conversion utilities
+│  └─ vessels-calc/      # Vessel calculation shared logic
 │
 ├─ docs/                 # Architecture documentation
 ├─ infra/                # Docker and deployment
+├─ .github/workflows/    # CI/CD pipelines
 └─ AGENTS.md
 ```
 
@@ -465,13 +480,10 @@ pytest -v tests/test_specific.py
 
 When generating or modifying code:
 
-- Prefer putting engineering logic in `services/calc-engine/` unless a scoped exception exists.
-- Put UI, orchestration, persistence in `apps/` or `packages/`
-- Respect the worker execution model by default
-- Do not add engineering math to TypeScript unless the nearest scoped `AGENTS.md` explicitly allows it
+- TypeScript is the default for all layers — UI, calculations, orchestration, persistence
+- Python in `services/calc-engine/` is used only when explicitly chosen for a domain
+- Respect the worker execution model for Python-backed calculations
 - Never duplicate calculation logic without a documented reason and verification plan
-
-Violations introduce latency, inconsistency, and loss of trust.
 
 ---
 

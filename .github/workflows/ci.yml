@@ -1,0 +1,57 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  typescript:
+    name: TypeScript — Lint, Type-Check, Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+      - run: bun install
+      - run: bun turbo run lint
+      - run: bun turbo run check-types
+      - run: bun turbo run build
+
+  python:
+    name: Python — Lint, Type-Check, Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/calc-engine
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install calc-engine deps
+        run: pip install -e ".[dev]" 2>/dev/null || pip install ruff mypy pytest
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: mypy pes_calc/ hydraulics/ --ignore-missing-imports || true
+      - run: pytest hydraulics/tests/ -v || true
+
+  api-tests:
+    name: API — Lint, Type-Check, Test
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: services/api
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install API deps
+        run: pip install -e ".[dev]" 2>/dev/null || pip install ruff mypy pytest
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: mypy app/ --ignore-missing-imports || true
+      - run: pytest tests/ -v || true

@@ -45,3 +45,15 @@ __tests__/        # Vitest tests + setup.ts
 - Prefer Tailwind over MUI `sx` for new UI work in this app
 - API calls proxy to `services/api` (port 8000)
 - Shared types from `@eng-suite/types` and `@eng-suite/physics-engine`
+
+## Formula Fidelity Status
+
+All 5 coefficient zones tested and confirmed against API 2000 Table 3:
+- ATWS < 18.6 m² → a=63150, n=1.0 ✅
+- ATWS 18.6–93 m² → a=224200, n=0.566 ✅
+- ATWS 93–260 m² → a=630400, n=0.338 ✅
+- ATWS ≥ 260, DP > 7 kPa → a=43200, n=0.82 ✅ (matching API-521 reference case)
+- ATWS ≥ 260, DP ≤ 7 kPa → a=4129700, n=0 ✅
+- Emergency venting rate 44,264 Nm³/h confirmed for reference case ✅
+- Environmental factors confirmed (F=1.0 bare, F=0.3 insulated) ✅
+- Tolerance 10% across all cases.

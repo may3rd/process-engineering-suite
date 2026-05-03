@@ -1,0 +1,115 @@
+# apps/heat-transfer-calculation
+
+Next.js app for heat transfer in storage tank calculations. Runs on **port 3008**.
+
+## Commands
+
+```bash
+bun run dev          # start dev server (port 3008)
+bun run build        # production build
+bun run test         # vitest
+bun run check-types  # tsc
+bun run lint         # eslint
+```
+
+From repo root: `bun turbo run dev --filter=heat-transfer-calculation`
+
+## Tech Stack
+
+- **Next.js 16 / React 19** — App Router (`src/app/`)
+- **Tailwind CSS v4** — primary styling (not MUI's `sx`)
+- **shadcn/ui** — component primitives (class-variance-authority)
+- **MUI v7** — TopToolbar uses MUI; some legacy components present
+- **React Hook Form + Zod** — form handling and validation
+- **Zod** — schema validation
+- **Zustand** — global state (`src/lib/store/`)
+- **React PDF** — PDF report generation
+- **Vitest + Testing Library** — tests in `__tests__/`
+
+## Structure
+
+```
+src/
+  app/
+    api/          # Next.js API routes
+    calculator/   # Main calculator page (3 modes: tank, pipe, horizontal)
+  components/     # UI components
+  contexts/       # React contexts (ColorModeContext)
+  lib/
+    calculations/ # Physics engines (index.ts, pipe.ts, horizontal-tank.ts)
+    materials/    # Fluid property lookups
+    store/        # Zustand stores (UoM preferences)
+    hooks/        # Custom hooks
+    uom.ts        # Heat-transfer-specific UoM base units
+    schemas/      # Zod input schemas
+  types/          # Local TypeScript types
+__tests__/        # Vitest tests
+```
+
+## Physics Engines
+
+Three separate engines in `src/lib/calculations/`:
+
+### Vertical/Cylindrical Tank (`index.ts`)
+Four surfaces with per-surface iterative convergence (8 iterations):
+1. **Internal natural convection** — Churchill & Chu (vertical plate, dry/wet), horizontal lower (floor), horizontal upper (roof)
+2. **Conduction** — multi-layer cylindrical wall: steel + optional insulation; roof/floor are uninsulated
+3. **External natural convection** — vertical plate correlation for wall, horizontal upper for roof
+4. **Wind enhancement** — external HTC multiplied by wind factor Wf (single value, not separate liquid/vapor)
+5. **Radiation** — linearized Stefan-Boltzmann, emissivity 0–1
+6. **Overall U** — per-surface series resistance network
+7. **Heat loss** — dry wall, wet wall, roof, floor → Q_total
+8. **Cooling rate** — transient to ambient, ε-NTU method
+
+### Pipe (`pipe.ts`)
+Single-phase pipe heat loss with iterative internal HTC (Sieder-Tate). ε-NTU method for outlet temperature.
+
+### Horizontal Tank (`horizontal-tank.ts`)
+Horizontal cylindrical tank with 2:1 ellipsoidal heads. Four surfaces: dry wall, wet wall, dry head, wet head. Internal correlations: horizontal cylinder for walls, sphere for heads. Grashof uses Excel μ-in-cP convention (ν×1000 in denominator).
+
+## Input Modes
+
+| Mode | Engine | Key Inputs |
+|------|---------|-----------|
+| Tank (vertical) | `calculate()` | D, H, liquid level, wind factor, roof type |
+| Pipe | `calculatePipe()` | NPS, schedule, length, insulation |
+| Horizontal tank | `calculateHorizontalTank()` | D, L, liquid level, head type |
+
+## Known Physics Deviations vs Excel
+
+These are documented but not yet fixed (as of 2026-05-03):
+
+| Issue | Engine | Impact |
+|-------|---------|--------|
+| Wind factor Wf is single value (vs Excel's separate Wf_liq/Wf_vapor) | vertical tank | Minor (~0.2 difference in multiplier) |
+| T_vapor = T_liquid (engine doesn't distinguish) | horizontal tank | Dry-side Q ~2x Excel; U values ~40% high |
+| Surface area reference (inner vs outer with insulation) | pipe | Q heat loss ~65% off vs Excel golden case |
+| Grashof in horizontal-tank uses μ×1000 (Excel convention) | horizontal tank | Already aligned — fix applied 2026-05-03 |
+
+## Formula Fidelity Status (2026-05-03)
+
+Tested against Excel golden cases in `__tests__/fidelity.test.ts`:
+
+| Case | Engine | Status |
+|------|---------|--------|
+| V-101 vertical tank | `calculate()` | ✅ 6/7 metrics within tolerance |
+| P-101 pipe | `calculatePipe()` | ✅ 5/6 metrics within tolerance; Q area ref mismatch |
+| HT-201 horizontal tank | `calculateHorizontalTank()` | ⚠️  U values ~40-50% high (T_vapor assumption) |
+
+## Pending
+
+- [ ] Fix horizontal tank T_vapor ≠ T_liquid (wet surfaces use liquid properties)
+- [ ] Resolve pipe surface area reference (inner vs outer insulation area)
+- [ ] Save/load via shared `/calculations` API
+- [ ] Tank schematic (SchematicCard)
+- [ ] PDF export
+
+## Notes
+
+- Cloned from `apps/calculation-template`
+- `basePath` is `/heat-transfer-calculation`
+- Prefer Tailwind over MUI `sx` for new UI work
+- API calls proxy to `services/api` (port 8000)
+- Shared types from `@eng-suite/types` and `@eng-suite/engineering-units`
+- Air properties use temperature-dependent linear correlations over 0–500°C
+- All calculations in SI base units internally; UI handles UoM conversion

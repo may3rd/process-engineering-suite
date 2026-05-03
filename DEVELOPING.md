@@ -12,9 +12,14 @@
     bun run dev
     ```
     - Dashboard: [http://localhost:3000](http://localhost:3000)
+    - Docs: [http://localhost:3001](http://localhost:3001)
     - Network Editor: [http://localhost:3002](http://localhost:3002)
     - PSV: [http://localhost:3003](http://localhost:3003)
-    - Venting Calculation: [http://localhost:3004](http://localhost:3004)
+    - Design Agents: [http://localhost:3004](http://localhost:3004)
+    - Venting Calculation: [http://localhost:3005](http://localhost:3005)
+    - Vessels Calculation: [http://localhost:3006](http://localhost:3006)
+    - Pump Calculation: [http://localhost:3007](http://localhost:3007)
+    - Heat Transfer Calculation: [http://localhost:3008](http://localhost:3008)
 
 3.  **Build**:
     ```bash
@@ -23,9 +28,9 @@
 
 ## Project Structure
 
-- **`apps/`**: Next.js applications (web, network-editor, psv, venting-calculation, docs)
-- **`services/`**: Backend services (api, calc-engine, design-agents)
-- **`packages/`**: Shared packages (ui, ui-kit, physics-engine, api-client, types, unit-converter)
+- **`apps/`**: Frontend applications — web (dashboard), docs, network-editor, psv, design-agents, venting-calculation, vessels-calculation, pump-calculation, heat-transfer-calculation, calculation-template
+- **`services/`**: Backend services — api (FastAPI), calc-engine (Python)
+- **`packages/`**: Shared packages — api-client, api-std, engineering-units, physics-engine, types, ui, ui-kit, unit-converter, hydraulics, vessels-calc
 - **`infra/`**: Docker and deployment config
 
 ## Coding Standards
@@ -33,7 +38,7 @@
 ### TypeScript
 - Strict mode is enabled. Avoid `any` whenever possible.
 - Define interfaces/types for all props and state.
-- Shared types should reside in `packages/physics-engine/src/types.ts` or `packages/shared`.
+- Shared types should reside in `packages/physics-engine/src/types.ts` or `packages/types` (`@eng-suite/types`).
 
 ### Styling
 - Use **Material UI (MUI)** components.

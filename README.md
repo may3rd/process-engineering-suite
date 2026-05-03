@@ -14,6 +14,10 @@ Recent backend change: saved calculations now use a hybrid persistence model wit
 | `apps/psv` | 3003 | PSV sizing workflow |
 | `apps/design-agents` | 3004 | AI design agents |
 | `apps/venting-calculation` | 3005 | Tank venting calculator |
+| `apps/vessels-calculation` | 3006 | Vessel & tank sizing |
+| `apps/pump-calculation` | 3007 | Pump sizing calculator |
+| `apps/heat-transfer-calculation` | 3008 | Heat transfer in storage tank |
+| `apps/calculation-template` | 3900 | Template for new calculator apps |
 
 ## Backend
 
@@ -83,7 +87,11 @@ apps/           # Frontend applications (Next.js / Vite)
 ├── network-editor/
 ├── psv/
 ├── design-agents/
-└── venting-calculation/
+├── venting-calculation/
+├── vessels-calculation/
+├── pump-calculation/
+├── heat-transfer-calculation/
+└── calculation-template/
 
 services/       # Backend services (Python)
 ├── api/        # FastAPI REST API (with design-agents logic)

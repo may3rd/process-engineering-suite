@@ -1,5 +1,6 @@
 # Multi-stage build for Next.js frontends (AWS ECS/Fargate)
-# Supports building: web, network-editor, psv, docs
+# Supports building: web, docs, network-editor, psv,
+#   venting-calculation, vessels-calculation, pump-calculation, heat-transfer-calculation
 # Usage: docker build --build-arg APP_NAME=web -f Dockerfile.frontend .
 
 # ============================================================================
@@ -38,7 +39,7 @@ COPY turbo.json ./
 COPY package.json ./
 
 # Build the specific app
-RUN bun run build --filter=@eng-suite/${APP_NAME}
+RUN bun run build --filter=${APP_NAME}
 
 # ============================================================================
 # Stage 3: Production - Standalone Next.js
