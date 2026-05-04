@@ -42,7 +42,7 @@ const defaultPipeValues: PipeCalculationInput = {
 
 export type PipeInput = PipeCalculationInput
 
-export function PipeCalculator() {
+export default function PipeCalculator() {
   const form = useForm<PipeCalculationInput>({
     defaultValues: defaultPipeValues,
     mode: "onChange",
