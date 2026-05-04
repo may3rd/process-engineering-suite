@@ -2,15 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   transpilePackages: ["@eng-suite/physics", "@eng-suite/ui-kit", "@eng-suite/api-client"],
-  basePath: "/venting-calculation",
+  basePath: "/heat-transfer-calculation",
   env: {
-    NEXT_PUBLIC_BASE_PATH: "/venting-calculation",
+    NEXT_PUBLIC_BASE_PATH: "/heat-transfer-calculation",
   },
   async redirects() {
     return [
       {
         source: "/",
-        destination: "/venting-calculation",
+        destination: "/heat-transfer-calculation",
         permanent: false,
         basePath: false,
       },
