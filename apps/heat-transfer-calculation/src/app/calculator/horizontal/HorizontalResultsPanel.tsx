@@ -31,7 +31,7 @@ export function HorizontalResultsPanel({ result }: Props) {
       <SectionCard title="Per-Surface Results">
         <div className="rounded-md border overflow-hidden text-xs">
           <div className="grid grid-cols-5 bg-muted/50 px-3 py-2 font-semibold uppercase tracking-wide text-muted-foreground">
-            <span>Parameter</span><span>Dry Wall</span><span>Wet Wall</span><span>Dry Head</span><span>Wet Head</span>
+            <span className="text-left">Parameter</span><span className="text-right">Dry Wall</span><span className="text-right">Wet Wall</span><span className="text-right">Dry Head</span><span className="text-right">Wet Head</span>
           </div>
           <Row label="h Internal" unit="W/(m²·K)" vals={[dryWall.hInternal, wetWall.hInternal, dryHead.hInternal, wetHead.hInternal].map(v => v.toFixed(3))} />
           <Row label="h External" unit="W/(m²·K)" vals={[dryWall.hExternal, wetWall.hExternal, dryHead.hExternal, wetHead.hExternal].map(v => v.toFixed(3))} />
@@ -47,7 +47,7 @@ export function HorizontalResultsPanel({ result }: Props) {
       <SectionCard title="Dimensionless Numbers">
         <div className="rounded-md border overflow-hidden text-xs">
           <div className="grid grid-cols-5 bg-muted/50 px-3 py-2 font-semibold uppercase tracking-wide text-muted-foreground">
-            <span>Parameter</span><span>Dry Wall</span><span>Wet Wall</span><span>Dry Head</span><span>Wet Head</span>
+            <span className="text-left">Parameter</span><span className="text-right">Dry Wall</span><span className="text-right">Wet Wall</span><span className="text-right">Dry Head</span><span className="text-right">Wet Head</span>
           </div>
           <Row label="Grashof" unit="" vals={[dryWall.grashof, wetWall.grashof, dryHead.grashof, wetHead.grashof].map(v => formatSI(v, 1))} />
           <Row label="Prandtl" unit="" vals={[dryWall.prandtl, wetWall.prandtl, dryHead.prandtl, wetHead.prandtl].map(v => v.toFixed(3))} />

@@ -71,11 +71,11 @@ export function ResultsPanel({ calculationResult }: ResultsPanelProps) {
         <div className="rounded-md border overflow-hidden text-xs">
           {/* Header */}
           <div className="grid grid-cols-5 bg-muted/50 px-3 py-2 font-semibold uppercase tracking-wide text-muted-foreground">
-            <span>Parameter</span>
-            <span>Dry Wall</span>
-            <span>Wet Wall</span>
-            <span>Roof</span>
-            <span>Floor</span>
+            <span className="text-left">Parameter</span>
+            <span className="text-right">Dry Wall</span>
+            <span className="text-right">Wet Wall</span>
+            <span className="text-right">Roof</span>
+            <span className="text-right">Floor</span>
           </div>
 
           <TableRow label="h Internal" unit="W/(m²·K)"
@@ -101,11 +101,11 @@ export function ResultsPanel({ calculationResult }: ResultsPanelProps) {
       <SectionCard title="Dimensionless Numbers">
         <div className="rounded-md border overflow-hidden text-xs">
           <div className="grid grid-cols-5 bg-muted/50 px-3 py-2 font-semibold uppercase tracking-wide text-muted-foreground">
-            <span>Parameter</span>
-            <span>Dry Wall</span>
-            <span>Wet Wall</span>
-            <span>Roof</span>
-            <span>Floor</span>
+            <span className="text-left">Parameter</span>
+            <span className="text-right">Dry Wall</span>
+            <span className="text-right">Wet Wall</span>
+            <span className="text-right">Roof</span>
+            <span className="text-right">Floor</span>
           </div>
 
           <TableRow label="Grashof" unit=""
