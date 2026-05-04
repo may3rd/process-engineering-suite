@@ -62,6 +62,14 @@ const tools = [
     status: "active" as const,
   },
   {
+    title: "Heat Transfer Calculator",
+    description:
+      "",
+    icon: <BoltIcon fontSize="large" />,
+    href: "/heat-transfer-calculation/calculator",
+    status: "active" as const,
+  },
+  {
     title: "Control Valve Sizing",
     description:
       "CV sizing based on ISA 75.01. Includes cavitation checks.",
