@@ -64,8 +64,8 @@ const tools = [
   {
     title: "Heat Transfer Calculator",
     description:
-      "",
-    icon: <BoltIcon fontSize="large" />,
+      "Steady-state heat loss from storage tanks and pipes. Vertical tank, pipe, and horizontal tank modes with conduction, convection, and radiation analysis.",
+    icon: <ScienceIcon fontSize="large" />,
     href: "/heat-transfer-calculation/calculator",
     status: "active" as const,
   },

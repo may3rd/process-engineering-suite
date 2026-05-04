@@ -27,7 +27,7 @@
         },
         {
             "source": "/heat-transfer-calculation/calculator",
-            "destination": "https://pes-heat-transfer-calculation.vercel.app/pump-calculation/calculator",
+            "destination": "https://pes-heat-transfer-calculation.vercel.app/heat-transfer-calculation/calculator",
             "permanent": false
         }
     ]
