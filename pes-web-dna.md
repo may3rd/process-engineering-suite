@@ -1064,6 +1064,7 @@ apps/{app-name}/
 ## 13. Checklist — New App Setup
 
 - [ ] Start from `apps/calculation-template` (already has TopToolbar, CalculationMetadataSection)
+- [ ] **CRITICAL — basePath in `next.config.ts`:** Replace `/venting-calculation` with your actual app name (e.g., `/heat-transfer-calculation`, `/pipe-sizer`). This is the #1 cause of broken Vercel deployments. The template ships with a placeholder — always verify before deploying.
 - [ ] Update `TopToolbar`: replace icon (lucide), title, subtitle
 - [ ] Update `layout.tsx` metadata: `title`, `description`
 - [ ] Update `uomStore` localStorage key to `{app-name}-uom-prefs`
@@ -1077,3 +1078,33 @@ apps/{app-name}/
 - [ ] Verify save/load round-trips in base units (no conversion on load)
 - [ ] Test dark mode (toggle button in TopToolbar)
 - [ ] Test at `xl` breakpoint for two-column layout
+
+## 14. Vercel Deployment — Critical basePath Rule
+
+**Every new app MUST set `basePath` in `next.config.ts` to match its Vercel project URL path.**
+
+The `basePath` in Next.js controls URL routing inside the deployed app. If it doesn't match the Vercel subdomain/path, every route will 404.
+
+**Example — correct for an app deployed at `https://pes-heat-transfer-calculation.vercel.app`:**
+```ts
+// next.config.ts — CORRECT
+const nextConfig: NextConfig = {
+  basePath: "/heat-transfer-calculation",
+  env: { NEXT_PUBLIC_BASE_PATH: "/heat-transfer-calculation" },
+  async redirects() {
+    return [{ source: "/", destination: "/heat-transfer-calculation", permanent: false, basePath: false }];
+  },
+}
+```
+
+**The template (`apps/calculation-template`) ships with a placeholder `basePath: "/[your-app-name]"`. You MUST replace this before deploying.**
+
+**How to verify before deploying:**
+1. Open Vercel project dashboard → Domains → note the deployed URL
+2. If URL is `https://pes-heat-transfer-calculation.vercel.app`, `basePath` must be `/heat-transfer-calculation`
+3. If URL is `https://my-custom-domain.com/`, `basePath` must be `/` (empty string, omit entirely)
+4. Run `bun run build` locally — if build succeeds with no basePath errors, it's likely correct
+
+**Do not copy `next.config.ts` from another app without changing the `basePath` value.**
+
+**`apps/web/vercel.json`** manages redirects from the root dashboard (`pes-web`) to sub-apps. Sub-apps own their own `next.config.ts` `basePath`. Both must be correct for navigation to work.

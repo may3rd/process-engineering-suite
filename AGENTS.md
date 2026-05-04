@@ -411,6 +411,12 @@ bun run test
 bun run test:run
 ```
 
+> ⚠️ **New App Deployment — basePath Rule**
+> Every new calculator app cloned from `apps/calculation-template` ships with `basePath: "/[your-app-name]"` as a placeholder in `next.config.ts`. **You MUST replace this with the correct value before deploying to Vercel.**
+>
+> If `basePath` doesn't match the deployed URL, the app will 404 on all routes. See `pes-web-dna.md` §14 for the full rule and verification steps.
+> Common mistake: copying `next.config.ts` from `venting-calculation` and forgetting to update `basePath`.
+
 ---
 
 ### Python Calculation Engine
