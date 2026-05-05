@@ -18,6 +18,8 @@
     "plugins": [{ "name": "next" }],
     "paths": {
       "@/*": ["./src/*"],
+      "@eng-suite/api-client": ["../../packages/api-client/src/index.ts"],
+      "@eng-suite/api-client/*": ["../../packages/api-client/src/*"],
       "@eng-suite/ui-kit": ["../../packages/ui-kit/src/index.ts"],
       "@eng-suite/ui-kit/*": ["../../packages/ui-kit/src/*"],
       "@eng-suite/physics": ["../../packages/physics-engine/src/index.ts"],

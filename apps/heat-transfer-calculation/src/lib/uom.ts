@@ -36,6 +36,10 @@ export const BASE_UNITS = {
   area:                SHARED_BASE_UNITS.area,       // m²
   power:               'W'                           as const, // overrides kW
   time:                'h'                           as const, // overrides s
+  velocity:            'm/s'                         as const,
+  specificHeat:        'J/(kg·K)'                    as const,
+  expansionCoeff:      '1/K'                         as const,
+  coolingRate:         '°C/h'                        as const,
 } as const
 
 export type HeatTransferUomCategory = keyof typeof BASE_UNITS

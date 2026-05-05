@@ -131,13 +131,8 @@ export function InputPanel({
           name="windSpeed"
           control={control}
           render={({ field }) => (
-            <FieldRow label="Wind Speed" unit="m/s" hint="Average wind speed at tank location">
-              <Input
-                type="number"
-                step="any"
-                value={field.value ?? ""}
-                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-              />
+            <FieldRow label="Wind Speed" hint="Average wind speed at tank location">
+              <UomInput name="windSpeed" category="velocity" />
             </FieldRow>
           )}
         />
@@ -266,13 +261,8 @@ export function InputPanel({
             control={control}
             render={({ field }) => (
               <FieldRow label="Specific Heat" required error={errors.fluidSpecificHeat?.message}
-                hint="Water ≈ 4180 J/(kg·K)" unit="J/(kg·K)">
-                <Input
-                  type="number"
-                  step="any"
-                  value={field.value ?? ""}
-                  onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-                />
+                hint="Water ≈ 4180 J/(kg·K)">
+                <UomInput name="fluidSpecificHeat" category="specificHeat" />
               </FieldRow>
             )}
           />
@@ -304,13 +294,8 @@ export function InputPanel({
           control={control}
           render={({ field }) => (
             <FieldRow label="Thermal Expansion Coeff." required error={errors.fluidExpansionCoeff?.message}
-              hint="Water ≈ 2.1×10⁻⁴ 1/K" unit="1/K">
-              <Input
-                type="number"
-                step="0.000001"
-                value={field.value ?? ""}
-                onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
-              />
+              hint="Water ≈ 2.1×10⁻⁴ 1/K">
+              <UomInput name="fluidExpansionCoeff" category="expansionCoeff" />
             </FieldRow>
           )}
         />
@@ -324,11 +309,8 @@ export function InputPanel({
               name="vaporDensity"
               control={control}
               render={({ field }) => (
-                <FieldRow label="Density" hint="Air ≈ 1.0 kg/m³ at 80°C" unit="kg/m³">
-                  <Input type="number" step="any"
-                    value={field.value ?? ""}
-                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-                  />
+                <FieldRow label="Density" hint="Air ≈ 1.0 kg/m³ at 80°C">
+                  <UomInput name="vaporDensity" category="density" />
                 </FieldRow>
               )}
             />
@@ -336,11 +318,8 @@ export function InputPanel({
               name="vaporSpecificHeat"
               control={control}
               render={({ field }) => (
-                <FieldRow label="Specific Heat" hint="Air ≈ 1009 J/(kg·K)" unit="J/(kg·K)">
-                  <Input type="number" step="any"
-                    value={field.value ?? ""}
-                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-                  />
+                <FieldRow label="Specific Heat" hint="Air ≈ 1009 J/(kg·K)">
+                  <UomInput name="vaporSpecificHeat" category="specificHeat" />
                 </FieldRow>
               )}
             />
@@ -350,11 +329,8 @@ export function InputPanel({
               name="vaporViscosity"
               control={control}
               render={({ field }) => (
-                <FieldRow label="Viscosity" hint="Air ≈ 2.1×10⁻⁵ Pa·s" unit="Pa·s">
-                  <Input type="number" step="0.000001"
-                    value={field.value ?? ""}
-                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-                  />
+                <FieldRow label="Viscosity" hint="Air ≈ 2.1×10⁻⁵ Pa·s">
+                  <UomInput name="vaporViscosity" category="viscosity" />
                 </FieldRow>
               )}
             />
@@ -362,11 +338,8 @@ export function InputPanel({
               name="vaporThermalConductivity"
               control={control}
               render={({ field }) => (
-                <FieldRow label="Thermal Conductivity" hint="Air ≈ 0.03 W/(m·K)" unit="W/(m·K)">
-                  <Input type="number" step="any"
-                    value={field.value ?? ""}
-                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-                  />
+                <FieldRow label="Thermal Conductivity" hint="Air ≈ 0.03 W/(m·K)">
+                  <UomInput name="vaporThermalConductivity" category="thermalConductivity" />
                 </FieldRow>
               )}
             />
@@ -375,11 +348,8 @@ export function InputPanel({
             name="vaporExpansionCoeff"
             control={control}
             render={({ field }) => (
-              <FieldRow label="Expansion Coeff." hint="Ideal gas ≈ 3×10⁻³ 1/K" unit="1/K">
-                <Input type="number" step="0.000001"
-                  value={field.value ?? ""}
-                  onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-                />
+              <FieldRow label="Expansion Coeff." hint="Ideal gas ≈ 3×10⁻³ 1/K">
+                <UomInput name="vaporExpansionCoeff" category="expansionCoeff" />
               </FieldRow>
             )}
           />
@@ -468,21 +438,15 @@ export function InputPanel({
           <div className="grid grid-cols-2 gap-3 mt-3">
             <Controller name="groundTemp" control={control}
               render={({ field }) => (
-                <FieldRow label="Ground Temperature" hint="Default 25°C" unit="°C">
-                  <Input type="number" step="any"
-                    value={field.value ?? ""}
-                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-                  />
+                <FieldRow label="Ground Temperature" hint="Default 25°C">
+                  <UomInput name="groundTemp" category="temperature" />
                 </FieldRow>
               )}
             />
             <Controller name="groundConductivity" control={control}
               render={({ field }) => (
-                <FieldRow label="Ground Conductivity" hint="Concrete ≈ 1.38 W/(m·K)" unit="W/(m·K)">
-                  <Input type="number" step="any"
-                    value={field.value ?? ""}
-                    onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
-                  />
+                <FieldRow label="Ground Conductivity" hint="Concrete ≈ 1.38 W/(m·K)">
+                  <UomInput name="groundConductivity" category="thermalConductivity" />
                 </FieldRow>
               )}
             />

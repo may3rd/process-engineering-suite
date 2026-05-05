@@ -27,6 +27,10 @@ export const UOM_OPTIONS = {
   time:                ['s', 'min', 'h', 'day', 'd', 'year', 'yr'],
   force:               ['N', 'lbf'],
   power:               ['kW', 'hp', 'MW', 'W'],
+  velocity:            ['m/s', 'ft/s'],
+  specificHeat:        ['J/(kg·K)', 'kJ/(kg·K)', 'kcal/(kg·K)', 'Btu/(lb·°F)'],
+  expansionCoeff:      ['1/K', '1/°F', '1/°C'],
+  coolingRate:         ['°C/h', '°C/d', 'K/h', 'K/d'],
 } as const
 
 export type UomCategory = keyof typeof UOM_OPTIONS
@@ -52,6 +56,10 @@ export const BASE_UNITS: Record<UomCategory, string> = {
   time:                's',
   force:               'N',
   power:               'kW',
+  velocity:            'm/s',
+  specificHeat:        'J/(kg·K)',
+  expansionCoeff:      '1/K',
+  coolingRate:         '°C/h',
 }
 
 /**
@@ -135,4 +143,21 @@ export const UOM_LABEL: Record<string, string> = {
   'hp': 'hp',
   'MW': 'MW',
   'W':  'W',
+  // Velocity
+  'm/s':  'm/s',
+  'ft/s': 'ft/s',
+  // Specific Heat
+  'J/(kg·K)':      'J/(kg·K)',
+  'kJ/(kg·K)':     'kJ/(kg·K)',
+  'kcal/(kg·K)':   'kcal/(kg·K)',
+  'Btu/(lb·°F)':   'Btu/(lb·°F)',
+  // Expansion Coefficient
+  '1/K':  '1/K',
+  '1/°F': '1/°F',
+  '1/°C': '1/°C',
+  // Cooling Rate
+  '°C/h': '°C/h',
+  '°C/d': '°C/d',
+  'K/h':  'K/h',
+  'K/d':  'K/d',
 }

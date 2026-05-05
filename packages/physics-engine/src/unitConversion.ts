@@ -326,6 +326,128 @@ const convert = configureMeasurements({
       },
     },
   },
+  speed: {
+    systems: {
+      metric: {
+        "m/s": {
+          name: { singular: "Metre per second", plural: "Metres per second" },
+          to_anchor: 1,
+        },
+        "km/h": {
+          name: { singular: "Kilometre per hour", plural: "Kilometres per hour" },
+          to_anchor: 1 / 3.6,
+        },
+      },
+      imperial: {
+        "ft/s": {
+          name: { singular: "Foot per second", plural: "Feet per second" },
+          to_anchor: 1 / 3.28084,
+        },
+        mph: {
+          name: { singular: "Mile per hour", plural: "Miles per hour" },
+          to_anchor: 1 / 2.23694,
+        },
+      },
+    },
+    anchors: {
+      metric: {
+        imperial: { ratio: 2.23694 },
+      },
+      imperial: {
+        metric: { ratio: 1 / 2.23694 },
+      },
+    },
+  },
+  specificHeat: {
+    systems: {
+      metric: {
+        "J/(kg·K)": {
+          name: { singular: "Joule per kilogram-kelvin", plural: "Joules per kilogram-kelvin" },
+          to_anchor: 1,
+        },
+        "kJ/(kg·K)": {
+          name: { singular: "Kilojoule per kilogram-kelvin", plural: "Kilojoules per kilogram-kelvin" },
+          to_anchor: 1000,
+        },
+        "kcal/(kg·K)": {
+          name: { singular: "Kilocalorie per kilogram-kelvin", plural: "Kilocalories per kilogram-kelvin" },
+          to_anchor: 4184,
+        },
+      },
+      imperial: {
+        "Btu/(lb·°F)": {
+          name: { singular: "British thermal unit per pound-fahrenheit", plural: "British thermal units per pound-fahrenheit" },
+          to_anchor: 4186.8,
+        },
+      },
+    },
+    anchors: {
+      metric: {
+        imperial: { ratio: 4186.8 },
+      },
+      imperial: {
+        metric: { ratio: 1 / 4186.8 },
+      },
+    },
+  },
+  expansionCoeff: {
+    systems: {
+      metric: {
+        "1/K": {
+          name: { singular: "Per kelvin", plural: "Per kelvin" },
+          to_anchor: 1,
+        },
+        "1/°C": {
+          name: { singular: "Per degree Celsius", plural: "Per degree Celsius" },
+          to_anchor: 1,
+        },
+      },
+      imperial: {
+        "1/°F": {
+          name: { singular: "Per degree Fahrenheit", plural: "Per degree Fahrenheit" },
+          to_anchor: 1 / 1.8,
+        },
+      },
+    },
+    anchors: {
+      metric: {
+        imperial: { ratio: 1 / 1.8 },
+      },
+      imperial: {
+        metric: { ratio: 1.8 },
+      },
+    },
+  },
+  coolingRate: {
+    systems: {
+      metric: {
+        "°C/h": {
+          name: { singular: "Degree Celsius per hour", plural: "Degrees Celsius per hour" },
+          to_anchor: 1,
+        },
+        "°C/d": {
+          name: { singular: "Degree Celsius per day", plural: "Degrees Celsius per day" },
+          to_anchor: 1 / 24,
+        },
+        "K/h": {
+          name: { singular: "Kelvin per hour", plural: "Kelvin per hour" },
+          to_anchor: 1,
+        },
+        "K/d": {
+          name: { singular: "Kelvin per day", plural: "Kelvin per day" },
+          to_anchor: 1 / 24,
+        },
+      },
+    },
+    anchors: {
+      metric: {
+        imperial: { ratio: 1 },
+      },
+      imperial: {
+        metric: { ratio: 1 },
+      },
+    },
+  },
 } as any);
 
 export function normalizeUnit(unit?: string | null): string | undefined {
