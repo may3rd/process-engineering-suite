@@ -159,11 +159,19 @@ export function calculatePipe(input: PipeCalculationInput): PipeCalculationResul
   const Wf = input.windEnhancement ?? 1.0
   const eps = input.surfaceEmissivity
 
-  // Conduction resistance (flat-plate approximation, adequate for thin-walled pipe)
-  const condSimple = (t_wall / k_wall) + (t_ins > 0 ? t_ins / k_ins : 0)
-
   // Outer diameter including insulation
   const D_outer = Do + 2 * t_ins
+  const A_inner = A_surface
+  const A_outer = 2 * Math.PI * D_outer * L
+
+  // Cylindrical conduction resistance expressed on the outer surface area basis.
+  // R''_o = A_o * ln(r_o/r_i) / (2πLk) = D_o * ln(D_o/D_i) / (2k)
+  const D_wall_outer = Do
+  const R_wall_outerBasis = D_outer * Math.log(Math.max(D_wall_outer / Di, 1)) / (2 * k_wall)
+  const R_ins_outerBasis = t_ins > 0
+    ? D_outer * Math.log(Math.max(D_outer / D_wall_outer, 1)) / (2 * k_ins)
+    : 0
+  const R_cond_outerBasis = R_wall_outerBasis + R_ins_outerBasis
 
   // Air properties (constant across iterations)
   const T_film_air = (T_in + T_a) / 2
@@ -202,14 +210,18 @@ export function calculatePipe(input: PipeCalculationInput): PipeCalculationResul
       Nu_i = ((f / 8) * (Re_i - 1000) * Pr_i) /
         (1 + 12.7 * Math.sqrt(f / 8) * (Pr_i ** (2 / 3) - 1))
     } else {
-      // Laminar — constant Nu for fully developed
-      Nu_i = 3.66
+      // Laminar, thermally developing flow (constant wall temperature).
+      // Matches the Excel workbook's entry-length correction for the golden pipe case.
+      const graetz = Re_i * Pr_i * Di / Math.max(L, 1e-9)
+      Nu_i = 3.66 + (0.0668 * graetz) / (1 + 0.04 * graetz ** (2 / 3))
     }
 
     const h_i = Nu_i * fluid.k / Di
 
     // ── External Natural Convection ─────────────────────────────
-    const T_wall_ext = Math.max(Tws - T_a, 0.1)
+    // Excel pipe workbook uses the inlet-to-ambient driving force for the
+    // external natural-convection coefficient, not the iterated skin ΔT.
+    const T_wall_ext = Math.max(T_in - T_a, 0.1)
     const nu_air = airProps.mu / airProps.rho
     const gr_ext = grashofNumber(air.beta, T_wall_ext, D_outer, nu_air)
     const pr_ext = airProps.cp * airProps.mu / airProps.k
@@ -239,30 +251,26 @@ export function calculatePipe(input: PipeCalculationInput): PipeCalculationResul
     const T_ws_K = Tws + 273.15
     const h_r = eps * SIGMA * (T_ws_K ** 2 + T_a_K ** 2) * (T_ws_K + T_a_K)
 
-    // ── Overall U (based on inner surface area) ─────────────────
+    // ── Overall U (based on outer surface area) ─────────────────
     const h_o_total = h_o_ext + h_r
-    const U = 1 / (1 / Math.max(h_i, 1e-6) + condSimple + 1 / Math.max(h_o_total, 1e-6))
+    const U = 1 / (
+      (D_outer / Di) / Math.max(h_i, 1e-6) +
+      R_cond_outerBasis +
+      1 / Math.max(h_o_total, 1e-6)
+    )
 
     // ── Heat Loss & Terminal Temperature ────────────────────────
-    // Energy balance: ṁ·cp·(T_in - T_out) = U·A·ΔT_lm
-    // ΔT_lm = (ΔT_in - ΔT_out) / ln(ΔT_in/ΔT_out)
-    // where ΔT_in = T_in - T_a, ΔT_out = T_out - T_a
-    // Solving for T_out: T_out = T_a + (T_in - T_a)·exp(-U·A_surface/(ṁ·cp))
+    // Excel golden workbook reports heat loss against the inlet-to-ambient driving
+    // force on the insulated outer area, then obtains outlet temperature from the
+    // fluid energy balance.
 
     const mCp = m_dot * fluid.cp
-    let T_out: number
-    if (mCp > 0) {
-      const NTU = U * A_surface / mCp
-      T_out = T_a + (T_in - T_a) * Math.exp(-NTU)
-    } else {
-      T_out = T_in
-    }
-
-    const Q = mCp * (T_in - T_out)
+    const Q = U * A_outer * (T_in - T_a)
+    const T_out = mCp > 0 ? T_in - Q / mCp : T_in
 
     // ── Back-calculate wall temperatures ────────────────────────
-    const Twi = T_avg - Q / (Math.max(h_i, 1e-6) * A_surface)
-    Tws = T_a + Q / (Math.max(h_o_total, 1e-6) * A_surface)
+    const Twi = T_avg - Q / (Math.max(h_i, 1e-6) * A_inner)
+    Tws = T_a + Q / (Math.max(h_o_total, 1e-6) * A_outer)
 
     // ── Update T_avg ────────────────────────────────────────────
     T_avg = (T_in + T_out) / 2
@@ -295,8 +303,7 @@ export function calculatePipe(input: PipeCalculationInput): PipeCalculationResul
   const pr_ext_final = airProps.cp * airProps.mu / airProps.k
 
   // Natural convection Nusselt at final wall temp
-  const Tw_final = last.twOutside
-  const deltaT_final = Math.max(Tw_final - T_a, 0.1)
+  const deltaT_final = Math.max(T_in - T_a, 0.1)
   const gr_final = grashofNumber(air.beta, deltaT_final, D_outer, nu_air_final)
   const ra_final = gr_final * pr_ext_final
   let Nu_ext_nat_final: number
@@ -315,7 +322,7 @@ export function calculatePipe(input: PipeCalculationInput): PipeCalculationResul
     externalNaturalHTC: last.externalNaturalHTC,
     radiationHTC: last.radiationHTC,
     uOverall: last.uOverall,
-    surfaceArea: round3(A_surface),
+    surfaceArea: round3(A_outer),
     heatLoss: last.heatLoss,
     inletTemp: T_in,
     outletTemp: last.outletTemp,
@@ -324,7 +331,7 @@ export function calculatePipe(input: PipeCalculationInput): PipeCalculationResul
     nusseltInternal: round3(lastNu),
     nusseltExternal: round3(Nu_ext_final),
     reynoldsExternal: round1(Re_ext_final),
-    twInside: round1(T_avg - last.heatLoss / (Math.max(last.internalHTC, 1e-6) * A_surface)),
+    twInside: round1(T_avg - last.heatLoss / (Math.max(last.internalHTC, 1e-6) * A_inner)),
     twOutside: last.twOutside,
     iterations,
     calculatedAt: new Date().toISOString(),

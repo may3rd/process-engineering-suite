@@ -18,6 +18,7 @@ const createDefaultValues = (): Partial<CalculationInput> => ({
   tankDiameter: 10000,            // 10 m diameter
   tankHeight: 12000,              // 12 m height
   liquidLevel: 10000,             // 10 m liquid
+  roofHeight: undefined,          // flat top by default
   fluidTemp: 80,
   ambientTemp: 30,
   windSpeed: 5,

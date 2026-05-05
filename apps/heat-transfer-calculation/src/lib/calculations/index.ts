@@ -2,7 +2,7 @@
  * Heat Transfer Calculator — Core Physics Engine
  *
  * Calculates heat loss from a vertical cylindrical storage tank to the environment
- * using a per-surface iterative model with 8-step convergence.
+ * using a per-surface iterative model with 20-step convergence.
  *
  * Four surfaces: dry wall (above liquid), wet wall (below liquid), roof, floor.
  * Each surface has: internal natural convection → conduction → external
@@ -28,7 +28,7 @@ import type {
 
 const G = 9.81                     // m/s² — gravitational acceleration
 const SIGMA = 5.67e-8              // W/(m²·K⁴) — Stefan-Boltzmann constant
-const MAX_ITERATIONS = 8
+const MAX_ITERATIONS = 20
 
 // ─── Core Nusselt Correlations ────────────────────────────────────────────────
 
@@ -160,7 +160,7 @@ export function calculate(input: CalculationInput): CalculationResult {
 
   const T_liquid = input.fluidTemp                 // °C
   const T_ambient = input.ambientTemp             // °C
-  const T_vapor = T_liquid                         // assume vapor ≈ liquid temp
+  const T_vapor = input.vaporTemp ?? T_liquid      // °C — default preserves legacy behavior
   const T_ground = input.groundTemp ?? 25          // °C
 
   const t_wall = input.wallThickness / 1000        // mm → m
@@ -177,9 +177,9 @@ export function calculate(input: CalculationInput): CalculationResult {
     beta: input.fluidExpansionCoeff,
   }
 
-  // Vapor/gas properties (fall back to air at fluid temp)
+  // Vapor/gas properties (fall back to air at vapor temp)
   const gas: FluidProps = (() => {
-    const a = getAirProps(T_liquid)
+    const a = getAirProps(T_vapor)
     return {
       rho: input.vaporDensity ?? a.rho,
       cp: input.vaporSpecificHeat ?? a.cp,
@@ -210,7 +210,10 @@ export function calculate(input: CalculationInput): CalculationResult {
   // Inner surface areas
   const A_dry = Math.PI * D * L_dry
   const A_wet = Math.PI * D * L_liq
-  const A_roof = Math.PI * R ** 2
+  // Roof area — cone or flat top
+  const A_roof = input.roofHeight && input.roofHeight > 0
+    ? Math.PI * R * Math.sqrt(R ** 2 + (input.roofHeight / 1000) ** 2)
+    : Math.PI * R ** 2
   const A_floor = Math.PI * R ** 2
 
   // Conduction resistance — walls get insulation, roof/floor do not
@@ -243,7 +246,7 @@ export function calculate(input: CalculationInput): CalculationResult {
   const iterations: IterationDetail[] = []
 
   // ═══════════════════════════════════════════════════════════════════
-  // 4. Iterative convergence loop (8 iterations)
+  // 4. Iterative convergence loop (20 iterations)
   // ═══════════════════════════════════════════════════════════════════
 
   for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
@@ -372,7 +375,7 @@ export function calculate(input: CalculationInput): CalculationResult {
   // 5. Final results (last iteration)
   // ═══════════════════════════════════════════════════════════════════
 
-  const final = iterations[MAX_ITERATIONS - 1]
+  const final = iterations[iterations.length - 1]
   const Q_total = final.dryWall.heatLoss + final.wetWall.heatLoss +
     final.roof.heatLoss + final.floor.heatLoss
   const A_total = A_dry + A_wet + A_roof + A_floor

@@ -74,12 +74,6 @@ function nusseltSphere(ra: number): number {
   return 0.021 * ra ** 0.4
 }
 
-/** Floor — same as vertical tank floor */
-function nusseltFloor(ra: number): number {
-  if (ra <= 0) return 1.0
-  return 0.14 * ra ** 0.33
-}
-
 // ─── Validation ─────────────────────────────────────────────────────────────
 
 export function validateHorizontalInput(input: HorizontalTankInput): ValidationIssue[] {
@@ -112,10 +106,11 @@ export function calculateHorizontalTank(input: HorizontalTankInput): HorizontalT
 
   const pctLevel = D > 0 ? Math.min(Math.max(h / D, 0), 1) : 0
 
-  // Areas (inner surface)
-  const A_shell = Math.PI * D * (L_tan + 2 * L_flange)
-  const A_head_one = singleHeadSurfaceArea(input.headType, D, headDepth)
-  const A_head_total = 2 * A_head_one
+  // Areas (inner surface). The Excel workbook treats the 2:1 ellipsoidal
+  // head surface formula below as the combined-head equivalent, then includes
+  // that area in the wall split and again in the head split.
+  const A_head_total = singleHeadSurfaceArea(input.headType, D, headDepth)
+  const A_shell = Math.PI * D * L_tan + A_head_total
 
   // Wet/dry split proportional to % liquid level
   const A_dry_wall = A_shell * (1 - pctLevel)
@@ -126,8 +121,7 @@ export function calculateHorizontalTank(input: HorizontalTankInput): HorizontalT
   // ── Temperatures ──────────────────────────────────────────────
   const T_f = input.fluidTemp
   const T_a = input.ambientTemp
-  const T_v = T_f  // assume vapor ≈ fluid
-  const T_g = input.groundTemp ?? 25
+  const T_v = input.vaporTemp ?? T_f  // vapor space can be cooler than liquid; default preserves legacy behavior
 
   // ── Wall construction ─────────────────────────────────────────
   const t_wall = input.wallThickness / 1000
@@ -162,9 +156,8 @@ export function calculateHorizontalTank(input: HorizontalTankInput): HorizontalT
   const Wf = input.windEnhancement ?? 1.0
   const eps = input.surfaceEmissivity
 
-  // ── Ground floor HTC ──────────────────────────────────────────
+  // ── Outside diameter ──────────────────────────────────────────
   const D_outer_wall = D + 2 * (t_wall + t_ins)
-  const h_o_floor = D > 0 ? (8 * (input.groundConductivity ?? 1.3846)) / (Math.PI * D) : 0
 
   // ── Initial wall temp guesses ─────────────────────────────────
   let Tws_dry = T_a + 0.25 * (T_v - T_a)
@@ -175,10 +168,8 @@ export function calculateHorizontalTank(input: HorizontalTankInput): HorizontalT
   let Twi_wet = (T_f + T_a) / 2
   let Twi_dh = (T_v + T_a) / 2
   let Twi_wh = (T_f + T_a) / 2
-  let Twi_floor = (T_f + T_g) / 2
 
   const iterations: HorizontalTankIterationDetail[] = []
-  let lastQFloor = 0
 
   for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
     // ── Internal Film Coefficients ──────────────────────────────
@@ -193,8 +184,6 @@ export function calculateHorizontalTank(input: HorizontalTankInput): HorizontalT
     const iDryHead = computeInternal(gas, Math.max(L_dry, 0.01), T_v, Twi_dh, nusseltSphere)
     // Wet head (liquid, L_char = h, sphere)
     const iWetHead = computeInternal(liq, Math.max(h, 0.01), T_f, Twi_wh, nusseltSphere)
-    // Floor (liquid, L_char = D)
-    const iFloor = computeInternal(liq, D, T_f, Twi_floor, nusseltFloor)
 
     // ── External Natural Convection ─────────────────────────────
     const dT_ext = Math.max((Tws_dry + Tws_wet) / 2 - T_a, 0.1)
@@ -217,8 +206,9 @@ export function calculateHorizontalTank(input: HorizontalTankInput): HorizontalT
     const h_o_wh = h_o_nat_head * Wf
 
     // ── Radiation ───────────────────────────────────────────────
-    const T_a_K = T_a + 273.15
-    const hr = (Tws: number) => eps * SIGMA * ((Tws + 273.15) ** 2 + T_a_K ** 2) * ((Tws + 273.15) + T_a_K)
+    // Match the legacy Excel workbook for horizontal tanks, which linearizes
+    // radiation with Celsius temperatures rather than absolute Kelvin.
+    const hr = (Tws: number) => eps * SIGMA * (Tws ** 2 + T_a ** 2) * (Tws + T_a)
     const hr_dry = hr(Tws_dry), hr_wet = hr(Tws_wet)
     const hr_dh = hr(Tws_dh), hr_wh = hr(Tws_wh)
 
@@ -230,22 +220,18 @@ export function calculateHorizontalTank(input: HorizontalTankInput): HorizontalT
     const U_wet = U(iWet.h, h_o_wet, hr_wet, hF_ww, R_cond)
     const U_dh = U(iDryHead.h, h_o_dh, hr_dh, hF_dh, R_cond)
     const U_wh = U(iWetHead.h, h_o_wh, hr_wh, hF_wh, R_cond)
-    const U_floor = 1 / (1/Math.max(iFloor.h, 1e-6) + t_wall/k_wall + 1/Math.max(h_o_floor, 1e-6))
 
     // ── Heat Loss ───────────────────────────────────────────────
     const Q_dry = U_dry * A_dry_wall * (T_v - T_a)
     const Q_wet = U_wet * A_wet_wall * (T_f - T_a)
     const Q_dh = U_dh * A_dry_head * (T_v - T_a)
     const Q_wh = U_wh * A_wet_head * (T_f - T_a)
-    const Q_floor = U_floor * Math.PI * (D / 2) ** 2 * (T_f - T_g)
-    lastQFloor = Q_floor
 
     // ── Back-calculate wall temps ───────────────────────────────
     Twi_dry = T_v - (U_dry / Math.max(iDry.h, 1e-6)) * (T_v - T_a)
     Twi_wet = T_f - (U_wet / Math.max(iWet.h, 1e-6)) * (T_f - T_a)
     Twi_dh = T_v - (U_dh / Math.max(iDryHead.h, 1e-6)) * (T_v - T_a)
     Twi_wh = T_f - (U_wh / Math.max(iWetHead.h, 1e-6)) * (T_f - T_a)
-    Twi_floor = T_f - (U_floor / Math.max(iFloor.h, 1e-6)) * (T_f - T_g)
 
     Tws_dry = U_dry / Math.max(h_o_dry + hr_dry, 1e-6) * (T_v - T_a) + T_a
     Tws_wet = U_wet / Math.max(h_o_wet + hr_wet, 1e-6) * (T_f - T_a) + T_a
@@ -263,7 +249,7 @@ export function calculateHorizontalTank(input: HorizontalTankInput): HorizontalT
 
   // ── Final results ─────────────────────────────────────────────
   const last = iterations[MAX_ITERATIONS - 1]
-  const Q_total = last.dryWall.heatLoss + last.wetWall.heatLoss + last.dryHead.heatLoss + last.wetHead.heatLoss + lastQFloor
+  const Q_total = last.dryWall.heatLoss + last.wetWall.heatLoss + last.dryHead.heatLoss + last.wetHead.heatLoss
   const A_total = A_shell + A_head_total
 
   const V_liq = Math.PI * (D / 2) ** 2 * (L_tan + 2 * L_flange) * pctLevel

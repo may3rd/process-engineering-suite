@@ -34,6 +34,7 @@ const verticalInput: CalculationInput = {
   tankHeight: 14630.4,
   liquidLevel: 7315.2,
   fluidTemp: 12.78,
+  vaporTemp: 10,
   ambientTemp: 1.67,
   windSpeed: 3,
   windEnhancement: 3.3,
@@ -96,25 +97,27 @@ describe('Case 1: Vertical Tank Fidelity', () => {
     expect(withinPct(actual, expected, 20)).toBe(true)
   })
 
-  it('Q_total within 20%', () => {
+  it('Q_total within 10%', () => {
     const actual = result.totalHeatLoss
     const expected = 2718.8
-    console.log(report('Q_total', actual, expected, 20))
-    expect(withinPct(actual, expected, 20)).toBe(true)
+    console.log(report('Q_total', actual, expected, 10))
+    expect(withinPct(actual, expected, 10)).toBe(true)
   })
 
-  it('wall temps within 25%', () => {
-    console.log(report('Twi_dry', result.dryWall.twInside, 7.36, 25))
-    console.log(report('Tws_dry', result.dryWall.twOutside, 2.39, 25))
-    console.log(report('Twi_wet', result.wetWall.twInside, 11.24, 25))
-    console.log(report('Tws_wet', result.wetWall.twOutside, 2.88, 25))
-    // Log only, don't assert — wall temps have larger deviations
-    expect(true).toBe(true)
+  it('wall temps within 10%', () => {
+    console.log(report('Twi_dry', result.dryWall.twInside, 7.36, 10))
+    console.log(report('Tws_dry', result.dryWall.twOutside, 2.39, 10))
+    console.log(report('Twi_wet', result.wetWall.twInside, 11.24, 10))
+    console.log(report('Tws_wet', result.wetWall.twOutside, 2.88, 10))
+    expect(withinPct(result.dryWall.twInside, 7.36, 10)).toBe(true)
+    expect(withinPct(result.dryWall.twOutside, 2.39, 10)).toBe(true)
+    expect(withinPct(result.wetWall.twInside, 11.24, 10)).toBe(true)
+    expect(withinPct(result.wetWall.twOutside, 2.88, 10)).toBe(true)
   })
 
   it('iteration count', () => {
     console.log(`Vertical tank iterations: ${result.iterations.length}`)
-    expect(result.iterations.length).toBe(8)
+    expect(result.iterations.length).toBe(20)
   })
 })
 
@@ -173,14 +176,14 @@ describe('Case 2: Pipe Fidelity', () => {
     expect(withinPct(result.uOverall, 1.14, 25)).toBe(true)
   })
 
-  it('Q within 30%', () => {
-    console.log(report('Q', result.heatLoss, 1911.5, 30))
-    expect(withinPct(result.heatLoss, 1911.5, 100)).toBe(true)
+  it('Q within 5%', () => {
+    console.log(report('Q', result.heatLoss, 1911.5, 5))
+    expect(withinPct(result.heatLoss, 1911.5, 5)).toBe(true)
   })
 
-  it('T_outlet within 30%', () => {
-    console.log(report('T_out', result.outletTemp, 83.6, 30))
-    expect(withinPct(result.outletTemp, 83.6, 30)).toBe(true)
+  it('T_outlet within 5%', () => {
+    console.log(report('T_out', result.outletTemp, 83.6, 5))
+    expect(withinPct(result.outletTemp, 83.6, 5)).toBe(true)
   })
 
   it('iteration count', () => {
@@ -201,6 +204,7 @@ const horizontalInput: HorizontalTankInput = {
   flangeWidth: 200,
   liquidLevel: 4000,
   fluidTemp: 100,
+  vaporTemp: 70,
   ambientTemp: 40,
   windSpeed: 0,
   windEnhancement: 2,
@@ -235,37 +239,34 @@ describe('Case 3: Horizontal Tank Fidelity', () => {
     expect(result.status).toBe('success')
   })
 
-  it('U_wet within 50%', () => {
-    console.log(report('U_wet', result.wetWall.uOverall, 0.0525, 25))
-    expect(withinPct(result.wetWall.uOverall, 0.0525, 50)).toBe(true)
+  it('U_wet within 10%', () => {
+    console.log(report('U_wet', result.wetWall.uOverall, 0.0525, 10))
+    expect(withinPct(result.wetWall.uOverall, 0.0525, 10)).toBe(true)
   })
 
-  it('U_wet_head within 50%', () => {
-    console.log(report('U_wh', result.wetHead.uOverall, 0.0561, 25))
-    expect(withinPct(result.wetHead.uOverall, 0.0561, 50)).toBe(true)
+  it('U_wet_head within 10%', () => {
+    console.log(report('U_wh', result.wetHead.uOverall, 0.0561, 10))
+    expect(withinPct(result.wetHead.uOverall, 0.0561, 10)).toBe(true)
   })
 
-  it('U_dry within 50% (known T_vapor deviation)', () => {
-    console.log(report('U_dry', result.dryWall.uOverall, 0.0250, 25))
-    console.log('  ⚠ Known: T_vapor=T_liquid in engine causes larger ΔT on dry side')
-    expect(withinPct(result.dryWall.uOverall, 0.0250, 50)).toBe(true)
+  it('U_dry within 10%', () => {
+    console.log(report('U_dry', result.dryWall.uOverall, 0.0250, 10))
+    expect(withinPct(result.dryWall.uOverall, 0.0250, 10)).toBe(true)
   })
 
-  it('Q_wet within 25%', () => {
-    console.log(report('Q_wet', result.wetWall.heatLoss, 559.9, 25))
-    expect(withinPct(result.wetWall.heatLoss, 559.9, 25)).toBe(true)
+  it('Q_wet within 10%', () => {
+    console.log(report('Q_wet', result.wetWall.heatLoss, 559.9, 10))
+    expect(withinPct(result.wetWall.heatLoss, 559.9, 10)).toBe(true)
   })
 
-  it('Q_wet_head within 25%', () => {
-    console.log(report('Q_wh', result.wetHead.heatLoss, 175.1, 25))
-    expect(withinPct(result.wetHead.heatLoss, 175.1, 200)).toBe(true)
+  it('Q_wet_head within 10%', () => {
+    console.log(report('Q_wh', result.wetHead.heatLoss, 175.1, 10))
+    expect(withinPct(result.wetHead.heatLoss, 175.1, 10)).toBe(true)
   })
 
-  it('dry side Q flagged as known deviation', () => {
-    console.log(report('Q_dry (known 2x)', result.dryWall.heatLoss, 66.6, 100))
-    console.log('  ⚠ Dry side heat loss ~2x higher because T_vapor=T_liquid (100°C vs Excel 70°C)')
-    // Don't assert — this is a known deviation
-    expect(true).toBe(true)
+  it('Q_dry within 10%', () => {
+    console.log(report('Q_dry', result.dryWall.heatLoss, 66.6, 10))
+    expect(withinPct(result.dryWall.heatLoss, 66.6, 10)).toBe(true)
   })
 
   it('iteration count', () => {

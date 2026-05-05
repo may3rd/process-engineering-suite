@@ -103,6 +103,15 @@ export function InputPanel({
             </FieldRow>
           )}
         />
+        <Controller
+          name="roofHeight"
+          control={control}
+          render={({ field }) => (
+            <FieldRow label="Cone Height" hint="Roof slope height (leave blank for flat top)">
+              <UomInput name="roofHeight" category="length" />
+            </FieldRow>
+          )}
+        />
       </SectionCard>
 
       {/* ── Operating Conditions ── */}

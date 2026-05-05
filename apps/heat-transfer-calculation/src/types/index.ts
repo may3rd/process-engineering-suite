@@ -44,6 +44,7 @@ export interface CalculationInput {
 
   // Operating conditions (base units: °C, m/s)
   fluidTemp: number               // °C — bulk liquid temperature
+  vaporTemp?: number              // °C — dry/vapor space bulk temperature; defaults to fluidTemp
   ambientTemp: number             // °C — ambient air temperature
   windSpeed: number               // m/s — average wind speed
 
@@ -158,6 +159,7 @@ export interface HorizontalTankInput {
 
   // Operating (°C, m/s)
   fluidTemp: number
+  vaporTemp?: number               // °C — dry/vapor space bulk temperature; defaults to fluidTemp
   ambientTemp: number
   windSpeed: number
   groundTemp?: number
