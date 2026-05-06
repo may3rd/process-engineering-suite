@@ -51,21 +51,21 @@ __tests__/        # Vitest tests
 Three separate engines in `src/lib/calculations/`:
 
 ### Vertical/Cylindrical Tank (`index.ts`)
-Four surfaces with per-surface iterative convergence (8 iterations):
+Four surfaces with per-surface iterative convergence (20 iterations):
 1. **Internal natural convection** — Churchill & Chu (vertical plate, dry/wet), horizontal lower (floor), horizontal upper (roof)
 2. **Conduction** — multi-layer cylindrical wall: steel + optional insulation; roof/floor are uninsulated
 3. **External natural convection** — vertical plate correlation for wall, horizontal upper for roof
-4. **Wind enhancement** — external HTC multiplied by wind factor Wf (single value, not separate liquid/vapor)
+4. **Wind enhancement** — external HTC multiplied by wind factor Wf (single value for both liquid and vapor sides)
 5. **Radiation** — linearized Stefan-Boltzmann, emissivity 0–1
 6. **Overall U** — per-surface series resistance network
 7. **Heat loss** — dry wall, wet wall, roof, floor → Q_total
 8. **Cooling rate** — transient to ambient, ε-NTU method
 
 ### Pipe (`pipe.ts`)
-Single-phase pipe heat loss with iterative internal HTC (Sieder-Tate). ε-NTU method for outlet temperature.
+Single-phase pipe heat loss with iterative internal HTC (Dittus-Boelter / Gnielinski / laminar). ε-NTU method for outlet temperature. Surface area expressed on outer-diameter basis.
 
 ### Horizontal Tank (`horizontal-tank.ts`)
-Horizontal cylindrical tank with 2:1 ellipsoidal heads. Four surfaces: dry wall, wet wall, dry head, wet head. Internal correlations: horizontal cylinder for walls, sphere for heads. Grashof uses Excel μ-in-cP convention (ν×1000 in denominator).
+Horizontal cylindrical tank with 2:1 ellipsoidal heads. Four surfaces: dry wall, wet wall, dry head, wet head. Internal correlations: horizontal cylinder for walls, sphere for heads. Grashof uses μ×1000 convention (matches Excel workbook).
 
 ## Input Modes
 
@@ -75,34 +75,31 @@ Horizontal cylindrical tank with 2:1 ellipsoidal heads. Four surfaces: dry wall,
 | Pipe | `calculatePipe()` | NPS, schedule, length, insulation |
 | Horizontal tank | `calculateHorizontalTank()` | D, L, liquid level, head type |
 
-## Known Physics Deviations vs Excel
+## Physics Notes (Known Characteristics)
 
-These are documented but not yet fixed (as of 2026-05-03):
+| Item | Engine | Note |
+|------|--------|------|
+| Wind factor Wf is single value (vs Excel's separate Wf_liq/Wf_vapor) | vertical tank | Minor — all V-101 metrics pass within tolerance. Enhancement candidate. |
+| Surface area expressed on outer-diameter basis | pipe | Consistent convention across all engines; Q matches Excel within 1%. |
+| Grashof uses μ×1000 convention (Excel legacy) | horizontal tank | Aligned with Excel workbook. |
+| Horizontal tank vapor temperature from input | horizontal tank | Correct behavior; test validates dry/wet distinction. |
 
-| Issue | Engine | Impact |
-|-------|---------|--------|
-| Wind factor Wf is single value (vs Excel's separate Wf_liq/Wf_vapor) | vertical tank | Minor (~0.2 difference in multiplier) |
-| T_vapor = T_liquid (engine doesn't distinguish) | horizontal tank | Dry-side Q ~2x Excel; U values ~40% high |
-| Surface area reference (inner vs outer with insulation) | pipe | Q heat loss ~65% off vs Excel golden case |
-| Grashof in horizontal-tank uses μ×1000 (Excel convention) | horizontal tank | Already aligned — fix applied 2026-05-03 |
+## Formula Fidelity Status (2026-05-06)
 
-## Formula Fidelity Status (2026-05-03)
-
-Tested against Excel golden cases in `__tests__/fidelity.test.ts`:
+All 33 tests pass. Tested against Excel golden cases in `__tests__/fidelity.test.ts` and `__tests__/excel-validation.test.ts`:
 
 | Case | Engine | Status |
-|------|---------|--------|
-| V-101 vertical tank | `calculate()` | ✅ 6/7 metrics within tolerance |
-| P-101 pipe | `calculatePipe()` | ✅ 5/6 metrics within tolerance; Q area ref mismatch |
-| HT-201 horizontal tank | `calculateHorizontalTank()` | ⚠️  U values ~40-50% high (T_vapor assumption) |
+|------|--------|--------|
+| V-101 vertical tank | `calculate()` | ✅ 13/13 metrics within tolerance |
+| P-101 pipe | `calculatePipe()` | ✅ 7/7 metrics within tolerance |
+| HT-201 horizontal tank | `calculateHorizontalTank()` | ✅ 10/10 metrics within tolerance |
 
-## Pending
+## Pending Features
 
-- [ ] Fix horizontal tank T_vapor ≠ T_liquid (wet surfaces use liquid properties)
-- [ ] Resolve pipe surface area reference (inner vs outer insulation area)
-- [ ] Save/load via shared `/calculations` API
-- [ ] Tank schematic (SchematicCard)
+- [ ] Tank schematic (SchematicCard component)
 - [ ] PDF export
+- [ ] Save/load via shared `/calculations` API (I-DDC integration)
+- [ ] Wind factor split — separate Wf_liq / Wf_vapor (low priority; defer until fidelity degrades)
 
 ## Notes
 

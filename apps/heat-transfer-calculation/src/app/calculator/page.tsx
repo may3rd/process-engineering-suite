@@ -71,14 +71,16 @@ export default function CalculatorPage() {
 
   const [calculationMetadata, setCalculationMetadata] = useState<CalculationMetadata>(EMPTY_METADATA)
   const [revisionHistory, setRevisionHistory] = useState<RevisionRecord[]>([])
-  const [clearToken, setClearToken] = useState(0)
+  const [linkedEquipmentId, setLinkedEquipmentId] = useState<string | null>(null)
+  const [linkedEquipmentTag, setLinkedEquipmentTag] = useState<string | null>(null)
 
   const handleClear = () => {
     form.reset(createDefaultValues() as unknown as CalculationInput, { keepDefaultValues: false })
     form.clearErrors()
     setCalculationMetadata(EMPTY_METADATA)
     setRevisionHistory([])
-    setClearToken((value) => value + 1)
+    setLinkedEquipmentId(null)
+    setLinkedEquipmentTag(null)
   }
 
   return (
@@ -97,10 +99,12 @@ export default function CalculatorPage() {
                 Heat Loss Calculator · Storage Tank
               </p>
               <ActionMenu
-                onTankLinked={() => {}}
-                linkedTag={null}
-                linkedEquipmentId={null}
-                clearToken={clearToken}
+                linkedEquipmentId={linkedEquipmentId}
+                linkedEquipmentTag={linkedEquipmentTag}
+                onEquipmentLinked={(equipmentId, equipmentTag) => {
+                  setLinkedEquipmentId(equipmentId)
+                  setLinkedEquipmentTag(equipmentTag ?? null)
+                }}
                 onClear={handleClear}
                 calculationMetadata={calculationMetadata}
                 revisionHistory={revisionHistory}

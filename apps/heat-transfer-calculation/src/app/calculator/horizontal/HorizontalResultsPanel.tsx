@@ -1,6 +1,7 @@
 "use client"
 
 import { SectionCard } from "../components/SectionCard"
+import { SchematicCard } from "../components/SchematicCard"
 import { Badge } from "@/components/ui/badge"
 import type { HorizontalTankResult, HorizontalTankSurfaceSnap } from "@/types"
 import { CalculationStatus } from "@/types"
@@ -8,13 +9,15 @@ import { CalculationStatus } from "@/types"
 interface Props { result: HorizontalTankResult | null }
 
 export function HorizontalResultsPanel({ result }: Props) {
-  if (!result) return <SectionCard title="Results"><p className="text-sm italic text-muted-foreground text-center py-4">Enter inputs to see results.</p></SectionCard>
-  if (result.status === CalculationStatus.ERROR) return <SectionCard title="Results" action={<Badge variant="outline" className="text-xs text-destructive">Error</Badge>}><p className="text-sm text-destructive">Calculation could not complete.</p></SectionCard>
+  if (!result) return <div className="space-y-4"><SchematicCard /><SectionCard title="Results"><p className="text-sm italic text-muted-foreground text-center py-4">Enter inputs to see results.</p></SectionCard></div>
+  if (result.status === CalculationStatus.ERROR) return <div className="space-y-4"><SchematicCard /><SectionCard title="Results" action={<Badge variant="outline" className="text-xs text-destructive">Error</Badge>}><p className="text-sm text-destructive">Calculation could not complete.</p></SectionCard></div>
 
   const { dryWall, wetWall, dryHead, wetHead, totalHeatLoss, totalArea, cooling, iterations } = result
 
   return (
     <div className="space-y-4">
+      <SchematicCard />
+
       <SectionCard title="Design Summary" action={<Badge variant="secondary" className="text-xs">8 iterations</Badge>}>
         <div className="grid grid-cols-3 gap-4 text-center">
           <Kpi label="Total Heat Loss" value={formatSI(totalHeatLoss, 1)} unit="W" />

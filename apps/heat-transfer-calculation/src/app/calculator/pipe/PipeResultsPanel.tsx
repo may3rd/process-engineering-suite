@@ -1,6 +1,7 @@
 "use client"
 
 import { SectionCard } from "../components/SectionCard"
+import { SchematicCard } from "../components/SchematicCard"
 import { Badge } from "@/components/ui/badge"
 import type { PipeCalculationResult } from "@/types"
 import { CalculationStatus } from "@/types"
@@ -12,25 +13,33 @@ interface PipeResultsPanelProps {
 export function PipeResultsPanel({ result }: PipeResultsPanelProps) {
   if (!result) {
     return (
-      <SectionCard title="Results">
-        <p className="text-sm italic text-muted-foreground text-center py-4">
-          Enter inputs to see results.
-        </p>
-      </SectionCard>
+      <div className="space-y-4">
+        <SchematicCard />
+        <SectionCard title="Results">
+          <p className="text-sm italic text-muted-foreground text-center py-4">
+            Enter inputs to see results.
+          </p>
+        </SectionCard>
+      </div>
     )
   }
 
   if (result.status === CalculationStatus.ERROR) {
     return (
-      <SectionCard title="Results"
-        action={<Badge variant="outline" className="text-xs text-destructive">Error</Badge>}>
-        <p className="text-sm text-destructive">Calculation could not complete. Check inputs.</p>
-      </SectionCard>
+      <div className="space-y-4">
+        <SchematicCard />
+        <SectionCard title="Results"
+          action={<Badge variant="outline" className="text-xs text-destructive">Error</Badge>}>
+          <p className="text-sm text-destructive">Calculation could not complete. Check inputs.</p>
+        </SectionCard>
+      </div>
     )
   }
 
   return (
     <div className="space-y-4">
+      <SchematicCard />
+
       {/* ── KPI Row ── */}
       <SectionCard title="Pipe Summary"
         action={<Badge variant="secondary" className="text-xs">8 iterations</Badge>}>
