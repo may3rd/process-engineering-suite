@@ -283,7 +283,7 @@ export function buildPipeSchematic(
   const wallOuterR   = Math.max(outerPxPerMm * (innerD + 2 * (wallOuterD - innerD) / 2) / 2, 2)  // outer radius of wall layer
   const fluidR       = Math.max(outerPxPerMm * innerD / 2, 1.5)                    // radius of fluid bore
   const bodyY  = cy - outerR
-  const crossCx = x0 + pipeW * 0.80  // cross-section callout offset inside pipe
+  const crossCx = x1 - outerR  // right end of pipe, so the outer circle just kisses the tip
 
   return {
     mode: 'pipe',
@@ -335,7 +335,7 @@ export function buildPipeSchematic(
       { key: 'pipe-inlet-temp', text: `Tᵢₙ ${fmtTemp(input.inletTemp)}`, x: x0 + 10, y: cy + outerR + 22, anchor: 'start' },
       { key: 'pipe-outlet-temp', text: 'Tₒᵤₜ', x: crossCx + outerR + 12, y: cy + outerR + 18, anchor: 'start' },
       { key: 'pipe-ambient-temp', text: `Tₐ ${fmtTemp(input.ambientTemp)}`, x: x0 + pipeW * 0.45, y: bodyY - 50, anchor: 'middle', tone: 'ambient' },
-      { key: 'pipe-flow-label', text: 'flow direction', x: x0 + pipeW * 0.4, y: cy + 18, anchor: 'middle', size: 11 },
+      { key: 'pipe-flow-label', text: 'flow direction', x: x0 + pipeW * 0.4, y: cy - 20, anchor: 'middle', size: 11 },
       { key: 'pipe-insulation-label', text: insulationThickness > 0 ? `insulation ${fmtM(insulationThickness)}` : 'bare pipe', x: crossCx, y: cy - outerR - 12, anchor: 'middle', tone: 'insulation' },
       { key: 'pipe-wall-label', text: `wall ${fmtM(input.wallThickness)}`, x: x0 + pipeW * 0.74, y: cy + fluidR + 16, anchor: 'middle', tone: 'metal', size: 11 },
     ],
