@@ -884,10 +884,6 @@ export function CalculationReport({
         <Section title="Input Summary">
           <TwoColumnInputTable groups={inputGroups} />
         </Section>
-
-        <Section title="System Schematic">
-          <SchematicSection input={input} mode={mode} />
-        </Section>
       </FramedPage>
 
       <FramedPage pageNumber={2}>
@@ -905,6 +901,10 @@ export function CalculationReport({
               { label: 'Revision records', value: present(revisions.length) },
             ]}
           />
+        </Section>
+
+        <Section title="System Schematic">
+          <SchematicSection input={input} mode={mode} />
         </Section>
       </FramedPage>
 
