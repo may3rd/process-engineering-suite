@@ -396,7 +396,7 @@ export function buildHorizontalTankSchematic(
       ? { key: 'horizontal-liquid-fill', x: xOuter0, y: levelY, width: tankW, height: y1 - levelY, tone: 'liquid', opacity: 0.22 }
       : undefined,
     outlines: {
-      paths: [{ key: 'horizontal-shell-outline', d: fullPath }],
+      paths: [{ key: 'horizontal-shell-outline', d: shellPath }],
       rects: [],
       circles: [],
       ellipses: [],
@@ -416,8 +416,8 @@ export function buildHorizontalTankSchematic(
       key: 'horizontal-liquid-level',
       label: `LL ${fmtM(liquidMm)}`,
       y: levelY,
-      x0: xOuter0,
-      x1: xOuter1,
+      x0: xTan0,
+      x1: xTan1,
       color: '#38bdf8',
       labelOffset: 18,
     }],
@@ -426,10 +426,10 @@ export function buildHorizontalTankSchematic(
       { key: 'horizontal-diameter', label: `D ${fmtM(diameter)}`, x1: xOuter1 + 38, y1: y0, x2: xOuter1 + 38, y2: y1, vertical: true, labelSide: 'end' },
     ],
     labels: [
-      { key: 'horizontal-dry-label', text: 'dry wall/head', x: width / 2, y: y0 + Math.max((levelY - y0) / 2, 16), anchor: 'middle', tone: 'dry' },
-      { key: 'horizontal-wet-label', text: 'wet wall/head', x: width / 2, y: levelY + Math.max((y1 - levelY) / 2, 18), anchor: 'middle', tone: 'liquid' },
-      { key: 'horizontal-head-label', text: input.headType === HeadType.ELLIPSOIDAL_2_1 ? '2:1 elliptical heads' : input.headType, x: width / 2, y: y0 - 14, anchor: 'middle', size: 11 },
-      { key: 'horizontal-temp-label', text: `Tᶠ ${fmtTemp(input.fluidTemp)} · Tₐ ${fmtTemp(input.ambientTemp)}`, x: width / 2, y: height - 14, anchor: 'middle', size: 11 },
+      { key: 'horizontal-dry-label', text: 'dry wall/head', x: cy, y: y0 + Math.max((levelY - y0) / 2, 16), anchor: 'middle', tone: 'dry' },
+      { key: 'horizontal-wet-label', text: 'wet wall/head', x: cy, y: levelY + Math.max((y1 - levelY) / 2, 18), anchor: 'middle', tone: 'liquid' },
+      { key: 'horizontal-head-label', text: input.headType === HeadType.ELLIPSOIDAL_2_1 ? '2:1 elliptical heads' : input.headType, x: cy, y: y0 - 14, anchor: 'middle', size: 11 },
+      { key: 'horizontal-temp-label', text: `Tᶠ ${fmtTemp(input.fluidTemp)} · Tₐ ${fmtTemp(input.ambientTemp)}`, x: cy, y: height - 14, anchor: 'middle', size: 11 },
     ],
     subtitle: 'Horizontal cylinder · elliptical heads and liquid split',
   }
