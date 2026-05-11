@@ -276,10 +276,12 @@ export function buildPipeSchematic(
   const x0 = (width - pipeW) / 2 - pipeH * 0.12
   const x1 = x0 + pipeW
   const cy = height / 2
-  const outerR = pipeH / 2
-  const wallR = outerR * clamp(wallOuterD / Math.max(insulatedOuterD, 1), 0.58, 0.94)
-  const innerR = outerR * clamp(innerD / Math.max(insulatedOuterD, 1), 0.42, 0.86)
-  const bodyY = cy - outerR
+  const outerR  = pipeH / 2
+  // Compute radii from actual dimensions so proportions are physically correct
+  const outerPxPerMm = pipeH / insulatedOuterD       // px per mm (all layers)
+  const wallR  = Math.max(outerPxPerMm * (wallOuterD - innerD) / 2, 2)
+  const innerR = Math.max(outerPxPerMm * innerD / 2, 1.5)
+  const bodyY  = cy - outerR
   const crossCx = x1
 
   return {
