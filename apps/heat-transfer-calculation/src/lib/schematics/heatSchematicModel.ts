@@ -276,11 +276,12 @@ export function buildPipeSchematic(
   const x0 = (width - pipeW) / 2 - pipeH * 0.12
   const x1 = x0 + pipeW
   const cy = height / 2
-  const outerR  = pipeH / 2
+  const outerR     = pipeH / 2  // full radius of outer insulation boundary in the cross-section
   // Compute radii from actual dimensions so proportions are physically correct
-  const outerPxPerMm = pipeH / insulatedOuterD       // px per mm (all layers)
-  const wallR  = Math.max(outerPxPerMm * (wallOuterD - innerD) / 2, 2)
-  const innerR = Math.max(outerPxPerMm * innerD / 2, 1.5)
+  const outerPxPerMm = pipeH / insulatedOuterD  // px per mm
+  const insulationR  = Math.max(outerPxPerMm * insulationThickness, 2)           // insulation layer radial thickness
+  const wallOuterR   = Math.max(outerPxPerMm * (innerD + 2 * (wallOuterD - innerD) / 2) / 2, 2)  // outer radius of wall layer
+  const fluidR       = Math.max(outerPxPerMm * innerD / 2, 1.5)                    // radius of fluid bore
   const bodyY  = cy - outerR
   const crossCx = x1
 
@@ -291,14 +292,14 @@ export function buildPipeSchematic(
     zoneFills: {
       rects: [
         { key: 'pipe-insulation-body', x: x0, y: bodyY, width: pipeW, height: pipeH, rx: outerR, tone: 'insulation', opacity: 0.22 },
-        { key: 'pipe-wall-body', x: x0, y: cy - wallR, width: pipeW, height: wallR * 2, rx: wallR, tone: 'metal', opacity: 0.18 },
-        { key: 'pipe-fluid-body', x: x0, y: cy - innerR, width: pipeW, height: innerR * 2, rx: innerR, tone: 'liquid', opacity: 0.16 },
+        { key: 'pipe-wall-body', x: x0, y: cy - fluidR - insulationR, width: pipeW, height: (fluidR + insulationR) * 2, rx: fluidR + insulationR, tone: 'metal', opacity: 0.18 },
+        { key: 'pipe-fluid-body', x: x0, y: cy - fluidR, width: pipeW, height: fluidR * 2, rx: fluidR, tone: 'liquid', opacity: 0.16 },
       ],
       paths: [],
       circles: [
         { key: 'pipe-insulation-cross-fill', cx: crossCx, cy, r: outerR, tone: 'insulation', opacity: 0.28 },
-        { key: 'pipe-wall-cross-fill', cx: crossCx, cy, r: wallR, tone: 'metal', opacity: 0.24 },
-        { key: 'pipe-fluid-cross-fill', cx: crossCx, cy, r: innerR, tone: 'liquid', opacity: 0.22 },
+        { key: 'pipe-wall-cross-fill', cx: crossCx, cy, r: fluidR + insulationR, tone: 'metal', opacity: 0.24 },
+        { key: 'pipe-fluid-cross-fill', cx: crossCx, cy, r: fluidR, tone: 'liquid', opacity: 0.22 },
       ],
       ellipses: [],
     },
@@ -306,13 +307,13 @@ export function buildPipeSchematic(
       paths: [],
       rects: [
         { key: 'pipe-outer-outline', x: x0, y: bodyY, width: pipeW, height: pipeH, rx: outerR },
-        { key: 'pipe-wall-outline', x: x0, y: cy - wallR, width: pipeW, height: wallR * 2, rx: wallR },
-        { key: 'pipe-bore-outline', x: x0, y: cy - innerR, width: pipeW, height: innerR * 2, rx: innerR },
+        { key: 'pipe-wall-outline', x: x0, y: cy - fluidR - insulationR, width: pipeW, height: (fluidR + insulationR) * 2, rx: fluidR + insulationR },
+        { key: 'pipe-bore-outline', x: x0, y: cy - fluidR, width: pipeW, height: fluidR * 2, rx: fluidR },
       ],
       circles: [
         { key: 'pipe-outer-cross-outline', cx: crossCx, cy, r: outerR },
-        { key: 'pipe-wall-cross-outline', cx: crossCx, cy, r: wallR },
-        { key: 'pipe-bore-cross-outline', cx: crossCx, cy, r: innerR },
+        { key: 'pipe-wall-cross-outline', cx: crossCx, cy, r: fluidR + insulationR },
+        { key: 'pipe-bore-cross-outline', cx: crossCx, cy, r: fluidR },
       ],
       ellipses: [],
       lines: [
@@ -328,7 +329,7 @@ export function buildPipeSchematic(
     levels: [],
     annotations: [
       { key: 'pipe-length', label: `L ${fmtPipeLength(lengthM)}`, x1: x0, y1: bodyY + pipeH + 34, x2: x1, y2: bodyY + pipeH + 34 },
-      { key: 'pipe-diameter', label: `Dᵢ ${fmtM(innerD)}`, x1: crossCx + outerR + 24, y1: cy - innerR, x2: crossCx + outerR + 24, y2: cy + innerR, vertical: true, labelSide: 'end' },
+      { key: 'pipe-diameter', label: `Dᵢ ${fmtM(innerD)}`, x1: crossCx + outerR + 24, y1: cy - fluidR, x2: crossCx + outerR + 24, y2: cy + fluidR, vertical: true, labelSide: 'end' },
     ],
     labels: [
       { key: 'pipe-inlet-temp', text: `Tᵢₙ ${fmtTemp(input.inletTemp)}`, x: x0 - 10, y: cy + outerR + 18, anchor: 'end' },
@@ -336,7 +337,7 @@ export function buildPipeSchematic(
       { key: 'pipe-ambient-temp', text: `Tₐ ${fmtTemp(input.ambientTemp)}`, x: x0 + pipeW * 0.45, y: bodyY - 50, anchor: 'middle', tone: 'ambient' },
       { key: 'pipe-flow-label', text: 'flow direction', x: x0 + pipeW * 0.4, y: cy - 8, anchor: 'middle', size: 11 },
       { key: 'pipe-insulation-label', text: insulationThickness > 0 ? `insulation ${fmtM(insulationThickness)}` : 'bare pipe', x: crossCx, y: cy - outerR - 12, anchor: 'middle', tone: 'insulation' },
-      { key: 'pipe-wall-label', text: `wall ${fmtM(input.wallThickness)}`, x: x0 + pipeW * 0.74, y: cy + innerR + 16, anchor: 'middle', tone: 'metal', size: 11 },
+      { key: 'pipe-wall-label', text: `wall ${fmtM(input.wallThickness)}`, x: x0 + pipeW * 0.74, y: cy + fluidR + 16, anchor: 'middle', tone: 'metal', size: 11 },
     ],
     subtitle: 'Horizontal pipe · insulation and temperature boundary labels',
   }
