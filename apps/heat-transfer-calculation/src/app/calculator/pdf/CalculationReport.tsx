@@ -1,10 +1,28 @@
 import {
   Document,
+  Circle,
+  Ellipse,
+  G,
+  Line,
   Page,
+  Path,
+  Rect,
   StyleSheet,
+  Svg,
   Text,
   View,
 } from '@react-pdf/renderer'
+import {
+  buildHorizontalTankSchematic,
+  buildPipeSchematic,
+  buildVerticalTankSchematic,
+  type CircleSpec,
+  type EllipseSpec,
+  type HeatSchematicModel,
+  type LineSpec,
+  type PathSpec,
+  type RectSpec,
+} from '@/lib/schematics/heatSchematicModel'
 import type {
   CalculationInput,
   CalculationMetadata,
@@ -664,6 +682,169 @@ function IterationTable({ rows }: { rows: IterationRow[] }) {
   )
 }
 
+// ─── Schematic SVG builders ────────────────────────────────────────────────
+
+const PDF_STROKE  = '#111827'
+const PDF_GUIDE   = '#6b7280'
+const PDF_LIQUID  = '#38bdf8'
+const PDF_DRY     = '#d97706'
+const PDF_INSUL   = '#ea580c'
+const PDF_METAL   = '#64748b'
+
+function PdfSchematic({ input, mode }: { input: ReportInput; mode: ReportMode }) {
+  const model: HeatSchematicModel | null =
+    mode === 'pipe'      ? buildPipeSchematic(input as PipeCalculationInput, 420, 340, 34) :
+    mode === 'horizontal' ? buildHorizontalTankSchematic(input as HorizontalTankInput, 420, 340, 34) :
+    buildVerticalTankSchematic(input as CalculationInput, 420, 340, 34)
+
+  if (!model) return null
+
+  return (
+    <Svg viewBox={`0 0 ${model.width} ${model.height}`} style={{ width: 260, height: 210 }}>
+      {/* Zone fills */}
+      {model.zoneFills.rects.map((r) => (
+        <Rect key={r.key} x={r.x} y={r.y} width={r.width} height={r.height} fill={fillColor(r.tone)} opacity={r.opacity ?? 1} />
+      ))}
+      {model.zoneFills.circles.map((c) => (
+        <Circle key={c.key} cx={c.cx} cy={c.cy} r={c.r} fill={fillColor(c.tone)} opacity={c.opacity ?? 1} />
+      ))}
+      {model.zoneFills.ellipses.map((e) => (
+        <Ellipse key={e.key} cx={e.cx} cy={e.cy} rx={e.rx} ry={e.ry} fill={fillColor(e.tone)} opacity={e.opacity ?? 1} />
+      ))}
+      {model.zoneFills.paths.map((p) => (
+        <Path key={p.key} d={p.d} fill={fillColor(p.tone)} opacity={p.opacity ?? 1} />
+      ))}
+      {model.liquidFill && (
+        <Rect
+          x={model.liquidFill.x} y={model.liquidFill.y}
+          width={model.liquidFill.width} height={model.liquidFill.height}
+          fill={fillColor(model.liquidFill.tone)} opacity={model.liquidFill.opacity ?? 1}
+        />
+      )}
+
+      {/* Outlines */}
+      {model.outlines.rects.map((r) => (
+        <Rect key={r.key} x={r.x} y={r.y} width={r.width} height={r.height}
+          rx={r.rx} ry={r.ry} stroke={PDF_STROKE} strokeWidth={2} fill="none" />
+      ))}
+      {model.outlines.circles.map((c) => (
+        <Circle key={c.key} cx={c.cx} cy={c.cy} r={c.r} stroke={PDF_STROKE} strokeWidth={2} fill="none" />
+      ))}
+      {model.outlines.ellipses.map((e) => (
+        <Ellipse key={e.key} cx={e.cx} cy={e.cy} rx={e.rx} ry={e.ry} stroke={PDF_STROKE} strokeWidth={2} fill="none" />
+      ))}
+      {model.outlines.paths.map((p) => (
+        <Path key={p.key} d={p.d} stroke={PDF_STROKE} strokeWidth={2} fill="none" />
+      ))}
+      {model.outlines.lines.map((l) => (
+        <Line key={l.key} x1={l.x1} y1={l.y1} x2={l.x2} y2={l.y2}
+          stroke={PDF_STROKE} strokeWidth={l.strokeWidth ?? 1.2}
+          strokeDasharray={l.dashed} opacity={l.opacity ?? 1} />
+      ))}
+
+      {/* Guide lines */}
+      {model.guideLines.map((g) => (
+        <Line key={g.key} x1={g.x1} y1={g.y1} x2={g.x2} y2={g.y2}
+          stroke={PDF_GUIDE} strokeWidth={0.75} opacity={g.opacity ?? 0.55} />
+      ))}
+
+      {/* Levels */}
+      {model.levels.map((lv) => (
+        <G key={lv.key}>
+          <Line x1={lv.x0} y1={lv.y} x2={lv.x1} y2={lv.y}
+            stroke={lv.color} strokeWidth={1.5} strokeDasharray={lv.dashed ? '5 4' : undefined} />
+          <Text
+            x={lv.x1 + (lv.labelOffset ?? 18)} y={lv.y - 4}
+            fill={lv.color} style={{ fontSize: 9 }}>
+            {lv.label}
+          </Text>
+        </G>
+      ))}
+
+      {/* Annotations */}
+      {model.annotations.map((ann) => {
+        const mx = (ann.x1 + ann.x2) / 2
+        const my = (ann.y1 + ann.y2) / 2
+        const labelY = ann.vertical ? my : my - 6
+        const labelX = ann.vertical ? (ann.labelSide === 'end' ? mx + 10 : mx - 10) : mx
+        const anchor = ann.vertical ? (ann.labelSide === 'end' ? 'start' : 'end') : 'middle'
+        return (
+          <G key={ann.key}>
+            <Line x1={ann.x1} y1={ann.y1} x2={ann.x2} y2={ann.y2}
+              stroke={PDF_GUIDE} strokeWidth={1.2} />
+            <Text x={labelX} y={labelY} fill={PDF_GUIDE} style={{ fontSize: 9 }} textAnchor={anchor}>
+              {ann.label}
+            </Text>
+          </G>
+        )
+      })}
+
+      {/* Labels */}
+      {model.labels.map((lb) => (
+        <Text
+          key={lb.key} x={lb.x} y={lb.y}
+          textAnchor={lb.anchor ?? 'middle'}
+          style={{ fontSize: lb.size ?? 10 }}
+          fill={PDF_GUIDE}>
+          {lb.text}
+        </Text>
+      ))}
+
+      {/* Title */}
+      <Text x={model.width / 2} y={20} textAnchor="middle" fill={PDF_GUIDE} style={{ fontSize: 10 }}>
+        {model.subtitle}
+      </Text>
+    </Svg>
+  )
+}
+
+function fillColor(tone?: string): string {
+  switch (tone) {
+    case 'liquid':  return PDF_LIQUID
+    case 'wet':     return '#7dd3fc'
+    case 'dry':     return PDF_DRY
+    case 'insulation': return PDF_INSUL
+    case 'metal':   return PDF_METAL
+    default:        return '#cbd5e1'
+  }
+}
+
+function SchematicLegend({ mode }: { mode: ReportMode }) {
+  const items = [
+    { color: PDF_LIQUID, label: 'LIQUID / WET' },
+    { color: PDF_DRY,    label: 'DRY WALL' },
+    { color: PDF_INSUL,  label: 'INSULATION' },
+    { color: PDF_METAL,  label: 'METAL' },
+  ]
+  if (mode === 'pipe') items.push({ color: PDF_GUIDE, label: 'AMBIENT' })
+
+  return (
+    <View style={{ flexDirection: 'row', gap: 12, marginTop: 6, justifyContent: 'center' }}>
+      {items.map((item) => (
+        <View key={item.label} style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+          <Rect x={0} y={0} width={8} height={8} fill={item.color} />
+          <Text style={{ fontSize: 7, color: PDF_GUIDE }}>{item.label}</Text>
+        </View>
+      ))}
+    </View>
+  )
+}
+
+function SchematicSection({ input, mode }: { input: ReportInput; mode: ReportMode }) {
+  return (
+    <View>
+      <PdfSchematic input={input} mode={mode} />
+      <SchematicLegend mode={mode} />
+      <Text style={{ fontSize: 7, color: '#94a3b8', textAlign: 'center', marginTop: 3 }}>
+        {mode === 'pipe' ? 'Pipe / duct cross-section with insulation layers' :
+         mode === 'horizontal' ? 'Horizontal tank dry/wet surface zones' :
+         'Vertical tank dry/wet surface zones'}
+      </Text>
+    </View>
+  )
+}
+
+
 export function CalculationReport({
   input,
   result,
@@ -702,6 +883,10 @@ export function CalculationReport({
 
         <Section title="Input Summary">
           <TwoColumnInputTable groups={inputGroups} />
+        </Section>
+
+        <Section title="System Schematic">
+          <SchematicSection input={input} mode={mode} />
         </Section>
       </FramedPage>
 
