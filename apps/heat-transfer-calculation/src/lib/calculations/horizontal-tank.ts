@@ -106,15 +106,24 @@ export function calculateHorizontalTank(input: HorizontalTankInput): HorizontalT
 
   const pctLevel = D > 0 ? Math.min(Math.max(h / D, 0), 1) : 0
 
-  // Areas (inner surface). The Excel workbook treats the 2:1 ellipsoidal
-  // head surface formula below as the combined-head equivalent, then includes
-  // that area in the wall split and again in the head split.
   const A_head_total = singleHeadSurfaceArea(input.headType, D, headDepth)
-  const A_shell = Math.PI * D * L_tan + A_head_total
 
-  // Wet/dry split proportional to % liquid level
-  const A_dry_wall = A_shell * (1 - pctLevel)
-  const A_wet_wall = A_shell * pctLevel
+  // ── Wet/dry shell split via circular arc geometry ──
+  // Liquid at height h from bottom of shell:
+  //   dryArcAngle = 2·acos((R - h) / R)  → angle spanning the VAPOR portion
+  //   wetArcAngle = 2π - dryArcAngle     → angle spanning the LIQUID portion
+  const R = D / 2
+  const dryAngle = 2 * Math.acos(Math.max(-1, Math.min(1, (R - h) / R)))
+  const wetAngle = 2 * Math.PI - dryAngle
+  const wetArcLen = R * wetAngle     // m — submerged perimeter
+  const dryArcLen = R * dryAngle     // m — vapor-space perimeter
+
+  // Shell wet/dry (cylinder only — heads handled separately below)
+  const A_wet_wall = wetArcLen * L_tan
+  const A_dry_wall = dryArcLen * L_tan
+
+  // Head wet/dry — use proportional split (the liquid surface cuts the
+  // ellipsoidal/hemispherical head as a circular cross-section, roughly proportional)
   const A_dry_head = A_head_total * (1 - pctLevel)
   const A_wet_head = A_head_total * pctLevel
 
@@ -156,8 +165,7 @@ export function calculateHorizontalTank(input: HorizontalTankInput): HorizontalT
   const Wf = input.windEnhancement ?? 1.0
   const eps = input.surfaceEmissivity
 
-  // ── Outside diameter ──────────────────────────────────────────
-  const D_outer_wall = D + 2 * (t_wall + t_ins)
+  const D_ext = D + 2 * (t_wall + t_ins)  // actual outer diameter exposed to air
 
   // ── Initial wall temp guesses ─────────────────────────────────
   let Tws_dry = T_a + 0.25 * (T_v - T_a)
@@ -173,31 +181,25 @@ export function calculateHorizontalTank(input: HorizontalTankInput): HorizontalT
 
   for (let iter = 0; iter < MAX_ITERATIONS; iter++) {
     // ── Internal Film Coefficients ──────────────────────────────
-    // Dry wall (vapor/gas, L_char = D, horizontal cylinder)
-    const nu_dry = liq.mu / liq.rho  // wait, should be gas for dry wall
-    const nu_gas = gas.mu / gas.rho
     const iDry = computeInternal(gas, D, T_v, Twi_dry, nusseltHorizontalCylinder)
-    // Wet wall (liquid, L_char = D, horizontal cylinder)
     const iWet = computeInternal(liq, D, T_f, Twi_wet, nusseltHorizontalCylinder)
-    // Dry head (vapor/gas, L_char = D - h = dry height above liquid, sphere)
     const L_dry = D - h
     const iDryHead = computeInternal(gas, Math.max(L_dry, 0.01), T_v, Twi_dh, nusseltSphere)
-    // Wet head (liquid, L_char = h, sphere)
     const iWetHead = computeInternal(liq, Math.max(h, 0.01), T_f, Twi_wh, nusseltSphere)
 
     // ── External Natural Convection ─────────────────────────────
     const dT_ext = Math.max((Tws_dry + Tws_wet) / 2 - T_a, 0.1)
-    const gr_ext = grashof(air.beta, dT_ext, D_outer_wall, nu_air)
+    const gr_ext = grashof(air.beta, dT_ext, D_ext, nu_air)
     const ra_ext = gr_ext * pr_air
     const nu_ext_wall = nusseltHorizontalCylinder(ra_ext)
-    const h_o_nat_wall = nu_ext_wall * airP.k / D_outer_wall
+    const h_o_nat_wall = nu_ext_wall * airP.k / D_ext
 
     // Head external (sphere)
     const dT_head_ext = Math.max((Tws_dh + Tws_wh) / 2 - T_a, 0.1)
-    const gr_head_ext = grashof(air.beta, dT_head_ext, D_outer_wall, nu_air)
+    const gr_head_ext = grashof(air.beta, dT_head_ext, D_ext, nu_air)
     const ra_head_ext = gr_head_ext * pr_air
     const nu_ext_head = nusseltSphere(ra_head_ext)
-    const h_o_nat_head = nu_ext_head * airP.k / D_outer_wall
+    const h_o_nat_head = nu_ext_head * airP.k / D_ext
 
     // Wind enhancement
     const h_o_dry = h_o_nat_wall * Wf
@@ -250,7 +252,7 @@ export function calculateHorizontalTank(input: HorizontalTankInput): HorizontalT
   // ── Final results ─────────────────────────────────────────────
   const last = iterations[MAX_ITERATIONS - 1]
   const Q_total = last.dryWall.heatLoss + last.wetWall.heatLoss + last.dryHead.heatLoss + last.wetHead.heatLoss
-  const A_total = A_shell + A_head_total
+  const A_total = Math.PI * D * L_tan + 2 * A_head_total
 
   const V_liq = Math.PI * (D / 2) ** 2 * (L_tan + 2 * L_flange) * pctLevel
   const mass = V_liq * liq.rho
@@ -260,7 +262,7 @@ export function calculateHorizontalTank(input: HorizontalTankInput): HorizontalT
     if (T_f - T_a > 0 && rateCHr > 0) timeHr = (T_f - T_a) / rateCHr
   }
 
-  const Re_ext = input.windSpeed * D_outer_wall / nu_air
+  const Re_ext = input.windSpeed * D_ext / nu_air
 
   return {
     status: CalculationStatus.SUCCESS,

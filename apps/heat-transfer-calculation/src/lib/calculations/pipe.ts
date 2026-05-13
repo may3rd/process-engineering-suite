@@ -161,8 +161,9 @@ export function calculatePipe(input: PipeCalculationInput): PipeCalculationResul
 
   // Outer diameter including insulation
   const D_outer = Do + 2 * t_ins
-  const A_inner = A_surface
-  const A_outer = 2 * Math.PI * D_outer * L
+  const D_ext = D_outer                          // actual outer surface (bare or insulated)
+  const A_inner = A_surface                      // π·Di·L — inner pipe wall
+  const A_outer = Math.PI * D_ext * L            // π·D·L — outer surface area (not 2π·DL)
 
   // Cylindrical conduction resistance expressed on the outer surface area basis.
   // R''_o = A_o * ln(r_o/r_i) / (2πLk) = D_o * ln(D_o/D_i) / (2k)
@@ -223,7 +224,7 @@ export function calculatePipe(input: PipeCalculationInput): PipeCalculationResul
     // external natural-convection coefficient, not the iterated skin ΔT.
     const T_wall_ext = Math.max(T_in - T_a, 0.1)
     const nu_air = airProps.mu / airProps.rho
-    const gr_ext = grashofNumber(air.beta, T_wall_ext, D_outer, nu_air)
+    const gr_ext = grashofNumber(air.beta, T_wall_ext, D_ext, nu_air)
     const pr_ext = airProps.cp * airProps.mu / airProps.k
     const ra_ext = gr_ext * pr_ext
 
@@ -234,7 +235,7 @@ export function calculatePipe(input: PipeCalculationInput): PipeCalculationResul
       Nu_ext_nat = nusseltHorizontalCylinder(ra_ext, pr_ext)
     }
 
-    const h_o_nat = Nu_ext_nat * airProps.k / D_outer
+    const h_o_nat = Nu_ext_nat * airProps.k / D_ext
 
     // ── External Forced Convection (wind) ───────────────────────
     const Re_ext = V_wind * D_outer / nu_air
@@ -268,8 +269,8 @@ export function calculatePipe(input: PipeCalculationInput): PipeCalculationResul
     const Q = U * A_outer * (T_in - T_a)
     const T_out = mCp > 0 ? T_in - Q / mCp : T_in
 
-    // ── Back-calculate wall temperatures ────────────────────────
-    const Twi = T_avg - Q / (Math.max(h_i, 1e-6) * A_inner)
+    // ── Back-calculate wall temperatures (Q computed on A_outer basis) ─
+    const Twi = T_avg - Q / (Math.max(h_i, 1e-6) * A_outer)
     Tws = T_a + Q / (Math.max(h_o_total, 1e-6) * A_outer)
 
     // ── Update T_avg ────────────────────────────────────────────
