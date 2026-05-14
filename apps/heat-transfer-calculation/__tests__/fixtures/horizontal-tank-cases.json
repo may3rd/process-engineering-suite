@@ -1,0 +1,440 @@
+[
+  {
+    "caseId": "HT-001",
+    "tag": "HT-201",
+    "description": "Horizontal tank golden case \u2014 fidelity test baseline. Insulated 2:1 ellipsoidal tank with hot water.",
+    "mode": "horizontal-tank",
+    "input": {
+      "tag": "HT-201",
+      "insideDiameter": 6000,
+      "tankLength": 10000,
+      "headType": "2:1 Ellipsoidal",
+      "flangeWidth": 200,
+      "liquidLevel": 4000,
+      "fluidTemp": 100,
+      "vaporTemp": 70,
+      "ambientTemp": 40,
+      "windSpeed": 0,
+      "windEnhancement": 2,
+      "groundTemp": 50,
+      "wallThickness": 30,
+      "wallConductivity": 45.3,
+      "insulationThickness": 300,
+      "insulationConductivity": 0.035,
+      "fluidDensity": 971.8,
+      "fluidSpecificHeat": 4197,
+      "fluidViscosity": 0.000355,
+      "fluidThermalConductivity": 0.67,
+      "fluidExpansionCoeff": 0.000653,
+      "vaporDensity": 1.127,
+      "vaporSpecificHeat": 1007,
+      "vaporViscosity": 1.918e-05,
+      "vaporThermalConductivity": 0.0266,
+      "vaporExpansionCoeff": 0.00321,
+      "foulingDryWall": 2500,
+      "foulingWetWall": 10000,
+      "foulingDryHead": 2500,
+      "foulingWetHead": 10000,
+      "surfaceEmissivity": 0.02,
+      "groundConductivity": 1.95,
+      "metadata": {
+        "projectNumber": "",
+        "documentNumber": "",
+        "title": "",
+        "projectName": "",
+        "client": ""
+      }
+    },
+    "expected": {
+      "dryWall": {
+        "uOverall": 0.027,
+        "heatLoss": 93.5
+      },
+      "wetWall": {
+        "uOverall": 0.055,
+        "heatLoss": 243.7
+      },
+      "dryHead": {
+        "uOverall": 0.032,
+        "heatLoss": 24.7
+      },
+      "wetHead": {
+        "uOverall": 0.056,
+        "heatLoss": 176.1
+      },
+      "totalHeatLoss": 538,
+      "totalArea": 344.59,
+      "cooling": {
+        "rateCHr": 0.0024,
+        "timeToAmbientHr": 24767.6
+      }
+    },
+    "notes": "PES TypeScript engine result (src/lib/calculations/horizontal-tank.ts). Golden case \u2014 Excel-validated. Tolerance: \u00b110%.",
+    "tolerance": 10
+  },
+  {
+    "caseId": "HT-002",
+    "tag": "HT-EXCEL-001",
+    "description": "Horizontal tank from Excel validation \u2014 matches the original Excel workbook test case.",
+    "mode": "horizontal-tank",
+    "input": {
+      "tag": "HT-EXCEL-001",
+      "insideDiameter": 6000,
+      "tankLength": 10000,
+      "headType": "2:1 Ellipsoidal",
+      "flangeWidth": 200,
+      "liquidLevel": 4000,
+      "fluidTemp": 100,
+      "vaporTemp": 70,
+      "ambientTemp": 40,
+      "windSpeed": 0,
+      "windEnhancement": 2,
+      "groundTemp": 50,
+      "wallThickness": 30,
+      "wallConductivity": 45.3,
+      "insulationThickness": 300,
+      "insulationConductivity": 0.035,
+      "fluidDensity": 971.8,
+      "fluidSpecificHeat": 4197,
+      "fluidViscosity": 0.000355,
+      "fluidThermalConductivity": 0.67,
+      "fluidExpansionCoeff": 0.000653,
+      "vaporDensity": 1.127,
+      "vaporSpecificHeat": 1007,
+      "vaporViscosity": 1.918e-05,
+      "vaporThermalConductivity": 0.0266,
+      "vaporExpansionCoeff": 0.00321,
+      "foulingDryWall": 2500,
+      "foulingWetWall": 10000,
+      "foulingDryHead": 2500,
+      "foulingWetHead": 10000,
+      "surfaceEmissivity": 0.02,
+      "groundConductivity": 1.95,
+      "metadata": {
+        "projectNumber": "",
+        "documentNumber": "",
+        "title": "",
+        "projectName": "",
+        "client": ""
+      }
+    },
+    "expected": {
+      "dryWall": {
+        "uOverall": 0.027,
+        "heatLoss": 93.5
+      },
+      "wetWall": {
+        "uOverall": 0.055,
+        "heatLoss": 243.7
+      },
+      "dryHead": {
+        "uOverall": 0.032,
+        "heatLoss": 24.7
+      },
+      "wetHead": {
+        "uOverall": 0.056,
+        "heatLoss": 176.1
+      },
+      "totalHeatLoss": 538,
+      "totalArea": 344.59,
+      "cooling": {
+        "rateCHr": 0.0024,
+        "timeToAmbientHr": 24767.6
+      }
+    },
+    "notes": "PES TypeScript engine result (src/lib/calculations/horizontal-tank.ts). Golden case \u2014 Excel-validated. Tolerance: \u00b110%.",
+    "tolerance": 10
+  },
+  {
+    "caseId": "HT-003",
+    "tag": "HT-NO-INS-01",
+    "description": "Uninsulated horizontal tank \u2014 tests bare steel heat loss with no insulation.",
+    "mode": "horizontal-tank",
+    "input": {
+      "tag": "HT-NO-INS-01",
+      "insideDiameter": 4000,
+      "tankLength": 8000,
+      "headType": "2:1 Ellipsoidal",
+      "flangeWidth": 150,
+      "liquidLevel": 2500,
+      "fluidTemp": 80,
+      "vaporTemp": 70,
+      "ambientTemp": 25,
+      "windSpeed": 2,
+      "windEnhancement": 2,
+      "groundTemp": 25,
+      "wallThickness": 20,
+      "wallConductivity": 45.3,
+      "insulationThickness": 0,
+      "insulationConductivity": 0.035,
+      "fluidDensity": 950,
+      "fluidSpecificHeat": 2100,
+      "fluidViscosity": 0.003,
+      "fluidThermalConductivity": 0.18,
+      "fluidExpansionCoeff": 0.0005,
+      "vaporDensity": 0.9,
+      "vaporSpecificHeat": 1010,
+      "vaporViscosity": 1.8e-05,
+      "vaporThermalConductivity": 0.03,
+      "vaporExpansionCoeff": 0.003,
+      "foulingDryWall": 5000,
+      "foulingWetWall": 4000,
+      "foulingDryHead": 5000,
+      "foulingWetHead": 4000,
+      "surfaceEmissivity": 0.85,
+      "groundConductivity": 1.3846,
+      "metadata": {
+        "projectNumber": "",
+        "documentNumber": "",
+        "title": "",
+        "projectName": "",
+        "client": ""
+      }
+    },
+    "expected": {
+      "dryWall": {
+        "uOverall": 0.047,
+        "heatLoss": 122.1
+      },
+      "wetWall": {
+        "uOverall": 0.147,
+        "heatLoss": 342.2
+      },
+      "dryHead": {
+        "uOverall": 0.057,
+        "heatLoss": 33.2
+      },
+      "wetHead": {
+        "uOverall": 0.157,
+        "heatLoss": 186.9
+      },
+      "totalHeatLoss": 684.4,
+      "totalArea": 169.91,
+      "cooling": {
+        "rateCHr": 0.0189,
+        "timeToAmbientHr": 2903.1
+      }
+    },
+    "notes": "PES TypeScript engine result (src/lib/calculations/horizontal-tank.ts). Engineered case. Tolerance: \u00b120%.",
+    "tolerance": 20
+  },
+  {
+    "caseId": "HT-004",
+    "tag": "HT-HEMI-01",
+    "description": "Hemispherical head horizontal tank \u2014 tests hemispherical head geometry vs ellipsoidal.",
+    "mode": "horizontal-tank",
+    "input": {
+      "tag": "HT-HEMI-01",
+      "insideDiameter": 5000,
+      "tankLength": 12000,
+      "headType": "Hemispherical",
+      "flangeWidth": 200,
+      "liquidLevel": 3000,
+      "fluidTemp": 120,
+      "vaporTemp": 100,
+      "ambientTemp": 30,
+      "windSpeed": 1,
+      "windEnhancement": 1.5,
+      "groundTemp": 30,
+      "wallThickness": 25,
+      "wallConductivity": 45.3,
+      "insulationThickness": 60,
+      "insulationConductivity": 0.04,
+      "fluidDensity": 960,
+      "fluidSpecificHeat": 2200,
+      "fluidViscosity": 0.002,
+      "fluidThermalConductivity": 0.2,
+      "fluidExpansionCoeff": 0.0006,
+      "vaporDensity": 0.85,
+      "vaporSpecificHeat": 1010,
+      "vaporViscosity": 1.8e-05,
+      "vaporThermalConductivity": 0.032,
+      "vaporExpansionCoeff": 0.003,
+      "foulingDryWall": 5000,
+      "foulingWetWall": 4000,
+      "foulingDryHead": 5000,
+      "foulingWetHead": 4000,
+      "surfaceEmissivity": 0.05,
+      "groundConductivity": 1.8,
+      "metadata": {
+        "projectNumber": "",
+        "documentNumber": "",
+        "title": "",
+        "projectName": "",
+        "client": ""
+      }
+    },
+    "expected": {
+      "dryWall": {
+        "uOverall": 0.04,
+        "heatLoss": 298.2
+      },
+      "wetWall": {
+        "uOverall": 0.089,
+        "heatLoss": 661.5
+      },
+      "dryHead": {
+        "uOverall": 0.047,
+        "heatLoss": 51.6
+      },
+      "wetHead": {
+        "uOverall": 0.094,
+        "heatLoss": 199.4
+      },
+      "totalHeatLoss": 1210.7,
+      "totalArea": 267.04,
+      "cooling": {
+        "rateCHr": 0.0141,
+        "timeToAmbientHr": 6370.9
+      }
+    },
+    "notes": "PES TypeScript engine result (src/lib/calculations/horizontal-tank.ts). Engineered case. Tolerance: \u00b120%.",
+    "tolerance": 20
+  },
+  {
+    "caseId": "HT-005",
+    "tag": "HT-LOW-LEVEL-01",
+    "description": "Low liquid level horizontal tank \u2014 mostly vapor space, tests dry-side dominance.",
+    "mode": "horizontal-tank",
+    "input": {
+      "tag": "HT-LOW-LEVEL-01",
+      "insideDiameter": 6000,
+      "tankLength": 10000,
+      "headType": "2:1 Ellipsoidal",
+      "flangeWidth": 200,
+      "liquidLevel": 1500,
+      "fluidTemp": 90,
+      "vaporTemp": 85,
+      "ambientTemp": 25,
+      "windSpeed": 2,
+      "windEnhancement": 2.0,
+      "groundTemp": 25,
+      "wallThickness": 30,
+      "wallConductivity": 45.3,
+      "insulationThickness": 100,
+      "insulationConductivity": 0.035,
+      "fluidDensity": 950,
+      "fluidSpecificHeat": 2100,
+      "fluidViscosity": 0.003,
+      "fluidThermalConductivity": 0.18,
+      "fluidExpansionCoeff": 0.0006,
+      "vaporDensity": 0.88,
+      "vaporSpecificHeat": 1010,
+      "vaporViscosity": 1.8e-05,
+      "vaporThermalConductivity": 0.03,
+      "vaporExpansionCoeff": 0.003,
+      "foulingDryWall": 5000,
+      "foulingWetWall": 4000,
+      "foulingDryHead": 5000,
+      "foulingWetHead": 4000,
+      "surfaceEmissivity": 0.05,
+      "groundConductivity": 1.5,
+      "metadata": {
+        "projectNumber": "",
+        "documentNumber": "",
+        "title": "",
+        "projectName": "",
+        "client": ""
+      }
+    },
+    "expected": {
+      "dryWall": {
+        "uOverall": 0.037,
+        "heatLoss": 141.2
+      },
+      "wetWall": {
+        "uOverall": 0.085,
+        "heatLoss": 694.3
+      },
+      "dryHead": {
+        "uOverall": 0.041,
+        "heatLoss": 142.4
+      },
+      "wetHead": {
+        "uOverall": 0.09,
+        "heatLoss": 114
+      },
+      "totalHeatLoss": 1091.9,
+      "totalArea": 344.59,
+      "cooling": {
+        "rateCHr": 0.0268,
+        "timeToAmbientHr": 2425.1
+      }
+    },
+    "notes": "PES TypeScript engine result (src/lib/calculations/horizontal-tank.ts). Engineered case. Tolerance: \u00b120%.",
+    "tolerance": 20
+  },
+  {
+    "caseId": "HT-006",
+    "tag": "HT-FULL-01",
+    "description": "Nearly full horizontal tank \u2014 minimal vapor space, wet surfaces dominate.",
+    "mode": "horizontal-tank",
+    "input": {
+      "tag": "HT-FULL-01",
+      "insideDiameter": 5000,
+      "tankLength": 8000,
+      "headType": "2:1 Ellipsoidal",
+      "flangeWidth": 150,
+      "liquidLevel": 4800,
+      "fluidTemp": 60,
+      "vaporTemp": 55,
+      "ambientTemp": 15,
+      "windSpeed": 0,
+      "windEnhancement": 1.0,
+      "groundTemp": 15,
+      "wallThickness": 20,
+      "wallConductivity": 45.3,
+      "insulationThickness": 50,
+      "insulationConductivity": 0.04,
+      "fluidDensity": 980,
+      "fluidSpecificHeat": 4180,
+      "fluidViscosity": 0.001,
+      "fluidThermalConductivity": 0.6,
+      "fluidExpansionCoeff": 0.0002,
+      "vaporDensity": 1.1,
+      "vaporSpecificHeat": 1010,
+      "vaporViscosity": 1.8e-05,
+      "vaporThermalConductivity": 0.028,
+      "vaporExpansionCoeff": 0.003,
+      "foulingDryWall": 5000,
+      "foulingWetWall": 4000,
+      "foulingDryHead": 5000,
+      "foulingWetHead": 4000,
+      "surfaceEmissivity": 0.85,
+      "groundConductivity": 1.3846,
+      "metadata": {
+        "projectNumber": "",
+        "documentNumber": "",
+        "title": "",
+        "projectName": "",
+        "client": ""
+      }
+    },
+    "expected": {
+      "dryWall": {
+        "uOverall": 0.031,
+        "heatLoss": 135.6
+      },
+      "wetWall": {
+        "uOverall": 0.067,
+        "heatLoss": 48.8
+      },
+      "dryHead": {
+        "uOverall": 0.045,
+        "heatLoss": 3.9
+      },
+      "wetHead": {
+        "uOverall": 0.071,
+        "heatLoss": 166.2
+      },
+      "totalHeatLoss": 354.5,
+      "totalArea": 234.06,
+      "cooling": {
+        "rateCHr": 0.002,
+        "timeToAmbientHr": 22600.6
+      }
+    },
+    "notes": "PES TypeScript engine result (src/lib/calculations/horizontal-tank.ts). Engineered case. Tolerance: \u00b120%.",
+    "tolerance": 20
+  }
+]

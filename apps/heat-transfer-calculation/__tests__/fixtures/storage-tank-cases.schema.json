@@ -1,0 +1,108 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Storage Tank Test Cases",
+  "description": "Test dataset for vertical storage tank heat loss calculations",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "required": ["caseId", "tag", "description", "mode", "input", "expected"],
+    "properties": {
+      "caseId": { "type": "string" },
+      "tag": { "type": "string" },
+      "description": { "type": "string" },
+      "mode": { "type": "string", "const": "storage-tank" },
+      "input": {
+        "type": "object",
+        "required": ["tag", "tankDiameter", "tankHeight", "liquidLevel", "fluidTemp", "ambientTemp", "windSpeed", "wallThickness", "wallConductivity", "insulationThickness", "insulationConductivity", "fluidDensity", "fluidSpecificHeat", "fluidViscosity", "fluidThermalConductivity", "fluidExpansionCoeff", "surfaceEmissivity", "metadata"],
+        "properties": {
+          "tag": { "type": "string" },
+          "description": { "type": "string" },
+          "tankDiameter": { "type": "number" },
+          "tankHeight": { "type": "number" },
+          "liquidLevel": { "type": "number" },
+          "tankRoofType": { "type": "string" },
+          "roofHeight": { "type": "number" },
+          "fluidTemp": { "type": "number" },
+          "vaporTemp": { "type": "number" },
+          "ambientTemp": { "type": "number" },
+          "windSpeed": { "type": "number" },
+          "windEnhancement": { "type": "number" },
+          "wallThickness": { "type": "number" },
+          "wallConductivity": { "type": "number" },
+          "insulationThickness": { "type": "number" },
+          "insulationConductivity": { "type": "number" },
+          "fluidDensity": { "type": "number" },
+          "fluidSpecificHeat": { "type": "number" },
+          "fluidViscosity": { "type": "number" },
+          "fluidThermalConductivity": { "type": "number" },
+          "fluidExpansionCoeff": { "type": "number" },
+          "vaporDensity": { "type": "number" },
+          "vaporSpecificHeat": { "type": "number" },
+          "vaporViscosity": { "type": "number" },
+          "vaporThermalConductivity": { "type": "number" },
+          "vaporExpansionCoeff": { "type": "number" },
+          "groundTemp": { "type": "number" },
+          "groundConductivity": { "type": "number" },
+          "foulingDryWall": { "type": "number" },
+          "foulingWetWall": { "type": "number" },
+          "foulingRoof": { "type": "number" },
+          "foulingFloor": { "type": "number" },
+          "surfaceEmissivity": { "type": "number" },
+          "roofEmissivity": { "type": "number" },
+          "metadata": {
+            "type": "object",
+            "properties": {
+              "projectNumber": { "type": "string" },
+              "documentNumber": { "type": "string" },
+              "title": { "type": "string" },
+              "projectName": { "type": "string" },
+              "client": { "type": "string" }
+            }
+          }
+        }
+      },
+      "expected": {
+        "type": "object",
+        "properties": {
+          "dryWall.uOverall": {
+            "type": "object",
+            "properties": { "value": { "type": "number" }, "unit": { "type": "string" }, "tolerance": { "type": "number" } }
+          },
+          "wetWall.uOverall": {
+            "type": "object",
+            "properties": { "value": { "type": "number" }, "unit": { "type": "string" }, "tolerance": { "type": "number" } }
+          },
+          "roof.uOverall": {
+            "type": "object",
+            "properties": { "value": { "type": "number" }, "unit": { "type": "string" }, "tolerance": { "type": "number" } }
+          },
+          "floor.uOverall": {
+            "type": "object",
+            "properties": { "value": { "type": "number" }, "unit": { "type": "string" }, "tolerance": { "type": "number" } }
+          },
+          "dryWall.heatLoss": {
+            "type": "object",
+            "properties": { "value": { "type": "number" }, "unit": { "type": "string" }, "tolerance": { "type": "number" } }
+          },
+          "wetWall.heatLoss": {
+            "type": "object",
+            "properties": { "value": { "type": "number" }, "unit": { "type": "string" }, "tolerance": { "type": "number" } }
+          },
+          "roof.heatLoss": {
+            "type": "object",
+            "properties": { "value": { "type": "number" }, "unit": { "type": "string" }, "tolerance": { "type": "number" } }
+          },
+          "floor.heatLoss": {
+            "type": "object",
+            "properties": { "value": { "type": "number" }, "unit": { "type": "string" }, "tolerance": { "type": "number" } }
+          },
+          "totalHeatLoss": {
+            "type": "object",
+            "properties": { "value": { "type": "number" }, "unit": { "type": "string" }, "tolerance": { "type": "number" } }
+          }
+        }
+      },
+      "notes": { "type": "string" }
+    }
+  }
+}

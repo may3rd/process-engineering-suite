@@ -1,0 +1,795 @@
+[
+  {
+    "caseId": "ST-001",
+    "tag": "V-101",
+    "description": "Vertical tank golden case \u2014 fidelity test baseline. Well-insulated large storage tank with moderate temperature difference.",
+    "mode": "storage-tank",
+    "input": {
+      "tag": "V-101",
+      "tankDiameter": 6096,
+      "tankHeight": 14630.4,
+      "liquidLevel": 7315.2,
+      "fluidTemp": 12.78,
+      "vaporTemp": 10,
+      "ambientTemp": 1.67,
+      "windSpeed": 3,
+      "windEnhancement": 3.3,
+      "wallThickness": 4.7625,
+      "wallConductivity": 17.307,
+      "insulationThickness": 38.1,
+      "insulationConductivity": 0.04846,
+      "fluidDensity": 749.66,
+      "fluidSpecificHeat": 2512.1,
+      "fluidViscosity": 0.04,
+      "fluidThermalConductivity": 0.207688,
+      "fluidExpansionCoeff": 1.8e-06,
+      "vaporDensity": 1.281,
+      "vaporSpecificHeat": 1046.7,
+      "vaporViscosity": 7e-06,
+      "vaporThermalConductivity": 0.026,
+      "vaporExpansionCoeff": 0.0036,
+      "groundTemp": 4.44,
+      "groundConductivity": 1.3846,
+      "foulingDryWall": 5678.3,
+      "foulingWetWall": 4542.6,
+      "foulingRoof": 5678.3,
+      "foulingFloor": 2839.1,
+      "surfaceEmissivity": 0.9,
+      "metadata": {
+        "projectNumber": "",
+        "documentNumber": "",
+        "title": "",
+        "projectName": "",
+        "client": ""
+      }
+    },
+    "expected": {
+      "dryWall": {
+        "uOverall": 0.758,
+        "heatLoss": 884.3,
+        "twInside": 7.4,
+        "twOutside": 2.4
+      },
+      "wetWall": {
+        "uOverall": 0.936,
+        "heatLoss": 1457.4,
+        "twInside": 11,
+        "twOutside": 2.9
+      },
+      "roof": {
+        "uOverall": 0.901,
+        "heatLoss": 219,
+        "twInside": 2.5,
+        "twOutside": 2.5
+      },
+      "floor": {
+        "uOverall": 0.505,
+        "heatLoss": 122.9,
+        "twInside": 11.7,
+        "twOutside": 4.4
+      },
+      "totalHeatLoss": 2683.5,
+      "totalArea": 338.56,
+      "cooling": {
+        "rateCHr": 0.024,
+        "timeToAmbientHr": 462.4
+      }
+    },
+    "notes": "PES TypeScript engine result (src/lib/calculations/index.ts). Golden case \u2014 Excel-validated. Tolerance: \u00b110%.",
+    "tolerance": 10
+  },
+  {
+    "caseId": "ST-002",
+    "tag": "V-NO-INS-01",
+    "description": "Uninsulated vertical tank \u2014 same geometry as golden case but no insulation. Heat loss should be significantly higher.",
+    "mode": "storage-tank",
+    "input": {
+      "tag": "V-NO-INS-01",
+      "tankDiameter": 6096,
+      "tankHeight": 14630.4,
+      "liquidLevel": 7315.2,
+      "fluidTemp": 12.78,
+      "vaporTemp": 10,
+      "ambientTemp": 1.67,
+      "windSpeed": 3,
+      "windEnhancement": 3.3,
+      "wallThickness": 4.7625,
+      "wallConductivity": 17.307,
+      "insulationThickness": 0,
+      "insulationConductivity": 0.04846,
+      "fluidDensity": 749.66,
+      "fluidSpecificHeat": 2512.1,
+      "fluidViscosity": 0.04,
+      "fluidThermalConductivity": 0.207688,
+      "fluidExpansionCoeff": 1.8e-06,
+      "vaporDensity": 1.281,
+      "vaporSpecificHeat": 1046.7,
+      "vaporViscosity": 7e-06,
+      "vaporThermalConductivity": 0.026,
+      "vaporExpansionCoeff": 0.0036,
+      "groundTemp": 4.44,
+      "groundConductivity": 1.3846,
+      "foulingDryWall": 5678.3,
+      "foulingWetWall": 4542.6,
+      "foulingRoof": 5678.3,
+      "foulingFloor": 2839.1,
+      "surfaceEmissivity": 0.9,
+      "metadata": {
+        "projectNumber": "",
+        "documentNumber": "",
+        "title": "",
+        "projectName": "",
+        "client": ""
+      }
+    },
+    "expected": {
+      "dryWall": {
+        "uOverall": 2.472,
+        "heatLoss": 2885.2,
+        "twInside": 3.5,
+        "twOutside": 3.5
+      },
+      "wetWall": {
+        "uOverall": 4.941,
+        "heatLoss": 7690.8,
+        "twInside": 6.6,
+        "twOutside": 6.6
+      },
+      "roof": {
+        "uOverall": 0.901,
+        "heatLoss": 219,
+        "twInside": 2.5,
+        "twOutside": 2.5
+      },
+      "floor": {
+        "uOverall": 0.505,
+        "heatLoss": 122.9,
+        "twInside": 11.7,
+        "twOutside": 4.4
+      },
+      "totalHeatLoss": 10917.9,
+      "totalArea": 338.56,
+      "cooling": {
+        "rateCHr": 0.0978,
+        "timeToAmbientHr": 113.7
+      }
+    },
+    "notes": "PES TypeScript engine result (src/lib/calculations/index.ts). Engineered case. Tolerance: \u00b120%.",
+    "tolerance": 20
+  },
+  {
+    "caseId": "ST-003",
+    "tag": "V-HOT-OIL-01",
+    "description": "Hot thermal oil storage tank \u2014 high temperature fluid (200\u00b0C) with rock wool insulation. Tests high-temperature regime.",
+    "mode": "storage-tank",
+    "input": {
+      "tag": "V-HOT-OIL-01",
+      "tankDiameter": 3000,
+      "tankHeight": 6000,
+      "liquidLevel": 4500,
+      "fluidTemp": 200,
+      "vaporTemp": 180,
+      "ambientTemp": 30,
+      "windSpeed": 2,
+      "windEnhancement": 1.5,
+      "wallThickness": 5,
+      "wallConductivity": 45.3,
+      "insulationThickness": 100,
+      "insulationConductivity": 0.04,
+      "fluidDensity": 850,
+      "fluidSpecificHeat": 2200,
+      "fluidViscosity": 0.005,
+      "fluidThermalConductivity": 0.12,
+      "fluidExpansionCoeff": 0.0008,
+      "vaporDensity": 0.75,
+      "vaporSpecificHeat": 1012,
+      "vaporViscosity": 1.5e-05,
+      "vaporThermalConductivity": 0.035,
+      "vaporExpansionCoeff": 0.003,
+      "groundTemp": 30,
+      "groundConductivity": 1.3846,
+      "foulingDryWall": 5000,
+      "foulingWetWall": 4000,
+      "foulingRoof": 5000,
+      "foulingFloor": 2500,
+      "surfaceEmissivity": 0.05,
+      "metadata": {
+        "projectNumber": "",
+        "documentNumber": "",
+        "title": "",
+        "projectName": "",
+        "client": ""
+      }
+    },
+    "expected": {
+      "dryWall": {
+        "uOverall": 0.328,
+        "heatLoss": 696.3,
+        "twInside": 164.3,
+        "twOutside": 41.1
+      },
+      "wetWall": {
+        "uOverall": 0.364,
+        "heatLoss": 2626.3,
+        "twInside": 198.8,
+        "twOutside": 44
+      },
+      "roof": {
+        "uOverall": 1.401,
+        "heatLoss": 1485.5,
+        "twInside": 61.9,
+        "twOutside": 61.8
+      },
+      "floor": {
+        "uOverall": 1.153,
+        "heatLoss": 1385.1,
+        "twInside": 196.8,
+        "twOutside": 30
+      },
+      "totalHeatLoss": 6193.2,
+      "totalArea": 70.69,
+      "cooling": {
+        "rateCHr": 0.3748,
+        "timeToAmbientHr": 453.5
+      }
+    },
+    "notes": "PES TypeScript engine result (src/lib/calculations/index.ts). Engineered case. Tolerance: \u00b120%.",
+    "tolerance": 20
+  },
+  {
+    "caseId": "ST-004",
+    "tag": "V-CHILLED-01",
+    "description": "Chilled water tank \u2014 35\u00b0C fluid in 15\u00b0C ambient (refrigerated tank in cold climate). 20\u00b0C \u0394T.",
+    "mode": "storage-tank",
+    "input": {
+      "tag": "V-CHILLED-01",
+      "tankDiameter": 2000,
+      "tankHeight": 4000,
+      "liquidLevel": 3000,
+      "fluidTemp": 35,
+      "vaporTemp": 35,
+      "ambientTemp": 15,
+      "windSpeed": 1,
+      "windEnhancement": 1.0,
+      "wallThickness": 4,
+      "wallConductivity": 45.3,
+      "insulationThickness": 50,
+      "insulationConductivity": 0.035,
+      "fluidDensity": 999.7,
+      "fluidSpecificHeat": 4182,
+      "fluidViscosity": 0.001002,
+      "fluidThermalConductivity": 0.58,
+      "fluidExpansionCoeff": 0.00015,
+      "vaporDensity": 1.1,
+      "vaporSpecificHeat": 1007,
+      "vaporViscosity": 1.8e-05,
+      "vaporThermalConductivity": 0.028,
+      "vaporExpansionCoeff": 0.003,
+      "groundTemp": 28,
+      "groundConductivity": 1.3846,
+      "foulingDryWall": 5000,
+      "foulingWetWall": 4000,
+      "foulingRoof": 5000,
+      "foulingFloor": 2500,
+      "surfaceEmissivity": 0.85,
+      "metadata": {
+        "projectNumber": "",
+        "documentNumber": "",
+        "title": "",
+        "projectName": "",
+        "client": ""
+      }
+    },
+    "expected": {
+      "dryWall": {
+        "uOverall": 0.497,
+        "heatLoss": 62.5,
+        "twInside": 30.8,
+        "twOutside": 16.6
+      },
+      "wetWall": {
+        "uOverall": 0.626,
+        "heatLoss": 236.1,
+        "twInside": 34.9,
+        "twOutside": 17
+      },
+      "roof": {
+        "uOverall": 1.012,
+        "heatLoss": 63.6,
+        "twInside": 17.9,
+        "twOutside": 17.9
+      },
+      "floor": {
+        "uOverall": 1.726,
+        "heatLoss": 38,
+        "twInside": 34.9,
+        "twOutside": 28
+      },
+      "totalHeatLoss": 400.1,
+      "totalArea": 31.42,
+      "cooling": {
+        "rateCHr": 0.0366,
+        "timeToAmbientHr": 547.1
+      }
+    },
+    "notes": "PES TypeScript engine result (src/lib/calculations/index.ts). Engineered case. Tolerance: \u00b120%.",
+    "tolerance": 20
+  },
+  {
+    "caseId": "ST-005",
+    "tag": "V-LARGE-01",
+    "description": "Large industrial crude oil storage tank \u2014 tests geometry scaling with large diameter and height.",
+    "mode": "storage-tank",
+    "input": {
+      "tag": "V-LARGE-01",
+      "tankDiameter": 30000,
+      "tankHeight": 15000,
+      "liquidLevel": 12000,
+      "fluidTemp": 60,
+      "vaporTemp": 50,
+      "ambientTemp": 25,
+      "windSpeed": 5,
+      "windEnhancement": 2.5,
+      "wallThickness": 6,
+      "wallConductivity": 45.3,
+      "insulationThickness": 0,
+      "insulationConductivity": 0.04,
+      "fluidDensity": 850,
+      "fluidSpecificHeat": 2000,
+      "fluidViscosity": 0.01,
+      "fluidThermalConductivity": 0.13,
+      "fluidExpansionCoeff": 0.0007,
+      "vaporDensity": 1.0,
+      "vaporSpecificHeat": 1010,
+      "vaporViscosity": 1.8e-05,
+      "vaporThermalConductivity": 0.03,
+      "vaporExpansionCoeff": 0.003,
+      "groundTemp": 25,
+      "groundConductivity": 1.3846,
+      "foulingDryWall": 5000,
+      "foulingWetWall": 4000,
+      "foulingRoof": 5000,
+      "foulingFloor": 2500,
+      "surfaceEmissivity": 0.8,
+      "metadata": {
+        "projectNumber": "",
+        "documentNumber": "",
+        "title": "",
+        "projectName": "",
+        "client": ""
+      }
+    },
+    "expected": {
+      "dryWall": {
+        "uOverall": 2.783,
+        "heatLoss": 19674.7,
+        "twInside": 30,
+        "twOutside": 30
+      },
+      "wetWall": {
+        "uOverall": 11.982,
+        "heatLoss": 474287,
+        "twInside": 54,
+        "twOutside": 53.8
+      },
+      "roof": {
+        "uOverall": 0.611,
+        "heatLoss": 10801.1,
+        "twInside": 26.7,
+        "twOutside": 26.7
+      },
+      "floor": {
+        "uOverall": 0.117,
+        "heatLoss": 2889.8,
+        "twInside": 59.8,
+        "twOutside": 25
+      },
+      "totalHeatLoss": 507652.6,
+      "totalArea": 2827.43,
+      "cooling": {
+        "rateCHr": 0.1267,
+        "timeToAmbientHr": 276.2
+      }
+    },
+    "notes": "PES TypeScript engine result (src/lib/calculations/index.ts). Engineered case. Tolerance: \u00b120%.",
+    "tolerance": 20
+  },
+  {
+    "caseId": "ST-006",
+    "tag": "V-SMALL-01",
+    "description": "Small chemical dosing tank \u2014 tests small geometry behavior and partial insulation.",
+    "mode": "storage-tank",
+    "input": {
+      "tag": "V-SMALL-01",
+      "tankDiameter": 800,
+      "tankHeight": 1200,
+      "liquidLevel": 1000,
+      "fluidTemp": 55,
+      "vaporTemp": 50,
+      "ambientTemp": 25,
+      "windSpeed": 0,
+      "windEnhancement": 1.0,
+      "wallThickness": 3,
+      "wallConductivity": 45.3,
+      "insulationThickness": 25,
+      "insulationConductivity": 0.04,
+      "fluidDensity": 1100,
+      "fluidSpecificHeat": 2300,
+      "fluidViscosity": 0.002,
+      "fluidThermalConductivity": 0.2,
+      "fluidExpansionCoeff": 0.0005,
+      "vaporDensity": 1.0,
+      "vaporSpecificHeat": 1010,
+      "vaporViscosity": 1.8e-05,
+      "vaporThermalConductivity": 0.028,
+      "vaporExpansionCoeff": 0.003,
+      "groundTemp": 25,
+      "groundConductivity": 1.3846,
+      "foulingDryWall": 5000,
+      "foulingWetWall": 4000,
+      "foulingRoof": 5000,
+      "foulingFloor": 2500,
+      "surfaceEmissivity": 0.85,
+      "metadata": {
+        "projectNumber": "",
+        "documentNumber": "",
+        "title": "",
+        "projectName": "",
+        "client": ""
+      }
+    },
+    "expected": {
+      "dryWall": {
+        "uOverall": 0.935,
+        "heatLoss": 11.8,
+        "twInside": 42.7,
+        "twOutside": 28.1
+      },
+      "wetWall": {
+        "uOverall": 1.3,
+        "heatLoss": 98,
+        "twInside": 54.5,
+        "twOutside": 30.1
+      },
+      "roof": {
+        "uOverall": 1.251,
+        "heatLoss": 15.7,
+        "twInside": 29.1,
+        "twOutside": 29.1
+      },
+      "floor": {
+        "uOverall": 4.199,
+        "heatLoss": 63.3,
+        "twInside": 53.6,
+        "twOutside": 25
+      },
+      "totalHeatLoss": 188.8,
+      "totalArea": 4.02,
+      "cooling": {
+        "rateCHr": 0.5346,
+        "timeToAmbientHr": 56.1
+      }
+    },
+    "notes": "PES TypeScript engine result (src/lib/calculations/index.ts). Engineered case. Tolerance: \u00b120%.",
+    "tolerance": 20
+  },
+  {
+    "caseId": "ST-007",
+    "tag": "V-PARTIAL-01",
+    "description": "Partially insulated tank \u2014 only walls insulated, roof and floor exposed. Tests selective insulation scenario.",
+    "mode": "storage-tank",
+    "input": {
+      "tag": "V-PARTIAL-01",
+      "tankDiameter": 5000,
+      "tankHeight": 8000,
+      "liquidLevel": 5000,
+      "fluidTemp": 90,
+      "vaporTemp": 85,
+      "ambientTemp": 20,
+      "windSpeed": 2,
+      "windEnhancement": 1.5,
+      "wallThickness": 5,
+      "wallConductivity": 45.3,
+      "insulationThickness": 75,
+      "insulationConductivity": 0.035,
+      "fluidDensity": 950,
+      "fluidSpecificHeat": 2100,
+      "fluidViscosity": 0.003,
+      "fluidThermalConductivity": 0.18,
+      "fluidExpansionCoeff": 0.0006,
+      "vaporDensity": 0.85,
+      "vaporSpecificHeat": 1010,
+      "vaporViscosity": 1.8e-05,
+      "vaporThermalConductivity": 0.03,
+      "vaporExpansionCoeff": 0.003,
+      "groundTemp": 20,
+      "groundConductivity": 1.3846,
+      "foulingDryWall": 5000,
+      "foulingWetWall": 4000,
+      "foulingRoof": 5000,
+      "foulingFloor": 2500,
+      "surfaceEmissivity": 0.05,
+      "roofEmissivity": 0.85,
+      "metadata": {
+        "projectNumber": "",
+        "documentNumber": "",
+        "title": "",
+        "projectName": "",
+        "client": ""
+      }
+    },
+    "expected": {
+      "dryWall": {
+        "uOverall": 0.356,
+        "heatLoss": 1091.1,
+        "twInside": 75.6,
+        "twOutside": 26
+      },
+      "wetWall": {
+        "uOverall": 0.413,
+        "heatLoss": 2272.2,
+        "twInside": 89.5,
+        "twOutside": 27.5
+      },
+      "roof": {
+        "uOverall": 1.05,
+        "heatLoss": 1339.5,
+        "twInside": 27.4,
+        "twOutside": 27.4
+      },
+      "floor": {
+        "uOverall": 0.697,
+        "heatLoss": 957.4,
+        "twInside": 89.2,
+        "twOutside": 20
+      },
+      "totalHeatLoss": 5660.3,
+      "totalArea": 164.93,
+      "cooling": {
+        "rateCHr": 0.104,
+        "timeToAmbientHr": 672.8
+      }
+    },
+    "notes": "PES TypeScript engine result (src/lib/calculations/index.ts). Engineered case. Tolerance: \u00b120%.",
+    "tolerance": 20
+  },
+  {
+    "caseId": "ST-008",
+    "tag": "V-CONE-ROOF-01",
+    "description": "Vertical tank with cone roof \u2014 tests cone roof geometry calculation.",
+    "mode": "storage-tank",
+    "input": {
+      "tag": "V-CONE-ROOF-01",
+      "tankDiameter": 4000,
+      "tankHeight": 10000,
+      "liquidLevel": 7000,
+      "tankRoofType": "Cone Roof",
+      "roofHeight": 600,
+      "fluidTemp": 80,
+      "vaporTemp": 75,
+      "ambientTemp": 25,
+      "windSpeed": 3,
+      "windEnhancement": 2.0,
+      "wallThickness": 5,
+      "wallConductivity": 45.3,
+      "insulationThickness": 50,
+      "insulationConductivity": 0.04,
+      "fluidDensity": 950,
+      "fluidSpecificHeat": 2000,
+      "fluidViscosity": 0.003,
+      "fluidThermalConductivity": 0.17,
+      "fluidExpansionCoeff": 0.0005,
+      "vaporDensity": 0.9,
+      "vaporSpecificHeat": 1010,
+      "vaporViscosity": 1.8e-05,
+      "vaporThermalConductivity": 0.03,
+      "vaporExpansionCoeff": 0.003,
+      "groundTemp": 25,
+      "groundConductivity": 1.3846,
+      "foulingDryWall": 5000,
+      "foulingWetWall": 4000,
+      "foulingRoof": 5000,
+      "foulingFloor": 2500,
+      "surfaceEmissivity": 0.85,
+      "metadata": {
+        "projectNumber": "",
+        "documentNumber": "",
+        "title": "",
+        "projectName": "",
+        "client": ""
+      }
+    },
+    "expected": {
+      "dryWall": {
+        "uOverall": 0.577,
+        "heatLoss": 1087.6,
+        "twInside": 64.2,
+        "twOutside": 28.2
+      },
+      "wetWall": {
+        "uOverall": 0.726,
+        "heatLoss": 3514.4,
+        "twInside": 79.3,
+        "twOutside": 29.3
+      },
+      "roof": {
+        "uOverall": 1.082,
+        "heatLoss": 709.9,
+        "twInside": 30.3,
+        "twOutside": 30.3
+      },
+      "floor": {
+        "uOverall": 0.867,
+        "heatLoss": 599.2,
+        "twInside": 79.1,
+        "twOutside": 25
+      },
+      "totalHeatLoss": 5911.1,
+      "totalArea": 151.35,
+      "cooling": {
+        "rateCHr": 0.1273,
+        "timeToAmbientHr": 432
+      }
+    },
+    "notes": "PES TypeScript engine result (src/lib/calculations/index.ts). Engineered case. Tolerance: \u00b120%.",
+    "tolerance": 20
+  },
+  {
+    "caseId": "ST-009",
+    "tag": "V-HIGH-WIND-01",
+    "description": "High wind offshore platform tank \u2014 tests wind enhancement and high wind speed on heat loss.",
+    "mode": "storage-tank",
+    "input": {
+      "tag": "V-HIGH-WIND-01",
+      "tankDiameter": 4000,
+      "tankHeight": 8000,
+      "liquidLevel": 5000,
+      "fluidTemp": 40,
+      "vaporTemp": 35,
+      "ambientTemp": 10,
+      "windSpeed": 20,
+      "windEnhancement": 5.0,
+      "wallThickness": 6,
+      "wallConductivity": 45.3,
+      "insulationThickness": 50,
+      "insulationConductivity": 0.04,
+      "fluidDensity": 980,
+      "fluidSpecificHeat": 4000,
+      "fluidViscosity": 0.001,
+      "fluidThermalConductivity": 0.6,
+      "fluidExpansionCoeff": 0.0002,
+      "vaporDensity": 1.2,
+      "vaporSpecificHeat": 1010,
+      "vaporViscosity": 1.8e-05,
+      "vaporThermalConductivity": 0.028,
+      "vaporExpansionCoeff": 0.003,
+      "groundTemp": 10,
+      "groundConductivity": 1.3846,
+      "foulingDryWall": 5000,
+      "foulingWetWall": 4000,
+      "foulingRoof": 5000,
+      "foulingFloor": 2500,
+      "surfaceEmissivity": 0.85,
+      "metadata": {
+        "projectNumber": "",
+        "documentNumber": "",
+        "title": "",
+        "projectName": "",
+        "client": ""
+      }
+    },
+    "expected": {
+      "dryWall": {
+        "uOverall": 0.579,
+        "heatLoss": 545.8,
+        "twInside": 29.3,
+        "twOutside": 11.2
+      },
+      "wetWall": {
+        "uOverall": 0.746,
+        "heatLoss": 1405.9,
+        "twInside": 39.8,
+        "twOutside": 11.8
+      },
+      "roof": {
+        "uOverall": 1.04,
+        "heatLoss": 326.8,
+        "twInside": 11.9,
+        "twOutside": 11.9
+      },
+      "floor": {
+        "uOverall": 0.874,
+        "heatLoss": 329.5,
+        "twInside": 39.8,
+        "twOutside": 10
+      },
+      "totalHeatLoss": 2608.1,
+      "totalArea": 125.66,
+      "cooling": {
+        "rateCHr": 0.0381,
+        "timeToAmbientHr": 787
+      }
+    },
+    "notes": "PES TypeScript engine result (src/lib/calculations/index.ts). Engineered case. Tolerance: \u00b120%.",
+    "tolerance": 20
+  },
+  {
+    "caseId": "ST-010",
+    "tag": "V-EMPTY-01",
+    "description": "Empty tank \u2014 liquid level at zero, tests dry-only heat loss calculation.",
+    "mode": "storage-tank",
+    "input": {
+      "tag": "V-EMPTY-01",
+      "tankDiameter": 5000,
+      "tankHeight": 10000,
+      "liquidLevel": 0,
+      "fluidTemp": 60,
+      "vaporTemp": 60,
+      "ambientTemp": 20,
+      "windSpeed": 1,
+      "windEnhancement": 1.0,
+      "wallThickness": 5,
+      "wallConductivity": 45.3,
+      "insulationThickness": 30,
+      "insulationConductivity": 0.04,
+      "fluidDensity": 800,
+      "fluidSpecificHeat": 2000,
+      "fluidViscosity": 0.005,
+      "fluidThermalConductivity": 0.15,
+      "fluidExpansionCoeff": 0.0006,
+      "vaporDensity": 0.85,
+      "vaporSpecificHeat": 1010,
+      "vaporViscosity": 1.8e-05,
+      "vaporThermalConductivity": 0.03,
+      "vaporExpansionCoeff": 0.003,
+      "groundTemp": 20,
+      "groundConductivity": 1.3846,
+      "foulingDryWall": 5000,
+      "foulingWetWall": 4000,
+      "foulingRoof": 5000,
+      "foulingFloor": 2500,
+      "surfaceEmissivity": 0.85,
+      "metadata": {
+        "projectNumber": "",
+        "documentNumber": "",
+        "title": "",
+        "projectName": "",
+        "client": ""
+      }
+    },
+    "expected": {
+      "dryWall": {
+        "uOverall": 0.78,
+        "heatLoss": 4900.9,
+        "twInside": 47.8,
+        "twOutside": 24.4
+      },
+      "wetWall": {
+        "uOverall": 0,
+        "heatLoss": 0,
+        "twInside": 20,
+        "twOutside": 20
+      },
+      "roof": {
+        "uOverall": 0.918,
+        "heatLoss": 721.1,
+        "twInside": 24.9,
+        "twOutside": 24.9
+      },
+      "floor": {
+        "uOverall": 0.692,
+        "heatLoss": 543.4,
+        "twInside": 59.3,
+        "twOutside": 20
+      },
+      "totalHeatLoss": 6165.4,
+      "totalArea": 196.35,
+      "cooling": {
+        "rateCHr": 0,
+        "timeToAmbientHr": null
+      }
+    },
+    "notes": "PES TypeScript engine result (src/lib/calculations/index.ts). Engineered case. Tolerance: \u00b120%.",
+    "tolerance": 20
+  }
+]
